@@ -1,0 +1,405 @@
+"""
+Processor Traien - Mortgage Document Processing App
+Main Streamlit application.
+"""
+
+import streamlit as st
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# --- Page Config ---
+st.set_page_config(
+    page_title="Processor Traien",
+    page_icon="📋",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+# --- Custom CSS ---
+st.markdown("""
+<style>
+.progress-nav {
+    display: flex;
+    gap: 2px;
+    background: #0e1117;
+    border-radius: 10px;
+    padding: 6px;
+    margin-bottom: 24px;
+    border: 1px solid #333;
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    flex-wrap: wrap;
+}
+.pn-step {
+    flex: 1;
+    min-width: 90px;
+    text-align: center;
+    padding: 8px 6px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s;
+    line-height: 1.3;
+}
+.pn-step.done {
+    background: #1a5c2a;
+    color: #8f8;
+}
+.pn-step.active {
+    background: #0e4da4;
+    color: #fff;
+}
+.pn-step.pending {
+    background: #1e1e1e;
+    color: #666;
+}
+.pn-step:hover {
+    background: #2a2a2a;
+    color: #fff;
+    transform: scale(1.02);
+}
+.pn-num {
+    display: block;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+.section-anchor {
+    display: block;
+    position: relative;
+    top: -100px;
+    visibility: hidden;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# --- Session State Defaults ---
+DEFAULTS = {
+    "authenticated": False,
+    "user_id": None,
+    "user_email": None,
+    "page": "login",
+    "sandbox_mode": True,
+    "scan_results": None,
+    "history": [],
+}
+for key, val in DEFAULTS.items():
+    if key not in st.session_state:
+        st.session_state[key] = val
+
+
+# --- All workflow steps ---
+WORKFLOW_STEPS = [
+    ("upload", "1", "Upload"),
+    ("megachecklist", "2", "Mega Checklist"),
+    ("conditions", "3", "Conditions"),
+    ("contacts", "4", "Contacts"),
+    ("emails", "5", "Emails"),
+    ("research", "6", "Research"),
+    ("bankrules", "7", "Bank Rules"),
+    ("riskflags", "8", "Risk Flags"),
+    ("stacking", "9", "Stacking Order"),
+    ("submit", "10", "Submit"),
+]
+
+
+def render_progress_bar(completed_steps):
+    """Render the full workflow progress bar."""
+    html = '<div class="progress-nav">'
+    for step_id, num, label in WORKFLOW_STEPS:
+        if step_id in completed_steps:
+            css = "pn-step done"
+        else:
+            css = "pn-step pending"
+        html += f'<a href="#{step_id}" class="{css}"><span class="pn-num">{num}</span>{label}</a>'
+    html += '</div>'
+    st.markdown(html, unsafe_allow_html=True)
+
+
+def show_login_page():
+    """Login / Signup page."""
+    st.markdown("# Processor Traien")
+    st.markdown("### Mortgage Document Processing - Powered by AI")
+    st.markdown("---")
+
+    tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
+
+    with tab_login:
+        with st.form("login_form"):
+            email = st.text_input("Email")
+            password = st.text_input("Password", type="password")
+            submitted = st.form_submit_button("Login", use_container_width=True)
+            if submitted and email and password:
+                from db import login
+                result = login(email, password)
+                if result.get("success"):
+                    st.session_state.authenticated = True
+                    st.session_state.user_id = result["user_id"]
+                    st.session_state.user_email = result["email"]
+                    st.session_state.page = "dashboard"
+                    st.rerun()
+                else:
+                    st.error(result.get("error", "Login failed"))
+
+    with tab_signup:
+        with st.form("signup_form"):
+            email = st.text_input("Email", key="signup_email")
+            password = st.text_input("Password", type="password", key="signup_pass")
+            confirm = st.text_input("Confirm Password", type="password", key="signup_confirm")
+            tos = st.checkbox(
+                "I agree to the Terms of Service. I acknowledge that documents "
+                "are processed in memory and never stored. I have authorization "
+                "to process any documents I upload."
+            )
+            submitted = st.form_submit_button("Create Account", use_container_width=True)
+            if submitted:
+                if not tos:
+                    st.error("You must agree to the Terms of Service")
+                elif password != confirm:
+                    st.error("Passwords do not match")
+                elif len(password) < 6:
+                    st.error("Password must be at least 6 characters")
+                elif email and password:
+                    from db import signup
+                    result = signup(email, password)
+                    if result.get("success"):
+                        st.success("Account created! Check your email to confirm, then log in.")
+                    else:
+                        st.error(result.get("error", "Signup failed"))
+
+    st.markdown("---")
+    if st.button("Try Sandbox (No Account Required)", use_container_width=True):
+        st.session_state.authenticated = True
+        st.session_state.user_id = "sandbox"
+        st.session_state.user_email = "sandbox@demo"
+        st.session_state.sandbox_mode = True
+        st.session_state.page = "dashboard"
+        st.rerun()
+
+
+def show_sidebar():
+    """Sidebar navigation."""
+    with st.sidebar:
+        st.markdown("### Processor Traien")
+        st.markdown(f"**{st.session_state.user_email}**")
+        st.markdown("---")
+
+        is_sandbox = st.toggle(
+            "Sandbox Mode (Free Practice)",
+            value=st.session_state.sandbox_mode,
+            help="Sandbox: unlimited free scans, results not saved.",
+        )
+        st.session_state.sandbox_mode = is_sandbox
+
+        if is_sandbox:
+            st.info("Sandbox: Free & unlimited. Results not saved.")
+        else:
+            if st.session_state.user_id != "sandbox":
+                from db import get_file_count
+                count = get_file_count(st.session_state.user_id)
+                remaining_free = max(0, 5 - count)
+                st.warning(f"Live Mode: {count} files processed. {remaining_free} free files remaining.")
+            else:
+                st.warning("Log in to use Live Mode.")
+
+        st.markdown("---")
+        if st.button("Document Scanner", use_container_width=True):
+            st.session_state.page = "dashboard"
+            st.rerun()
+        if st.button("My History", use_container_width=True):
+            st.session_state.page = "history"
+            st.rerun()
+        st.markdown("---")
+        if st.button("Logout", use_container_width=True):
+            from db import logout
+            logout()
+            for key in DEFAULTS:
+                st.session_state[key] = DEFAULTS[key]
+            st.rerun()
+
+
+def show_dashboard():
+    """Main document scanning page."""
+    st.markdown("## Document Scanner")
+
+    # === STEP 1: UPLOAD ===
+    st.markdown('<span class="section-anchor" id="upload"></span>', unsafe_allow_html=True)
+
+    uploaded_files = st.file_uploader(
+        "Upload mortgage documents (PDF)",
+        type=["pdf"],
+        accept_multiple_files=True,
+        help="Drag and drop PDFs here. Files are processed in memory and never stored.",
+    )
+
+    if not uploaded_files:
+        # Show progress bar with nothing done
+        render_progress_bar(set())
+        st.markdown("---")
+        st.markdown("### How it works")
+        st.markdown(
+            "1. **Upload** a mortgage PDF\n"
+            "2. **Select** the document type\n"
+            "3. **Scan** - AI extracts everything in one shot\n"
+            "4. **Review** conditions, contacts, research, emails, stacking order\n"
+            "5. **Submit** to lender when ready"
+        )
+        return
+
+    for uploaded_file in uploaded_files:
+        with st.expander(f"📄 {uploaded_file.name}", expanded=True):
+            col1, col2 = st.columns([1, 2])
+
+            with col1:
+                doc_type = st.selectbox(
+                    "Document Type",
+                    [
+                        "Approval Letter",
+                        "Closing Disclosure (CD)",
+                        "Loan Estimate (LE)",
+                        "1003 Application",
+                        "Credit Report",
+                        "Bank Statement",
+                        "Change of Circumstance (COC)",
+                        "Broker Package (BP)",
+                    ],
+                    key=f"doctype_{uploaded_file.name}",
+                )
+                scan_btn = st.button(
+                    "🔍 Scan Document",
+                    key=f"scan_{uploaded_file.name}",
+                    use_container_width=True,
+                )
+
+            with col2:
+                if scan_btn:
+                    progress = st.progress(0, text="Starting scan...")
+                    from ai_engine import process_document
+
+                    pdf_bytes = uploaded_file.read()
+
+                    user_history = []
+                    if st.session_state.user_id and st.session_state.user_id != "sandbox":
+                        from db import get_history
+                        user_history = get_history(st.session_state.user_id, 5)
+
+                    progress.progress(10, text="Extracting conditions...")
+
+                    result = process_document(pdf_bytes, doc_type, user_history)
+                    del pdf_bytes
+
+                    progress.progress(100, text="Done!")
+
+                    if result["success"]:
+                        st.session_state.scan_results = result
+                        if not st.session_state.sandbox_mode and st.session_state.user_id != "sandbox":
+                            from db import save_result, log_pattern
+                            save_result(
+                                st.session_state.user_id, doc_type,
+                                result["conditions"], result.get("risks", ""),
+                                result.get("bank_rules", ""),
+                            )
+                            log_pattern(doc_type, {
+                                "text_length": result["text_length"],
+                            })
+                    else:
+                        st.error(result.get("error", "Processing failed"))
+
+            # === DISPLAY RESULTS ===
+            if st.session_state.scan_results and st.session_state.scan_results.get("doc_type") == doc_type:
+                result = st.session_state.scan_results
+
+                # === CONDITIONS (the main output) ===
+                conditions_text = result["conditions"]
+                condition_rows = []
+                for line in conditions_text.split("\n"):
+                    line = line.strip()
+                    if line.startswith("|") and not line.startswith("| #") and not line.startswith("|--") and not line.startswith("|-"):
+                        cells = [c.strip() for c in line.split("|") if c.strip()]
+                        if len(cells) >= 4:
+                            condition_rows.append({
+                                "num": cells[0], "desc": cells[1],
+                                "party": cells[2], "status": cells[3],
+                            })
+
+                st.markdown("### 📋 Conditions")
+                st.markdown(conditions_text)
+
+                # Email buttons per condition
+                if condition_rows:
+                    st.markdown("---")
+                    st.markdown("**Draft an email for a specific condition:**")
+                    for cond in condition_rows:
+                        if st.button(f"📧 #{cond['num']} - {cond['desc'][:60]}", key=f"em_{uploaded_file.name}_{cond['num']}", use_container_width=True):
+                            st.session_state["draft_single_email"] = {"condition": cond, "file": uploaded_file.name}
+
+                    # Draft email UI
+                    if "draft_single_email" in st.session_state and st.session_state["draft_single_email"] and st.session_state["draft_single_email"]["file"] == uploaded_file.name:
+                        cond = st.session_state["draft_single_email"]["condition"]
+                        st.markdown("---")
+                        lc1, lc2 = st.columns(2)
+                        with lc1:
+                            email_lang = st.selectbox("Language", ["English", "Spanish"], key=f"lang_{uploaded_file.name}_{cond['num']}")
+                        with lc2:
+                            st.markdown(f"**To: {cond['party']}** re: Condition #{cond['num']}")
+                        with st.spinner(f"Drafting email to {cond['party']}..."):
+                            from ai_engine import draft_email
+                            detail = f"Condition #{cond['num']}: {cond['desc']} - Responsible: {cond['party']} - Status: {cond['status']}"
+                            email_text = draft_email(detail, cond["party"], email_lang)
+                            st.container(border=True).markdown(email_text)
+                            st.caption("Copy and paste into your email client. Review before sending.")
+                        st.session_state["draft_single_email"] = None
+
+                st.markdown("---")
+                st.caption(
+                    f"Processed {result['text_length']:,} characters | "
+                    f"{'Sandbox' if st.session_state.sandbox_mode else 'Live'} mode"
+                )
+
+
+def show_history():
+    """Show user's scan history."""
+    st.markdown("## My History")
+    if st.session_state.user_id == "sandbox":
+        st.info("Log in to save and view your scan history.")
+        return
+    from db import get_history
+    history = get_history(st.session_state.user_id)
+    if not history:
+        st.info("No scans yet. Upload a document to get started.")
+        return
+    for entry in history:
+        with st.expander(f"📄 {entry['doc_type']} - {entry['created_at'][:10]}"):
+            st.markdown("**Summary:**")
+            st.markdown(entry.get("summary", ""))
+            if st.button("View Full Results", key=f"view_{entry['id']}"):
+                st.markdown("---")
+                st.markdown("### Conditions")
+                st.markdown(entry.get("conditions", ""))
+                if entry.get("bank_rules"):
+                    st.markdown("### Bank Statement Rules")
+                    st.markdown(entry["bank_rules"])
+                st.markdown("### Risk Flags")
+                st.markdown(entry.get("risks", ""))
+
+
+# --- Main ---
+def main():
+    if not st.session_state.authenticated:
+        show_login_page()
+    else:
+        show_sidebar()
+        page = st.session_state.page
+        if page == "dashboard":
+            show_dashboard()
+        elif page == "history":
+            show_history()
+        else:
+            show_dashboard()
+
+
+if __name__ == "__main__":
+    main()
