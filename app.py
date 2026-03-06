@@ -123,6 +123,19 @@ def show_login_page():
     """Login / Signup page."""
     st.markdown("# Processor Traien")
     st.markdown("### Mortgage Document Processing - Powered by AI")
+
+    # Sandbox button top center, compact
+    _, sb_col, _ = st.columns([1, 1, 1])
+    with sb_col:
+        if st.button("Try Sandbox", type="primary"):
+            st.session_state.authenticated = True
+            st.session_state.user_id = "sandbox"
+            st.session_state.user_email = "sandbox@demo"
+            st.session_state.sandbox_mode = True
+            st.session_state.page = "dashboard"
+            st.rerun()
+        st.caption("Free - No account needed")
+
     st.markdown("---")
 
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
@@ -170,14 +183,7 @@ def show_login_page():
                     else:
                         st.error(result.get("error", "Signup failed"))
 
-    st.markdown("---")
-    if st.button("Try Sandbox (No Account Required)", use_container_width=True):
-        st.session_state.authenticated = True
-        st.session_state.user_id = "sandbox"
-        st.session_state.user_email = "sandbox@demo"
-        st.session_state.sandbox_mode = True
-        st.session_state.page = "dashboard"
-        st.rerun()
+
 
 
 def show_sidebar():
