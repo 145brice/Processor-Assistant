@@ -1,155 +1,151 @@
 """
-Supabase Database Helpers for Processor Traien
-Stores ONLY structured results - never raw documents or PII.
+Local SQLite Database for Processor Traien
+Fully offline - no cloud, no Supabase.
+Stores user accounts and scan history locally.
 """
 
 import os
+import sqlite3
+import hashlib
 import json
-from datetime import datetime, timezone
-from dotenv import load_dotenv
+from datetime import datetime
 
-load_dotenv()
-
-_client = None
+DB_PATH = os.path.join(os.path.dirname(__file__), "processor.db")
 
 
-def get_supabase():
-    """Get or create Supabase client singleton."""
-    global _client
-    if _client is None:
-        from supabase import create_client
+def _get_conn():
+    """Get SQLite connection, create tables if needed."""
+    conn = sqlite3.connect(DB_PATH)
+    conn.row_factory = sqlite3.Row
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS users (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            email TEXT UNIQUE NOT NULL,
+            password_hash TEXT NOT NULL,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS scan_history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            doc_type TEXT,
+            conditions TEXT,
+            risks TEXT,
+            bank_rules TEXT,
+            summary TEXT,
+            created_at TEXT DEFAULT (datetime('now'))
+        )
+    """)
+    conn.commit()
+    return conn
 
-        url = os.getenv("SUPABASE_URL", "")
-        key = os.getenv("SUPABASE_KEY", "")
-        if not url or not key:
-            return None
-        _client = create_client(url, key)
-    return _client
+
+def _hash_password(password: str) -> str:
+    return hashlib.sha256(password.encode()).hexdigest()
 
 
 # --- Auth ---
 
-
 def signup(email: str, password: str) -> dict:
-    """Sign up a new user via Supabase auth."""
-    sb = get_supabase()
-    if not sb:
-        return {"error": "Supabase not configured"}
     try:
-        result = sb.auth.sign_up({"email": email, "password": password})
-        if result.user:
-            return {"success": True, "user_id": result.user.id, "email": email}
-        return {"error": "Signup failed - check email/password requirements"}
+        conn = _get_conn()
+        conn.execute(
+            "INSERT INTO users (email, password_hash) VALUES (?, ?)",
+            (email, _hash_password(password)),
+        )
+        conn.commit()
+        user_id = conn.execute(
+            "SELECT id FROM users WHERE email = ?", (email,)
+        ).fetchone()["id"]
+        conn.close()
+        return {"success": True, "user_id": str(user_id), "email": email}
+    except sqlite3.IntegrityError:
+        return {"error": "Email already registered"}
     except Exception as e:
         return {"error": str(e)}
 
 
 def login(email: str, password: str) -> dict:
-    """Log in an existing user."""
-    sb = get_supabase()
-    if not sb:
-        return {"error": "Supabase not configured"}
     try:
-        result = sb.auth.sign_in_with_password(
-            {"email": email, "password": password}
-        )
-        if result.user:
-            return {"success": True, "user_id": result.user.id, "email": email}
-        return {"error": "Login failed - check credentials"}
+        conn = _get_conn()
+        row = conn.execute(
+            "SELECT id, password_hash FROM users WHERE email = ?", (email,)
+        ).fetchone()
+        conn.close()
+        if row and row["password_hash"] == _hash_password(password):
+            return {"success": True, "user_id": str(row["id"]), "email": email}
+        return {"error": "Invalid email or password"}
     except Exception as e:
         return {"error": str(e)}
 
 
 def logout():
-    """Log out current user."""
-    sb = get_supabase()
-    if sb:
-        try:
-            sb.auth.sign_out()
-        except Exception:
-            pass
+    pass  # Nothing to do for local auth
 
 
-# --- Scan History (structured data only, no raw docs) ---
-
+# --- Scan History ---
 
 def save_result(user_id: str, doc_type: str, conditions: str, risks: str, bank_rules: str = "") -> dict:
-    """Save scan results. Only structured output - never raw document text."""
-    sb = get_supabase()
-    if not sb:
-        return {"error": "Supabase not configured"}
     try:
-        # Create a brief summary (first 200 chars of conditions) for history display
         summary = conditions[:200] + "..." if len(conditions) > 200 else conditions
-
-        data = {
-            "user_id": user_id,
-            "doc_type": doc_type,
-            "conditions": conditions,
-            "risks": risks,
-            "bank_rules": bank_rules,
-            "summary": summary,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
-        result = sb.table("scan_history").insert(data).execute()
-        return {"success": True, "id": result.data[0]["id"] if result.data else None}
+        conn = _get_conn()
+        cur = conn.execute(
+            "INSERT INTO scan_history (user_id, doc_type, conditions, risks, bank_rules, summary) VALUES (?, ?, ?, ?, ?, ?)",
+            (user_id, doc_type, conditions, risks, bank_rules, summary),
+        )
+        conn.commit()
+        row_id = cur.lastrowid
+        conn.close()
+        return {"success": True, "id": row_id}
     except Exception as e:
         return {"error": str(e)}
 
 
 def get_history(user_id: str, limit: int = 20) -> list[dict]:
-    """Fetch user's scan history. Returns structured results only."""
-    sb = get_supabase()
-    if not sb:
-        return []
     try:
-        result = (
-            sb.table("scan_history")
-            .select("id, doc_type, summary, conditions, risks, bank_rules, created_at")
-            .eq("user_id", user_id)
-            .order("created_at", desc=True)
-            .limit(limit)
-            .execute()
-        )
-        return result.data or []
+        conn = _get_conn()
+        rows = conn.execute(
+            "SELECT id, doc_type, summary, conditions, risks, bank_rules, created_at "
+            "FROM scan_history WHERE user_id = ? ORDER BY created_at DESC LIMIT ?",
+            (user_id, limit),
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
     except Exception:
         return []
 
 
 def get_file_count(user_id: str) -> int:
-    """Count how many live files the user has submitted."""
-    sb = get_supabase()
-    if not sb:
-        return 0
     try:
-        result = (
-            sb.table("scan_history")
-            .select("id", count="exact")
-            .eq("user_id", user_id)
-            .execute()
-        )
-        return result.count or 0
+        conn = _get_conn()
+        row = conn.execute(
+            "SELECT COUNT(*) as cnt FROM scan_history WHERE user_id = ?",
+            (user_id,),
+        ).fetchone()
+        conn.close()
+        return row["cnt"] if row else 0
     except Exception:
         return 0
-
-
-# --- Admin Pattern Logging (anonymized, no PII) ---
 
 
 def log_pattern(doc_type: str, rule_results: dict) -> None:
-    """
-    Log anonymized pattern data for admin learning.
-    NO PII, NO raw text - only rule pass/fail counts.
-    """
-    sb = get_supabase()
-    if not sb:
-        return
+    """Log anonymized pattern data locally. Non-critical."""
     try:
-        data = {
-            "doc_type": doc_type,
-            "rule_results": json.dumps(rule_results),
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }
-        sb.table("admin_patterns").insert(data).execute()
+        conn = _get_conn()
+        conn.execute("""
+            CREATE TABLE IF NOT EXISTS admin_patterns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                doc_type TEXT,
+                rule_results TEXT,
+                created_at TEXT DEFAULT (datetime('now'))
+            )
+        """)
+        conn.execute(
+            "INSERT INTO admin_patterns (doc_type, rule_results) VALUES (?, ?)",
+            (doc_type, json.dumps(rule_results)),
+        )
+        conn.commit()
+        conn.close()
     except Exception:
-        pass  # Non-critical, don't break user flow
+        pass

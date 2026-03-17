@@ -1,136 +1,208 @@
 # Processor Assistant
 
-AI-powered mortgage document processor that automates the tedious work of a loan processor. Upload a PDF, get conditions extracted, draft emails, and run a full 250-point compliance audit — all in-memory for maximum compliance safety.
+Fully offline mortgage document processor. Upload a PDF approval letter, get every condition extracted word-for-word, draft emails in English or Spanish, and search the borrower's local folder for matching documents. No cloud, no API keys, no internet required. Runs 100% on your machine.
+
+---
 
 ## What It Does
 
-A loan processor's job involves reading approval letters, CDs, LEs, credit reports, bank statements, and dozens of other documents — then manually extracting conditions, figuring out who's responsible for each one, drafting follow-up emails, and tracking everything. This app automates all of that.
+A loan processor's job: read approval letters, extract conditions, figure out who's responsible, draft follow-up emails, find supporting documents. This app automates all of that — offline, locally, lightweight enough for an HP EliteBook.
 
-### Core Features (Live Now)
+### Core Features
 
-- **PDF Upload & AI Extraction** — Upload any mortgage document (approval letter, CD, LE, 1003, credit report, bank statement, COC, broker package). AI reads it and extracts all conditions into a clean table with condition description, responsible party, and status (Needed/Pending/Received).
-- **Per-Condition Email Drafting** — Each extracted condition has a dedicated email button. Click it, choose English or Spanish, and the AI drafts a professional email to the responsible party (borrower, title company, underwriter, etc.).
-- **In-Memory Processing** — PDFs are processed entirely in memory and immediately deleted. Raw documents are never stored anywhere — not on disk, not in a database. Only structured results (conditions text, summaries) are saved if the user opts into Live Mode.
-- **Sandbox Mode** — Free unlimited practice mode. No account required, no data saved. Great for testing and training.
+- **PDF Upload & Condition Extraction** — Upload a mortgage approval letter (or CD, LE, 1003, credit report, bank statement, COC, broker package). The engine reads the PDF text and extracts every condition into a clean table showing the condition description, responsible party, and status (Needed/Received/Cleared/Waived).
+- **Supports Lender Condition-Code Format** — Automatically parses lender systems that output conditions with codes like `Underwriter WCR01`, `Closer WES03`, `Jr Underwriter WPR15`, `Manager WCL02`. Handles multi-line conditions, strips dates/metadata/junk, and keeps only the real actionable text.
+- **Multi-Condition Email Drafting** — Check multiple conditions, pick a language (English or Spanish), pick a recipient (Borrower, Underwriter, Title, Closer, Insurance, Appraiser), and hit Draft Email. All selected conditions go into one combined email. Templates for every party type in both languages.
+- **Fetch from Local Folder** — Select conditions, click "Fetch from Folder", paste the borrower's folder path. The app recursively searches that folder, fuzzy-matching filenames AND PDF content against your selected conditions. Returns organized results with match scores, page numbers, and text snippets.
+- **Sandbox Mode** — Free unlimited practice. No account needed, no data saved.
+- **Local SQLite Database** — User accounts and scan history stored in a local `processor.db` file. No cloud database.
+- **In-Memory Processing** — PDFs are processed in memory and never saved to disk. Only structured results are stored.
 
-### On-Demand Tools (Available After Upload)
+### On-Demand Analysis Tools
 
-- **250-Point Mega Checklist** — A massive compliance audit covering 11 categories and 250 items. The AI auto-detects the document type and checks every possible mortgage condition against the document. Categories include:
-  1. Loan Type & Program (conventional, FHA, VA, USDA, ARM, jumbo, etc.)
-  2. Property Type (SFR, condo, PUD, manufactured, investment, etc.)
-  3. HOA & Condo Docs (dues, financials, litigation, project approval)
-  4. Insurance (hazard, flood, earthquake, wind, PMI, MIP, title)
-  5. Title & Legal (liens, easements, POA, trusts, divorce)
-  6. Borrower Profile (credit scores, DTI, bankruptcy, housing history)
-  7. Income & Employment (W-2, self-employed, VOE, pay stubs, tax returns)
-  8. Assets & Reserves (accounts, gift funds, large deposits)
-  9. Appraisal (form type, comps, condition ratings, zoning)
-  10. Application & Disclosures (1003, LE, CD, TRID, all required notices)
-  11. Closing & Funding (CTC, note, deed of trust, settlement, QC)
+These run only when you trigger them (a la carte, no constant scanning):
 
-- **Contacts & Loan Details Extraction** — Pulls names, phone numbers, emails, loan amounts, property addresses from the document.
-- **Web Research** — Identifies conditions that can be verified online and provides search links.
-- **Bank Statement Rules** — 50-point compliance check specifically for bank statement analysis.
-- **Risk Flags** — Scans for red flags like fraud indicators, undisclosed debts, inconsistent data.
-- **Stacking Order** — Generates a loan file stacking order checklist.
+- **250-Point Mega Checklist** — Compliance audit across 11 categories: loan type, property, HOA, insurance, title, borrower profile, income, assets, appraisal, disclosures, closing.
+- **50-Rule Bank Statement Analysis** — Checks for overdrafts, NSF fees, large deposits, gambling transactions, crypto, foreign currency, dormant periods, and 44 more rules.
+- **Risk Flags** — Scans for DTI over limits, low credit scores, high LTV, employment gaps, title issues, compliance problems. Severity rated HIGH/MEDIUM/LOW.
+- **Contacts Extraction** — Pulls borrower names, phone numbers, emails, loan numbers, property addresses, loan type, interest rate from the document.
+- **Stacking Order** — Generates a full loan file checklist (application, disclosures, credit, income, assets, property, government program docs, closing docs) with checkmarks for items found in the document.
+- **Email Auto-Drafting** — Groups all conditions by responsible party and drafts separate emails for each.
+- **Web Research Links** — Identifies conditions needing online verification and provides the specific URLs (FEMA flood lookup, FHA case number, NMLS, state SOS, county assessor, etc.). No web calls made — just gives you the links.
 
-### Planned Features (Phase 2)
-
-- **Stripe Payments** — $10/file in Live Mode, 5 free files for new accounts
-- **Supabase Auth** — Full user accounts with scan history
-- **OCR Support** — For scanned/image-based PDFs
-- **Multi-Document Workflow** — Upload entire loan files and cross-reference across documents
+---
 
 ## Tech Stack
 
 | Component | Technology |
 |-----------|-----------|
-| Frontend | Streamlit |
-| AI Engine | Google Gemini 2.5 Flash (via OpenAI-compatible SDK) |
+| Frontend | Streamlit (Python web UI) |
+| Processing Engine | Pure Python regex + pattern matching (no AI, no API) |
 | PDF Parsing | pypdf (in-memory only) |
-| Auth & DB | Supabase (optional, graceful degradation if not configured) |
-| Payments | Stripe (Phase 2) |
-| Prompts | Python `string.Template` ($variable syntax) |
+| Fuzzy Matching | thefuzz (pure Python, no C dependencies) |
+| Database | SQLite (local file, no cloud) |
+| Email Templates | Python string formatting (English + Spanish) |
+
+**No API keys. No cloud accounts. No internet connection needed.**
+
+---
 
 ## Project Structure
 
 ```
-processor-traien/
-├── app.py              # Main Streamlit UI — upload, display, email buttons
-├── ai_engine.py        # AI processing — conditions, emails, checklist, etc.
-├── prompts.py          # All AI prompt templates (conditions, mega checklist, emails, etc.)
-├── db.py               # Supabase helpers — auth, history, pattern logging
-├── supabase_schema.sql # Database schema with RLS policies
-├── requirements.txt    # Python dependencies
-├── .env.example        # Environment variable template
-└── .env                # Your actual config (not committed)
+Processor-Assistant/
+├── app.py              # Main Streamlit UI — upload, scan, conditions, emails, fetch
+├── ai_engine.py        # Offline processing engine — condition extraction, risk flags,
+│                       #   bank rules, contacts, stacking order, mega checklist, emails
+├── folder_search.py    # Local folder search — fuzzy matches files to conditions
+├── prompts.py          # Document type context (reference only)
+├── db.py               # Local SQLite database — user accounts, scan history
+├── requirements.txt    # Python dependencies (4 packages)
+├── processor.db        # Created automatically on first run (SQLite database)
+└── README.md           # This file
 ```
 
-## Setup
+---
 
-### 1. Clone & Install
+## Setup — Step by Step
+
+### Prerequisites
+
+- **Python 3.10+** installed (check with `python --version`)
+- **pip** package manager (comes with Python)
+- **VS Code** (recommended) or any text editor
+- **A web browser** (Chrome, Edge, Firefox)
+
+### Step 1: Clone the Repository
+
+Open a terminal (VS Code: press `` Ctrl+` ``) and run:
 
 ```bash
 git clone https://github.com/145brice/Processor-Assistant.git
 cd Processor-Assistant
+```
+
+Or if you already have the folder, just `cd` into it:
+
+```bash
+cd "C:\Users\user\OneDrive\Desktop\processor-traien\Processor-Assistant"
+```
+
+### Step 2: Install Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-### 2. Configure Environment
+This installs 4 packages:
+- `streamlit` — the web UI framework
+- `pypdf` — reads PDF files
+- `python-dotenv` — loads environment config (optional, kept for compatibility)
+- `thefuzz` — fuzzy string matching for the folder search feature
 
-Copy `.env.example` to `.env` and fill in your API key:
+That's it. No API keys, no `.env` file, no cloud setup.
 
-```bash
-cp .env.example .env
-```
-
-```env
-# Required — Get a key from https://aistudio.google.com/apikey
-OPENAI_API_KEY=your-gemini-api-key
-OPENAI_BASE_URL=https://generativelanguage.googleapis.com/v1beta/openai/
-OPENAI_MODEL=gemini-2.5-flash
-
-# Optional — Supabase for user accounts & history
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_KEY=your-anon-key
-
-# Optional — Stripe for payments (Phase 2)
-STRIPE_SECRET_KEY=
-STRIPE_PRICE_ID_SIGNUP=
-STRIPE_PRICE_ID_FILE=
-```
-
-### 3. Run
+### Step 3: Run the App
 
 ```bash
 streamlit run app.py
 ```
 
-The app opens at `http://localhost:8501`. Click **"Try Sandbox"** to start without an account.
+The app opens automatically in your browser at **http://localhost:8501**.
 
-## How It Works
+If it doesn't open automatically, copy that URL and paste it into your browser.
 
-1. **Upload** a mortgage PDF (approval letter, CD, LE, etc.)
-2. **Select** the document type from the dropdown
-3. **Click Scan** — AI extracts all conditions into a structured table
-4. **Review** — Each condition shows what's needed, who's responsible, and current status
-5. **Draft Emails** — Click the email button on any condition to generate a professional follow-up email in English or Spanish
+### Step 4: Start Using It
 
-### Compliance Architecture
+1. Click **"Try Sandbox"** on the login page (no account needed)
+2. Upload a mortgage PDF using the file uploader
+3. Select the document type from the dropdown (e.g., "Approval Letter")
+4. Click **"Scan Document"**
+5. Review the extracted conditions table
+6. Check conditions you want to act on
+7. Click **"Draft Email"** or **"Fetch from Folder"**
 
-- PDFs are read into `bytes` via Streamlit's file uploader
-- Text is extracted in-memory using `pypdf` with `io.BytesIO`
-- The `bytes` object is explicitly deleted (`del pdf_bytes`) after extraction
-- Only the AI's structured output (conditions table, email drafts) is ever displayed or saved
-- Raw document text is never persisted to disk or database
-- Supabase stores only: doc type, conditions summary, risk flags, timestamps
+---
 
-## API Configuration
+## How Each Feature Works
 
-The app uses Google's Gemini AI through the OpenAI-compatible API endpoint. This means:
-- You need a Google AI Studio API key (free tier available)
-- The OpenAI Python SDK handles all API calls
-- You can swap to any OpenAI-compatible provider by changing the `.env` values
+### Condition Extraction
+
+When you upload a PDF and click Scan:
+
+1. The PDF is read into memory using `pypdf` (never saved to disk)
+2. Text is extracted page-by-page with gentle pauses between pages
+3. The engine detects the format:
+   - **Lender condition-code format**: Lines starting with `Underwriter WCR01`, `Closer WES03`, etc. are recognized as condition headers. Multi-line descriptions are assembled. Dates, status codes, and metadata are stripped. Only the actionable condition text is kept.
+   - **Traditional format**: Numbered/bulleted lists under section headers like "Prior to Closing Conditions:" are captured line by line.
+   - **Loan-number format**: Lines prefixed with long loan numbers (`5000002228902-`) are split and cleaned.
+4. Junk is aggressively filtered: addresses, dollar amounts, email addresses, phone numbers, closing cost summaries, timestamps, company names, boilerplate footer text.
+5. Each condition gets a responsible party assignment based on keywords (title, insurance, appraisal, underwriter, or defaults to Borrower).
+6. Results display as a markdown table with checkboxes.
+
+### Email Drafting
+
+1. Check one or more conditions using the checkboxes
+2. Pick a language (English or Spanish)
+3. Pick a recipient from the dropdown (auto-populated from the selected conditions' parties)
+4. Click **Draft Email**
+5. A professional email is generated from templates with all selected conditions listed
+6. Copy and paste into your email client
+
+Templates exist for: Borrower, Title, Underwriter, Closer, Insurance, Appraiser — in both English and Spanish.
+
+### Fetch from Folder
+
+1. Check the conditions you need documents for
+2. Click **"Fetch from Folder"**
+3. Paste the full path to the borrower's folder (e.g., `C:\Loans\SmithJohn\`)
+4. Click **Search**
+5. The engine:
+   - Walks the entire folder tree recursively
+   - Checks every PDF and text file (skips executables, zips, etc.)
+   - Fuzzy-matches each file's **name** against condition keywords
+   - Opens each PDF and fuzzy-matches **page content** against condition keywords
+   - Scores each match 0-100% using token-based and partial string matching
+   - Pauses between files to stay gentle on CPU
+6. Results show:
+   - Green badge (80%+), Yellow (65-79%), Red (<65%) match confidence
+   - File name and full path
+   - Match type (filename, content, or both)
+   - Matched page numbers within PDFs
+   - Text snippet showing the matching content
+
+Limits: 500 files max, skips files over 50MB, supports PDF and TXT content search.
+
+### User Accounts
+
+- **Sandbox mode**: Click "Try Sandbox" — unlimited free use, nothing saved
+- **Create account**: Sign up with email + password. Stored locally in SQLite (hashed password). Scan history is saved.
+- **Login**: Returns you to your saved history
+- **Live mode**: Toggle in sidebar. Tracks file count and saves results to local database.
+
+---
+
+## Stopping the App
+
+Press `Ctrl+C` in the terminal where Streamlit is running. Or just close the terminal.
+
+To restart: `streamlit run app.py`
+
+---
+
+## Troubleshooting
+
+| Problem | Fix |
+|---------|-----|
+| `streamlit: command not found` | Run `pip install streamlit` again, or use `python -m streamlit run app.py` |
+| PDF shows "could not extract enough text" | The PDF is likely a scanned image (picture of a document). This app needs text-based PDFs. OCR support is planned. |
+| "No specific conditions found" | The PDF format may not match the expected patterns. The raw text preview at the bottom shows what was extracted — check if conditions are visible there. |
+| App is slow on large PDFs | Normal — the engine pauses between pages to stay light on CPU. A 50-page PDF takes ~25 seconds. |
+| Fetch results show low scores | Try a lower threshold or check that the folder actually contains the expected documents. Scanned/image PDFs won't have searchable text. |
+| Duplicate key error | Don't upload the same filename twice in one session. Rename one copy first. |
+| Port 8501 already in use | Another Streamlit instance is running. Kill it with `Ctrl+C` in that terminal, or use `streamlit run app.py --server.port 8502` |
+
+---
 
 ## License
 

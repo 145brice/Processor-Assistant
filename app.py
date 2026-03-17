@@ -4,9 +4,6 @@ Main Streamlit application.
 """
 
 import streamlit as st
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # --- Page Config ---
 st.set_page_config(
@@ -85,6 +82,8 @@ DEFAULTS = {
     "sandbox_mode": True,
     "scan_results": None,
     "history": [],
+    "last_fetch_folder": "",
+    "fetch_results": None,
 }
 for key, val in DEFAULTS.items():
     if key not in st.session_state:
@@ -122,7 +121,7 @@ def render_progress_bar(completed_steps):
 def show_login_page():
     """Login / Signup page."""
     st.markdown("# Processor Traien")
-    st.markdown("### Mortgage Document Processing - Powered by AI")
+    st.markdown("### Mortgage Document Processing - Offline Mode")
 
     # Sandbox button top center, compact
     _, sb_col, _ = st.columns([1, 1, 1])
@@ -249,13 +248,14 @@ def show_dashboard():
         st.markdown(
             "1. **Upload** a mortgage PDF\n"
             "2. **Select** the document type\n"
-            "3. **Scan** - AI extracts everything in one shot\n"
+            "3. **Scan** - Pattern engine extracts everything in one shot\n"
             "4. **Review** conditions, contacts, research, emails, stacking order\n"
             "5. **Submit** to lender when ready"
         )
         return
 
-    for uploaded_file in uploaded_files:
+    for file_idx, uploaded_file in enumerate(uploaded_files):
+        fkey = f"{uploaded_file.name}_{file_idx}"
         with st.expander(f"📄 {uploaded_file.name}", expanded=True):
             col1, col2 = st.columns([1, 2])
 
@@ -272,11 +272,11 @@ def show_dashboard():
                         "Change of Circumstance (COC)",
                         "Broker Package (BP)",
                     ],
-                    key=f"doctype_{uploaded_file.name}",
+                    key=f"doctype_{fkey}",
                 )
                 scan_btn = st.button(
                     "🔍 Scan Document",
-                    key=f"scan_{uploaded_file.name}",
+                    key=f"scan_{fkey}",
                     use_container_width=True,
                 )
 
@@ -334,30 +334,147 @@ def show_dashboard():
                 st.markdown("### 📋 Conditions")
                 st.markdown(conditions_text)
 
-                # Email buttons per condition
+                # Email drafting - select multiple conditions to combine
                 if condition_rows:
                     st.markdown("---")
-                    st.markdown("**Draft an email for a specific condition:**")
-                    for cond in condition_rows:
-                        if st.button(f"📧 #{cond['num']} - {cond['desc'][:60]}", key=f"em_{uploaded_file.name}_{cond['num']}", use_container_width=True):
-                            st.session_state["draft_single_email"] = {"condition": cond, "file": uploaded_file.name}
+                    st.markdown("**Draft an email - select conditions to include:**")
 
-                    # Draft email UI
-                    if "draft_single_email" in st.session_state and st.session_state["draft_single_email"] and st.session_state["draft_single_email"]["file"] == uploaded_file.name:
-                        cond = st.session_state["draft_single_email"]["condition"]
+                    # Checkboxes for each condition
+                    selected_conds = []
+                    for cond in condition_rows:
+                        if st.checkbox(
+                            f"#{cond['num']} - {cond['desc'][:80]}  ({cond['party']})",
+                            key=f"chk_{fkey}_{cond['num']}",
+                        ):
+                            selected_conds.append(cond)
+
+                    if selected_conds:
                         st.markdown("---")
-                        lc1, lc2 = st.columns(2)
+                        lc1, lc2, lc3 = st.columns(3)
                         with lc1:
-                            email_lang = st.selectbox("Language", ["English", "Spanish"], key=f"lang_{uploaded_file.name}_{cond['num']}")
+                            email_lang = st.selectbox(
+                                "Language", ["English", "Spanish"],
+                                key=f"lang_{fkey}",
+                            )
                         with lc2:
-                            st.markdown(f"**To: {cond['party']}** re: Condition #{cond['num']}")
-                        with st.spinner(f"Drafting email to {cond['party']}..."):
+                            # Default recipient to most common party in selection
+                            parties = list({c["party"] for c in selected_conds})
+                            recipient = st.selectbox(
+                                "Send to", parties,
+                                key=f"recip_{fkey}",
+                            )
+                        with lc3:
+                            st.markdown(f"**{len(selected_conds)} condition(s) selected**")
+
+                        btn_col1, btn_col2 = st.columns(2)
+                        with btn_col1:
+                            draft_clicked = st.button("Draft Email", key=f"draft_{fkey}", use_container_width=True)
+                        with btn_col2:
+                            fetch_clicked = st.button("Fetch from Folder", key=f"fetch_{fkey}", use_container_width=True)
+
+                        # --- Draft Email ---
+                        if draft_clicked:
                             from ai_engine import draft_email
-                            detail = f"Condition #{cond['num']}: {cond['desc']} - Responsible: {cond['party']} - Status: {cond['status']}"
-                            email_text = draft_email(detail, cond["party"], email_lang)
+                            cond_lines = []
+                            for c in selected_conds:
+                                cond_lines.append(
+                                    f"- Condition #{c['num']}: {c['desc']} (Status: {c['status']})"
+                                )
+                            combined = "\n".join(cond_lines)
+                            email_text = draft_email(combined, recipient, email_lang)
                             st.container(border=True).markdown(email_text)
                             st.caption("Copy and paste into your email client. Review before sending.")
-                        st.session_state["draft_single_email"] = None
+
+                        # --- Fetch from Folder ---
+                        if fetch_clicked:
+                            st.session_state[f"show_fetch_{fkey}"] = True
+
+                        if st.session_state.get(f"show_fetch_{fkey}"):
+                            st.markdown("---")
+                            st.markdown("**Fetch borrower folder?**")
+                            folder_path = st.text_input(
+                                "Folder path (paste or type the full path to the borrower's folder):",
+                                value=st.session_state.get("last_fetch_folder", ""),
+                                key=f"folder_{fkey}",
+                                placeholder=r"C:\Users\...\BorrowerName",
+                            )
+
+                            search_col1, search_col2 = st.columns([1, 3])
+                            with search_col1:
+                                search_clicked = st.button("Search", key=f"search_{fkey}", use_container_width=True)
+                            with search_col2:
+                                cancel_clicked = st.button("Cancel", key=f"cancel_fetch_{fkey}")
+
+                            if cancel_clicked:
+                                st.session_state[f"show_fetch_{fkey}"] = False
+                                st.rerun()
+
+                            if search_clicked and folder_path:
+                                st.session_state["last_fetch_folder"] = folder_path
+                                import os
+                                if not os.path.isdir(folder_path):
+                                    st.error(f"Folder not found: {folder_path}")
+                                else:
+                                    from folder_search import scan_folder
+                                    progress = st.progress(0, text="Scanning folder...")
+
+                                    def update_progress(pct, msg):
+                                        progress.progress(min(pct, 100), text=msg)
+
+                                    fetch_results = scan_folder(
+                                        folder_path, selected_conds,
+                                        threshold=60, progress_callback=update_progress,
+                                    )
+
+                                    if "error" in fetch_results:
+                                        st.error(fetch_results["error"])
+                                    else:
+                                        st.session_state["fetch_results"] = fetch_results
+                                        st.session_state[f"show_fetch_{fkey}"] = False
+
+                        # --- Display Fetch Results ---
+                        if st.session_state.get("fetch_results"):
+                            st.markdown("---")
+                            st.markdown("### Fetch Results")
+                            fetch_results = st.session_state["fetch_results"]
+                            any_found = False
+
+                            for cnum, cdata in fetch_results.items():
+                                if cnum == "error":
+                                    continue
+                                matches = cdata.get("matches", [])
+                                desc_short = cdata["desc"][:80]
+
+                                if matches:
+                                    any_found = True
+                                    with st.expander(f"Condition #{cnum}: {desc_short} ({len(matches)} match{'es' if len(matches) != 1 else ''})"):
+                                        for match in matches:
+                                            score = match["score"]
+                                            if score >= 80:
+                                                badge = "🟢"
+                                            elif score >= 65:
+                                                badge = "🟡"
+                                            else:
+                                                badge = "🔴"
+                                            pages_str = ""
+                                            if match["matched_pages"]:
+                                                pages_str = f" | Pages: {', '.join(str(p) for p in match['matched_pages'])}"
+                                            st.markdown(
+                                                f"{badge} **{match['file_name']}** — "
+                                                f"{match['match_type']} match ({score}%){pages_str}"
+                                            )
+                                            st.caption(f"📁 {match['file_path']}")
+                                            if match.get("snippet"):
+                                                st.text(match["snippet"][:200])
+                                else:
+                                    st.caption(f"Condition #{cnum}: {desc_short} — no matches found")
+
+                            if not any_found:
+                                st.info("No matching documents found in that folder for the selected conditions.")
+
+                            if st.button("Clear fetch results", key=f"clear_fetch_{fkey}"):
+                                st.session_state["fetch_results"] = None
+                                st.rerun()
 
                 st.markdown("---")
                 st.caption(
