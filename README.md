@@ -29,6 +29,7 @@ These run only when you trigger them (a la carte, no constant scanning):
 - **Stacking Order** — Generates a full loan file checklist (application, disclosures, credit, income, assets, property, government program docs, closing docs) with checkmarks for items found in the document.
 - **Email Auto-Drafting** — Groups all conditions by responsible party and drafts separate emails for each.
 - **Web Research Links** — Identifies conditions needing online verification and provides the specific URLs (FEMA flood lookup, FHA case number, NMLS, state SOS, county assessor, etc.). No web calls made — just gives you the links.
+- **Check Guidelines (Fannie Mae / Freddie Mac)** — Select conditions, click "Check Guidelines." The engine searches through the full Fannie Mae Selling Guide (1,191 pages) and Freddie Mac Seller/Servicer Guide (2,882 pages) for sections relevant to each condition. Returns actual guideline text with page numbers, section references, and relevance scores. First run indexes the PDFs (~2-3 minutes), then loads from cache instantly.
 
 ---
 
@@ -51,14 +52,16 @@ These run only when you trigger them (a la carte, no constant scanning):
 
 ```
 Processor-Assistant/
-├── app.py              # Main Streamlit UI — upload, scan, conditions, emails, fetch
+├── app.py              # Main Streamlit UI — upload, scan, conditions, emails, fetch, guidelines
 ├── ai_engine.py        # Offline processing engine — condition extraction, risk flags,
 │                       #   bank rules, contacts, stacking order, mega checklist, emails
 ├── folder_search.py    # Local folder search — fuzzy matches files to conditions
+├── guidelines.py       # Fannie Mae / Freddie Mac guideline search engine
 ├── prompts.py          # Document type context (reference only)
 ├── db.py               # Local SQLite database — user accounts, scan history
 ├── requirements.txt    # Python dependencies (4 packages)
 ├── processor.db        # Created automatically on first run (SQLite database)
+├── guidelines_index/   # Created automatically — cached guideline indexes (JSON)
 └── README.md           # This file
 ```
 
@@ -102,7 +105,22 @@ This installs 4 packages:
 
 That's it. No API keys, no `.env` file, no cloud setup.
 
-### Step 3: Run the App
+### Step 3: Add Guideline PDFs (Optional but Recommended)
+
+Place these files on your Desktop to enable the "Check Guidelines" feature:
+
+- `Fannie Mae.pdf` — Fannie Mae Selling Guide (download from Fannie Mae's website)
+- `Freddie Mac.pdf` — Freddie Mac Seller/Servicer Guide (download from Freddie Mac's website)
+
+The app looks for them at:
+```
+C:\Users\<your-username>\OneDrive\Desktop\Fannie Mae.pdf
+C:\Users\<your-username>\OneDrive\Desktop\Freddie Mac.pdf
+```
+
+On first click of "Check Guidelines", the app indexes both PDFs (takes 2-3 minutes for ~4,000 pages). After that, the index is cached in `guidelines_index/` and loads instantly on every future use.
+
+### Step 4: Run the App
 
 ```bash
 streamlit run app.py
@@ -120,7 +138,7 @@ If it doesn't open automatically, copy that URL and paste it into your browser.
 4. Click **"Scan Document"**
 5. Review the extracted conditions table
 6. Check conditions you want to act on
-7. Click **"Draft Email"** or **"Fetch from Folder"**
+7. Click **"Draft Email"**, **"Fetch from Folder"**, or **"Check Guidelines"**
 
 ---
 
@@ -172,6 +190,27 @@ Templates exist for: Borrower, Title, Underwriter, Closer, Insurance, Appraiser 
    - Text snippet showing the matching content
 
 Limits: 500 files max, skips files over 50MB, supports PDF and TXT content search.
+
+### Check Guidelines (Fannie Mae / Freddie Mac)
+
+1. Check the conditions you want to look up
+2. Click **"Check Guidelines"**
+3. First time: the engine indexes both PDFs (~2-3 minutes for 4,000+ pages). Shows a progress bar. After indexing, the cache is saved to `guidelines_index/` and loads instantly on future runs.
+4. The engine searches all 7,900+ indexed sections for content relevant to each selected condition
+5. Results show per condition:
+   - Source (Fannie Mae or Freddie Mac)
+   - Page number and section reference (e.g., "Chapter 5202", "B3-5.3-09")
+   - Relevance score with color badge
+   - Actual guideline text excerpt (up to 500 chars)
+6. Expand any condition to see up to 5 matching guideline references
+
+How it works under the hood:
+- PDFs are split into ~1,500-character overlapping chunks
+- Each chunk is tagged with page number, source, and section ID
+- Table-of-contents and boilerplate pages are filtered out
+- Search uses topic detection (maps "hazard insurance" to insurance-related terms, "LLC" to entity terms, etc.)
+- Fuzzy matching scores each chunk against condition keywords + related topic terms
+- Results are deduplicated by page and sorted by relevance
 
 ### User Accounts
 

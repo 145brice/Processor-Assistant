@@ -84,6 +84,7 @@ DEFAULTS = {
     "history": [],
     "last_fetch_folder": "",
     "fetch_results": None,
+    "guide_results": None,
 }
 for key, val in DEFAULTS.items():
     if key not in st.session_state:
@@ -366,11 +367,13 @@ def show_dashboard():
                         with lc3:
                             st.markdown(f"**{len(selected_conds)} condition(s) selected**")
 
-                        btn_col1, btn_col2 = st.columns(2)
+                        btn_col1, btn_col2, btn_col3 = st.columns(3)
                         with btn_col1:
                             draft_clicked = st.button("Draft Email", key=f"draft_{fkey}", use_container_width=True)
                         with btn_col2:
                             fetch_clicked = st.button("Fetch from Folder", key=f"fetch_{fkey}", use_container_width=True)
+                        with btn_col3:
+                            guidelines_clicked = st.button("Check Guidelines", key=f"guide_{fkey}", use_container_width=True)
 
                         # --- Draft Email ---
                         if draft_clicked:
@@ -474,6 +477,77 @@ def show_dashboard():
 
                             if st.button("Clear fetch results", key=f"clear_fetch_{fkey}"):
                                 st.session_state["fetch_results"] = None
+                                st.rerun()
+
+                        # --- Check Guidelines ---
+                        if guidelines_clicked:
+                            from guidelines import check_conditions_against_guidelines, get_available_guidelines
+                            available = get_available_guidelines()
+                            if not available:
+                                st.error("No guideline PDFs found. Place 'Fannie Mae.pdf' and/or 'Freddie Mac.pdf' on your Desktop.")
+                            else:
+                                guide_names = [g["name"] for g in available]
+                                cached_status = ", ".join(
+                                    f"{g['name']} ({'cached' if g['indexed'] else 'will index'})"
+                                    for g in available
+                                )
+                                st.info(f"Guidelines found: {cached_status}")
+                                progress = st.progress(0, text="Loading guidelines...")
+
+                                def guide_progress(pct, msg):
+                                    progress.progress(min(pct, 100), text=msg)
+
+                                guide_results = check_conditions_against_guidelines(
+                                    selected_conds,
+                                    progress_callback=guide_progress,
+                                )
+
+                                if "error" in guide_results:
+                                    st.error(guide_results["error"])
+                                else:
+                                    st.session_state["guide_results"] = guide_results
+
+                        # --- Display Guidelines Results ---
+                        if st.session_state.get("guide_results"):
+                            st.markdown("---")
+                            st.markdown("### Guideline References")
+                            guide_results = st.session_state["guide_results"]
+
+                            for cnum, cdata in guide_results.items():
+                                if cnum == "error":
+                                    continue
+                                guidelines = cdata.get("guidelines", [])
+                                desc_short = cdata["desc"][:80]
+
+                                if guidelines:
+                                    with st.expander(
+                                        f"Condition #{cnum}: {desc_short} "
+                                        f"({len(guidelines)} reference{'s' if len(guidelines) != 1 else ''})",
+                                        expanded=False,
+                                    ):
+                                        for gi, ref in enumerate(guidelines):
+                                            score = ref["score"]
+                                            if score >= 80:
+                                                badge = "🟢"
+                                            elif score >= 65:
+                                                badge = "🟡"
+                                            else:
+                                                badge = "🔴"
+
+                                            section_str = f" | {ref['section']}" if ref.get("section") else ""
+                                            st.markdown(
+                                                f"{badge} **{ref['source']}** — "
+                                                f"Page {ref['page']}{section_str} "
+                                                f"(relevance: {score}%)"
+                                            )
+                                            st.container(border=True).markdown(
+                                                ref["excerpt"][:500]
+                                            )
+                                else:
+                                    st.caption(f"Condition #{cnum}: {desc_short} — no guideline references found")
+
+                            if st.button("Clear guideline results", key=f"clear_guide_{fkey}"):
+                                st.session_state["guide_results"] = None
                                 st.rerun()
 
                 st.markdown("---")
