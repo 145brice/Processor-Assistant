@@ -16,6 +16,7 @@ st.set_page_config(
 # --- Custom CSS ---
 st.markdown("""
 <style>
+/* ── Progress nav bar ─────────────────────────────────────────── */
 .progress-nav {
     display: flex;
     gap: 2px;
@@ -41,23 +42,10 @@ st.markdown("""
     transition: all 0.2s;
     line-height: 1.3;
 }
-.pn-step.done {
-    background: #1a5c2a;
-    color: #8f8;
-}
-.pn-step.active {
-    background: #0e4da4;
-    color: #fff;
-}
-.pn-step.pending {
-    background: #1e1e1e;
-    color: #666;
-}
-.pn-step:hover {
-    background: #2a2a2a;
-    color: #fff;
-    transform: scale(1.02);
-}
+.pn-step.done    { background: #1a5c2a; color: #8f8; }
+.pn-step.active  { background: #0e4da4; color: #fff; }
+.pn-step.pending { background: #1e1e1e; color: #666; }
+.pn-step:hover   { background: #2a2a2a; color: #fff; transform: scale(1.02); }
 .pn-num {
     display: block;
     font-size: 14px;
@@ -69,6 +57,64 @@ st.markdown("""
     position: relative;
     top: -100px;
     visibility: hidden;
+}
+
+/* ── Party / condition badges ─────────────────────────────────── */
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #fff;
+    margin: 1px 3px;
+    letter-spacing: 0.3px;
+}
+.badge-borrower     { background: #1565C0; }
+.badge-title        { background: #6A1B9A; }
+.badge-underwriter  { background: #E65100; }
+.badge-insurance    { background: #00695C; }
+.badge-closer       { background: #c8971a; color: #000; }
+.badge-jr           { background: #AD1457; }
+.badge-manager      { background: #283593; }
+.badge-appraiser    { background: #558B2F; }
+.badge-default      { background: #455A64; }
+
+/* ── Pipeline / CRM status chips ─────────────────────────────── */
+.status-chip {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 14px;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.5px;
+}
+.status-pending    { background: #c0392b22; color: #e74c3c; border: 1px solid #c0392b; }
+.status-requested  { background: #e67e2222; color: #f39c12; border: 1px solid #e67e22; }
+.status-cleared    { background: #27ae6022; color: #2ecc71; border: 1px solid #27ae60; }
+.status-overdue    { background: #7f8c8d22; color: #95a5a6; border: 1px solid #7f8c8d; }
+.status-closed     { background: #2c3e5022; color: #bdc3c7; border: 1px solid #2c3e50; }
+
+/* ── Pipeline table rows ──────────────────────────────────────── */
+.loan-row {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 8px;
+    padding: 10px 14px;
+    margin-bottom: 6px;
+}
+.loan-row:hover { border-color: #58a6ff; }
+.loan-num  { font-size: 16px; font-weight: 800; color: #58a6ff; }
+.loan-name { font-size: 14px; color: #e6edf3; }
+.loan-due  { font-size: 12px; color: #8b949e; }
+.loan-missing { font-size: 12px; color: #f0883e; }
+
+/* ── Big action buttons row ───────────────────────────────────── */
+div[data-testid="column"] > div > div > div > button {
+    min-height: 54px;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    border-radius: 10px !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -89,6 +135,7 @@ DEFAULTS = {
     "reader_files": [],
     "reader_open_file": None,
     "reader_page": 1,
+    "pipeline_add_open": False,
 }
 for key, val in DEFAULTS.items():
     if key not in st.session_state:
@@ -216,13 +263,16 @@ def show_sidebar():
                 st.warning("Log in to use Live Mode.")
 
         st.markdown("---")
-        if st.button("Document Scanner", use_container_width=True):
+        if st.button("📋 Document Scanner", use_container_width=True):
             st.session_state.page = "dashboard"
             st.rerun()
-        if st.button("Document Reader", use_container_width=True):
+        if st.button("🗂️ My Pipeline", use_container_width=True):
+            st.session_state.page = "pipeline"
+            st.rerun()
+        if st.button("📂 Document Reader", use_container_width=True):
             st.session_state.page = "reader"
             st.rerun()
-        if st.button("My History", use_container_width=True):
+        if st.button("🕑 My History", use_container_width=True):
             st.session_state.page = "history"
             st.rerun()
         st.markdown("---")
@@ -347,13 +397,19 @@ def show_dashboard():
                     st.markdown("---")
                     st.markdown("**Draft an email - select conditions to include:**")
 
-                    # Checkboxes for each condition
+                    # Checkboxes for each condition — party shown as color badge
                     selected_conds = []
                     for cond in condition_rows:
-                        if st.checkbox(
-                            f"#{cond['num']} - {cond['desc'][:80]}  ({cond['party']})",
-                            key=f"chk_{fkey}_{cond['num']}",
-                        ):
+                        badge_html = _party_badge(cond["party"])
+                        col_chk, col_badge = st.columns([6, 1])
+                        with col_chk:
+                            checked = st.checkbox(
+                                f"#{cond['num']} — {cond['desc'][:90]}",
+                                key=f"chk_{fkey}_{cond['num']}",
+                            )
+                        with col_badge:
+                            st.markdown(badge_html, unsafe_allow_html=True)
+                        if checked:
                             selected_conds.append(cond)
 
                     if selected_conds:
@@ -562,6 +618,213 @@ def show_dashboard():
                     f"Processed {result['text_length']:,} characters | "
                     f"{'Sandbox' if st.session_state.sandbox_mode else 'Live'} mode"
                 )
+
+
+def _party_badge(party: str) -> str:
+    """Return an HTML badge span for a condition party."""
+    key = party.lower().replace(" ", "").replace("jr", "jr")
+    mapping = {
+        "borrower": "borrower",
+        "title": "title",
+        "underwriter": "underwriter",
+        "insurance": "insurance",
+        "closer": "closer",
+        "jrunderwriter": "jr",
+        "manager": "manager",
+        "appraiser": "appraiser",
+    }
+    css = mapping.get(key, "default")
+    return f'<span class="badge badge-{css}">{party}</span>'
+
+
+def _status_chip(status: str) -> str:
+    """Return an HTML status chip for pipeline rows."""
+    css = status.lower()
+    from crm import STATUS_EMOJI
+    emoji = STATUS_EMOJI.get(status, "")
+    return f'<span class="status-chip status-{css}">{emoji} {status}</span>'
+
+
+def show_pipeline():
+    """Color-coded CRM loan pipeline dashboard."""
+    import os
+    from crm import (
+        get_all_loans, add_loan, set_status, delete_loan, update_loan,
+        STATUS_OPTIONS, STATUS_EMOJI,
+    )
+
+    st.markdown("## 🗂️ My Pipeline")
+    st.caption("Track every loan — color-coded by status, one-click actions.")
+
+    # ── Top action bar ──────────────────────────────────────────────────────
+    tb1, tb2, tb3, tb4 = st.columns([2, 2, 2, 2])
+    with tb1:
+        if st.button("➕ Add Loan", use_container_width=True, type="primary"):
+            st.session_state.pipeline_add_open = not st.session_state.get("pipeline_add_open", False)
+    with tb2:
+        filter_status = st.selectbox(
+            "Filter by status:", ["All"] + STATUS_OPTIONS,
+            key="pipeline_filter", label_visibility="collapsed",
+        )
+    with tb3:
+        search_loan = st.text_input(
+            "Search:", placeholder="Loan # or borrower name",
+            key="pipeline_search", label_visibility="collapsed",
+        )
+    with tb4:
+        st.markdown(
+            " &nbsp; ".join(
+                f'<span class="status-chip status-{s.lower()}">{STATUS_EMOJI[s]} {s}</span>'
+                for s in STATUS_OPTIONS[:4]
+            ),
+            unsafe_allow_html=True,
+        )
+
+    # ── Add Loan form ────────────────────────────────────────────────────────
+    if st.session_state.get("pipeline_add_open"):
+        with st.container(border=True):
+            st.markdown("**Add New Loan to Pipeline**")
+            f1, f2, f3 = st.columns(3)
+            with f1:
+                new_loan_num = st.text_input("Loan #", key="pl_new_num")
+                new_borrower = st.text_input("Borrower Name", key="pl_new_borrower")
+            with f2:
+                new_status = st.selectbox("Status", STATUS_OPTIONS, key="pl_new_status")
+                new_due = st.date_input("Due Date", key="pl_new_due")
+            with f3:
+                new_missing = st.text_area(
+                    "Missing Docs (comma separated)",
+                    key="pl_new_missing", height=68,
+                )
+                new_folder = st.text_input(
+                    "Borrower Folder Path (optional)", key="pl_new_folder",
+                    placeholder=r"C:\Loans\SmithJohn",
+                )
+
+            sa1, sa2 = st.columns([1, 4])
+            with sa1:
+                if st.button("Save Loan", use_container_width=True, key="pl_save_btn"):
+                    if new_loan_num and new_borrower:
+                        add_loan(
+                            new_loan_num, new_borrower, new_status,
+                            str(new_due), new_missing, new_folder,
+                        )
+                        st.session_state.pipeline_add_open = False
+                        st.rerun()
+                    else:
+                        st.error("Loan # and Borrower Name are required.")
+            with sa2:
+                if st.button("Cancel", key="pl_cancel_btn"):
+                    st.session_state.pipeline_add_open = False
+                    st.rerun()
+
+    st.markdown("---")
+
+    # ── Load and filter loans ────────────────────────────────────────────────
+    loans = get_all_loans()
+
+    if filter_status != "All":
+        loans = [l for l in loans if l["status"] == filter_status]
+    if search_loan:
+        q = search_loan.lower()
+        loans = [l for l in loans
+                 if q in l.get("loan_num", "").lower()
+                 or q in l.get("borrower", "").lower()]
+
+    if not loans:
+        st.info("No loans in pipeline yet. Click **➕ Add Loan** to get started.")
+        return
+
+    # ── Stats row ────────────────────────────────────────────────────────────
+    all_loans = get_all_loans()
+    counts = {s: sum(1 for l in all_loans if l["status"] == s) for s in STATUS_OPTIONS}
+    sc = st.columns(len(STATUS_OPTIONS))
+    for i, status in enumerate(STATUS_OPTIONS):
+        with sc[i]:
+            st.markdown(
+                f'<div style="text-align:center; padding:8px; border-radius:8px; '
+                f'background:#161b22; border:1px solid #30363d;">'
+                f'{STATUS_EMOJI[status]} <strong style="font-size:20px">{counts[status]}</strong>'
+                f'<br><span style="font-size:11px; color:#8b949e">{status}</span></div>',
+                unsafe_allow_html=True,
+            )
+
+    st.markdown("---")
+
+    # ── Loan rows ────────────────────────────────────────────────────────────
+    for loan in loans:
+        lid = loan.get("id")
+        status = loan.get("status", "Pending")
+        status_css = status.lower()
+        emoji = STATUS_EMOJI.get(status, "")
+
+        # Color left-border by status
+        border_colors = {
+            "Pending":   "#c0392b",
+            "Requested": "#e67e22",
+            "Cleared":   "#27ae60",
+            "Overdue":   "#7f8c8d",
+            "Closed":    "#2c3e50",
+        }
+        border_color = border_colors.get(status, "#444")
+
+        st.markdown(
+            f'<div style="border-left: 4px solid {border_color}; background:#161b22; '
+            f'border-radius:0 8px 8px 0; padding:10px 14px; margin-bottom:4px;">'
+            f'<span class="loan-num">#{loan.get("loan_num","—")}</span> &nbsp;'
+            f'<span class="loan-name">{loan.get("borrower","—")}</span> &nbsp;'
+            f'{_status_chip(status)}'
+            f'<br><span class="loan-due">📅 Due: {loan.get("due_date","—")}</span> &nbsp;'
+            f'<span class="loan-missing">📋 Missing: {loan.get("missing_docs","—") or "None"}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+        # Action buttons in a compact row
+        ac1, ac2, ac3, ac4, ac5 = st.columns([1, 1, 1, 1, 2])
+        with ac1:
+            if st.button("✅ Cleared", key=f"clr_{lid}", use_container_width=True):
+                set_status(lid, "Cleared")
+                st.rerun()
+        with ac2:
+            if st.button("📤 Requested", key=f"req_{lid}", use_container_width=True):
+                set_status(lid, "Requested")
+                st.rerun()
+        with ac3:
+            if st.button("⏰ Overdue", key=f"ovr_{lid}", use_container_width=True):
+                set_status(lid, "Overdue")
+                st.rerun()
+        with ac4:
+            folder = loan.get("folder_path", "")
+            if folder and os.path.isdir(folder):
+                if st.button("📂 Open Folder", key=f"ofld_{lid}", use_container_width=True):
+                    os.startfile(folder)
+            else:
+                folder_in = st.text_input(
+                    "Set folder:", key=f"fpath_{lid}",
+                    label_visibility="collapsed",
+                    placeholder="Paste folder path",
+                )
+                if folder_in and st.button("Save", key=f"fsave_{lid}"):
+                    update_loan(lid, folder_path=folder_in)
+                    st.rerun()
+        with ac5:
+            notes = st.text_input(
+                "Notes:", value=loan.get("notes", ""),
+                key=f"notes_{lid}", label_visibility="collapsed",
+                placeholder="Notes...",
+            )
+            nc1, nc2 = st.columns([1, 1])
+            with nc1:
+                if st.button("Save Notes", key=f"nsave_{lid}", use_container_width=True):
+                    update_loan(lid, notes=notes)
+                    st.rerun()
+            with nc2:
+                if st.button("🗑️ Remove", key=f"del_{lid}", use_container_width=True):
+                    delete_loan(lid)
+                    st.rerun()
+
+        st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
 
 
 def _show_pdf_reader(pdf_path: str, search_term: str = ""):
@@ -786,6 +1049,8 @@ def main():
         page = st.session_state.page
         if page == "dashboard":
             show_dashboard()
+        elif page == "pipeline":
+            show_pipeline()
         elif page == "history":
             show_history()
         elif page == "reader":
