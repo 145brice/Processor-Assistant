@@ -1,26 +1,28 @@
-# Processor Assistant
+# Processor Traien — Mortgage Document Processing App
 
-Fully offline mortgage document processor. Upload a PDF approval letter, get every condition extracted word-for-word, draft emails in English or Spanish, and search the borrower's local folder for matching documents. No cloud, no API keys, no internet required. Runs 100% on your machine.
+100% offline. No cloud, no AI API, no internet required after setup.
+Runs on your local machine using Python + Streamlit.
 
 ---
 
 ## What It Does
 
-A loan processor's job: read approval letters, extract conditions, figure out who's responsible, draft follow-up emails, find supporting documents. This app automates all of that — offline, locally, lightweight enough for an HP EliteBook.
+A loan processor's job: read approval letters, extract conditions, figure out who's responsible, draft follow-up emails, find supporting documents, and verify against agency guidelines. This app automates all of that — offline, locally, lightweight enough for an HP EliteBook.
 
 ### Core Features
 
 - **PDF Upload & Condition Extraction** — Upload a mortgage approval letter (or CD, LE, 1003, credit report, bank statement, COC, broker package). The engine reads the PDF text and extracts every condition into a clean table showing the condition description, responsible party, and status (Needed/Received/Cleared/Waived).
 - **Supports Lender Condition-Code Format** — Automatically parses lender systems that output conditions with codes like `Underwriter WCR01`, `Closer WES03`, `Jr Underwriter WPR15`, `Manager WCL02`. Handles multi-line conditions, strips dates/metadata/junk, and keeps only the real actionable text.
-- **Multi-Condition Email Drafting** — Check multiple conditions, pick a language (English or Spanish), pick a recipient (Borrower, Underwriter, Title, Closer, Insurance, Appraiser), and hit Draft Email. All selected conditions go into one combined email. Templates for every party type in both languages.
+- **Multi-Condition Email Drafting** — Check multiple conditions (as many as needed), pick a language (English or Spanish), pick a recipient (Borrower, Underwriter, Title, Closer, Insurance, Appraiser), and hit Draft Email. All selected conditions go into one combined email. Templates for every party type in both languages.
 - **Fetch from Local Folder** — Select conditions, click "Fetch from Folder", paste the borrower's folder path. The app recursively searches that folder, fuzzy-matching filenames AND PDF content against your selected conditions. Returns organized results with match scores, page numbers, and text snippets.
+- **Document Reader** — Browse any local folder, pick any file, and read it page by page or search inside it by keyword. Works on PDFs, TXT, and CSV files.
 - **Sandbox Mode** — Free unlimited practice. No account needed, no data saved.
 - **Local SQLite Database** — User accounts and scan history stored in a local `processor.db` file. No cloud database.
 - **In-Memory Processing** — PDFs are processed in memory and never saved to disk. Only structured results are stored.
 
 ### On-Demand Analysis Tools
 
-These run only when you trigger them (a la carte, no constant scanning):
+These run only when you trigger them (a la carte — no constant scanning, no CPU spikes):
 
 - **250-Point Mega Checklist** — Compliance audit across 11 categories: loan type, property, HOA, insurance, title, borrower profile, income, assets, appraisal, disclosures, closing.
 - **50-Rule Bank Statement Analysis** — Checks for overdrafts, NSF fees, large deposits, gambling transactions, crypto, foreign currency, dormant periods, and 44 more rules.
@@ -52,11 +54,12 @@ These run only when you trigger them (a la carte, no constant scanning):
 
 ```
 Processor-Assistant/
-├── app.py              # Main Streamlit UI — upload, scan, conditions, emails, fetch, guidelines
+├── app.py              # Main Streamlit UI — upload, scan, conditions, emails,
+│                       #   fetch, reader, guidelines, routing, sidebar
 ├── ai_engine.py        # Offline processing engine — condition extraction, risk flags,
 │                       #   bank rules, contacts, stacking order, mega checklist, emails
 ├── folder_search.py    # Local folder search — fuzzy matches files to conditions
-├── guidelines.py       # Fannie Mae / Freddie Mac guideline search engine
+├── guidelines.py       # Fannie Mae / Freddie Mac guideline index + search engine
 ├── prompts.py          # Document type context (reference only)
 ├── db.py               # Local SQLite database — user accounts, scan history
 ├── requirements.txt    # Python dependencies (4 packages)
@@ -190,6 +193,32 @@ Templates exist for: Borrower, Title, Underwriter, Closer, Insurance, Appraiser 
    - Text snippet showing the matching content
 
 Limits: 500 files max, skips files over 50MB, supports PDF and TXT content search.
+
+### Document Reader
+
+A separate tool (sidebar: **Document Reader**) for browsing and reading local files directly — no upload required.
+
+1. Click **Document Reader** in the left sidebar
+2. Paste the full path to any folder (borrower folder, shared drive, USB, wherever):
+   ```
+   C:\Users\YourName\Loans\Smith John\
+   ```
+3. Click **Browse Folder** — the app lists every readable file (.pdf, .txt, .csv) in that folder and all subfolders
+4. Pick a file from the dropdown
+5. Click **Open & Read**
+
+**Page-by-page reading mode:**
+- Use the page number input to jump to any page in a PDF
+- Full extracted text appears in a scrollable text box
+
+**Search mode (keyword search inside a document):**
+- Type a keyword in the "Search inside document" box before clicking Open & Read (or while the file is open)
+- The app scans every page and returns snippets with context around every match
+- Example keywords: `appraisal`, `HOA`, `verification of mortgage`, `certificate of good standing`
+
+Use the Reader to manually verify a document found by the Fetch tool, look up a specific detail in any file, or just read through a borrower document without leaving the app.
+
+---
 
 ### Check Guidelines (Fannie Mae / Freddie Mac)
 

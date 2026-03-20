@@ -85,6 +85,10 @@ DEFAULTS = {
     "last_fetch_folder": "",
     "fetch_results": None,
     "guide_results": None,
+    "reader_folder": "",
+    "reader_files": [],
+    "reader_open_file": None,
+    "reader_page": 1,
 }
 for key, val in DEFAULTS.items():
     if key not in st.session_state:
@@ -214,6 +218,9 @@ def show_sidebar():
         st.markdown("---")
         if st.button("Document Scanner", use_container_width=True):
             st.session_state.page = "dashboard"
+            st.rerun()
+        if st.button("Document Reader", use_container_width=True):
+            st.session_state.page = "reader"
             st.rerun()
         if st.button("My History", use_container_width=True):
             st.session_state.page = "history"
@@ -557,6 +564,193 @@ def show_dashboard():
                 )
 
 
+def _show_pdf_reader(pdf_path: str, search_term: str = ""):
+    """Read a PDF page by page, or search within it."""
+    import time as _t
+    from pypdf import PdfReader
+    try:
+        reader = PdfReader(pdf_path)
+        total_pages = len(reader.pages)
+    except Exception as e:
+        st.error(f"Could not read PDF: {e}")
+        return
+
+    st.caption(f"{total_pages} pages total")
+
+    if search_term:
+        st.markdown(f"**Searching for:** `{search_term}`")
+        found_pages = []
+        search_lower = search_term.lower()
+        with st.spinner("Searching through pages..."):
+            for i, page in enumerate(reader.pages):
+                text = page.extract_text() or ""
+                if search_lower in text.lower():
+                    idx = text.lower().find(search_lower)
+                    start = max(0, idx - 100)
+                    end = min(len(text), idx + len(search_term) + 250)
+                    snippet = text[start:end].replace('\n', ' ')
+                    found_pages.append({"page": i + 1, "snippet": snippet})
+                _t.sleep(0.02)
+
+        if found_pages:
+            st.success(f"Found on {len(found_pages)} page(s)")
+            for fp in found_pages:
+                with st.expander(f"Page {fp['page']}", expanded=len(found_pages) <= 6):
+                    st.markdown(f"...{fp['snippet']}...")
+        else:
+            st.warning(f"'{search_term}' not found in this document.")
+    else:
+        page_num = st.number_input(
+            "Go to page:", min_value=1, max_value=total_pages,
+            value=st.session_state.get("reader_page", 1),
+            key="reader_page_num",
+        )
+        st.session_state["reader_page"] = page_num
+        text = reader.pages[page_num - 1].extract_text() or ""
+        if text.strip():
+            st.text_area("Page content:", value=text, height=450, key=f"reader_pg_{page_num}")
+        else:
+            st.warning("This page has no extractable text (may be a scanned image).")
+
+
+def _show_text_reader(file_path: str, search_term: str = ""):
+    """Read a text or CSV file with optional search."""
+    try:
+        with open(file_path, 'r', errors='ignore') as f:
+            content = f.read(200_000)
+    except Exception as e:
+        st.error(f"Could not read file: {e}")
+        return
+
+    if search_term:
+        lines = content.split('\n')
+        matches = [(i + 1, line) for i, line in enumerate(lines)
+                   if search_term.lower() in line.lower()]
+        if matches:
+            st.success(f"Found on {len(matches)} line(s)")
+            for lnum, line in matches[:80]:
+                st.markdown(f"**Line {lnum}:** {line}")
+        else:
+            st.warning(f"'{search_term}' not found.")
+    else:
+        st.text_area("File content:", value=content[:15000], height=450, key="reader_text_content")
+        if len(content) > 15000:
+            st.caption(f"Showing first 15,000 of {len(content):,} characters.")
+
+
+def show_reader():
+    """Document Reader - browse any folder, open any file, read or search through it."""
+    import os
+
+    st.markdown("## Document Reader")
+    st.caption("Browse a local folder, open and read any document, or search inside it.")
+
+    # --- Folder input ---
+    col1, col2 = st.columns([4, 1])
+    with col1:
+        folder_path = st.text_input(
+            "Folder path:",
+            value=st.session_state.get("reader_folder", ""),
+            placeholder=r"C:\Users\...\BorrowerName  (paste the full path)",
+            key="reader_folder_input",
+        )
+    with col2:
+        st.markdown("<br>", unsafe_allow_html=True)
+        browse_btn = st.button("Browse Folder", use_container_width=True, key="reader_browse_btn")
+
+    if browse_btn:
+        if not folder_path:
+            st.warning("Paste a folder path first.")
+        elif not os.path.isdir(folder_path):
+            st.error(f"Folder not found: {folder_path}")
+        else:
+            st.session_state["reader_folder"] = folder_path
+            st.session_state["reader_open_file"] = None
+            st.session_state["reader_page"] = 1
+            files = []
+            _READABLE = {'.pdf', '.txt', '.csv'}
+            for root, dirs, fnames in os.walk(folder_path):
+                # Skip hidden/system dirs
+                dirs[:] = [d for d in dirs if not d.startswith('.')]
+                for fname in sorted(fnames):
+                    ext = os.path.splitext(fname)[1].lower()
+                    if ext not in _READABLE:
+                        continue
+                    fpath = os.path.join(root, fname)
+                    try:
+                        size_kb = os.path.getsize(fpath) / 1024
+                    except OSError:
+                        size_kb = 0
+                    if size_kb > 100_000:  # skip files > 100MB
+                        continue
+                    rel = os.path.relpath(fpath, folder_path)
+                    files.append({"name": fname, "path": fpath, "rel": rel,
+                                  "ext": ext, "size_kb": round(size_kb, 1)})
+            st.session_state["reader_files"] = files
+            st.rerun()
+
+    files = st.session_state.get("reader_files", [])
+
+    if not files:
+        if st.session_state.get("reader_folder"):
+            st.info("No readable files (.pdf, .txt, .csv) found. Try a different folder.")
+        else:
+            st.markdown(
+                "### How to use\n"
+                "1. Paste the full path to a borrower folder above\n"
+                "2. Click **Browse Folder** to list all readable files\n"
+                "3. Pick any file from the list and click **Open & Read**\n"
+                "4. Read page by page, or type a keyword to **search inside** the document"
+            )
+        return
+
+    st.markdown(f"**{len(files)} readable file(s) found**")
+
+    # --- File selector ---
+    file_labels = [f"{f['rel']}  ({f['size_kb']} KB)" for f in files]
+    selected_idx = st.selectbox(
+        "Select a file:",
+        range(len(file_labels)),
+        format_func=lambda i: file_labels[i],
+        key="reader_file_select",
+    )
+    selected_file = files[selected_idx]
+
+    r1, r2, r3 = st.columns([1, 2, 1])
+    with r1:
+        open_btn = st.button("Open & Read", use_container_width=True, key="reader_open_btn")
+    with r2:
+        search_term = st.text_input(
+            "Search inside document:",
+            placeholder="e.g. appraisal, HOA, verification of mortgage",
+            key="reader_search_input",
+        )
+    with r3:
+        if st.session_state.get("reader_open_file"):
+            if st.button("Close File", use_container_width=True, key="reader_close_btn"):
+                st.session_state["reader_open_file"] = None
+                st.rerun()
+
+    if open_btn:
+        st.session_state["reader_open_file"] = selected_file
+        st.session_state["reader_page"] = 1
+        st.rerun()
+
+    # --- Show file content ---
+    open_file = st.session_state.get("reader_open_file")
+    if open_file:
+        st.markdown("---")
+        st.markdown(f"### {open_file['name']}")
+        st.caption(f"{open_file['path']}")
+
+        if open_file["ext"] == ".pdf":
+            _show_pdf_reader(open_file["path"], search_term)
+        elif open_file["ext"] in {".txt", ".csv"}:
+            _show_text_reader(open_file["path"], search_term)
+        else:
+            st.info("File type cannot be read here. Open it directly in File Explorer.")
+
+
 def show_history():
     """Show user's scan history."""
     st.markdown("## My History")
@@ -594,6 +788,8 @@ def main():
             show_dashboard()
         elif page == "history":
             show_history()
+        elif page == "reader":
+            show_reader()
         else:
             show_dashboard()
 

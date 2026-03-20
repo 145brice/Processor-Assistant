@@ -641,7 +641,8 @@ def draft_email(conditions: str, recipient_type: str, language: str = "English",
     template = templates.get(language, templates.get("English", ""))
     if not template:
         template = _EMAIL_TEMPLATES["Borrower"]["English"]
-    return template.format(conditions=conditions)
+    # Safe substitution — avoids crash when condition text contains { } characters
+    return template.replace("{conditions}", conditions)
 
 
 def auto_draft_emails(conditions: str, user_history=None) -> str:
