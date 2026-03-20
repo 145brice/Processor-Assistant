@@ -1,277 +1,321 @@
 # Processor Traien — Mortgage Document Processing App
 
-100% offline. No cloud, no AI API, no internet required after setup.
-Runs on your local machine using Python + Streamlit.
+**100% offline. No cloud. No API keys. No internet after setup.**
+Runs on your local Windows machine using Python + Streamlit (opens in your browser).
 
 ---
 
-## What It Does
+## QUICK START — How to run it every time
 
-A loan processor's job: read approval letters, extract conditions, figure out who's responsible, draft follow-up emails, find supporting documents, and verify against agency guidelines. This app automates all of that — offline, locally, lightweight enough for an HP EliteBook.
+1. Open **VS Code**
+2. Open the terminal: press `` Ctrl+` ``
+3. Make sure you're in the right folder:
+   ```
+   cd "C:\Users\user\OneDrive\Desktop\processor-traien\Processor-Assistant"
+   ```
+4. Run:
+   ```
+   streamlit run app.py
+   ```
+5. Browser opens automatically at **http://localhost:8501**
+6. Click **Try Sandbox** — you're in. No login required.
 
-### Core Features
-
-- **PDF Upload & Condition Extraction** — Upload a mortgage approval letter (or CD, LE, 1003, credit report, bank statement, COC, broker package). The engine reads the PDF text and extracts every condition into a clean table showing the condition description, responsible party, and status (Needed/Received/Cleared/Waived).
-- **Supports Lender Condition-Code Format** — Automatically parses lender systems that output conditions with codes like `Underwriter WCR01`, `Closer WES03`, `Jr Underwriter WPR15`, `Manager WCL02`. Handles multi-line conditions, strips dates/metadata/junk, and keeps only the real actionable text.
-- **Multi-Condition Email Drafting** — Check multiple conditions (as many as needed), pick a language (English or Spanish), pick a recipient (Borrower, Underwriter, Title, Closer, Insurance, Appraiser), and hit Draft Email. All selected conditions go into one combined email. Templates for every party type in both languages.
-- **Fetch from Local Folder** — Select conditions, click "Fetch from Folder", paste the borrower's folder path. The app recursively searches that folder, fuzzy-matching filenames AND PDF content against your selected conditions. Returns organized results with match scores, page numbers, and text snippets.
-- **Document Reader** — Browse any local folder, pick any file, and read it page by page or search inside it by keyword. Works on PDFs, TXT, and CSV files.
-- **Sandbox Mode** — Free unlimited practice. No account needed, no data saved.
-- **Local SQLite Database** — User accounts and scan history stored in a local `processor.db` file. No cloud database.
-- **In-Memory Processing** — PDFs are processed in memory and never saved to disk. Only structured results are stored.
-
-### On-Demand Analysis Tools
-
-These run only when you trigger them (a la carte — no constant scanning, no CPU spikes):
-
-- **250-Point Mega Checklist** — Compliance audit across 11 categories: loan type, property, HOA, insurance, title, borrower profile, income, assets, appraisal, disclosures, closing.
-- **50-Rule Bank Statement Analysis** — Checks for overdrafts, NSF fees, large deposits, gambling transactions, crypto, foreign currency, dormant periods, and 44 more rules.
-- **Risk Flags** — Scans for DTI over limits, low credit scores, high LTV, employment gaps, title issues, compliance problems. Severity rated HIGH/MEDIUM/LOW.
-- **Contacts Extraction** — Pulls borrower names, phone numbers, emails, loan numbers, property addresses, loan type, interest rate from the document.
-- **Stacking Order** — Generates a full loan file checklist (application, disclosures, credit, income, assets, property, government program docs, closing docs) with checkmarks for items found in the document.
-- **Email Auto-Drafting** — Groups all conditions by responsible party and drafts separate emails for each.
-- **Web Research Links** — Identifies conditions needing online verification and provides the specific URLs (FEMA flood lookup, FHA case number, NMLS, state SOS, county assessor, etc.). No web calls made — just gives you the links.
-- **Check Guidelines (Fannie Mae / Freddie Mac)** — Select conditions, click "Check Guidelines." The engine searches through the full Fannie Mae Selling Guide (1,191 pages) and Freddie Mac Seller/Servicer Guide (2,882 pages) for sections relevant to each condition. Returns actual guideline text with page numbers, section references, and relevance scores. First run indexes the PDFs (~2-3 minutes), then loads from cache instantly.
+To stop the app: press `Ctrl+C` in the terminal.
 
 ---
 
-## Tech Stack
+## FIRST-TIME SETUP (do this once)
 
-| Component | Technology |
-|-----------|-----------|
-| Frontend | Streamlit (Python web UI) |
-| Processing Engine | Pure Python regex + pattern matching (no AI, no API) |
-| PDF Parsing | pypdf (in-memory only) |
-| Fuzzy Matching | thefuzz (pure Python, no C dependencies) |
-| Database | SQLite (local file, no cloud) |
-| Email Templates | Python string formatting (English + Spanish) |
-
-**No API keys. No cloud accounts. No internet connection needed.**
-
----
-
-## Project Structure
-
+### Step 1 — Make sure Python is installed
+Open Command Prompt and type:
 ```
-Processor-Assistant/
-├── app.py              # Main Streamlit UI — upload, scan, conditions, emails,
-│                       #   fetch, reader, guidelines, routing, sidebar
-├── ai_engine.py        # Offline processing engine — condition extraction, risk flags,
-│                       #   bank rules, contacts, stacking order, mega checklist, emails
-├── folder_search.py    # Local folder search — fuzzy matches files to conditions
-├── guidelines.py       # Fannie Mae / Freddie Mac guideline index + search engine
-├── prompts.py          # Document type context (reference only)
-├── db.py               # Local SQLite database — user accounts, scan history
-├── requirements.txt    # Python dependencies (4 packages)
-├── processor.db        # Created automatically on first run (SQLite database)
-├── guidelines_index/   # Created automatically — cached guideline indexes (JSON)
-└── README.md           # This file
+python --version
 ```
+You should see `Python 3.10.x` or higher. If not, download Python from python.org.
 
----
-
-## Setup — Step by Step
-
-### Prerequisites
-
-- **Python 3.10+** installed (check with `python --version`)
-- **pip** package manager (comes with Python)
-- **VS Code** (recommended) or any text editor
-- **A web browser** (Chrome, Edge, Firefox)
-
-### Step 1: Clone the Repository
-
-Open a terminal (VS Code: press `` Ctrl+` ``) and run:
-
-```bash
-git clone https://github.com/145brice/Processor-Assistant.git
-cd Processor-Assistant
+### Step 2 — Install dependencies
+In the project folder terminal:
 ```
-
-Or if you already have the folder, just `cd` into it:
-
-```bash
-cd "C:\Users\user\OneDrive\Desktop\processor-traien\Processor-Assistant"
+pip install streamlit pypdf thefuzz python-Levenshtein python-dotenv
 ```
+That's it — 5 packages total. No API keys, no accounts, no .env file needed.
 
-### Step 2: Install Dependencies
-
-```bash
-pip install -r requirements.txt
+### Step 3 — Guideline PDFs (for the "Check Guidelines" feature)
+Place these two files exactly on your Desktop:
 ```
-
-This installs 4 packages:
-- `streamlit` — the web UI framework
-- `pypdf` — reads PDF files
-- `python-dotenv` — loads environment config (optional, kept for compatibility)
-- `thefuzz` — fuzzy string matching for the folder search feature
-
-That's it. No API keys, no `.env` file, no cloud setup.
-
-### Step 3: Add Guideline PDFs (Optional but Recommended)
-
-Place these files on your Desktop to enable the "Check Guidelines" feature:
-
-- `Fannie Mae.pdf` — Fannie Mae Selling Guide (download from Fannie Mae's website)
-- `Freddie Mac.pdf` — Freddie Mac Seller/Servicer Guide (download from Freddie Mac's website)
-
-The app looks for them at:
+C:\Users\user\OneDrive\Desktop\Fannie Mae.pdf
+C:\Users\user\OneDrive\Desktop\Freddie Mac.pdf
 ```
-C:\Users\<your-username>\OneDrive\Desktop\Fannie Mae.pdf
-C:\Users\<your-username>\OneDrive\Desktop\Freddie Mac.pdf
+- The filenames must match exactly (capital F, capital M, space between words).
+- These are the full Fannie Mae Selling Guide (1,191 pages) and Freddie Mac Seller/Servicer Guide (2,882 pages).
+- Download them free from FannieMae.com and FreddieMac.com.
+- **If you don't have them**, the rest of the app works fine — just skip "Check Guidelines."
+
+### Step 4 — Run it
 ```
-
-On first click of "Check Guidelines", the app indexes both PDFs (takes 2-3 minutes for ~4,000 pages). After that, the index is cached in `guidelines_index/` and loads instantly on every future use.
-
-### Step 4: Run the App
-
-```bash
 streamlit run app.py
 ```
 
-The app opens automatically in your browser at **http://localhost:8501**.
+---
 
-If it doesn't open automatically, copy that URL and paste it into your browser.
+## FILE STRUCTURE — What every file does
 
-### Step 4: Start Using It
-
-1. Click **"Try Sandbox"** on the login page (no account needed)
-2. Upload a mortgage PDF using the file uploader
-3. Select the document type from the dropdown (e.g., "Approval Letter")
-4. Click **"Scan Document"**
-5. Review the extracted conditions table
-6. Check conditions you want to act on
-7. Click **"Draft Email"**, **"Fetch from Folder"**, or **"Check Guidelines"**
+```
+Processor-Assistant/
+│
+├── app.py               ← MAIN FILE. All UI pages, navigation, buttons, layout.
+│                           Edit this to change how anything looks or routes.
+│
+├── ai_engine.py         ← The brain. Reads PDFs, extracts conditions, drafts emails,
+│                           runs checklists, detects risk flags, pulls contacts.
+│                           No AI, no internet — pure Python regex + pattern matching.
+│
+├── crm.py               ← Pipeline database logic. Reads/writes pipeline.json.
+│                           Handles add, update, delete, status changes, overdue detection.
+│
+├── folder_search.py     ← Folder search engine. Given a folder path + condition keywords,
+│                           walks every subfolder, fuzzy-matches filenames and PDF content.
+│
+├── guidelines.py        ← Fannie/Freddie search engine. Indexes the PDFs into chunks,
+│                           caches the index, searches for relevant guideline sections.
+│
+├── db.py                ← Local SQLite user accounts + scan history.
+│                           Creates processor.db automatically on first run.
+│
+├── prompts.py           ← Output templates (stacking order, research links, risk labels).
+│
+├── pipeline.json        ← Your loan pipeline data. Auto-created. Edit directly if needed.
+│                           Backed up every time you push to GitHub.
+│
+├── processor.db         ← SQLite database. Auto-created. Stores login accounts + history.
+│
+├── guidelines_index/    ← Auto-created folder. Stores the Fannie/Freddie index cache.
+│   ├── Fannie_Mae.json      (built on first "Check Guidelines" click — takes ~2 min)
+│   ├── Freddie_Mac.json     (built on first click — Freddie is ~2,882 pages, takes ~5 min)
+│   └── *.hash               (used to detect when PDFs have been updated)
+│
+├── requirements.txt     ← Package list. Run `pip install -r requirements.txt` to install all.
+└── README.md            ← This file.
+```
 
 ---
 
-## How Each Feature Works
+## THE FOUR PAGES — What each does
 
-### Condition Extraction
+### 1. 📋 Document Scanner
+The main workhorse. Upload a PDF, extract every condition, then act on them.
 
-When you upload a PDF and click Scan:
+**How to use it:**
+1. Click **📋 Document Scanner** in the left sidebar
+2. Drag and drop a mortgage PDF onto the uploader (approval letter, CD, 1003, etc.)
+3. Pick the **Document Type** from the dropdown
+4. Click **🔍 Scan Document**
+5. The condition table appears — every condition extracted from the actual PDF text
 
-1. The PDF is read into memory using `pypdf` (never saved to disk)
-2. Text is extracted page-by-page with gentle pauses between pages
-3. The engine detects the format:
-   - **Lender condition-code format**: Lines starting with `Underwriter WCR01`, `Closer WES03`, etc. are recognized as condition headers. Multi-line descriptions are assembled. Dates, status codes, and metadata are stripped. Only the actionable condition text is kept.
-   - **Traditional format**: Numbered/bulleted lists under section headers like "Prior to Closing Conditions:" are captured line by line.
-   - **Loan-number format**: Lines prefixed with long loan numbers (`5000002228902-`) are split and cleaned.
-4. Junk is aggressively filtered: addresses, dollar amounts, email addresses, phone numbers, closing cost summaries, timestamps, company names, boilerplate footer text.
-5. Each condition gets a responsible party assignment based on keywords (title, insurance, appraisal, underwriter, or defaults to Borrower).
-6. Results display as a markdown table with checkboxes.
+**What you see in the condition table:**
+- `#` — condition number
+- `Condition` — the actual text from the PDF (not guessed — literally what's written)
+- Responsible Party — color-coded badge: 🔵 Borrower, 🟣 Title, 🟠 Underwriter, 🟢 Insurance, 🟡 Closer
+- Status — Needed / Received / Cleared / Waived
 
-### Email Drafting
+**After scanning — three action buttons appear:**
 
-1. Check one or more conditions using the checkboxes
-2. Pick a language (English or Spanish)
-3. Pick a recipient from the dropdown (auto-populated from the selected conditions' parties)
-4. Click **Draft Email**
-5. A professional email is generated from templates with all selected conditions listed
-6. Copy and paste into your email client
+**Draft Email**
+- Check any conditions you want (you can check 1 or 20 — they all go in one email)
+- Pick Language: English or Spanish
+- Pick who to send to (Borrower, Title, Underwriter, etc.)
+- Click **Draft Email** → ready-to-copy professional email appears below
+- Copy and paste into Outlook
 
-Templates exist for: Borrower, Title, Underwriter, Closer, Insurance, Appraiser — in both English and Spanish.
+**Fetch from Folder**
+- Check conditions you need documents for
+- Click **Fetch from Folder**
+- Paste the borrower's full folder path, e.g.: `C:\Users\user\Loans\FishMartha\`
+- Click **Search**
+- App walks every subfolder, matches filenames AND PDF content to your conditions
+- Results show match score (🟢 80%+, 🟡 65-79%, 🔴 below 65%), page numbers, and a text snippet
 
-### Fetch from Folder
+**Check Guidelines**
+- Check conditions you want to look up in Fannie/Freddie
+- Click **Check Guidelines**
+- First time: indexes both PDFs (progress bar shown — takes a few minutes)
+- Every time after: loads from cache in seconds
+- Results show: source (Fannie or Freddie), page number, section code, and the actual guideline text
 
-1. Check the conditions you need documents for
-2. Click **"Fetch from Folder"**
-3. Paste the full path to the borrower's folder (e.g., `C:\Loans\SmithJohn\`)
-4. Click **Search**
-5. The engine:
-   - Walks the entire folder tree recursively
-   - Checks every PDF and text file (skips executables, zips, etc.)
-   - Fuzzy-matches each file's **name** against condition keywords
-   - Opens each PDF and fuzzy-matches **page content** against condition keywords
-   - Scores each match 0-100% using token-based and partial string matching
-   - Pauses between files to stay gentle on CPU
-6. Results show:
-   - Green badge (80%+), Yellow (65-79%), Red (<65%) match confidence
-   - File name and full path
-   - Match type (filename, content, or both)
-   - Matched page numbers within PDFs
-   - Text snippet showing the matching content
+---
 
-Limits: 500 files max, skips files over 50MB, supports PDF and TXT content search.
+### 2. 🗂️ My Pipeline
+Your color-coded loan tracking board. Every active loan in one place.
 
-### Document Reader
+**Color key:**
+- 🔴 **Pending** — waiting on borrower or docs, nothing sent yet
+- 🟠 **Requested** — docs requested, waiting on response
+- 🟢 **Cleared** — all conditions met, ready to close
+- ⚫ **Overdue** — past due date, auto-flagged
+- ✅ **Closed** — funded and done
 
-A separate tool (sidebar: **Document Reader**) for browsing and reading local files directly — no upload required.
+**How to add a loan:**
+1. Click **➕ Add Loan** at the top
+2. Fill in: Loan #, Borrower Name, Status, Due Date, Missing Docs, Folder Path (optional)
+3. Click **Save Loan**
+4. It appears in the list immediately and is saved to `pipeline.json`
 
-1. Click **Document Reader** in the left sidebar
-2. Paste the full path to any folder (borrower folder, shared drive, USB, wherever):
-   ```
-   C:\Users\YourName\Loans\Smith John\
-   ```
-3. Click **Browse Folder** — the app lists every readable file (.pdf, .txt, .csv) in that folder and all subfolders
+**Per-loan actions (buttons on each row):**
+- **✅ Cleared** — marks the loan cleared (green)
+- **📤 Requested** — marks as requested (orange)
+- **⏰ Overdue** — marks as overdue (gray)
+- **📂 Open Folder** — opens the borrower's folder in File Explorer (Windows only)
+- **Notes** — type anything, click **Save Notes**
+- **🗑️ Remove** — permanently deletes the loan from pipeline
+
+**Filtering:**
+- Use the **Filter by status** dropdown to show only Pending, Requested, etc.
+- Use the **Search** box to find by loan number or borrower name
+
+**Auto-overdue:** Any loan whose due date has passed and isn't Cleared or Closed gets automatically flagged Overdue when the page loads.
+
+**Sample pipeline** is included — 7 realistic loans showing all 5 statuses so you can see how it looks right away. Replace them with your real loans any time.
+
+---
+
+### 3. 📂 Document Reader
+Browse any local folder and read any file — without uploading it to the scanner.
+
+**Use this when:**
+- You want to look up something in a specific document
+- You want to read through a borrower's file before scanning
+- You fetched a document and want to read the actual pages
+
+**How to use it:**
+1. Click **📂 Document Reader** in the sidebar
+2. Paste the full folder path, e.g.: `C:\Users\user\Loans\FishMartha\`
+3. Click **Browse Folder** — all PDFs, TXTs, and CSVs in that folder are listed
 4. Pick a file from the dropdown
 5. Click **Open & Read**
 
-**Page-by-page reading mode:**
-- Use the page number input to jump to any page in a PDF
-- Full extracted text appears in a scrollable text box
+**Read mode (no search term):**
+- Use the page number input to jump to any page
+- Full text of that page shows in a scrollable box
 
-**Search mode (keyword search inside a document):**
-- Type a keyword in the "Search inside document" box before clicking Open & Read (or while the file is open)
-- The app scans every page and returns snippets with context around every match
-- Example keywords: `appraisal`, `HOA`, `verification of mortgage`, `certificate of good standing`
-
-Use the Reader to manually verify a document found by the Fetch tool, look up a specific detail in any file, or just read through a borrower document without leaving the app.
+**Search mode (type a keyword first):**
+- Type something in the "Search inside document" box
+- Every page is scanned, and every match is shown with surrounding context
+- Good for: `appraisal`, `HOA`, `verification of mortgage`, `certificate of good standing`, any condition keyword
 
 ---
 
-### Check Guidelines (Fannie Mae / Freddie Mac)
-
-1. Check the conditions you want to look up
-2. Click **"Check Guidelines"**
-3. First time: the engine indexes both PDFs (~2-3 minutes for 4,000+ pages). Shows a progress bar. After indexing, the cache is saved to `guidelines_index/` and loads instantly on future runs.
-4. The engine searches all 7,900+ indexed sections for content relevant to each selected condition
-5. Results show per condition:
-   - Source (Fannie Mae or Freddie Mac)
-   - Page number and section reference (e.g., "Chapter 5202", "B3-5.3-09")
-   - Relevance score with color badge
-   - Actual guideline text excerpt (up to 500 chars)
-6. Expand any condition to see up to 5 matching guideline references
-
-How it works under the hood:
-- PDFs are split into ~1,500-character overlapping chunks
-- Each chunk is tagged with page number, source, and section ID
-- Table-of-contents and boilerplate pages are filtered out
-- Search uses topic detection (maps "hazard insurance" to insurance-related terms, "LLC" to entity terms, etc.)
-- Fuzzy matching scores each chunk against condition keywords + related topic terms
-- Results are deduplicated by page and sorted by relevance
-
-### User Accounts
-
-- **Sandbox mode**: Click "Try Sandbox" — unlimited free use, nothing saved
-- **Create account**: Sign up with email + password. Stored locally in SQLite (hashed password). Scan history is saved.
-- **Login**: Returns you to your saved history
-- **Live mode**: Toggle in sidebar. Tracks file count and saves results to local database.
+### 4. 🕑 My History
+Only available when logged in (not sandbox). Shows all past scans saved to the local database.
 
 ---
 
-## Stopping the App
+## COMMON TASKS — Step by step
 
-Press `Ctrl+C` in the terminal where Streamlit is running. Or just close the terminal.
+### "I just got an approval letter. What do I do?"
+1. Click **📋 Document Scanner**
+2. Upload the approval letter PDF
+3. Select **Approval Letter** from the Document Type dropdown
+4. Click **🔍 Scan Document**
+5. Review the condition table
+6. Check all Borrower conditions → pick **English** or **Spanish** → click **Draft Email** → copy to Outlook
+7. Check all Title conditions → pick **Title** → click **Draft Email** → copy to Outlook
+8. Add the loan to **My Pipeline** with a due date so you don't forget it
 
-To restart: `streamlit run app.py`
+### "I need to find if the borrower already sent me the appraisal"
+1. Go to **📋 Document Scanner**, check the Appraisal condition
+2. Click **Fetch from Folder**
+3. Paste the borrower's folder path
+4. Click **Search** — it finds any PDF with "appraisal" in the filename or content
+
+### "What does Fannie Mae say about LLC vesting?"
+1. Go to **📋 Document Scanner**, check the LLC/entity condition
+2. Click **Check Guidelines**
+3. Results show the exact Fannie Mae sections about entity vesting with page numbers
+
+### "I want to read page 3 of a doc without uploading it"
+1. Go to **📂 Document Reader**
+2. Browse to the folder → open the file → set page to 3
+
+### "I need to email conditions in Spanish"
+1. Scan the document
+2. Check the conditions you want to include
+3. Set **Language** to **Spanish**
+4. Set **Send to** to **Borrower**
+5. Click **Draft Email**
+6. Full professional Spanish email appears — copy to Outlook
 
 ---
 
-## Troubleshooting
+## TROUBLESHOOTING
 
-| Problem | Fix |
-|---------|-----|
-| `streamlit: command not found` | Run `pip install streamlit` again, or use `python -m streamlit run app.py` |
-| PDF shows "could not extract enough text" | The PDF is likely a scanned image (picture of a document). This app needs text-based PDFs. OCR support is planned. |
-| "No specific conditions found" | The PDF format may not match the expected patterns. The raw text preview at the bottom shows what was extracted — check if conditions are visible there. |
-| App is slow on large PDFs | Normal — the engine pauses between pages to stay light on CPU. A 50-page PDF takes ~25 seconds. |
-| Fetch results show low scores | Try a lower threshold or check that the folder actually contains the expected documents. Scanned/image PDFs won't have searchable text. |
-| Duplicate key error | Don't upload the same filename twice in one session. Rename one copy first. |
-| Port 8501 already in use | Another Streamlit instance is running. Kill it with `Ctrl+C` in that terminal, or use `streamlit run app.py --server.port 8502` |
+| Problem | What to do |
+|---|---|
+| **App won't start** — `streamlit: command not found` | Run `pip install streamlit` then try again. Or use `python -m streamlit run app.py` |
+| **"No specific conditions found"** | The PDF is probably a scanned image. This app needs text-based PDFs (digitally created, not photographed). Open in Adobe Acrobat → Tools → Recognize Text, then re-upload. |
+| **Spanish email shows English** | Make sure you selected "Borrower" as the recipient — all party types now have Spanish templates. |
+| **Duplicate key error** | You uploaded the same PDF filename twice. Remove one from the uploader. |
+| **Fetch finds nothing** | The folder may only have scanned/image PDFs (no text layer). Or the condition text is too generic. Try lowering the threshold or searching a parent folder. |
+| **Guidelines indexing freezes** | Close the tab, reopen at http://localhost:8501, and click Check Guidelines again — it resumes from cache. |
+| **Port 8501 already in use** | Another Streamlit is running. Press Ctrl+C in that terminal first. Or run `streamlit run app.py --server.port 8502` |
+| **pipeline.json got wiped** | It's saved in the project folder. If git is set up, `git checkout pipeline.json` restores the last committed version. |
 
 ---
 
-## License
+## SAVING & PUSHING TO GITHUB
 
-MIT
+Your code is connected to GitHub at: `https://github.com/145brice/Processor-Assistant`
+
+**To save everything and push:**
+```
+cd "C:\Users\user\OneDrive\Desktop\processor-traien\Processor-Assistant"
+git add .
+git commit -m "your note here"
+git push
+```
+
+**What gets saved to GitHub:**
+- All `.py` files (app, engine, crm, search, guidelines, db, prompts)
+- `pipeline.json` (your loan pipeline)
+- `README.md`
+- `requirements.txt`
+
+**What does NOT get saved (excluded by .gitignore or just local):**
+- `processor.db` (local user accounts — you'd need to recreate logins on a new machine)
+- `guidelines_index/` folder (rebuilt automatically from the PDFs — no need to push 500MB of JSON)
+
+---
+
+## UPDATING THE APP
+
+When you want to add features or fix bugs:
+1. Make changes in VS Code
+2. Test by running `streamlit run app.py`
+3. When it works, push:
+   ```
+   git add .
+   git commit -m "describe what you changed"
+   git push
+   ```
+
+---
+
+## WHAT'S OFFLINE vs WHAT NEEDS INTERNET
+
+| Feature | Online? |
+|---|---|
+| Scan document | ✅ 100% offline |
+| Draft email | ✅ 100% offline |
+| Fetch from folder | ✅ 100% offline |
+| Check Guidelines | ✅ 100% offline (after PDFs are on Desktop) |
+| Document Reader | ✅ 100% offline |
+| My Pipeline | ✅ 100% offline |
+| Login/Signup | ✅ 100% offline (local SQLite) |
+| Push to GitHub | ❌ Needs internet (only for backup) |
+
+---
+
+## PRIVACY
+
+- PDFs you upload are **read in memory only** — never written to disk by this app.
+- Your pipeline and history are stored locally in `pipeline.json` and `processor.db`.
+- Nothing leaves your computer except when you push to GitHub (which you control).
