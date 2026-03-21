@@ -185,17 +185,25 @@ button[kind="secondary"]:hover {
 [data-testid="stExpander"] {
     background: #3a2878 !important;
     border: 1px solid #4a3a8a !important;
-    border-radius: 10px !important;
-    margin-bottom: 6px !important;
+    border-radius: 8px !important;
+    margin-bottom: 3px !important;
 }
 [data-testid="stExpander"] summary {
     font-weight: 600 !important;
-    color: #e6edf3 !important;
-    font-size: 14px !important;
-    padding: 12px 16px !important;
+    color: #f0f6fc !important;
+    font-size: 13px !important;
+    padding: 7px 12px !important;
+    min-height: 0 !important;
+    line-height: 1.4 !important;
 }
 [data-testid="stExpander"] summary:hover {
-    color: #f0f6fc !important;
+    color: #ffffff !important;
+    background: #4a3a8a !important;
+    border-radius: 8px !important;
+}
+/* Compact the expanded content area */
+[data-testid="stExpander"] > div[data-testid="stExpanderDetails"] {
+    padding: 8px 12px 10px 12px !important;
 }
 
 /* ── Info / warning / error boxes ────────────────────────────── */
@@ -754,70 +762,64 @@ def show_dashboard():
                     "Closer", "Insurance", "Appraiser", "Manager", "Processor",
                 ]
 
-                # One card per condition — checkbox + description + multi-party + notes
+                # Compact condition rows — checkbox + summary line; expand for details
                 selected_conds = []
                 for cond in condition_rows:
                     cnum = cond["num"]
+                    party_key  = f"party_{fkey}_{cnum}"
+                    notes_key  = f"notes_{fkey}_{cnum}"
 
-                    # Default party from PDF — stored as a list for multiselect
-                    party_key = f"party_{fkey}_{cnum}"
+                    # Init party list once from PDF default
                     raw_default = cond["party"] if cond["party"] in PARTY_OPTIONS else "Borrower"
-                    # Init default only once (don't overwrite user edits on rerun)
                     if party_key not in st.session_state:
                         st.session_state[party_key] = [raw_default]
-                    saved_parties = st.session_state[party_key]
-                    # Guard: ensure list, strip any invalid entries
+                    saved_parties = st.session_state.get(party_key, [raw_default])
                     if not isinstance(saved_parties, list):
                         saved_parties = [raw_default]
                     saved_parties = [p for p in saved_parties if p in PARTY_OPTIONS] or [raw_default]
 
-                    # Card layout: checkbox | description
-                    c1, c2 = st.columns([1, 10])
-                    with c1:
-                        checked = st.checkbox("", key=f"chk_{fkey}_{cnum}", label_visibility="collapsed")
-                    with c2:
-                        st.markdown(
-                            f'<div style="padding:6px 0; font-size:14px; font-weight:600; color:#f0f6fc;">'
-                            f'<span style="color:#b794f4; font-weight:700;">#{cnum}</span>'
-                            f'&nbsp;&nbsp;{cond["desc"]}'
-                            f'</div>',
-                            unsafe_allow_html=True,
+                    # Current notes (may be empty)
+                    saved_notes = st.session_state.get(notes_key, "")
+
+                    # ── Compact summary row ──────────────────────────────
+                    badges_html = " ".join(_party_badge(p) for p in saved_parties)
+                    note_preview = f' · <span style="color:#a89ec9;font-style:italic;">{saved_notes[:40]}{"…" if len(saved_notes)>40 else ""}</span>' if saved_notes else ""
+                    expander_label = f"#{cnum}  {cond['desc'][:75]}{'…' if len(cond['desc'])>75 else ''}"
+
+                    row_left, row_right = st.columns([1, 11])
+                    with row_left:
+                        checked = st.checkbox(
+                            "", key=f"chk_{fkey}_{cnum}",
+                            label_visibility="collapsed",
                         )
+                    with row_right:
+                        with st.expander(expander_label, expanded=False):
+                            # Badges inline at top of expanded view
+                            st.markdown(badges_html + note_preview, unsafe_allow_html=True)
+                            st.markdown('<div style="height:4px"></div>', unsafe_allow_html=True)
 
-                    # Multi-party selector — full width below description
-                    new_parties = st.multiselect(
-                        "Responsible parties",
-                        PARTY_OPTIONS,
-                        default=saved_parties,
-                        key=party_key,
-                        label_visibility="collapsed",
-                        placeholder="Select one or more responsible parties...",
-                    )
-                    # Show a badge for each selected party
-                    if new_parties:
-                        badges_html = " ".join(_party_badge(p) for p in new_parties)
-                        st.markdown(badges_html, unsafe_allow_html=True)
+                            # Party multiselect
+                            new_parties = st.multiselect(
+                                "Responsible parties",
+                                PARTY_OPTIONS,
+                                default=saved_parties,
+                                key=party_key,
+                                placeholder="Add parties...",
+                            )
 
-                    # Editable notes / update line
-                    notes_key = f"notes_{fkey}_{cnum}"
-                    st.text_input(
-                        "notes",
-                        key=notes_key,
-                        placeholder=f"Update or note for condition #{cnum}...",
-                        label_visibility="collapsed",
-                    )
-                    st.markdown(
-                        '<div style="height:1px;background:#4a3a8a;margin:6px 0 8px 0;"></div>',
-                        unsafe_allow_html=True,
-                    )
+                            # Notes text input
+                            st.text_input(
+                                "Update / notes",
+                                key=notes_key,
+                                placeholder="Add update or note...",
+                            )
 
                     if checked:
-                        # Pass ALL selected parties; primary = first one
-                        primary = new_parties[0] if new_parties else "Borrower"
+                        primary = saved_parties[0] if saved_parties else "Borrower"
                         selected_conds.append({
                             **cond,
                             "party": primary,
-                            "all_parties": new_parties or ["Borrower"],
+                            "all_parties": saved_parties,
                         })
 
                     if selected_conds:
