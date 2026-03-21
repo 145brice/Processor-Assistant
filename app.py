@@ -23,7 +23,7 @@ html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 .stApp {
-    background: #0d0a1f;
+    background: #2d2060;
 }
 
 /* ── Hide Streamlit chrome ────────────────────────────────────── */
@@ -32,8 +32,8 @@ html, body, [class*="css"] {
 
 /* ── Sidebar ──────────────────────────────────────────────────── */
 [data-testid="stSidebar"] {
-    background: #100c24 !important;
-    border-right: 1px solid #2a1f50 !important;
+    background: #231959 !important;
+    border-right: 1px solid #4a3a8a !important;
 }
 [data-testid="stSidebar"] > div:first-child {
     padding: 1.5rem 1rem;
@@ -42,7 +42,7 @@ html, body, [class*="css"] {
 /* Sidebar nav buttons */
 [data-testid="stSidebar"] button[kind="secondary"] {
     background: transparent !important;
-    border: 1px solid #2a1f50 !important;
+    border: 1px solid #4a3a8a !important;
     color: #cdd9e5 !important;
     border-radius: 8px !important;
     font-size: 14px !important;
@@ -54,7 +54,7 @@ html, body, [class*="css"] {
     width: 100% !important;
 }
 [data-testid="stSidebar"] button[kind="secondary"]:hover {
-    background: #1e1640 !important;
+    background: #3a2878 !important;
     border-color: #7c6ff7 !important;
     color: #f0f6fc !important;
 }
@@ -133,9 +133,9 @@ button[kind="primary"]:hover {
     transform: translateY(-1px) !important;
 }
 button[kind="secondary"] {
-    background: #1e1640 !important;
+    background: #3a2878 !important;
     color: #e6edf3 !important;
-    border: 1px solid #3d2f72 !important;
+    border: 1px solid #6a56b8 !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
     font-size: 14px !important;
@@ -145,7 +145,7 @@ button[kind="secondary"] {
 button[kind="secondary"]:hover {
     border-color: #7c6ff7 !important;
     color: #f0f6fc !important;
-    background: #261d52 !important;
+    background: #4a3a8a !important;
 }
 
 /* ── Inputs & selects ─────────────────────────────────────────── */
@@ -153,8 +153,8 @@ button[kind="secondary"]:hover {
 [data-testid="stTextArea"] textarea,
 [data-testid="stSelectbox"] > div > div,
 [data-testid="stNumberInput"] input {
-    background: #130e2a !important;
-    border: 1px solid #3d2f72 !important;
+    background: #3a2878 !important;
+    border: 1px solid #6a56b8 !important;
     border-radius: 8px !important;
     color: #f0f6fc !important;
     font-size: 14px !important;
@@ -168,8 +168,8 @@ button[kind="secondary"]:hover {
 
 /* ── File uploader ────────────────────────────────────────────── */
 [data-testid="stFileUploader"] {
-    background: #130e2a !important;
-    border: 2px dashed #3d2f72 !important;
+    background: #3a2878 !important;
+    border: 2px dashed #6a56b8 !important;
     border-radius: 12px !important;
     padding: 20px !important;
     transition: border-color 0.2s !important;
@@ -183,8 +183,8 @@ button[kind="secondary"]:hover {
 
 /* ── Expanders ────────────────────────────────────────────────── */
 [data-testid="stExpander"] {
-    background: #130e2a !important;
-    border: 1px solid #2a1f50 !important;
+    background: #3a2878 !important;
+    border: 1px solid #4a3a8a !important;
     border-radius: 10px !important;
     margin-bottom: 6px !important;
 }
@@ -206,7 +206,7 @@ button[kind="secondary"]:hover {
 }
 
 /* ── Dividers ─────────────────────────────────────────────────── */
-hr { border-color: #2a1f50 !important; margin: 16px 0 !important; }
+hr { border-color: #4a3a8a !important; margin: 16px 0 !important; }
 
 /* ── Tabs ─────────────────────────────────────────────────────── */
 [data-testid="stTabs"] [role="tab"] {
@@ -238,20 +238,45 @@ hr { border-color: #2a1f50 !important; margin: 16px 0 !important; }
     border-radius: 4px !important;
 }
 [data-testid="stProgress"] {
-    background: #1e1640 !important;
+    background: #3a2878 !important;
     border-radius: 4px !important;
 }
 
 /* ── Containers (bordered) ────────────────────────────────────── */
 [data-testid="stVerticalBlockBorderWrapper"] {
-    background: #130e2a !important;
-    border: 1px solid #2a1f50 !important;
+    background: #3a2878 !important;
+    border: 1px solid #4a3a8a !important;
     border-radius: 12px !important;
     padding: 16px !important;
 }
 
 /* ── Selectbox dropdown ───────────────────────────────────────── */
-[data-testid="stSelectbox"] svg { color: #a89ec9 !important; }
+[data-testid="stSelectbox"] svg { color: #cdd9e5 !important; }
+
+/* Dropdown popup list */
+[data-baseweb="popover"] ul,
+[data-baseweb="menu"] {
+    background: #3a2878 !important;
+    border: 1px solid #6a56b8 !important;
+    border-radius: 8px !important;
+}
+[data-baseweb="popover"] li,
+[data-baseweb="menu"] li {
+    background: #3a2878 !important;
+    color: #f0f6fc !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+}
+[data-baseweb="popover"] li:hover,
+[data-baseweb="menu"] li:hover {
+    background: #5540a8 !important;
+    color: #ffffff !important;
+}
+[data-baseweb="select"] > div {
+    background: #3a2878 !important;
+    border-color: #6a56b8 !important;
+    color: #f0f6fc !important;
+}
 
 /* ── Toggle ───────────────────────────────────────────────────── */
 [data-testid="stToggle"] > label > div[data-checked="true"] {
@@ -262,13 +287,13 @@ hr { border-color: #2a1f50 !important; margin: 16px 0 !important; }
 [data-testid="stMarkdownContainer"] table {
     width: 100% !important;
     border-collapse: collapse !important;
-    background: #1a1240 !important;
+    background: #3a2878 !important;
     border-radius: 10px !important;
     overflow: hidden !important;
     font-size: 14px !important;
 }
 [data-testid="stMarkdownContainer"] thead tr {
-    background: #261d52 !important;
+    background: #4a3a8a !important;
 }
 [data-testid="stMarkdownContainer"] th {
     color: #b794f4 !important;
@@ -277,17 +302,17 @@ hr { border-color: #2a1f50 !important; margin: 16px 0 !important; }
     padding: 10px 14px !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
-    border-bottom: 1px solid #3d2f72 !important;
+    border-bottom: 1px solid #6a56b8 !important;
 }
 [data-testid="stMarkdownContainer"] td {
     color: #f0f6fc !important;
     font-size: 14px !important;
     font-weight: 500 !important;
     padding: 9px 14px !important;
-    border-bottom: 1px solid #2a1f50 !important;
+    border-bottom: 1px solid #4a3a8a !important;
 }
 [data-testid="stMarkdownContainer"] tr:hover td {
-    background: #261d52 !important;
+    background: #4a3a8a !important;
     color: #ffffff !important;
 }
 
@@ -295,11 +320,11 @@ hr { border-color: #2a1f50 !important; margin: 16px 0 !important; }
 .progress-nav {
     display: flex;
     gap: 3px;
-    background: #130e2a;
+    background: #3a2878;
     border-radius: 10px;
     padding: 5px;
     margin-bottom: 20px;
-    border: 1px solid #2a1f50;
+    border: 1px solid #4a3a8a;
     position: sticky;
     top: 0;
     z-index: 999;
@@ -362,8 +387,8 @@ hr { border-color: #2a1f50 !important; margin: 16px 0 !important; }
 
 /* ── Loan pipeline cards ──────────────────────────────────────── */
 .loan-card {
-    background: #130e2a;
-    border: 1px solid #2a1f50;
+    background: #3a2878;
+    border: 1px solid #4a3a8a;
     border-radius: 10px;
     padding: 12px 16px;
     margin-bottom: 4px;
@@ -380,8 +405,8 @@ hr { border-color: #2a1f50 !important; margin: 16px 0 !important; }
     text-align: center;
     padding: 12px 8px;
     border-radius: 10px;
-    background: #130e2a;
-    border: 1px solid #2a1f50;
+    background: #3a2878;
+    border: 1px solid #4a3a8a;
 }
 .stat-num  { font-size: 26px; font-weight: 800; color: #f0f6fc; line-height: 1; }
 .stat-label { font-size: 11px; color: #8b949e; margin-top: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -390,8 +415,8 @@ hr { border-color: #2a1f50 !important; margin: 16px 0 !important; }
 .login-card {
     max-width: 420px;
     margin: 40px auto 0 auto;
-    background: #130e2a;
-    border: 1px solid #2a1f50;
+    background: #3a2878;
+    border: 1px solid #4a3a8a;
     border-radius: 16px;
     padding: 36px 32px;
 }
@@ -703,30 +728,67 @@ def show_dashboard():
                             })
 
                 st.markdown("### 📋 Conditions")
-                st.markdown(conditions_text)
+                st.caption(f"{len(condition_rows)} condition(s) extracted — party and notes are editable")
 
-                # Email drafting - select multiple conditions to combine
-                if condition_rows:
-                    st.markdown("---")
-                    st.markdown("**Draft an email - select conditions to include:**")
+                PARTY_OPTIONS = [
+                    "Borrower", "Title", "Underwriter", "Jr Underwriter",
+                    "Closer", "Insurance", "Appraiser", "Manager", "Processor",
+                ]
 
-                    # Checkboxes for each condition — party shown as color badge
-                    selected_conds = []
-                    for cond in condition_rows:
-                        badge_html = _party_badge(cond["party"])
-                        col_chk, col_badge = st.columns([6, 1])
-                        with col_chk:
-                            checked = st.checkbox(
-                                f"#{cond['num']} — {cond['desc'][:90]}",
-                                key=f"chk_{fkey}_{cond['num']}",
-                            )
-                        with col_badge:
-                            st.markdown(badge_html, unsafe_allow_html=True)
-                        if checked:
-                            selected_conds.append(cond)
+                # One card per condition — checkbox + editable party + editable notes
+                selected_conds = []
+                for cond in condition_rows:
+                    cnum = cond["num"]
+
+                    # Resolve currently saved party (editable)
+                    party_key = f"party_{fkey}_{cnum}"
+                    default_party = cond["party"]
+                    if default_party not in PARTY_OPTIONS:
+                        default_party = "Borrower"
+                    saved_party = st.session_state.get(party_key, default_party)
+                    if saved_party not in PARTY_OPTIONS:
+                        saved_party = "Borrower"
+
+                    badge_html = _party_badge(saved_party)
+
+                    # Card layout: checkbox | description | party picker
+                    c1, c2, c3 = st.columns([1, 7, 3])
+                    with c1:
+                        checked = st.checkbox("", key=f"chk_{fkey}_{cnum}", label_visibility="collapsed")
+                    with c2:
+                        st.markdown(
+                            f'<div style="padding:6px 0; font-size:14px; font-weight:600; color:#f0f6fc;">'
+                            f'<span style="color:#b794f4; font-weight:700;">#{cnum}</span> &nbsp;{cond["desc"]}'
+                            f'</div>',
+                            unsafe_allow_html=True,
+                        )
+                    with c3:
+                        new_party = st.selectbox(
+                            "Party",
+                            PARTY_OPTIONS,
+                            index=PARTY_OPTIONS.index(saved_party),
+                            key=party_key,
+                            label_visibility="collapsed",
+                        )
+                        st.markdown(badge_html, unsafe_allow_html=True)
+
+                    # Editable notes line below each condition
+                    notes_key = f"notes_{fkey}_{cnum}"
+                    st.text_input(
+                        "Update / notes",
+                        value=st.session_state.get(notes_key, ""),
+                        key=notes_key,
+                        placeholder=f"Add update or note for condition #{cnum}...",
+                        label_visibility="collapsed",
+                    )
+                    st.markdown('<div style="height:2px;border-bottom:1px solid #4a3a8a;margin-bottom:4px"></div>', unsafe_allow_html=True)
+
+                    if checked:
+                        selected_conds.append({**cond, "party": new_party})
 
                     if selected_conds:
                         st.markdown("---")
+                        st.markdown(f"**{len(selected_conds)} condition(s) selected — choose action:**")
                         lc1, lc2, lc3 = st.columns(3)
                         with lc1:
                             email_lang = st.selectbox(
