@@ -991,6 +991,12 @@ def show_dashboard():
                 st.markdown("### 📋 Conditions")
 
                 # ── Split into active and cleared ──────────────────────────
+                STATUS_PRIORITY = {
+                    "Important":      0,
+                    "Needed":         1,
+                    "Requested":      2,
+                    "Ready to Clear": 3,
+                }
                 active_conds  = []
                 cleared_conds = []
                 for cond in condition_rows:
@@ -1000,6 +1006,17 @@ def show_dashboard():
                     else:
                         active_conds.append(cond)
 
+                # Sort active: 1st by status priority, 2nd by primary party name
+                def _sort_key(cond):
+                    sk = f"cstatus_{fkey}_{cond['num']}"
+                    status = st.session_state.get(sk, "Needed")
+                    pk = f"party_{fkey}_{cond['num']}"
+                    parties = st.session_state.get(pk, [cond.get("party", "Borrower")])
+                    primary_party = parties[0] if isinstance(parties, list) and parties else cond.get("party", "Borrower")
+                    return (STATUS_PRIORITY.get(status, 99), primary_party)
+
+                active_conds.sort(key=_sort_key)
+
                 # Count per status for header summary
                 status_counts = {}
                 for cond in condition_rows:
@@ -1007,8 +1024,9 @@ def show_dashboard():
                     s   = st.session_state.get(sk, "Needed")
                     status_counts[s] = status_counts.get(s, 0) + 1
                 summary_parts = [
-                    f"{COND_STATUSES[s]['emoji']} {c} {s}"
-                    for s, c in status_counts.items() if s in COND_STATUSES
+                    f"{COND_STATUSES[s]['emoji']} {status_counts[s]} {s}"
+                    for s in ["Important", "Needed", "Requested", "Ready to Clear", "Cleared"]
+                    if s in status_counts
                 ]
                 st.caption("  ·  ".join(summary_parts) if summary_parts else f"{len(condition_rows)} conditions")
 
