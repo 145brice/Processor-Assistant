@@ -763,8 +763,6 @@ def show_dashboard():
                                 "party": cells[2], "status": cells[3],
                             })
 
-                st.markdown("### 📋 Conditions")
-
                 PARTY_OPTIONS = [
                     "Borrower", "Title", "Underwriter", "Jr Underwriter",
                     "Closer", "Insurance", "Appraiser", "Manager", "Processor",
@@ -780,11 +778,14 @@ def show_dashboard():
                 }
 
                 def _render_condition(cond, fkey, PARTY_OPTIONS, COND_STATUSES):
-                    """Render one compact condition row with expandable details."""
+                    """Compact condition row — expand for status, parties, notes, fetch, guidelines."""
+                    import os as _os
                     cnum       = cond["num"]
                     party_key  = f"party_{fkey}_{cnum}"
                     notes_key  = f"notes_{fkey}_{cnum}"
                     status_key = f"cstatus_{fkey}_{cnum}"
+                    fetch_key  = f"cfetch_{fkey}_{cnum}"
+                    guide_key  = f"cguide_{fkey}_{cnum}"
 
                     # Init party
                     raw_default = cond["party"] if cond["party"] in PARTY_OPTIONS else "Borrower"
@@ -802,12 +803,10 @@ def show_dashboard():
                     if cur_status not in COND_STATUSES:
                         cur_status = "Needed"
                     status_info = COND_STATUSES[cur_status]
-
                     saved_notes = st.session_state.get(notes_key, "")
 
-                    # Build expander label: emoji + # + truncated desc
-                    short_desc  = cond["desc"][:72] + ("…" if len(cond["desc"]) > 72 else "")
-                    exp_label   = f"{status_info['emoji']} #{cnum}  {short_desc}"
+                    short_desc = cond["desc"][:72] + ("…" if len(cond["desc"]) > 72 else "")
+                    exp_label  = f"{status_info['emoji']} #{cnum}  {short_desc}"
 
                     col_chk, col_exp = st.columns([1, 11])
                     with col_chk:
@@ -815,13 +814,12 @@ def show_dashboard():
                                               label_visibility="collapsed")
                     with col_exp:
                         with st.expander(exp_label, expanded=False):
-                            # ── Status buttons row ───────────────────────
+                            # ── Status buttons ───────────────────────────
                             st.markdown("**Status:**")
                             sb = st.columns(len(COND_STATUSES))
                             for i, (sname, sinfo) in enumerate(COND_STATUSES.items()):
                                 with sb[i]:
                                     active = "✓ " if cur_status == sname else ""
-                                    border = "3px solid #fff" if cur_status == sname else f"2px solid {sinfo['color']}"
                                     if st.button(
                                         f"{sinfo['emoji']} {active}{sinfo['label']}",
                                         key=f"sbtn_{fkey}_{cnum}_{sname}",
@@ -834,10 +832,8 @@ def show_dashboard():
 
                             # ── Party multiselect ────────────────────────
                             new_parties = st.multiselect(
-                                "Responsible parties",
-                                PARTY_OPTIONS,
-                                default=saved_parties,
-                                key=party_key,
+                                "Responsible parties", PARTY_OPTIONS,
+                                default=saved_parties, key=party_key,
                                 placeholder="Add parties...",
                             )
                             if new_parties:
@@ -847,15 +843,152 @@ def show_dashboard():
                                 )
 
                             # ── Notes ────────────────────────────────────
-                            st.text_input(
-                                "Update / notes",
-                                key=notes_key,
-                                placeholder="Add update or note...",
-                            )
+                            st.text_input("Update / notes", key=notes_key,
+                                          placeholder="Add update or note...")
                             if saved_notes:
                                 st.caption(f"💬 {saved_notes}")
 
+                            st.markdown("---")
+
+                            # ── Fetch from Folder ────────────────────────
+                            fa, fb = st.columns([1, 1])
+                            with fa:
+                                fetch_btn = st.button("📂 Fetch from Folder",
+                                    key=f"fetchbtn_{fkey}_{cnum}", use_container_width=True)
+                            with fb:
+                                guide_btn = st.button("📋 Check Guidelines",
+                                    key=f"guidebtn_{fkey}_{cnum}", use_container_width=True)
+
+                            if fetch_btn:
+                                st.session_state[f"show_cfetch_{fkey}_{cnum}"] = True
+                            if st.session_state.get(f"show_cfetch_{fkey}_{cnum}"):
+                                folder_path = st.text_input(
+                                    "Folder path:",
+                                    value=st.session_state.get("last_fetch_folder", ""),
+                                    key=f"cfolder_{fkey}_{cnum}",
+                                    placeholder=r"C:\Users\...\BorrowerName",
+                                )
+                                sc1, sc2 = st.columns([1, 3])
+                                with sc1:
+                                    do_search = st.button("Search",
+                                        key=f"csearch_{fkey}_{cnum}", use_container_width=True)
+                                with sc2:
+                                    if st.button("Cancel", key=f"ccancel_{fkey}_{cnum}"):
+                                        st.session_state[f"show_cfetch_{fkey}_{cnum}"] = False
+                                        st.rerun()
+                                if do_search and folder_path:
+                                    st.session_state["last_fetch_folder"] = folder_path
+                                    if not _os.path.isdir(folder_path):
+                                        st.error(f"Folder not found: {folder_path}")
+                                    else:
+                                        from folder_search import scan_folder
+                                        prog = st.progress(0, text="Scanning...")
+                                        res = scan_folder(folder_path, [cond], threshold=60,
+                                            progress_callback=lambda p, m: prog.progress(min(p,100), text=m))
+                                        st.session_state[fetch_key] = res
+                                        st.session_state[f"show_cfetch_{fkey}_{cnum}"] = False
+
+                            # Fetch results for this condition
+                            if st.session_state.get(fetch_key):
+                                fr = st.session_state[fetch_key]
+                                matches = fr.get(cond["num"], {}).get("matches", [])
+                                if matches:
+                                    for m in matches:
+                                        score = m["score"]
+                                        dot = "🟢" if score >= 80 else ("🟡" if score >= 65 else "🔴")
+                                        pages_str = f" | Pages: {', '.join(str(p) for p in m['matched_pages'])}" if m["matched_pages"] else ""
+                                        st.markdown(f"{dot} **{m['file_name']}** — {m['match_type']} ({score}%){pages_str}")
+                                        st.caption(f"📁 {m['file_path']}")
+                                        if m.get("snippet"):
+                                            st.text(m["snippet"][:180])
+                                else:
+                                    st.info("No matching files found for this condition.")
+                                if st.button("Clear", key=f"clrfetch_{fkey}_{cnum}"):
+                                    st.session_state[fetch_key] = None
+                                    st.rerun()
+
+                            # ── Check Guidelines ─────────────────────────
+                            if guide_btn:
+                                from guidelines import check_conditions_against_guidelines, get_available_guidelines
+                                available = get_available_guidelines()
+                                if not available:
+                                    st.error("No guideline PDFs found on Desktop.")
+                                else:
+                                    gprog = st.progress(0, text="Searching guidelines...")
+                                    gres = check_conditions_against_guidelines(
+                                        [cond],
+                                        progress_callback=lambda p, m: gprog.progress(min(p,100), text=m),
+                                    )
+                                    st.session_state[guide_key] = gres
+
+                            if st.session_state.get(guide_key):
+                                gr = st.session_state[guide_key]
+                                refs = gr.get(cond["num"], {}).get("guidelines", [])
+                                if refs:
+                                    for ref in refs:
+                                        score = ref["score"]
+                                        dot = "🟢" if score >= 80 else ("🟡" if score >= 65 else "🔴")
+                                        sec = f" | {ref['section']}" if ref.get("section") else ""
+                                        st.markdown(f"{dot} **{ref['source']}** — Page {ref['page']}{sec} ({score}%)")
+                                        st.container(border=True).markdown(ref["excerpt"][:400])
+                                else:
+                                    st.info("No guideline references found.")
+                                if st.button("Clear", key=f"clrguide_{fkey}_{cnum}"):
+                                    st.session_state[guide_key] = None
+                                    st.rerun()
+
                     return checked, cur_status, saved_parties
+
+                # ── Draft Email — always visible, above conditions ─────────
+                st.markdown("### ✉️ Draft Email")
+                # Read which conditions are checked from session state (persists across reruns)
+                pre_selected = []
+                for cond in condition_rows:
+                    if st.session_state.get(f"chk_{fkey}_{cond['num']}", False):
+                        pk = f"party_{fkey}_{cond['num']}"
+                        sp = st.session_state.get(pk, [cond["party"]])
+                        if not isinstance(sp, list):
+                            sp = [cond["party"]]
+                        sp = [p for p in sp if p in PARTY_OPTIONS] or ["Borrower"]
+                        pre_selected.append({**cond, "party": sp[0], "all_parties": sp})
+
+                em_c1, em_c2, em_c3 = st.columns([2, 2, 3])
+                with em_c1:
+                    email_lang = st.selectbox("Language", ["English", "Spanish"],
+                                              key=f"lang_{fkey}")
+                with em_c2:
+                    flat_parties = []
+                    for c in pre_selected:
+                        for p in c.get("all_parties", [c["party"]]):
+                            if p not in flat_parties:
+                                flat_parties.append(p)
+                    if not flat_parties:
+                        flat_parties = PARTY_OPTIONS
+                    recipient = st.selectbox("Send to", flat_parties, key=f"recip_{fkey}")
+                with em_c3:
+                    if pre_selected:
+                        st.markdown(
+                            f'<div style="padding-top:8px; font-size:13px; color:#cdd9e5;">'
+                            f'✅ {len(pre_selected)} condition(s) checked</div>',
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.caption("Check conditions below to include them")
+
+                draft_clicked = st.button("✉️ Draft Email", key=f"draft_{fkey}",
+                                          type="primary", use_container_width=False)
+                if draft_clicked:
+                    from ai_engine import draft_email
+                    if pre_selected:
+                        cond_lines = [f"- Condition #{c['num']}: {c['desc']}" for c in pre_selected]
+                    else:
+                        cond_lines = ["(No conditions selected — add details manually)"]
+                    email_text = draft_email("\n".join(cond_lines), recipient, email_lang)
+                    st.container(border=True).markdown(email_text)
+                    st.caption("Copy and paste into your email client. Review before sending.")
+
+                st.markdown("---")
+                st.markdown("### 📋 Conditions")
 
                 # ── Split into active and cleared ──────────────────────────
                 active_conds  = []
@@ -909,211 +1042,7 @@ def show_dashboard():
                                     "cond_status": cur_status,
                                 })
 
-                if selected_conds:
-                        st.markdown("---")
-                        st.markdown(f"**{len(selected_conds)} condition(s) selected — choose action:**")
-                        lc1, lc2, lc3 = st.columns(3)
-                        with lc1:
-                            email_lang = st.selectbox(
-                                "Language", ["English", "Spanish"],
-                                key=f"lang_{fkey}",
-                            )
-                        with lc2:
-                            # All parties across all selected conditions
-                            all_parties_flat = []
-                            for c in selected_conds:
-                                for p in c.get("all_parties", [c["party"]]):
-                                    if p not in all_parties_flat:
-                                        all_parties_flat.append(p)
-                            recipient = st.selectbox(
-                                "Send to", all_parties_flat,
-                                key=f"recip_{fkey}",
-                            )
-                        with lc3:
-                            st.markdown(f"**{len(selected_conds)} condition(s) selected**")
-
-                        btn_col1, btn_col2, btn_col3 = st.columns(3)
-                        with btn_col1:
-                            draft_clicked = st.button("Draft Email", key=f"draft_{fkey}", use_container_width=True)
-                        with btn_col2:
-                            fetch_clicked = st.button("Fetch from Folder", key=f"fetch_{fkey}", use_container_width=True)
-                        with btn_col3:
-                            guidelines_clicked = st.button("Check Guidelines", key=f"guide_{fkey}", use_container_width=True)
-
-                        # --- Draft Email ---
-                        if draft_clicked:
-                            from ai_engine import draft_email
-                            cond_lines = []
-                            for c in selected_conds:
-                                cond_lines.append(
-                                    f"- Condition #{c['num']}: {c['desc']} (Status: {c['status']})"
-                                )
-                            combined = "\n".join(cond_lines)
-                            email_text = draft_email(combined, recipient, email_lang)
-                            st.container(border=True).markdown(email_text)
-                            st.caption("Copy and paste into your email client. Review before sending.")
-
-                        # --- Fetch from Folder ---
-                        if fetch_clicked:
-                            st.session_state[f"show_fetch_{fkey}"] = True
-
-                        if st.session_state.get(f"show_fetch_{fkey}"):
-                            st.markdown("---")
-                            st.markdown("**Fetch borrower folder?**")
-                            folder_path = st.text_input(
-                                "Folder path (paste or type the full path to the borrower's folder):",
-                                value=st.session_state.get("last_fetch_folder", ""),
-                                key=f"folder_{fkey}",
-                                placeholder=r"C:\Users\...\BorrowerName",
-                            )
-
-                            search_col1, search_col2 = st.columns([1, 3])
-                            with search_col1:
-                                search_clicked = st.button("Search", key=f"search_{fkey}", use_container_width=True)
-                            with search_col2:
-                                cancel_clicked = st.button("Cancel", key=f"cancel_fetch_{fkey}")
-
-                            if cancel_clicked:
-                                st.session_state[f"show_fetch_{fkey}"] = False
-                                st.rerun()
-
-                            if search_clicked and folder_path:
-                                st.session_state["last_fetch_folder"] = folder_path
-                                import os
-                                if not os.path.isdir(folder_path):
-                                    st.error(f"Folder not found: {folder_path}")
-                                else:
-                                    from folder_search import scan_folder
-                                    progress = st.progress(0, text="Scanning folder...")
-
-                                    def update_progress(pct, msg):
-                                        progress.progress(min(pct, 100), text=msg)
-
-                                    fetch_results = scan_folder(
-                                        folder_path, selected_conds,
-                                        threshold=60, progress_callback=update_progress,
-                                    )
-
-                                    if "error" in fetch_results:
-                                        st.error(fetch_results["error"])
-                                    else:
-                                        st.session_state["fetch_results"] = fetch_results
-                                        st.session_state[f"show_fetch_{fkey}"] = False
-
-                        # --- Display Fetch Results ---
-                        if st.session_state.get("fetch_results"):
-                            st.markdown("---")
-                            st.markdown("### Fetch Results")
-                            fetch_results = st.session_state["fetch_results"]
-                            any_found = False
-
-                            for cnum, cdata in fetch_results.items():
-                                if cnum == "error":
-                                    continue
-                                matches = cdata.get("matches", [])
-                                desc_short = cdata["desc"][:80]
-
-                                if matches:
-                                    any_found = True
-                                    with st.expander(f"Condition #{cnum}: {desc_short} ({len(matches)} match{'es' if len(matches) != 1 else ''})"):
-                                        for match in matches:
-                                            score = match["score"]
-                                            if score >= 80:
-                                                badge = "🟢"
-                                            elif score >= 65:
-                                                badge = "🟡"
-                                            else:
-                                                badge = "🔴"
-                                            pages_str = ""
-                                            if match["matched_pages"]:
-                                                pages_str = f" | Pages: {', '.join(str(p) for p in match['matched_pages'])}"
-                                            st.markdown(
-                                                f"{badge} **{match['file_name']}** — "
-                                                f"{match['match_type']} match ({score}%){pages_str}"
-                                            )
-                                            st.caption(f"📁 {match['file_path']}")
-                                            if match.get("snippet"):
-                                                st.text(match["snippet"][:200])
-                                else:
-                                    st.caption(f"Condition #{cnum}: {desc_short} — no matches found")
-
-                            if not any_found:
-                                st.info("No matching documents found in that folder for the selected conditions.")
-
-                            if st.button("Clear fetch results", key=f"clear_fetch_{fkey}"):
-                                st.session_state["fetch_results"] = None
-                                st.rerun()
-
-                        # --- Check Guidelines ---
-                        if guidelines_clicked:
-                            from guidelines import check_conditions_against_guidelines, get_available_guidelines
-                            available = get_available_guidelines()
-                            if not available:
-                                st.error("No guideline PDFs found. Place 'Fannie Mae.pdf' and/or 'Freddie Mac.pdf' on your Desktop.")
-                            else:
-                                guide_names = [g["name"] for g in available]
-                                cached_status = ", ".join(
-                                    f"{g['name']} ({'cached' if g['indexed'] else 'will index'})"
-                                    for g in available
-                                )
-                                st.info(f"Guidelines found: {cached_status}")
-                                progress = st.progress(0, text="Loading guidelines...")
-
-                                def guide_progress(pct, msg):
-                                    progress.progress(min(pct, 100), text=msg)
-
-                                guide_results = check_conditions_against_guidelines(
-                                    selected_conds,
-                                    progress_callback=guide_progress,
-                                )
-
-                                if "error" in guide_results:
-                                    st.error(guide_results["error"])
-                                else:
-                                    st.session_state["guide_results"] = guide_results
-
-                        # --- Display Guidelines Results ---
-                        if st.session_state.get("guide_results"):
-                            st.markdown("---")
-                            st.markdown("### Guideline References")
-                            guide_results = st.session_state["guide_results"]
-
-                            for cnum, cdata in guide_results.items():
-                                if cnum == "error":
-                                    continue
-                                guidelines = cdata.get("guidelines", [])
-                                desc_short = cdata["desc"][:80]
-
-                                if guidelines:
-                                    with st.expander(
-                                        f"Condition #{cnum}: {desc_short} "
-                                        f"({len(guidelines)} reference{'s' if len(guidelines) != 1 else ''})",
-                                        expanded=False,
-                                    ):
-                                        for gi, ref in enumerate(guidelines):
-                                            score = ref["score"]
-                                            if score >= 80:
-                                                badge = "🟢"
-                                            elif score >= 65:
-                                                badge = "🟡"
-                                            else:
-                                                badge = "🔴"
-
-                                            section_str = f" | {ref['section']}" if ref.get("section") else ""
-                                            st.markdown(
-                                                f"{badge} **{ref['source']}** — "
-                                                f"Page {ref['page']}{section_str} "
-                                                f"(relevance: {score}%)"
-                                            )
-                                            st.container(border=True).markdown(
-                                                ref["excerpt"][:500]
-                                            )
-                                else:
-                                    st.caption(f"Condition #{cnum}: {desc_short} — no guideline references found")
-
-                            if st.button("Clear guideline results", key=f"clear_guide_{fkey}"):
-                                st.session_state["guide_results"] = None
-                                st.rerun()
+                # (Fetch and Guidelines are now inside each condition expander above)
 
                 st.markdown("---")
                 st.caption(
