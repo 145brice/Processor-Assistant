@@ -16,15 +16,220 @@ st.set_page_config(
 # --- Custom CSS ---
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+/* ── Global reset & base ──────────────────────────────────────── */
+html, body, [class*="css"] {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+}
+.stApp {
+    background: #08090d;
+}
+
+/* ── Hide Streamlit chrome ────────────────────────────────────── */
+#MainMenu, footer, header { visibility: hidden; height: 0; }
+.stDeployButton { display: none; }
+
+/* ── Sidebar ──────────────────────────────────────────────────── */
+[data-testid="stSidebar"] {
+    background: #0d1117 !important;
+    border-right: 1px solid #1e2530 !important;
+}
+[data-testid="stSidebar"] > div:first-child {
+    padding: 1.5rem 1rem;
+}
+
+/* Sidebar nav buttons */
+[data-testid="stSidebar"] button[kind="secondary"] {
+    background: transparent !important;
+    border: 1px solid #1e2530 !important;
+    color: #8b949e !important;
+    border-radius: 8px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    text-align: left !important;
+    padding: 10px 14px !important;
+    margin-bottom: 2px !important;
+    transition: all 0.15s ease !important;
+    width: 100% !important;
+}
+[data-testid="stSidebar"] button[kind="secondary"]:hover {
+    background: #161b22 !important;
+    border-color: #4f8ef7 !important;
+    color: #e6edf3 !important;
+}
+
+/* Sidebar toggle */
+[data-testid="stSidebar"] [data-testid="stToggle"] label {
+    font-size: 12px !important;
+    color: #8b949e !important;
+}
+
+/* ── Main content area ────────────────────────────────────────── */
+.block-container {
+    padding: 1.5rem 2rem 3rem 2rem !important;
+    max-width: 1300px !important;
+}
+
+/* Page headings */
+h1 { font-size: 26px !important; font-weight: 800 !important; color: #e6edf3 !important; letter-spacing: -0.5px; }
+h2 { font-size: 20px !important; font-weight: 700 !important; color: #e6edf3 !important; }
+h3 { font-size: 15px !important; font-weight: 600 !important; color: #c9d1d9 !important; }
+p, li, label { color: #8b949e !important; font-size: 13px !important; }
+
+/* ── Buttons ──────────────────────────────────────────────────── */
+button[kind="primary"] {
+    background: linear-gradient(135deg, #4f8ef7 0%, #2563eb 100%) !important;
+    color: #fff !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    padding: 0 20px !important;
+    height: 38px !important;
+    box-shadow: 0 2px 8px #4f8ef730 !important;
+    transition: all 0.15s ease !important;
+}
+button[kind="primary"]:hover {
+    background: linear-gradient(135deg, #6ea8fe 0%, #3b82f6 100%) !important;
+    box-shadow: 0 4px 16px #4f8ef750 !important;
+    transform: translateY(-1px) !important;
+}
+button[kind="secondary"] {
+    background: #161b22 !important;
+    color: #c9d1d9 !important;
+    border: 1px solid #30363d !important;
+    border-radius: 8px !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    height: 38px !important;
+    transition: all 0.15s ease !important;
+}
+button[kind="secondary"]:hover {
+    border-color: #4f8ef7 !important;
+    color: #e6edf3 !important;
+    background: #1c2333 !important;
+}
+
+/* ── Inputs & selects ─────────────────────────────────────────── */
+[data-testid="stTextInput"] input,
+[data-testid="stTextArea"] textarea,
+[data-testid="stSelectbox"] > div > div,
+[data-testid="stNumberInput"] input {
+    background: #0d1117 !important;
+    border: 1px solid #30363d !important;
+    border-radius: 8px !important;
+    color: #e6edf3 !important;
+    font-size: 13px !important;
+    font-family: 'Inter', sans-serif !important;
+}
+[data-testid="stTextInput"] input:focus,
+[data-testid="stTextArea"] textarea:focus {
+    border-color: #4f8ef7 !important;
+    box-shadow: 0 0 0 3px #4f8ef720 !important;
+}
+
+/* ── File uploader ────────────────────────────────────────────── */
+[data-testid="stFileUploader"] {
+    background: #0d1117 !important;
+    border: 2px dashed #1e2530 !important;
+    border-radius: 12px !important;
+    padding: 20px !important;
+    transition: border-color 0.2s !important;
+}
+[data-testid="stFileUploader"]:hover {
+    border-color: #4f8ef7 !important;
+}
+[data-testid="stFileUploader"] label {
+    color: #8b949e !important;
+}
+
+/* ── Expanders ────────────────────────────────────────────────── */
+[data-testid="stExpander"] {
+    background: #0d1117 !important;
+    border: 1px solid #1e2530 !important;
+    border-radius: 10px !important;
+    margin-bottom: 6px !important;
+}
+[data-testid="stExpander"] summary {
+    font-weight: 600 !important;
+    color: #c9d1d9 !important;
+    font-size: 13px !important;
+    padding: 12px 16px !important;
+}
+[data-testid="stExpander"] summary:hover {
+    color: #e6edf3 !important;
+}
+
+/* ── Info / warning / error boxes ────────────────────────────── */
+[data-testid="stAlert"] {
+    border-radius: 8px !important;
+    border-width: 1px !important;
+    font-size: 13px !important;
+}
+
+/* ── Dividers ─────────────────────────────────────────────────── */
+hr { border-color: #1e2530 !important; margin: 16px 0 !important; }
+
+/* ── Tabs ─────────────────────────────────────────────────────── */
+[data-testid="stTabs"] [role="tab"] {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: #8b949e !important;
+    border-radius: 6px 6px 0 0 !important;
+    padding: 8px 18px !important;
+}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+    color: #4f8ef7 !important;
+    border-bottom: 2px solid #4f8ef7 !important;
+    background: transparent !important;
+}
+
+/* ── Checkbox ─────────────────────────────────────────────────── */
+[data-testid="stCheckbox"] label {
+    font-size: 13px !important;
+    color: #c9d1d9 !important;
+}
+
+/* ── Caption / small text ─────────────────────────────────────── */
+[data-testid="stCaptionContainer"] p,
+.stCaption { color: #484f58 !important; font-size: 12px !important; }
+
+/* ── Progress bar ─────────────────────────────────────────────── */
+[data-testid="stProgress"] > div > div {
+    background: linear-gradient(90deg, #4f8ef7, #2563eb) !important;
+    border-radius: 4px !important;
+}
+[data-testid="stProgress"] {
+    background: #1e2530 !important;
+    border-radius: 4px !important;
+}
+
+/* ── Containers (bordered) ────────────────────────────────────── */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: #0d1117 !important;
+    border: 1px solid #1e2530 !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+}
+
+/* ── Selectbox dropdown ───────────────────────────────────────── */
+[data-testid="stSelectbox"] svg { color: #8b949e !important; }
+
+/* ── Toggle ───────────────────────────────────────────────────── */
+[data-testid="stToggle"] > label > div[data-checked="true"] {
+    background: #4f8ef7 !important;
+}
+
 /* ── Progress nav bar ─────────────────────────────────────────── */
 .progress-nav {
     display: flex;
-    gap: 2px;
-    background: #0e1117;
+    gap: 3px;
+    background: #0d1117;
     border-radius: 10px;
-    padding: 6px;
-    margin-bottom: 24px;
-    border: 1px solid #333;
+    padding: 5px;
+    margin-bottom: 20px;
+    border: 1px solid #1e2530;
     position: sticky;
     top: 0;
     z-index: 999;
@@ -32,89 +237,106 @@ st.markdown("""
 }
 .pn-step {
     flex: 1;
-    min-width: 90px;
+    min-width: 80px;
     text-align: center;
-    padding: 8px 6px;
-    border-radius: 8px;
-    font-size: 11px;
+    padding: 7px 5px;
+    border-radius: 7px;
+    font-size: 10px;
     font-weight: 600;
     text-decoration: none;
-    transition: all 0.2s;
+    transition: all 0.15s;
     line-height: 1.3;
+    color: #484f58;
 }
-.pn-step.done    { background: #1a5c2a; color: #8f8; }
-.pn-step.active  { background: #0e4da4; color: #fff; }
-.pn-step.pending { background: #1e1e1e; color: #666; }
-.pn-step:hover   { background: #2a2a2a; color: #fff; transform: scale(1.02); }
-.pn-num {
-    display: block;
-    font-size: 14px;
-    font-weight: 700;
-    margin-bottom: 2px;
-}
-.section-anchor {
-    display: block;
-    position: relative;
-    top: -100px;
-    visibility: hidden;
-}
+.pn-step.done    { background: #0d2818; color: #3fb950; border: 1px solid #238636; }
+.pn-step.active  { background: #1c2d4f; color: #79c0ff; border: 1px solid #4f8ef7; }
+.pn-step.pending { background: transparent; color: #484f58; }
+.pn-step:hover   { background: #161b22; color: #c9d1d9; }
+.pn-num { display: block; font-size: 13px; font-weight: 700; margin-bottom: 1px; }
+.section-anchor  { display: block; position: relative; top: -100px; visibility: hidden; }
 
 /* ── Party / condition badges ─────────────────────────────────── */
 .badge {
     display: inline-block;
-    padding: 2px 10px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 700;
-    color: #fff;
-    margin: 1px 3px;
-    letter-spacing: 0.3px;
+    padding: 2px 9px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    margin: 1px 2px;
+    letter-spacing: 0.2px;
 }
-.badge-borrower     { background: #1565C0; }
-.badge-title        { background: #6A1B9A; }
-.badge-underwriter  { background: #E65100; }
-.badge-insurance    { background: #00695C; }
-.badge-closer       { background: #c8971a; color: #000; }
-.badge-jr           { background: #AD1457; }
-.badge-manager      { background: #283593; }
-.badge-appraiser    { background: #558B2F; }
-.badge-default      { background: #455A64; }
+.badge-borrower    { background: #1c2d4f; color: #79c0ff; border: 1px solid #2563eb; }
+.badge-title       { background: #2d1b4f; color: #d2a8ff; border: 1px solid #6A1B9A; }
+.badge-underwriter { background: #3d1a00; color: #ffa657; border: 1px solid #E65100; }
+.badge-insurance   { background: #0d2f2b; color: #56d364; border: 1px solid #00695C; }
+.badge-closer      { background: #2e2200; color: #e3b341; border: 1px solid #c8971a; }
+.badge-jr          { background: #3d0d25; color: #f778ba; border: 1px solid #AD1457; }
+.badge-manager     { background: #0d1433; color: #79c0ff; border: 1px solid #283593; }
+.badge-appraiser   { background: #1a2b0d; color: #7ee787; border: 1px solid #558B2F; }
+.badge-default     { background: #161b22; color: #8b949e; border: 1px solid #30363d; }
 
-/* ── Pipeline / CRM status chips ─────────────────────────────── */
+/* ── Pipeline status chips ────────────────────────────────────── */
 .status-chip {
     display: inline-block;
-    padding: 3px 12px;
-    border-radius: 14px;
-    font-size: 12px;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+}
+.status-pending   { background: #3d0d0d; color: #ff7b72; border: 1px solid #c0392b; }
+.status-requested { background: #3d2200; color: #ffa657; border: 1px solid #e67e22; }
+.status-cleared   { background: #0d2818; color: #56d364; border: 1px solid #27ae60; }
+.status-overdue   { background: #1e2530; color: #8b949e; border: 1px solid #484f58; }
+.status-closed    { background: #0d1117; color: #484f58; border: 1px solid #30363d; }
+
+/* ── Loan pipeline cards ──────────────────────────────────────── */
+.loan-card {
+    background: #0d1117;
+    border: 1px solid #1e2530;
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin-bottom: 4px;
+    transition: border-color 0.15s;
+}
+.loan-card:hover { border-color: #4f8ef7; }
+.loan-num   { font-size: 14px; font-weight: 800; color: #79c0ff; font-family: 'Inter', monospace; }
+.loan-name  { font-size: 13px; color: #c9d1d9; font-weight: 500; }
+.loan-due   { font-size: 11px; color: #484f58; }
+.loan-missing { font-size: 11px; color: #ffa657; }
+
+/* ── Stat cards (pipeline counts) ────────────────────────────── */
+.stat-card {
+    text-align: center;
+    padding: 12px 8px;
+    border-radius: 10px;
+    background: #0d1117;
+    border: 1px solid #1e2530;
+}
+.stat-num  { font-size: 26px; font-weight: 800; color: #e6edf3; line-height: 1; }
+.stat-label { font-size: 11px; color: #484f58; margin-top: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+
+/* ── Login card ───────────────────────────────────────────────── */
+.login-card {
+    max-width: 420px;
+    margin: 40px auto 0 auto;
+    background: #0d1117;
+    border: 1px solid #1e2530;
+    border-radius: 16px;
+    padding: 36px 32px;
+}
+.login-title {
+    font-size: 24px;
     font-weight: 800;
-    letter-spacing: 0.5px;
+    color: #e6edf3;
+    text-align: center;
+    margin-bottom: 4px;
 }
-.status-pending    { background: #c0392b22; color: #e74c3c; border: 1px solid #c0392b; }
-.status-requested  { background: #e67e2222; color: #f39c12; border: 1px solid #e67e22; }
-.status-cleared    { background: #27ae6022; color: #2ecc71; border: 1px solid #27ae60; }
-.status-overdue    { background: #7f8c8d22; color: #95a5a6; border: 1px solid #7f8c8d; }
-.status-closed     { background: #2c3e5022; color: #bdc3c7; border: 1px solid #2c3e50; }
-
-/* ── Pipeline table rows ──────────────────────────────────────── */
-.loan-row {
-    background: #161b22;
-    border: 1px solid #30363d;
-    border-radius: 8px;
-    padding: 10px 14px;
-    margin-bottom: 6px;
-}
-.loan-row:hover { border-color: #58a6ff; }
-.loan-num  { font-size: 16px; font-weight: 800; color: #58a6ff; }
-.loan-name { font-size: 14px; color: #e6edf3; }
-.loan-due  { font-size: 12px; color: #8b949e; }
-.loan-missing { font-size: 12px; color: #f0883e; }
-
-/* ── Big action buttons row ───────────────────────────────────── */
-div[data-testid="column"] > div > div > div > button {
-    min-height: 54px;
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    border-radius: 10px !important;
+.login-sub {
+    font-size: 13px;
+    color: #484f58;
+    text-align: center;
+    margin-bottom: 24px;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -172,21 +394,32 @@ def render_progress_bar(completed_steps):
 
 def show_login_page():
     """Login / Signup page."""
-    st.markdown("# Processor Traien")
-    st.markdown("### Mortgage Document Processing - Offline Mode")
+    st.markdown("""
+    <div style="text-align:center; padding: 48px 0 8px 0;">
+      <div style="font-size:36px; margin-bottom:6px;">📋</div>
+      <div style="font-size:28px; font-weight:800; color:#e6edf3; letter-spacing:-0.5px;">
+        Processor Traien
+      </div>
+      <div style="font-size:13px; color:#484f58; margin-top:4px;">
+        Offline Mortgage Processing &nbsp;·&nbsp; No cloud &nbsp;·&nbsp; No API keys
+      </div>
+    </div>
+    """, unsafe_allow_html=True)
 
-    # Sandbox button top center, compact
+    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
     _, sb_col, _ = st.columns([1, 1, 1])
     with sb_col:
-        if st.button("Try Sandbox", type="primary"):
+        if st.button("⚡ Try Sandbox — No Account Needed", type="primary", use_container_width=True):
             st.session_state.authenticated = True
             st.session_state.user_id = "sandbox"
             st.session_state.user_email = "sandbox@demo"
             st.session_state.sandbox_mode = True
             st.session_state.page = "dashboard"
             st.rerun()
-        st.caption("Free - No account needed")
+        st.caption("Free & unlimited — results not saved between sessions")
 
+    st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
     st.markdown("---")
 
     tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
@@ -240,8 +473,18 @@ def show_login_page():
 def show_sidebar():
     """Sidebar navigation."""
     with st.sidebar:
-        st.markdown("### Processor Traien")
-        st.markdown(f"**{st.session_state.user_email}**")
+        st.markdown("""
+        <div style="padding: 4px 0 16px 0;">
+          <div style="font-size:18px; font-weight:800; color:#e6edf3; letter-spacing:-0.3px;">
+            📋 Processor Traien
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="font-size:11px; color:#484f58; margin-bottom:12px;">'
+            f'{st.session_state.user_email}</div>',
+            unsafe_allow_html=True,
+        )
         st.markdown("---")
 
         is_sandbox = st.toggle(
@@ -742,10 +985,10 @@ def show_pipeline():
     for i, status in enumerate(STATUS_OPTIONS):
         with sc[i]:
             st.markdown(
-                f'<div style="text-align:center; padding:8px; border-radius:8px; '
-                f'background:#161b22; border:1px solid #30363d;">'
-                f'{STATUS_EMOJI[status]} <strong style="font-size:20px">{counts[status]}</strong>'
-                f'<br><span style="font-size:11px; color:#8b949e">{status}</span></div>',
+                f'<div class="stat-card">'
+                f'<div class="stat-num">{STATUS_EMOJI[status]} {counts[status]}</div>'
+                f'<div class="stat-label">{status}</div>'
+                f'</div>',
                 unsafe_allow_html=True,
             )
 
@@ -769,8 +1012,7 @@ def show_pipeline():
         border_color = border_colors.get(status, "#444")
 
         st.markdown(
-            f'<div style="border-left: 4px solid {border_color}; background:#161b22; '
-            f'border-radius:0 8px 8px 0; padding:10px 14px; margin-bottom:4px;">'
+            f'<div class="loan-card" style="border-left: 4px solid {border_color};">'
             f'<span class="loan-num">#{loan.get("loan_num","—")}</span> &nbsp;'
             f'<span class="loan-name">{loan.get("borrower","—")}</span> &nbsp;'
             f'{_status_chip(status)}'
