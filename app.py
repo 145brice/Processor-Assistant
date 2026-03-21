@@ -291,6 +291,15 @@ hr { border-color: #4a3a8a !important; margin: 16px 0 !important; }
     background: #7c6ff7 !important;
 }
 
+/* ── Condition status buttons (inside expander) ──────────────── */
+div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+    font-size: 12px !important;
+    font-weight: 700 !important;
+    padding: 4px 6px !important;
+    height: 32px !important;
+    border-radius: 6px !important;
+}
+
 /* ── Multiselect ──────────────────────────────────────────────── */
 [data-testid="stMultiSelect"] > div {
     background: #3a2878 !important;
@@ -755,21 +764,29 @@ def show_dashboard():
                             })
 
                 st.markdown("### 📋 Conditions")
-                st.caption(f"{len(condition_rows)} condition(s) extracted — party and notes are editable")
 
                 PARTY_OPTIONS = [
                     "Borrower", "Title", "Underwriter", "Jr Underwriter",
                     "Closer", "Insurance", "Appraiser", "Manager", "Processor",
                 ]
 
-                # Compact condition rows — checkbox + summary line; expand for details
-                selected_conds = []
-                for cond in condition_rows:
-                    cnum = cond["num"]
+                # Condition status definitions
+                COND_STATUSES = {
+                    "Needed":          {"emoji": "🟡", "color": "#f1c40f", "label": "Needed"},
+                    "Requested":       {"emoji": "🟠", "color": "#e67e22", "label": "Requested"},
+                    "Important":       {"emoji": "🔴", "color": "#e74c3c", "label": "Important"},
+                    "Ready to Clear":  {"emoji": "🟢", "color": "#27ae60", "label": "Ready to Clear"},
+                    "Cleared":         {"emoji": "🔵", "color": "#5dade2", "label": "Cleared"},
+                }
+
+                def _render_condition(cond, fkey, PARTY_OPTIONS, COND_STATUSES):
+                    """Render one compact condition row with expandable details."""
+                    cnum       = cond["num"]
                     party_key  = f"party_{fkey}_{cnum}"
                     notes_key  = f"notes_{fkey}_{cnum}"
+                    status_key = f"cstatus_{fkey}_{cnum}"
 
-                    # Init party list once from PDF default
+                    # Init party
                     raw_default = cond["party"] if cond["party"] in PARTY_OPTIONS else "Borrower"
                     if party_key not in st.session_state:
                         st.session_state[party_key] = [raw_default]
@@ -778,27 +795,44 @@ def show_dashboard():
                         saved_parties = [raw_default]
                     saved_parties = [p for p in saved_parties if p in PARTY_OPTIONS] or [raw_default]
 
-                    # Current notes (may be empty)
+                    # Init status
+                    if status_key not in st.session_state:
+                        st.session_state[status_key] = "Needed"
+                    cur_status = st.session_state.get(status_key, "Needed")
+                    if cur_status not in COND_STATUSES:
+                        cur_status = "Needed"
+                    status_info = COND_STATUSES[cur_status]
+
                     saved_notes = st.session_state.get(notes_key, "")
 
-                    # ── Compact summary row ──────────────────────────────
-                    badges_html = " ".join(_party_badge(p) for p in saved_parties)
-                    note_preview = f' · <span style="color:#a89ec9;font-style:italic;">{saved_notes[:40]}{"…" if len(saved_notes)>40 else ""}</span>' if saved_notes else ""
-                    expander_label = f"#{cnum}  {cond['desc'][:75]}{'…' if len(cond['desc'])>75 else ''}"
+                    # Build expander label: emoji + # + truncated desc
+                    short_desc  = cond["desc"][:72] + ("…" if len(cond["desc"]) > 72 else "")
+                    exp_label   = f"{status_info['emoji']} #{cnum}  {short_desc}"
 
-                    row_left, row_right = st.columns([1, 11])
-                    with row_left:
-                        checked = st.checkbox(
-                            "", key=f"chk_{fkey}_{cnum}",
-                            label_visibility="collapsed",
-                        )
-                    with row_right:
-                        with st.expander(expander_label, expanded=False):
-                            # Badges inline at top of expanded view
-                            st.markdown(badges_html + note_preview, unsafe_allow_html=True)
+                    col_chk, col_exp = st.columns([1, 11])
+                    with col_chk:
+                        checked = st.checkbox("", key=f"chk_{fkey}_{cnum}",
+                                              label_visibility="collapsed")
+                    with col_exp:
+                        with st.expander(exp_label, expanded=False):
+                            # ── Status buttons row ───────────────────────
+                            st.markdown("**Status:**")
+                            sb = st.columns(len(COND_STATUSES))
+                            for i, (sname, sinfo) in enumerate(COND_STATUSES.items()):
+                                with sb[i]:
+                                    active = "✓ " if cur_status == sname else ""
+                                    border = "3px solid #fff" if cur_status == sname else f"2px solid {sinfo['color']}"
+                                    if st.button(
+                                        f"{sinfo['emoji']} {active}{sinfo['label']}",
+                                        key=f"sbtn_{fkey}_{cnum}_{sname}",
+                                        use_container_width=True,
+                                    ):
+                                        st.session_state[status_key] = sname
+                                        st.rerun()
+
                             st.markdown('<div style="height:4px"></div>', unsafe_allow_html=True)
 
-                            # Party multiselect
+                            # ── Party multiselect ────────────────────────
                             new_parties = st.multiselect(
                                 "Responsible parties",
                                 PARTY_OPTIONS,
@@ -806,23 +840,76 @@ def show_dashboard():
                                 key=party_key,
                                 placeholder="Add parties...",
                             )
+                            if new_parties:
+                                st.markdown(
+                                    " ".join(_party_badge(p) for p in new_parties),
+                                    unsafe_allow_html=True,
+                                )
 
-                            # Notes text input
+                            # ── Notes ────────────────────────────────────
                             st.text_input(
                                 "Update / notes",
                                 key=notes_key,
                                 placeholder="Add update or note...",
                             )
+                            if saved_notes:
+                                st.caption(f"💬 {saved_notes}")
 
+                    return checked, cur_status, saved_parties
+
+                # ── Split into active and cleared ──────────────────────────
+                active_conds  = []
+                cleared_conds = []
+                for cond in condition_rows:
+                    sk = f"cstatus_{fkey}_{cond['num']}"
+                    if st.session_state.get(sk, "Needed") == "Cleared":
+                        cleared_conds.append(cond)
+                    else:
+                        active_conds.append(cond)
+
+                # Count per status for header summary
+                status_counts = {}
+                for cond in condition_rows:
+                    sk  = f"cstatus_{fkey}_{cond['num']}"
+                    s   = st.session_state.get(sk, "Needed")
+                    status_counts[s] = status_counts.get(s, 0) + 1
+                summary_parts = [
+                    f"{COND_STATUSES[s]['emoji']} {c} {s}"
+                    for s, c in status_counts.items() if s in COND_STATUSES
+                ]
+                st.caption("  ·  ".join(summary_parts) if summary_parts else f"{len(condition_rows)} conditions")
+
+                # ── Render active conditions ───────────────────────────────
+                selected_conds = []
+                for cond in active_conds:
+                    checked, cur_status, saved_parties = _render_condition(
+                        cond, fkey, PARTY_OPTIONS, COND_STATUSES
+                    )
                     if checked:
-                        primary = saved_parties[0] if saved_parties else "Borrower"
                         selected_conds.append({
                             **cond,
-                            "party": primary,
+                            "party":       saved_parties[0] if saved_parties else "Borrower",
                             "all_parties": saved_parties,
+                            "cond_status": cur_status,
                         })
 
-                    if selected_conds:
+                # ── Cleared section at the bottom ──────────────────────────
+                if cleared_conds:
+                    st.markdown("---")
+                    with st.expander(f"🔵 Cleared ({len(cleared_conds)})", expanded=False):
+                        for cond in cleared_conds:
+                            checked, cur_status, saved_parties = _render_condition(
+                                cond, fkey, PARTY_OPTIONS, COND_STATUSES
+                            )
+                            if checked:
+                                selected_conds.append({
+                                    **cond,
+                                    "party":       saved_parties[0] if saved_parties else "Borrower",
+                                    "all_parties": saved_parties,
+                                    "cond_status": cur_status,
+                                })
+
+                if selected_conds:
                         st.markdown("---")
                         st.markdown(f"**{len(selected_conds)} condition(s) selected — choose action:**")
                         lc1, lc2, lc3 = st.columns(3)
