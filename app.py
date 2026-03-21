@@ -283,6 +283,25 @@ hr { border-color: #4a3a8a !important; margin: 16px 0 !important; }
     background: #7c6ff7 !important;
 }
 
+/* ── Multiselect ──────────────────────────────────────────────── */
+[data-testid="stMultiSelect"] > div {
+    background: #3a2878 !important;
+    border: 1px solid #6a56b8 !important;
+    border-radius: 8px !important;
+}
+[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+    background: #5540a8 !important;
+    color: #f0f6fc !important;
+    border-radius: 6px !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+}
+[data-testid="stMultiSelect"] input {
+    color: #f0f6fc !important;
+    background: transparent !important;
+    border: none !important;
+}
+
 /* ── Markdown tables (conditions output) ─────────────────────── */
 [data-testid="stMarkdownContainer"] table {
     width: 100% !important;
@@ -735,56 +754,71 @@ def show_dashboard():
                     "Closer", "Insurance", "Appraiser", "Manager", "Processor",
                 ]
 
-                # One card per condition — checkbox + editable party + editable notes
+                # One card per condition — checkbox + description + multi-party + notes
                 selected_conds = []
                 for cond in condition_rows:
                     cnum = cond["num"]
 
-                    # Resolve currently saved party (editable)
+                    # Default party from PDF — stored as a list for multiselect
                     party_key = f"party_{fkey}_{cnum}"
-                    default_party = cond["party"]
-                    if default_party not in PARTY_OPTIONS:
-                        default_party = "Borrower"
-                    saved_party = st.session_state.get(party_key, default_party)
-                    if saved_party not in PARTY_OPTIONS:
-                        saved_party = "Borrower"
+                    raw_default = cond["party"] if cond["party"] in PARTY_OPTIONS else "Borrower"
+                    # Init default only once (don't overwrite user edits on rerun)
+                    if party_key not in st.session_state:
+                        st.session_state[party_key] = [raw_default]
+                    saved_parties = st.session_state[party_key]
+                    # Guard: ensure list, strip any invalid entries
+                    if not isinstance(saved_parties, list):
+                        saved_parties = [raw_default]
+                    saved_parties = [p for p in saved_parties if p in PARTY_OPTIONS] or [raw_default]
 
-                    badge_html = _party_badge(saved_party)
-
-                    # Card layout: checkbox | description | party picker
-                    c1, c2, c3 = st.columns([1, 7, 3])
+                    # Card layout: checkbox | description
+                    c1, c2 = st.columns([1, 10])
                     with c1:
                         checked = st.checkbox("", key=f"chk_{fkey}_{cnum}", label_visibility="collapsed")
                     with c2:
                         st.markdown(
                             f'<div style="padding:6px 0; font-size:14px; font-weight:600; color:#f0f6fc;">'
-                            f'<span style="color:#b794f4; font-weight:700;">#{cnum}</span> &nbsp;{cond["desc"]}'
+                            f'<span style="color:#b794f4; font-weight:700;">#{cnum}</span>'
+                            f'&nbsp;&nbsp;{cond["desc"]}'
                             f'</div>',
                             unsafe_allow_html=True,
                         )
-                    with c3:
-                        new_party = st.selectbox(
-                            "Party",
-                            PARTY_OPTIONS,
-                            index=PARTY_OPTIONS.index(saved_party),
-                            key=party_key,
-                            label_visibility="collapsed",
-                        )
-                        st.markdown(badge_html, unsafe_allow_html=True)
 
-                    # Editable notes line below each condition
+                    # Multi-party selector — full width below description
+                    new_parties = st.multiselect(
+                        "Responsible parties",
+                        PARTY_OPTIONS,
+                        default=saved_parties,
+                        key=party_key,
+                        label_visibility="collapsed",
+                        placeholder="Select one or more responsible parties...",
+                    )
+                    # Show a badge for each selected party
+                    if new_parties:
+                        badges_html = " ".join(_party_badge(p) for p in new_parties)
+                        st.markdown(badges_html, unsafe_allow_html=True)
+
+                    # Editable notes / update line
                     notes_key = f"notes_{fkey}_{cnum}"
                     st.text_input(
-                        "Update / notes",
-                        value=st.session_state.get(notes_key, ""),
+                        "notes",
                         key=notes_key,
-                        placeholder=f"Add update or note for condition #{cnum}...",
+                        placeholder=f"Update or note for condition #{cnum}...",
                         label_visibility="collapsed",
                     )
-                    st.markdown('<div style="height:2px;border-bottom:1px solid #4a3a8a;margin-bottom:4px"></div>', unsafe_allow_html=True)
+                    st.markdown(
+                        '<div style="height:1px;background:#4a3a8a;margin:6px 0 8px 0;"></div>',
+                        unsafe_allow_html=True,
+                    )
 
                     if checked:
-                        selected_conds.append({**cond, "party": new_party})
+                        # Pass ALL selected parties; primary = first one
+                        primary = new_parties[0] if new_parties else "Borrower"
+                        selected_conds.append({
+                            **cond,
+                            "party": primary,
+                            "all_parties": new_parties or ["Borrower"],
+                        })
 
                     if selected_conds:
                         st.markdown("---")
@@ -796,10 +830,14 @@ def show_dashboard():
                                 key=f"lang_{fkey}",
                             )
                         with lc2:
-                            # Default recipient to most common party in selection
-                            parties = list({c["party"] for c in selected_conds})
+                            # All parties across all selected conditions
+                            all_parties_flat = []
+                            for c in selected_conds:
+                                for p in c.get("all_parties", [c["party"]]):
+                                    if p not in all_parties_flat:
+                                        all_parties_flat.append(p)
                             recipient = st.selectbox(
-                                "Send to", parties,
+                                "Send to", all_parties_flat,
                                 key=f"recip_{fkey}",
                             )
                         with lc3:
