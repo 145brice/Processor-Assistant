@@ -43,10 +43,10 @@ html, body, [class*="css"] {
 [data-testid="stSidebar"] button[kind="secondary"] {
     background: transparent !important;
     border: 1px solid #1e2530 !important;
-    color: #8b949e !important;
+    color: #cdd9e5 !important;
     border-radius: 8px !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
     text-align: left !important;
     padding: 10px 14px !important;
     margin-bottom: 2px !important;
@@ -61,8 +61,9 @@ html, body, [class*="css"] {
 
 /* Sidebar toggle */
 [data-testid="stSidebar"] [data-testid="stToggle"] label {
-    font-size: 12px !important;
-    color: #8b949e !important;
+    font-size: 13px !important;
+    color: #cdd9e5 !important;
+    font-weight: 500 !important;
 }
 
 /* ── Main content area ────────────────────────────────────────── */
@@ -72,10 +73,46 @@ html, body, [class*="css"] {
 }
 
 /* Page headings */
-h1 { font-size: 26px !important; font-weight: 800 !important; color: #e6edf3 !important; letter-spacing: -0.5px; }
-h2 { font-size: 20px !important; font-weight: 700 !important; color: #e6edf3 !important; }
-h3 { font-size: 15px !important; font-weight: 600 !important; color: #c9d1d9 !important; }
-p, li, label { color: #8b949e !important; font-size: 13px !important; }
+h1 { font-size: 28px !important; font-weight: 800 !important; color: #f0f6fc !important; letter-spacing: -0.5px; }
+h2 { font-size: 22px !important; font-weight: 700 !important; color: #f0f6fc !important; }
+h3 { font-size: 16px !important; font-weight: 700 !important; color: #e6edf3 !important; }
+p, li { color: #cdd9e5 !important; font-size: 14px !important; font-weight: 400 !important; }
+label { color: #cdd9e5 !important; font-size: 14px !important; font-weight: 500 !important; }
+
+/* Markdown text inside the app */
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li,
+[data-testid="stMarkdownContainer"] span {
+    color: #cdd9e5 !important;
+    font-size: 14px !important;
+}
+[data-testid="stMarkdownContainer"] strong {
+    color: #f0f6fc !important;
+    font-weight: 700 !important;
+}
+
+/* Checkbox labels */
+[data-testid="stCheckbox"] label p {
+    color: #cdd9e5 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+}
+
+/* Selectbox selected value text */
+[data-testid="stSelectbox"] > div > div > div {
+    color: #e6edf3 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+}
+
+/* Radio / number input labels */
+[data-testid="stNumberInput"] label,
+[data-testid="stDateInput"] label,
+[data-testid="stTextArea"] label {
+    color: #cdd9e5 !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+}
 
 /* ── Buttons ──────────────────────────────────────────────────── */
 button[kind="primary"] {
@@ -97,17 +134,17 @@ button[kind="primary"]:hover {
 }
 button[kind="secondary"] {
     background: #161b22 !important;
-    color: #c9d1d9 !important;
+    color: #e6edf3 !important;
     border: 1px solid #30363d !important;
     border-radius: 8px !important;
-    font-weight: 500 !important;
-    font-size: 13px !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
     height: 38px !important;
     transition: all 0.15s ease !important;
 }
 button[kind="secondary"]:hover {
     border-color: #4f8ef7 !important;
-    color: #e6edf3 !important;
+    color: #f0f6fc !important;
     background: #1c2333 !important;
 }
 
@@ -193,7 +230,7 @@ hr { border-color: #1e2530 !important; margin: 16px 0 !important; }
 
 /* ── Caption / small text ─────────────────────────────────────── */
 [data-testid="stCaptionContainer"] p,
-.stCaption { color: #484f58 !important; font-size: 12px !important; }
+.stCaption { color: #8b949e !important; font-size: 12px !important; font-weight: 500 !important; }
 
 /* ── Progress bar ─────────────────────────────────────────────── */
 [data-testid="stProgress"] > div > div {
@@ -300,10 +337,10 @@ hr { border-color: #1e2530 !important; margin: 16px 0 !important; }
     transition: border-color 0.15s;
 }
 .loan-card:hover { border-color: #4f8ef7; }
-.loan-num   { font-size: 14px; font-weight: 800; color: #79c0ff; font-family: 'Inter', monospace; }
-.loan-name  { font-size: 13px; color: #c9d1d9; font-weight: 500; }
-.loan-due   { font-size: 11px; color: #484f58; }
-.loan-missing { font-size: 11px; color: #ffa657; }
+.loan-num   { font-size: 15px; font-weight: 800; color: #79c0ff; font-family: 'Inter', monospace; }
+.loan-name  { font-size: 14px; color: #e6edf3; font-weight: 600; }
+.loan-due   { font-size: 12px; color: #8b949e; font-weight: 500; }
+.loan-missing { font-size: 12px; color: #ffa657; font-weight: 500; }
 
 /* ── Stat cards (pipeline counts) ────────────────────────────── */
 .stat-card {
@@ -313,8 +350,8 @@ hr { border-color: #1e2530 !important; margin: 16px 0 !important; }
     background: #0d1117;
     border: 1px solid #1e2530;
 }
-.stat-num  { font-size: 26px; font-weight: 800; color: #e6edf3; line-height: 1; }
-.stat-label { font-size: 11px; color: #484f58; margin-top: 3px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-num  { font-size: 26px; font-weight: 800; color: #f0f6fc; line-height: 1; }
+.stat-label { font-size: 11px; color: #8b949e; margin-top: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
 /* ── Login card ───────────────────────────────────────────────── */
 .login-card {
