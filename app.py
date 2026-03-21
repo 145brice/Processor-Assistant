@@ -23,7 +23,7 @@ html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 .stApp {
-    background: #08090d;
+    background: #0d0a1f;
 }
 
 /* ── Hide Streamlit chrome ────────────────────────────────────── */
@@ -32,8 +32,8 @@ html, body, [class*="css"] {
 
 /* ── Sidebar ──────────────────────────────────────────────────── */
 [data-testid="stSidebar"] {
-    background: #0d1117 !important;
-    border-right: 1px solid #1e2530 !important;
+    background: #100c24 !important;
+    border-right: 1px solid #2a1f50 !important;
 }
 [data-testid="stSidebar"] > div:first-child {
     padding: 1.5rem 1rem;
@@ -42,7 +42,7 @@ html, body, [class*="css"] {
 /* Sidebar nav buttons */
 [data-testid="stSidebar"] button[kind="secondary"] {
     background: transparent !important;
-    border: 1px solid #1e2530 !important;
+    border: 1px solid #2a1f50 !important;
     color: #cdd9e5 !important;
     border-radius: 8px !important;
     font-size: 14px !important;
@@ -54,9 +54,9 @@ html, body, [class*="css"] {
     width: 100% !important;
 }
 [data-testid="stSidebar"] button[kind="secondary"]:hover {
-    background: #161b22 !important;
-    border-color: #4f8ef7 !important;
-    color: #e6edf3 !important;
+    background: #1e1640 !important;
+    border-color: #7c6ff7 !important;
+    color: #f0f6fc !important;
 }
 
 /* Sidebar toggle */
@@ -133,9 +133,9 @@ button[kind="primary"]:hover {
     transform: translateY(-1px) !important;
 }
 button[kind="secondary"] {
-    background: #161b22 !important;
+    background: #1e1640 !important;
     color: #e6edf3 !important;
-    border: 1px solid #30363d !important;
+    border: 1px solid #3d2f72 !important;
     border-radius: 8px !important;
     font-weight: 600 !important;
     font-size: 14px !important;
@@ -143,9 +143,9 @@ button[kind="secondary"] {
     transition: all 0.15s ease !important;
 }
 button[kind="secondary"]:hover {
-    border-color: #4f8ef7 !important;
+    border-color: #7c6ff7 !important;
     color: #f0f6fc !important;
-    background: #1c2333 !important;
+    background: #261d52 !important;
 }
 
 /* ── Inputs & selects ─────────────────────────────────────────── */
@@ -153,120 +153,153 @@ button[kind="secondary"]:hover {
 [data-testid="stTextArea"] textarea,
 [data-testid="stSelectbox"] > div > div,
 [data-testid="stNumberInput"] input {
-    background: #0d1117 !important;
-    border: 1px solid #30363d !important;
+    background: #130e2a !important;
+    border: 1px solid #3d2f72 !important;
     border-radius: 8px !important;
-    color: #e6edf3 !important;
-    font-size: 13px !important;
+    color: #f0f6fc !important;
+    font-size: 14px !important;
     font-family: 'Inter', sans-serif !important;
 }
 [data-testid="stTextInput"] input:focus,
 [data-testid="stTextArea"] textarea:focus {
-    border-color: #4f8ef7 !important;
-    box-shadow: 0 0 0 3px #4f8ef720 !important;
+    border-color: #7c6ff7 !important;
+    box-shadow: 0 0 0 3px #7c6ff730 !important;
 }
 
 /* ── File uploader ────────────────────────────────────────────── */
 [data-testid="stFileUploader"] {
-    background: #0d1117 !important;
-    border: 2px dashed #1e2530 !important;
+    background: #130e2a !important;
+    border: 2px dashed #3d2f72 !important;
     border-radius: 12px !important;
     padding: 20px !important;
     transition: border-color 0.2s !important;
 }
 [data-testid="stFileUploader"]:hover {
-    border-color: #4f8ef7 !important;
+    border-color: #7c6ff7 !important;
 }
 [data-testid="stFileUploader"] label {
-    color: #8b949e !important;
+    color: #cdd9e5 !important;
 }
 
 /* ── Expanders ────────────────────────────────────────────────── */
 [data-testid="stExpander"] {
-    background: #0d1117 !important;
-    border: 1px solid #1e2530 !important;
+    background: #130e2a !important;
+    border: 1px solid #2a1f50 !important;
     border-radius: 10px !important;
     margin-bottom: 6px !important;
 }
 [data-testid="stExpander"] summary {
     font-weight: 600 !important;
-    color: #c9d1d9 !important;
-    font-size: 13px !important;
+    color: #e6edf3 !important;
+    font-size: 14px !important;
     padding: 12px 16px !important;
 }
 [data-testid="stExpander"] summary:hover {
-    color: #e6edf3 !important;
+    color: #f0f6fc !important;
 }
 
 /* ── Info / warning / error boxes ────────────────────────────── */
 [data-testid="stAlert"] {
     border-radius: 8px !important;
     border-width: 1px !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
 }
 
 /* ── Dividers ─────────────────────────────────────────────────── */
-hr { border-color: #1e2530 !important; margin: 16px 0 !important; }
+hr { border-color: #2a1f50 !important; margin: 16px 0 !important; }
 
 /* ── Tabs ─────────────────────────────────────────────────────── */
 [data-testid="stTabs"] [role="tab"] {
-    font-size: 13px !important;
+    font-size: 14px !important;
     font-weight: 500 !important;
-    color: #8b949e !important;
+    color: #a89ec9 !important;
     border-radius: 6px 6px 0 0 !important;
     padding: 8px 18px !important;
 }
 [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-    color: #4f8ef7 !important;
-    border-bottom: 2px solid #4f8ef7 !important;
+    color: #b794f4 !important;
+    border-bottom: 2px solid #7c6ff7 !important;
     background: transparent !important;
 }
 
 /* ── Checkbox ─────────────────────────────────────────────────── */
 [data-testid="stCheckbox"] label {
-    font-size: 13px !important;
-    color: #c9d1d9 !important;
+    font-size: 14px !important;
+    color: #e6edf3 !important;
 }
 
 /* ── Caption / small text ─────────────────────────────────────── */
 [data-testid="stCaptionContainer"] p,
-.stCaption { color: #8b949e !important; font-size: 12px !important; font-weight: 500 !important; }
+.stCaption { color: #a89ec9 !important; font-size: 12px !important; font-weight: 500 !important; }
 
 /* ── Progress bar ─────────────────────────────────────────────── */
 [data-testid="stProgress"] > div > div {
-    background: linear-gradient(90deg, #4f8ef7, #2563eb) !important;
+    background: linear-gradient(90deg, #7c6ff7, #4f8ef7) !important;
     border-radius: 4px !important;
 }
 [data-testid="stProgress"] {
-    background: #1e2530 !important;
+    background: #1e1640 !important;
     border-radius: 4px !important;
 }
 
 /* ── Containers (bordered) ────────────────────────────────────── */
 [data-testid="stVerticalBlockBorderWrapper"] {
-    background: #0d1117 !important;
-    border: 1px solid #1e2530 !important;
+    background: #130e2a !important;
+    border: 1px solid #2a1f50 !important;
     border-radius: 12px !important;
     padding: 16px !important;
 }
 
 /* ── Selectbox dropdown ───────────────────────────────────────── */
-[data-testid="stSelectbox"] svg { color: #8b949e !important; }
+[data-testid="stSelectbox"] svg { color: #a89ec9 !important; }
 
 /* ── Toggle ───────────────────────────────────────────────────── */
 [data-testid="stToggle"] > label > div[data-checked="true"] {
-    background: #4f8ef7 !important;
+    background: #7c6ff7 !important;
+}
+
+/* ── Markdown tables (conditions output) ─────────────────────── */
+[data-testid="stMarkdownContainer"] table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    background: #1a1240 !important;
+    border-radius: 10px !important;
+    overflow: hidden !important;
+    font-size: 14px !important;
+}
+[data-testid="stMarkdownContainer"] thead tr {
+    background: #261d52 !important;
+}
+[data-testid="stMarkdownContainer"] th {
+    color: #b794f4 !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    padding: 10px 14px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.5px !important;
+    border-bottom: 1px solid #3d2f72 !important;
+}
+[data-testid="stMarkdownContainer"] td {
+    color: #f0f6fc !important;
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    padding: 9px 14px !important;
+    border-bottom: 1px solid #2a1f50 !important;
+}
+[data-testid="stMarkdownContainer"] tr:hover td {
+    background: #261d52 !important;
+    color: #ffffff !important;
 }
 
 /* ── Progress nav bar ─────────────────────────────────────────── */
 .progress-nav {
     display: flex;
     gap: 3px;
-    background: #0d1117;
+    background: #130e2a;
     border-radius: 10px;
     padding: 5px;
     margin-bottom: 20px;
-    border: 1px solid #1e2530;
+    border: 1px solid #2a1f50;
     position: sticky;
     top: 0;
     z-index: 999;
@@ -329,14 +362,14 @@ hr { border-color: #1e2530 !important; margin: 16px 0 !important; }
 
 /* ── Loan pipeline cards ──────────────────────────────────────── */
 .loan-card {
-    background: #0d1117;
-    border: 1px solid #1e2530;
+    background: #130e2a;
+    border: 1px solid #2a1f50;
     border-radius: 10px;
     padding: 12px 16px;
     margin-bottom: 4px;
     transition: border-color 0.15s;
 }
-.loan-card:hover { border-color: #4f8ef7; }
+.loan-card:hover { border-color: #7c6ff7; }
 .loan-num   { font-size: 15px; font-weight: 800; color: #79c0ff; font-family: 'Inter', monospace; }
 .loan-name  { font-size: 14px; color: #e6edf3; font-weight: 600; }
 .loan-due   { font-size: 12px; color: #8b949e; font-weight: 500; }
@@ -347,8 +380,8 @@ hr { border-color: #1e2530 !important; margin: 16px 0 !important; }
     text-align: center;
     padding: 12px 8px;
     border-radius: 10px;
-    background: #0d1117;
-    border: 1px solid #1e2530;
+    background: #130e2a;
+    border: 1px solid #2a1f50;
 }
 .stat-num  { font-size: 26px; font-weight: 800; color: #f0f6fc; line-height: 1; }
 .stat-label { font-size: 11px; color: #8b949e; margin-top: 3px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
@@ -357,8 +390,8 @@ hr { border-color: #1e2530 !important; margin: 16px 0 !important; }
 .login-card {
     max-width: 420px;
     margin: 40px auto 0 auto;
-    background: #0d1117;
-    border: 1px solid #1e2530;
+    background: #130e2a;
+    border: 1px solid #2a1f50;
     border-radius: 16px;
     padding: 36px 32px;
 }
