@@ -199,7 +199,8 @@ def _check(config: dict) -> int:
                 with open(save_path, "wb") as f:
                     f.write(payload)
 
-                m = _match(payload, fname, sender, subject)
+                from doc_verify import verify as _verify
+                v = _verify(payload, fname, borrower_hint=f"{sender} {subject}")
                 with _lock:
                     _matches.append({
                         "filename":  fname,
@@ -207,7 +208,7 @@ def _check(config: dict) -> int:
                         "sender":    sender,
                         "subject":   subject,
                         "received":  datetime.now().strftime("%I:%M %p"),
-                        **m,
+                        **v,
                     })
         except Exception:
             continue

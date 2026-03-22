@@ -700,6 +700,163 @@ def show_dashboard():
     """Main document scanning page."""
     st.markdown("## Document Scanner")
 
+    # === QUICK DOC VERIFY — drop any PDF, get instant check ===
+    import email_watch as _ew_mod
+    _ew_pending = _ew_mod.get_status()["pending_count"]
+    _qv_label   = f"📥 Quick Verify  ({_ew_pending} from inbox waiting)" if _ew_pending else "📥 Quick Verify — drop any PDF for instant check"
+
+    with st.expander(_qv_label, expanded=bool(_ew_pending)):
+        st.markdown(
+            "Drop any PDF here — no doc type selection needed. "
+            "The app figures out what it is, checks the dates, counts pages, "
+            "and tries to match it to a loan in your pipeline. "
+            "**Nothing is saved until you say so.**"
+        )
+
+        qv_file = st.file_uploader(
+            "Drop a PDF to verify",
+            type=["pdf"],
+            key="qv_uploader",
+            help="Works for any doc: bank statement, pay stub, W-2, appraisal, etc.",
+        )
+        if qv_file:
+            qv_bytes = qv_file.read()
+            from doc_verify import verify as _dv
+            with st.spinner("Checking..."):
+                result = _dv(qv_bytes, qv_file.name)
+
+            verdict = result["verdict"]
+            if verdict == "pass":
+                vcard_bg, vcard_bdr, vcard_icon = "#152a1e", "#27ae60", "✅"
+                vcard_title = "Looks good — ready for review"
+            elif verdict == "review":
+                vcard_bg, vcard_bdr, vcard_icon = "#2d2808", "#f1c40f", "⚠️"
+                vcard_title = "Probably fine — double-check flagged items"
+            else:
+                vcard_bg, vcard_bdr, vcard_icon = "#3d1515", "#e74c3c", "🔍"
+                vcard_title = "Needs attention before saving"
+
+            st.markdown(
+                f'<div style="background:{vcard_bg};border-left:4px solid {vcard_bdr};'
+                f'border-radius:8px;padding:12px 16px;margin:12px 0;">'
+                f'<div style="font-size:15px;font-weight:700;color:#f0f6fc;">'
+                f'{vcard_icon} {result["doc_type"]} · {vcard_title}</div>'
+                f'<div style="font-size:12px;color:#a89ec9;margin-top:4px;">{qv_file.name}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+            vc1, vc2 = st.columns(2)
+            with vc1:
+                st.markdown("**✅ Passed**")
+                for ok in result["ok_list"]:
+                    st.markdown(
+                        f'<div style="display:flex;gap:8px;margin-bottom:3px;">'
+                        f'<span style="color:#27ae60;">✓</span>'
+                        f'<span style="color:#cdd9e5;font-size:13px;">{ok}</span></div>',
+                        unsafe_allow_html=True,
+                    )
+            with vc2:
+                st.markdown("**⚠️ Flagged**")
+                if result["flags"]:
+                    for fl in result["flags"]:
+                        st.markdown(
+                            f'<div style="display:flex;gap:8px;margin-bottom:3px;">'
+                            f'<span style="color:#e74c3c;">⚑</span>'
+                            f'<span style="color:#f5b7b1;font-size:13px;">{fl}</span></div>',
+                            unsafe_allow_html=True,
+                        )
+                else:
+                    st.markdown(
+                        '<span style="color:#a89ec9;font-size:13px;">No flags — all clear</span>',
+                        unsafe_allow_html=True,
+                    )
+
+            # ── Action row ───────────────────────────────────────────────────
+            st.markdown("---")
+            folder = result.get("suggested_folder", "")
+            borrower = result.get("borrower", "")
+            loan_num = result.get("loan_num", "")
+
+            if borrower:
+                st.markdown(
+                    f'<div style="background:#1e1645;border:1px solid #4a3a8a;border-radius:8px;'
+                    f'padding:10px 14px;margin-bottom:10px;">'
+                    f'<span style="font-size:13px;color:#cdd9e5;">Pipeline match: </span>'
+                    f'<span style="font-size:14px;font-weight:700;color:#f0f6fc;">{borrower}</span>'
+                    f'<span style="font-size:12px;color:#7c6ff7;margin-left:8px;">Loan {loan_num}</span>'
+                    f'<span style="font-size:12px;color:#a89ec9;margin-left:8px;">'
+                    f'{result["confidence"]}% confidence</span></div>',
+                    unsafe_allow_html=True,
+                )
+
+            act1, act2, act3, act4 = st.columns(4)
+            with act1:
+                if folder and os.path.isdir(folder):
+                    if st.button("💾 Save to folder", key="qv_save", type="primary", use_container_width=True):
+                        import shutil
+                        dest = os.path.join(folder, qv_file.name)
+                        with open(dest, "wb") as _f:
+                            _f.write(qv_bytes)
+                        st.success(f"Saved to {dest} — marked Pending Review in pipeline.")
+                else:
+                    save_path = st.text_input("Save to folder:", placeholder=r"C:\Loans\Smith", key="qv_savepath")
+                    if save_path and st.button("💾 Save here", key="qv_save_manual", use_container_width=True):
+                        os.makedirs(save_path, exist_ok=True)
+                        dest = os.path.join(save_path, qv_file.name)
+                        with open(dest, "wb") as _f:
+                            _f.write(qv_bytes)
+                        st.success(f"Saved to {dest}")
+            with act2:
+                if st.button("📋 Scan this doc", key="qv_scan", use_container_width=True):
+                    st.session_state["qv_promote"] = qv_bytes
+                    st.session_state["qv_promote_name"] = qv_file.name
+                    st.rerun()
+            with act3:
+                if st.button("📂 Open in Reader", key="qv_reader", use_container_width=True):
+                    st.session_state.reader_open_file = None
+                    st.session_state.page = "reader"
+                    st.rerun()
+            with act4:
+                pass   # space
+
+        # ── Email Watch inbox inside Verify tab ──────────────────────────────
+        ew_matches = _ew_mod.get_matches()
+        if ew_matches:
+            st.markdown("---")
+            st.markdown(f"### 📬 Email Inbox — {len(ew_matches)} attachment(s) waiting")
+            for ei, em in enumerate(ew_matches):
+                v_icon = {"pass": "✅", "review": "⚠️", "check": "🔍"}.get(em.get("verdict", "check"), "📄")
+                with st.expander(
+                    f"{v_icon} {em['filename']} · {em.get('received','')} · "
+                    f"From: {em['sender'][:40]}",
+                    expanded=False,
+                ):
+                    ec1, ec2 = st.columns([3, 1])
+                    with ec1:
+                        for ok in em.get("ok_list", []):
+                            st.markdown(
+                                f'<div style="color:#a9dfbf;font-size:12px;">✓ {ok}</div>',
+                                unsafe_allow_html=True,
+                            )
+                        for fl in em.get("flags", []):
+                            st.markdown(
+                                f'<div style="color:#f5b7b1;font-size:12px;">⚑ {fl}</div>',
+                                unsafe_allow_html=True,
+                            )
+                    with ec2:
+                        efolder = em.get("suggested_folder", "")
+                        if efolder and os.path.isdir(efolder):
+                            if st.button("💾 Save", key=f"ew_qv_save_{ei}", use_container_width=True, type="primary"):
+                                import shutil
+                                shutil.copy2(em["file_path"], os.path.join(efolder, em["filename"]))
+                                _ew_mod.dismiss(ei)
+                                st.success("Saved.")
+                                st.rerun()
+                        if st.button("Dismiss", key=f"ew_qv_dis_{ei}", use_container_width=True):
+                            _ew_mod.dismiss(ei)
+                            st.rerun()
+
     # === STEP 1: UPLOAD ===
     st.markdown('<span class="section-anchor" id="upload"></span>', unsafe_allow_html=True)
 
