@@ -659,10 +659,35 @@ def show_sidebar():
         if st.button("👥 My Team", use_container_width=True):
             st.session_state.page = "team"
             st.rerun()
+        if st.button("📧 Email Watch", use_container_width=True):
+            st.session_state.page = "email_watch"
+            st.rerun()
         if not is_sandbox:
             if st.button("🕑 My History", use_container_width=True):
                 st.session_state.page = "history"
                 st.rerun()
+
+        st.markdown("---")
+
+        # ── Email Watch status indicator ──────────────────────────────────────
+        import email_watch as _ew
+        _ew_status = _ew.get_status()
+        _ew_running = _ew_status["running"]
+        _ew_pending = _ew_status["pending_count"]
+        _ew_last    = _ew_status["last_time"] or "—"
+        if _ew_running:
+            _dot = "🟢"
+            _label = f"Watching · {_ew_last}"
+        else:
+            _dot = "⚫"
+            _label = "Inbox watch off"
+        _badge = f' <span style="background:#7c6ff7;color:#fff;font-size:10px;border-radius:8px;padding:1px 6px;">{_ew_pending}</span>' if _ew_pending else ""
+        st.markdown(
+            f'<div style="background:#1e1645;border:1px solid #4a3a8a;border-radius:8px;'
+            f'padding:7px 10px;margin-bottom:8px;cursor:default;">'
+            f'<span style="font-size:12px;color:#cdd9e5;">{_dot} {_label}{_badge}</span></div>',
+            unsafe_allow_html=True,
+        )
 
         st.markdown("---")
         if st.button("🚪 Logout", use_container_width=True):
@@ -2485,6 +2510,207 @@ def show_history():
                 st.markdown(entry.get("risks", ""))
 
 
+def show_email_watch_page():
+    """Email inbox watcher — setup, toggle, and matched attachment inbox."""
+    import email_watch as ew
+
+    st.markdown("## 📧 Email Watch")
+    st.caption(
+        "Watch your inbox for new PDF attachments. When one arrives, the app reads it, "
+        "tries to match the borrower name to your pipeline, and asks what to do with it. "
+        "100% local — your credentials never leave your computer."
+    )
+
+    cfg = ew.get_config()
+    status = ew.get_status()
+
+    # ── Status card ──────────────────────────────────────────────────────────
+    if status["running"]:
+        st.markdown(
+            f'<div style="background:#152a1e;border-left:4px solid #27ae60;border-radius:8px;'
+            f'padding:10px 16px;margin-bottom:16px;">'
+            f'<span style="font-size:14px;font-weight:700;color:#a9dfbf;">🟢 Watching inbox</span>'
+            f'<span style="font-size:12px;color:#7dcea0;margin-left:12px;">'
+            f'Last check: {status["last_time"] or "—"} · {status["last_status"]}</span></div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            f'<div style="background:#1e1645;border-left:4px solid #4a3a8a;border-radius:8px;'
+            f'padding:10px 16px;margin-bottom:16px;">'
+            f'<span style="font-size:14px;font-weight:700;color:#a89ec9;">⚫ Inbox watch is off</span>'
+            + (f'<span style="font-size:12px;color:#6a56b8;margin-left:12px;">'
+               f'Last check: {status["last_time"]} · {status["last_status"]}</span>'
+               if status["last_time"] else "")
+            + '</div>',
+            unsafe_allow_html=True,
+        )
+
+    # ── Toggle ───────────────────────────────────────────────────────────────
+    t1, t2 = st.columns([1, 4])
+    with t1:
+        if status["running"]:
+            if st.button("⏹ Stop Watching", use_container_width=True, type="primary"):
+                ew.stop()
+                st.success("Inbox watch stopped.")
+                st.rerun()
+        else:
+            if st.button("▶ Start Watching", use_container_width=True, type="primary"):
+                try:
+                    ew.start()
+                    st.success("Inbox watch started — checking every "
+                               f"{cfg.get('interval_minutes', 5)} minutes.")
+                    st.rerun()
+                except Exception as exc:
+                    st.error(f"Could not start: {exc}  ·  Set up your credentials below first.")
+
+    st.markdown("---")
+
+    # ── Pending matches ───────────────────────────────────────────────────────
+    matches = ew.get_matches()
+    if matches:
+        st.markdown(f"### 📬 {len(matches)} New Attachment(s) — Waiting for Action")
+        for i, m in enumerate(matches):
+            conf  = m.get("confidence", 0)
+            sugg  = m.get("suggestion", "unknown")
+            bname = m.get("borrower") or "Unknown borrower"
+            lnum  = m.get("loan_num", "")
+
+            if sugg == "match":
+                conf_color = "#27ae60"
+                conf_label = f"✅ Matched — {bname} · Loan {lnum} ({conf}% confidence)"
+            elif sugg == "possible":
+                conf_color = "#f1c40f"
+                conf_label = f"⚠️ Possible match — {bname} · Loan {lnum} ({conf}%)"
+            else:
+                conf_color = "#e74c3c"
+                conf_label = "❓ No pipeline match found"
+
+            with st.expander(f"📄 {m['filename']}  ·  {m.get('received', '')}  ·  {conf_label}", expanded=True):
+                mc1, mc2 = st.columns([3, 1])
+                with mc1:
+                    st.markdown(
+                        f'<div style="font-size:12px;color:#a89ec9;">From: {m["sender"]}</div>'
+                        f'<div style="font-size:12px;color:#a89ec9;">Subject: {m["subject"]}</div>'
+                        f'<div style="font-size:13px;font-weight:700;color:{conf_color};margin-top:6px;">'
+                        f'{conf_label}</div>',
+                        unsafe_allow_html=True,
+                    )
+                    folder = m.get("suggested_folder", "")
+                    if folder:
+                        st.markdown(
+                            f'<div style="font-size:12px;color:#7c6ff7;margin-top:4px;">'
+                            f'📁 Suggested folder: {folder}</div>',
+                            unsafe_allow_html=True,
+                        )
+
+                with mc2:
+                    if folder and os.path.isdir(folder):
+                        if st.button("💾 Save to folder", key=f"ew_save_{i}", use_container_width=True, type="primary"):
+                            import shutil
+                            dest = os.path.join(folder, m["filename"])
+                            shutil.copy2(m["file_path"], dest)
+                            ew.dismiss(i)
+                            st.success(f"Saved to {dest}")
+                            st.rerun()
+                    if st.button("Open in Reader", key=f"ew_read_{i}", use_container_width=True):
+                        st.session_state.reader_open_file = m["file_path"]
+                        st.session_state.page = "reader"
+                        st.rerun()
+                    if st.button("Dismiss", key=f"ew_dismiss_{i}", use_container_width=True):
+                        ew.dismiss(i)
+                        st.rerun()
+
+        if st.button("Dismiss All", key="ew_dismiss_all"):
+            ew.clear_all()
+            st.rerun()
+
+        st.markdown("---")
+
+    # ── Credentials setup ─────────────────────────────────────────────────────
+    with st.expander("⚙️ Email Credentials" + (" (configured)" if cfg else " (not set up)"), expanded=not cfg):
+        st.markdown(
+            '<div style="background:#3d3015;border-left:3px solid #f1c40f;border-radius:6px;'
+            'padding:8px 14px;margin-bottom:12px;font-size:12px;color:#f9e79f;">'
+            '⚠️ <b>Gmail users:</b> You must use an App Password, not your real password.<br>'
+            'Go to: <b>myaccount.google.com → Security → 2-Step Verification → App Passwords</b><br>'
+            'Select "Mail" + "Windows Computer" → copy the 16-character code → paste below.</div>',
+            unsafe_allow_html=True,
+        )
+
+        provider = st.selectbox(
+            "Email provider",
+            list(ew.PROVIDERS.keys()),
+            index=list(ew.PROVIDERS.keys()).index(cfg.get("provider", "Gmail"))
+            if cfg.get("provider") in ew.PROVIDERS else 0,
+            key="ew_provider",
+        )
+        email_addr = st.text_input(
+            "Your email address",
+            value=cfg.get("email", ""),
+            placeholder="you@gmail.com",
+            key="ew_email",
+        )
+        password = st.text_input(
+            "App password (not your real password)",
+            value=cfg.get("password", ""),
+            type="password",
+            placeholder="xxxx xxxx xxxx xxxx",
+            key="ew_pass",
+        )
+        if provider == "Custom":
+            custom_host = st.text_input(
+                "IMAP server hostname",
+                value=cfg.get("host", ""),
+                placeholder="imap.yourprovider.com",
+                key="ew_host",
+            )
+        else:
+            custom_host = ""
+
+        interval = st.select_slider(
+            "Check every",
+            options=[2, 5, 10, 15, 30],
+            value=cfg.get("interval_minutes", 5),
+            format_func=lambda x: f"{x} min",
+            key="ew_interval",
+        )
+
+        if st.button("💾 Save Credentials", key="ew_save_creds", type="primary"):
+            if email_addr and password:
+                ew.save_config(email_addr, password, provider, custom_host, interval)
+                st.success("Credentials saved. Click ▶ Start Watching to begin.")
+                st.rerun()
+            else:
+                st.error("Enter both email address and app password.")
+
+    # ── How it works ─────────────────────────────────────────────────────────
+    with st.expander("ℹ️ How Email Watch works"):
+        st.markdown("""
+**What it does:**
+- Checks your inbox every N minutes (runs in the background — you can use the rest of the app normally)
+- Looks for **unread emails with PDF attachments**
+- Downloads each PDF to the `incoming/` folder in this app's directory
+- Reads the first 3 pages of the PDF to extract borrower names
+- Fuzzy-matches those names against every loan in your Pipeline
+- Shows a notification card here and in the sidebar
+
+**Privacy:**
+- Your credentials are saved locally in `email_config.json` in the app folder
+- The app connects to your IMAP server, downloads attachments, then disconnects
+- Nothing is sent anywhere — reads only, no cloud
+
+**Toggle:**
+- On: background thread checks every N minutes, then sleeps
+- Off: thread stops within a few seconds — no more peeking
+
+**Borrower matching confidence:**
+- 🟢 80%+ = high confidence match (name found in PDF text)
+- 🟡 50–79% = possible match (partial name found)
+- 🔴 Below 50% = no match — file saved to `incoming/` folder, you decide
+        """)
+
+
 # --- Main ---
 def main():
     if not st.session_state.authenticated:
@@ -2498,6 +2724,8 @@ def main():
             show_pipeline()
         elif page == "team":
             show_team_page()
+        elif page == "email_watch":
+            show_email_watch_page()
         elif page == "history":
             show_history()
         elif page == "reader":
