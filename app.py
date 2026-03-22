@@ -1233,6 +1233,47 @@ def show_dashboard():
                                                 unsafe_allow_html=True,
                                             )
 
+                    # ── Fraud Check (bank statements) ───────────────────────
+                    st.markdown("---")
+                    fc_key = f"fraud_on_{fkey}"
+                    fc_col1, fc_col2 = st.columns([1, 4])
+                    with fc_col1:
+                        fraud_on = st.toggle("🔍 Fraud Check", key=fc_key, value=False)
+                    with fc_col2:
+                        if fraud_on:
+                            st.caption("Scanning for fraud indicators — SSN mismatches, "
+                                       "zero withholding, balance jumps, uniform pay, date gaps.")
+
+                    if fraud_on:
+                        from fraud_check import check as _fc
+                        _pdf_bytes_fc = uploaded_file.getvalue()
+                        _fc_result = _fc(_pdf_bytes_fc, doc_type)
+                        _fc_risk   = _fc_result["risk_level"]
+                        _fc_flags  = _fc_result["flags"]
+                        _fc_bg = {"high": "#3d1515", "medium": "#2d2808", "low": "#152a1e"}[_fc_risk]
+                        _fc_bdr = {"high": "#e74c3c", "medium": "#f1c40f", "low": "#27ae60"}[_fc_risk]
+                        st.markdown(
+                            f'<div style="background:{_fc_bg};border-left:4px solid {_fc_bdr};'
+                            f'border-radius:8px;padding:10px 16px;margin:8px 0;">'
+                            f'<div style="font-size:14px;font-weight:700;color:#f0f6fc;">'
+                            f'{_fc_result["summary"]}</div></div>',
+                            unsafe_allow_html=True,
+                        )
+                        if _fc_flags:
+                            for _ffl in _fc_flags:
+                                _ffl_clr = {"high": "#f5b7b1", "medium": "#fdebd0"}.get(
+                                    _ffl["severity"], "#cdd9e5"
+                                )
+                                st.markdown(
+                                    f'<div style="display:flex;gap:8px;margin-bottom:4px;">'
+                                    f'<span style="color:#e74c3c;font-size:14px;">⚑</span>'
+                                    f'<div><span style="color:#f0f6fc;font-size:13px;font-weight:600;">'
+                                    f'{_ffl["rule"]}</span><br>'
+                                    f'<span style="color:{_ffl_clr};font-size:12px;">'
+                                    f'{_ffl["detail"]}</span></div></div>',
+                                    unsafe_allow_html=True,
+                                )
+
                     # skip the rest of the condition-rendering code for this file
                     continue
 
@@ -1922,6 +1963,44 @@ def show_dashboard():
                                 })
 
                 # (Fetch and Guidelines are now inside each condition expander above)
+
+                # ── Fraud Check — available for W-2, pay stub, 1003 scans ───
+                st.markdown("---")
+                _fc2_key = f"fraud_on_cond_{fkey}"
+                _fc2c1, _fc2c2 = st.columns([1, 4])
+                with _fc2c1:
+                    _fraud_on2 = st.toggle("🔍 Fraud Check", key=_fc2_key, value=False)
+                with _fc2c2:
+                    if _fraud_on2:
+                        st.caption("Scanning for SSN mismatches, zero withholding, uniform pay, "
+                                   "date gaps, round-dollar income.")
+                if _fraud_on2:
+                    from fraud_check import check as _fc2
+                    _fc2_bytes  = uploaded_file.getvalue()
+                    _fc2_result = _fc2(_fc2_bytes, doc_type)
+                    _fc2_risk   = _fc2_result["risk_level"]
+                    _fc2_bdr    = {"high": "#e74c3c", "medium": "#f1c40f", "low": "#27ae60"}[_fc2_risk]
+                    _fc2_bg     = {"high": "#3d1515", "medium": "#2d2808", "low": "#152a1e"}[_fc2_risk]
+                    st.markdown(
+                        f'<div style="background:{_fc2_bg};border-left:4px solid {_fc2_bdr};'
+                        f'border-radius:8px;padding:10px 16px;margin:8px 0;">'
+                        f'<div style="font-size:14px;font-weight:700;color:#f0f6fc;">'
+                        f'{_fc2_result["summary"]}</div></div>',
+                        unsafe_allow_html=True,
+                    )
+                    for _ffl2 in _fc2_result.get("flags", []):
+                        _ffl2_clr = {"high": "#f5b7b1", "medium": "#fdebd0"}.get(
+                            _ffl2["severity"], "#cdd9e5"
+                        )
+                        st.markdown(
+                            f'<div style="display:flex;gap:8px;margin-bottom:4px;">'
+                            f'<span style="color:#e74c3c;font-size:14px;">⚑</span>'
+                            f'<div><span style="color:#f0f6fc;font-size:13px;font-weight:600;">'
+                            f'{_ffl2["rule"]}</span><br>'
+                            f'<span style="color:{_ffl2_clr};font-size:12px;">'
+                            f'{_ffl2["detail"]}</span></div></div>',
+                            unsafe_allow_html=True,
+                        )
 
                 st.markdown("---")
                 st.caption(
@@ -2784,6 +2863,109 @@ def show_email_watch_page():
 
         st.markdown("---")
 
+    # ── Incoming Queue — all files in the incoming/ folder ────────────────────
+    import email_watch as ew
+    _incoming_dir = os.path.join(os.path.dirname(__file__), "incoming")
+    _inbox_files  = []
+    if os.path.isdir(_incoming_dir):
+        _inbox_files = [
+            f for f in os.listdir(_incoming_dir)
+            if f.lower().endswith(".pdf")
+        ]
+
+    _iq_label = f"📂 Incoming Queue — {len(_inbox_files)} file(s) waiting" if _inbox_files \
+                else "📂 Incoming Queue — empty"
+    with st.expander(_iq_label, expanded=bool(_inbox_files)):
+        if not _inbox_files:
+            st.markdown(
+                '<span style="color:#a89ec9;font-size:13px;">No files in the incoming folder. '
+                'Files appear here when Email Watch downloads attachments.</span>',
+                unsafe_allow_html=True,
+            )
+        else:
+            st.caption(
+                "These files came from your email inbox. Review each one — "
+                "**nothing moves until you click Yes.**"
+            )
+            from doc_verify import verify as _dv_q
+            from crm import get_all_loans as _iq_loans
+            _pipeline = {l.get("id"): l for l in _iq_loans()}
+
+            for _qi, _qfname in enumerate(_inbox_files):
+                _qfpath = os.path.join(_incoming_dir, _qfname)
+                try:
+                    with open(_qfpath, "rb") as _qf:
+                        _qbytes = _qf.read()
+                    _qv = _dv_q(_qbytes, _qfname)
+                except Exception:
+                    _qv = {"doc_type": "Document", "ok_list": [], "flags": ["Could not read file"],
+                           "verdict": "check", "borrower": None, "loan_num": "",
+                           "suggested_folder": "", "confidence": 0}
+
+                _v_color = {"pass": "#27ae60", "review": "#f1c40f", "check": "#e74c3c"}.get(
+                    _qv.get("verdict", "check"), "#e74c3c"
+                )
+                _v_icon  = {"pass": "✅", "review": "⚠️", "check": "🔍"}.get(
+                    _qv.get("verdict", "check"), "🔍"
+                )
+                _bname = _qv.get("borrower") or "Unknown borrower"
+                _lnum  = _qv.get("loan_num", "")
+                _match_label = f" · {_bname} · Loan {_lnum}" if _qv.get("borrower") else " · No pipeline match"
+
+                with st.container():
+                    st.markdown(
+                        f'<div style="background:#1e1645;border-left:3px solid {_v_color};'
+                        f'border-radius:6px;padding:8px 12px;margin-bottom:6px;">'
+                        f'<span style="font-weight:700;color:#f0f6fc;font-size:13px;">'
+                        f'{_v_icon} {_qfname}</span>'
+                        f'<span style="font-size:12px;color:#a89ec9;">{_match_label}</span><br>'
+                        f'<span style="font-size:11px;color:#7c6ff7;">{_qv.get("doc_type","Document")} · '
+                        f'{_qv.get("page_count",0)} pages · '
+                        f'{_qv.get("days_old","?")}d old</span></div>',
+                        unsafe_allow_html=True,
+                    )
+                    _qa, _qb, _qc, _qd = st.columns([3, 1, 1, 1])
+                    with _qa:
+                        for _ok in _qv.get("ok_list", []):
+                            st.markdown(f'<span style="color:#27ae60;font-size:11px;">✓ {_ok}</span><br>',
+                                        unsafe_allow_html=True)
+                        for _fl in _qv.get("flags", []):
+                            st.markdown(f'<span style="color:#e74c3c;font-size:11px;">⚑ {_fl}</span><br>',
+                                        unsafe_allow_html=True)
+                    _dest_folder = _qv.get("suggested_folder", "")
+                    with _qb:
+                        if _dest_folder and os.path.isdir(_dest_folder):
+                            if st.button("✅ Yes — Save", key=f"iq_yes_{_qi}",
+                                         use_container_width=True, type="primary"):
+                                import shutil as _shu
+                                _dest = os.path.join(_dest_folder, _qfname)
+                                _shu.move(_qfpath, _dest)
+                                st.success(f"Moved to {_dest}")
+                                st.rerun()
+                        else:
+                            _manual = st.text_input("Save to:", key=f"iq_path_{_qi}",
+                                                    placeholder=r"C:\Loans\Smith",
+                                                    label_visibility="collapsed")
+                            if _manual and st.button("✅ Yes", key=f"iq_yes_m_{_qi}",
+                                                     use_container_width=True, type="primary"):
+                                import shutil as _shu
+                                os.makedirs(_manual, exist_ok=True)
+                                _shu.move(_qfpath, os.path.join(_manual, _qfname))
+                                st.success("Moved.")
+                                st.rerun()
+                    with _qc:
+                        if st.button("📂 Read", key=f"iq_read_{_qi}", use_container_width=True):
+                            st.session_state.reader_open_file = _qfpath
+                            st.session_state.page = "reader"
+                            st.rerun()
+                    with _qd:
+                        if st.button("❌ No", key=f"iq_no_{_qi}", use_container_width=True):
+                            try:
+                                os.remove(_qfpath)
+                            except Exception:
+                                pass
+                            st.rerun()
+
     # ── Credentials setup ─────────────────────────────────────────────────────
     with st.expander("⚙️ Email Credentials" + (" (configured)" if cfg else " (not set up)"), expanded=not cfg):
         st.markdown(
@@ -2825,17 +3007,27 @@ def show_email_watch_page():
         else:
             custom_host = ""
 
-        interval = st.select_slider(
-            "Check every",
-            options=[2, 5, 10, 15, 30],
-            value=cfg.get("interval_minutes", 5),
-            format_func=lambda x: f"{x} min",
-            key="ew_interval",
-        )
+        iv1, iv2 = st.columns(2)
+        with iv1:
+            interval = st.select_slider(
+                "Check every",
+                options=[2, 5, 10, 15, 30],
+                value=cfg.get("interval_minutes", 5),
+                format_func=lambda x: f"{x} min",
+                key="ew_interval",
+            )
+        with iv2:
+            since_hours = st.select_slider(
+                "Only look back",
+                options=[0, 1, 2, 3, 6, 12, 24],
+                value=cfg.get("since_hours", 1),
+                format_func=lambda x: "All unread" if x == 0 else f"Last {x}h",
+                key="ew_since",
+            )
 
         if st.button("💾 Save Credentials", key="ew_save_creds", type="primary"):
             if email_addr and password:
-                ew.save_config(email_addr, password, provider, custom_host, interval)
+                ew.save_config(email_addr, password, provider, custom_host, interval, since_hours)
                 st.success("Credentials saved. Click ▶ Start Watching to begin.")
                 st.rerun()
             else:

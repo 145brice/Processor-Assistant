@@ -65,7 +65,8 @@ def get_config() -> dict:
 
 
 def save_config(email_addr: str, password: str, provider: str,
-                custom_host: str = "", interval: int = 5) -> dict:
+                custom_host: str = "", interval: int = 5,
+                since_hours: int = 0) -> dict:
     host = PROVIDERS.get(provider, {}).get("host") or custom_host
     port = PROVIDERS.get(provider, {}).get("port", 993)
     cfg = {
@@ -75,6 +76,7 @@ def save_config(email_addr: str, password: str, provider: str,
         "host":             host,
         "port":             port,
         "interval_minutes": interval,
+        "since_hours":      since_hours,   # 0 = all unseen, N = only last N hours
     }
     with open(_CFG_FILE, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=2)
@@ -169,7 +171,13 @@ def _check(config: dict) -> int:
     mail.login(config["email"], config["password"])
     mail.select("inbox")
 
-    _, data = mail.search(None, "UNSEEN")
+    since_hours = int(config.get("since_hours", 0))
+    if since_hours > 0:
+        from datetime import datetime as _dt, timedelta as _td
+        since_date = (_dt.now() - _td(hours=since_hours)).strftime("%d-%b-%Y")
+        _, data = mail.search(None, f'UNSEEN SINCE {since_date}')
+    else:
+        _, data = mail.search(None, "UNSEEN")
     eids = data[0].split()
 
     found = 0
