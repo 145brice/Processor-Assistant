@@ -180,6 +180,43 @@ button[kind="secondary"]:hover {
 [data-testid="stFileUploader"] label {
     color: #cdd9e5 !important;
 }
+/* Uploaded file chip — name + size shown after upload */
+[data-testid="stFileUploaderFile"] {
+    background: #2a1f55 !important;
+    border: 1px solid #4a3a8a !important;
+    border-radius: 6px !important;
+    color: #e6edf3 !important;
+}
+[data-testid="stFileUploaderFile"] span,
+[data-testid="stFileUploaderFile"] small,
+[data-testid="stFileUploaderFile"] p {
+    color: #e6edf3 !important;
+    font-weight: 500 !important;
+}
+[data-testid="stFileUploaderFileName"] {
+    color: #f0f6fc !important;
+    font-weight: 600 !important;
+}
+[data-testid="stFileUploaderFileData"] {
+    color: #a89ec9 !important;
+}
+
+/* ── Form submit buttons (Add to Team, Save, etc.) ────────────── */
+[data-testid="stForm"] [data-testid="stBaseButton-secondaryFormSubmit"],
+[data-testid="stForm"] button[kind="primaryFormSubmit"],
+[data-testid="stForm"] button[kind="secondaryFormSubmit"] {
+    background: #3a2878 !important;
+    border: 1px solid #6a56b8 !important;
+    color: #e6edf3 !important;
+    font-weight: 600 !important;
+    border-radius: 8px !important;
+}
+[data-testid="stForm"] button[kind="primaryFormSubmit"]:hover,
+[data-testid="stForm"] button[kind="secondaryFormSubmit"]:hover {
+    background: #4a3a8a !important;
+    border-color: #7c6ff7 !important;
+    color: #ffffff !important;
+}
 
 /* ── Expanders ────────────────────────────────────────────────── */
 [data-testid="stExpander"] {
