@@ -13,6 +13,9 @@ from datetime import datetime
 DB_PATH = os.path.join(os.path.dirname(__file__), "processor.db")
 
 
+ROLE_OPTIONS = ["Processor", "Loan Officer", "Jr Underwriter", "Manager"]
+
+
 def _get_conn():
     """Get SQLite connection, create tables if needed."""
     conn = sqlite3.connect(DB_PATH)
@@ -22,9 +25,22 @@ def _get_conn():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             email TEXT UNIQUE NOT NULL,
             password_hash TEXT NOT NULL,
+            display_name TEXT DEFAULT '',
+            role TEXT DEFAULT 'Processor',
             created_at TEXT DEFAULT (datetime('now'))
         )
     """)
+    # Migrate existing DBs that don't have display_name / role columns
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN display_name TEXT DEFAULT ''")
+        conn.commit()
+    except Exception:
+        pass
+    try:
+        conn.execute("ALTER TABLE users ADD COLUMN role TEXT DEFAULT 'Processor'")
+        conn.commit()
+    except Exception:
+        pass
     conn.execute("""
         CREATE TABLE IF NOT EXISTS scan_history (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -47,19 +63,20 @@ def _hash_password(password: str) -> str:
 
 # --- Auth ---
 
-def signup(email: str, password: str) -> dict:
+def signup(email: str, password: str, display_name: str = "", role: str = "Processor") -> dict:
     try:
         conn = _get_conn()
         conn.execute(
-            "INSERT INTO users (email, password_hash) VALUES (?, ?)",
-            (email, _hash_password(password)),
+            "INSERT INTO users (email, password_hash, display_name, role) VALUES (?, ?, ?, ?)",
+            (email, _hash_password(password), display_name.strip(), role),
         )
         conn.commit()
-        user_id = conn.execute(
+        row = conn.execute(
             "SELECT id FROM users WHERE email = ?", (email,)
-        ).fetchone()["id"]
+        ).fetchone()
         conn.close()
-        return {"success": True, "user_id": str(user_id), "email": email}
+        return {"success": True, "user_id": str(row["id"]), "email": email,
+                "display_name": display_name, "role": role}
     except sqlite3.IntegrityError:
         return {"error": "Email already registered"}
     except Exception as e:
@@ -70,14 +87,33 @@ def login(email: str, password: str) -> dict:
     try:
         conn = _get_conn()
         row = conn.execute(
-            "SELECT id, password_hash FROM users WHERE email = ?", (email,)
+            "SELECT id, password_hash, display_name, role FROM users WHERE email = ?", (email,)
         ).fetchone()
         conn.close()
         if row and row["password_hash"] == _hash_password(password):
-            return {"success": True, "user_id": str(row["id"]), "email": email}
+            return {
+                "success": True,
+                "user_id": str(row["id"]),
+                "email": email,
+                "display_name": row["display_name"] or "",
+                "role": row["role"] or "Processor",
+            }
         return {"error": "Invalid email or password"}
     except Exception as e:
         return {"error": str(e)}
+
+
+def get_all_users() -> list:
+    """Return all users (for pipeline assignment dropdowns)."""
+    try:
+        conn = _get_conn()
+        rows = conn.execute(
+            "SELECT id, email, display_name, role FROM users ORDER BY display_name, email"
+        ).fetchall()
+        conn.close()
+        return [dict(r) for r in rows]
+    except Exception:
+        return []
 
 
 def logout():

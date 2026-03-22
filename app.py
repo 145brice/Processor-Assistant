@@ -474,16 +474,15 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
 
 # --- Session State Defaults ---
 DEFAULTS = {
+    "page": "dashboard",
     "authenticated": False,
     "user_id": None,
-    "user_email": None,
-    "page": "login",
-    "sandbox_mode": True,
+    "user_email": "",
+    "user_name": "",
+    "user_role": "",
+    "sandbox_mode": False,
     "scan_results": None,
-    "history": [],
     "last_fetch_folder": "",
-    "fetch_results": None,
-    "guide_results": None,
     "reader_folder": "",
     "reader_files": [],
     "reader_open_file": None,
@@ -545,6 +544,8 @@ def show_login_page():
             st.session_state.authenticated = True
             st.session_state.user_id = "sandbox"
             st.session_state.user_email = "sandbox@demo"
+            st.session_state.user_name = "Sandbox User"
+            st.session_state.user_role = "Processor"
             st.session_state.sandbox_mode = True
             st.session_state.page = "dashboard"
             st.rerun()
@@ -567,6 +568,9 @@ def show_login_page():
                     st.session_state.authenticated = True
                     st.session_state.user_id = result["user_id"]
                     st.session_state.user_email = result["email"]
+                    st.session_state.user_name = result.get("display_name") or result["email"].split("@")[0]
+                    st.session_state.user_role = result.get("role", "Processor")
+                    st.session_state.sandbox_mode = False
                     st.session_state.page = "dashboard"
                     st.rerun()
                 else:
@@ -574,27 +578,31 @@ def show_login_page():
 
     with tab_signup:
         with st.form("signup_form"):
+            from db import ROLE_OPTIONS
+            display_name = st.text_input("Your Name", placeholder="e.g. Maria Garcia", key="signup_name")
+            role = st.selectbox("Your Role", ROLE_OPTIONS, key="signup_role")
             email = st.text_input("Email", key="signup_email")
             password = st.text_input("Password", type="password", key="signup_pass")
             confirm = st.text_input("Confirm Password", type="password", key="signup_confirm")
             tos = st.checkbox(
-                "I agree to the Terms of Service. I acknowledge that documents "
-                "are processed in memory and never stored. I have authorization "
-                "to process any documents I upload."
+                "I acknowledge that documents are processed in memory only and never stored. "
+                "I have authorization to process any documents I upload."
             )
             submitted = st.form_submit_button("Create Account", use_container_width=True)
             if submitted:
                 if not tos:
-                    st.error("You must agree to the Terms of Service")
+                    st.error("Please check the acknowledgment above")
                 elif password != confirm:
                     st.error("Passwords do not match")
                 elif len(password) < 6:
                     st.error("Password must be at least 6 characters")
+                elif not display_name.strip():
+                    st.error("Please enter your name")
                 elif email and password:
                     from db import signup
-                    result = signup(email, password)
+                    result = signup(email, password, display_name=display_name, role=role)
                     if result.get("success"):
-                        st.success("Account created! Check your email to confirm, then log in.")
+                        st.success(f"Account created for {display_name}! You can now log in.")
                     else:
                         st.error(result.get("error", "Signup failed"))
 
@@ -604,39 +612,41 @@ def show_login_page():
 def show_sidebar():
     """Sidebar navigation."""
     with st.sidebar:
+        user_name = st.session_state.get("user_name", "")
+        user_role = st.session_state.get("user_role", "")
+        is_sandbox = st.session_state.get("sandbox_mode", False)
+
         st.markdown("""
         <div style="padding: 4px 0 16px 0;">
-          <div style="font-size:18px; font-weight:800; color:#e6edf3; letter-spacing:-0.3px;">
+          <div style="font-size:20px; font-weight:800; color:#e6edf3; letter-spacing:-0.3px;">
             📋 Processor Traien
           </div>
+          <div style="font-size:11px; color:#a89ec9; margin-top:4px;">Offline · Local · No cloud</div>
         </div>
         """, unsafe_allow_html=True)
-        st.markdown(
-            f'<div style="font-size:11px; color:#484f58; margin-bottom:12px;">'
-            f'{st.session_state.user_email}</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown("---")
 
-        is_sandbox = st.toggle(
-            "Sandbox Mode (Free Practice)",
-            value=st.session_state.sandbox_mode,
-            help="Sandbox: unlimited free scans, results not saved.",
-        )
-        st.session_state.sandbox_mode = is_sandbox
-
+        # ── Who's logged in ──────────────────────────────────────────────────
         if is_sandbox:
-            st.info("Sandbox: Free & unlimited. Results not saved.")
-        else:
-            if st.session_state.user_id != "sandbox":
-                from db import get_file_count
-                count = get_file_count(st.session_state.user_id)
-                remaining_free = max(0, 5 - count)
-                st.warning(f"Live Mode: {count} files processed. {remaining_free} free files remaining.")
-            else:
-                st.warning("Log in to use Live Mode.")
+            st.markdown(
+                '<div style="background:#2a1f55;border:1px solid #4a3a8a;border-radius:8px;'
+                'padding:8px 12px;margin-bottom:12px;">'
+                '<span style="font-size:12px;color:#a89ec9;">⚡ Sandbox Mode</span></div>',
+                unsafe_allow_html=True,
+            )
+        elif user_name:
+            role_color = {"Loan Officer": "#e67e22", "Manager": "#2980b9",
+                          "Jr Underwriter": "#c0392b"}.get(user_role, "#7c6ff7")
+            st.markdown(
+                f'<div style="background:#2a1f55;border:1px solid #4a3a8a;border-radius:8px;'
+                f'padding:8px 12px;margin-bottom:12px;">'
+                f'<div style="font-size:13px;font-weight:700;color:#f0f6fc;">{user_name}</div>'
+                f'<div style="font-size:11px;color:{role_color};font-weight:600;">{user_role}</div>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
 
         st.markdown("---")
+
         if st.button("📋 Document Scanner", use_container_width=True):
             st.session_state.page = "dashboard"
             st.rerun()
@@ -646,13 +656,16 @@ def show_sidebar():
         if st.button("📂 Document Reader", use_container_width=True):
             st.session_state.page = "reader"
             st.rerun()
-        if st.button("🕑 My History", use_container_width=True):
-            st.session_state.page = "history"
+        if st.button("👥 My Team", use_container_width=True):
+            st.session_state.page = "team"
             st.rerun()
+        if not is_sandbox:
+            if st.button("🕑 My History", use_container_width=True):
+                st.session_state.page = "history"
+                st.rerun()
+
         st.markdown("---")
-        if st.button("Logout", use_container_width=True):
-            from db import logout
-            logout()
+        if st.button("🚪 Logout", use_container_width=True):
             for key in DEFAULTS:
                 st.session_state[key] = DEFAULTS[key]
             st.rerun()
@@ -750,7 +763,297 @@ def show_dashboard():
             if st.session_state.scan_results and st.session_state.scan_results.get("doc_type") == doc_type:
                 result = st.session_state.scan_results
 
-                # === CONDITIONS (the main output) ===
+                # === BANK STATEMENT — special display ===
+                if doc_type == "Bank Statement":
+                    bank_rules = result.get("bank_rules", "")
+                    if not bank_rules:
+                        st.warning("Bank statement analysis returned no results. The PDF may be a scanned image with no readable text.")
+                        continue
+
+                    st.markdown("## 🏦 Bank Statement Analysis")
+                    st.caption("Offline pattern scan — manual review always recommended.")
+
+                    # Parse structured output
+                    raw_lines = bank_rules.strip().split("\n")
+                    ok_c = flag_c = miss_c = info_c = 0
+                    current_section = ""
+
+                    for raw in raw_lines:
+                        parts = raw.split("|")
+                        tag = parts[0] if parts else ""
+
+                        if tag == "SUMMARY":
+                            ok_c, flag_c, miss_c, info_c = (
+                                int(parts[1]), int(parts[2]),
+                                int(parts[3]), int(parts[4]),
+                            )
+                            sc1, sc2, sc3, sc4 = st.columns(4)
+                            with sc1:
+                                st.markdown(
+                                    f'<div class="stat-card"><div class="stat-num" style="color:#27ae60;">{ok_c}</div>'
+                                    f'<div class="stat-label">✅ Passed</div></div>',
+                                    unsafe_allow_html=True,
+                                )
+                            with sc2:
+                                st.markdown(
+                                    f'<div class="stat-card"><div class="stat-num" style="color:#e74c3c;">{flag_c}</div>'
+                                    f'<div class="stat-label">🚩 Flagged</div></div>',
+                                    unsafe_allow_html=True,
+                                )
+                            with sc3:
+                                st.markdown(
+                                    f'<div class="stat-card"><div class="stat-num" style="color:#f1c40f;">{miss_c}</div>'
+                                    f'<div class="stat-label">⚠️ Missing</div></div>',
+                                    unsafe_allow_html=True,
+                                )
+                            with sc4:
+                                st.markdown(
+                                    f'<div class="stat-card"><div class="stat-num" style="color:#5dade2;">{info_c}</div>'
+                                    f'<div class="stat-label">ℹ️ Note</div></div>',
+                                    unsafe_allow_html=True,
+                                )
+                            st.markdown("---")
+
+                        elif tag == "SECTION":
+                            current_section = parts[1] if len(parts) > 1 else ""
+                            st.markdown(
+                                f'<div style="font-size:13px;font-weight:700;color:#b794f4;'
+                                f'margin:14px 0 6px 0;text-transform:uppercase;letter-spacing:0.5px;">'
+                                f'{current_section}</div>',
+                                unsafe_allow_html=True,
+                            )
+
+                        elif tag == "OK":
+                            num, label, msg = parts[1], parts[2], parts[3] if len(parts) > 3 else ""
+                            st.markdown(
+                                f'<div style="display:flex;gap:10px;align-items:flex-start;'
+                                f'background:#152a1e;border-left:3px solid #27ae60;'
+                                f'border-radius:6px;padding:7px 12px;margin-bottom:3px;">'
+                                f'<span style="color:#27ae60;font-weight:700;font-size:12px;min-width:20px;">✓</span>'
+                                f'<div><span style="color:#cdd9e5;font-size:13px;font-weight:600;">{label}</span>'
+                                f'<br><span style="color:#a89ec9;font-size:12px;">{msg}</span></div></div>',
+                                unsafe_allow_html=True,
+                            )
+
+                        elif tag == "FLAG":
+                            num, label, msg = parts[1], parts[2], parts[3] if len(parts) > 3 else ""
+                            st.markdown(
+                                f'<div style="display:flex;gap:10px;align-items:flex-start;'
+                                f'background:#3d1515;border-left:3px solid #e74c3c;'
+                                f'border-radius:6px;padding:7px 12px;margin-bottom:3px;">'
+                                f'<span style="color:#e74c3c;font-weight:700;font-size:12px;min-width:20px;">🚩</span>'
+                                f'<div><span style="color:#f0f6fc;font-size:13px;font-weight:700;">{label}</span>'
+                                f'<br><span style="color:#e8b4b4;font-size:12px;">{msg}</span></div></div>',
+                                unsafe_allow_html=True,
+                            )
+
+                        elif tag == "MISSING":
+                            num, label, msg = parts[1], parts[2], parts[3] if len(parts) > 3 else ""
+                            st.markdown(
+                                f'<div style="display:flex;gap:10px;align-items:flex-start;'
+                                f'background:#3d3015;border-left:3px solid #f1c40f;'
+                                f'border-radius:6px;padding:7px 12px;margin-bottom:3px;">'
+                                f'<span style="color:#f1c40f;font-weight:700;font-size:12px;min-width:20px;">⚠</span>'
+                                f'<div><span style="color:#f0f6fc;font-size:13px;font-weight:600;">{label}</span>'
+                                f'<br><span style="color:#e8d8a0;font-size:12px;">{msg}</span></div></div>',
+                                unsafe_allow_html=True,
+                            )
+
+                        elif tag == "INFO":
+                            num, label, msg = parts[1], parts[2], parts[3] if len(parts) > 3 else ""
+                            st.markdown(
+                                f'<div style="display:flex;gap:10px;align-items:flex-start;'
+                                f'background:#1a2a3d;border-left:3px solid #5dade2;'
+                                f'border-radius:6px;padding:7px 12px;margin-bottom:3px;">'
+                                f'<span style="color:#5dade2;font-weight:700;font-size:12px;min-width:20px;">ℹ</span>'
+                                f'<div><span style="color:#f0f6fc;font-size:13px;font-weight:600;">{label}</span>'
+                                f'<br><span style="color:#a8c8e8;font-size:12px;">{msg}</span></div></div>',
+                                unsafe_allow_html=True,
+                            )
+
+                        elif tag == "MANUAL":
+                            num, label = parts[1], parts[2] if len(parts) > 2 else ""
+                            st.markdown(
+                                f'<div style="display:flex;gap:10px;align-items:center;'
+                                f'background:#252040;border-left:3px solid #6a56b8;'
+                                f'border-radius:6px;padding:6px 12px;margin-bottom:3px;">'
+                                f'<span style="color:#6a56b8;font-size:12px;min-width:20px;">👁</span>'
+                                f'<span style="color:#a89ec9;font-size:13px;">{label}</span>'
+                                f'</div>',
+                                unsafe_allow_html=True,
+                            )
+
+                    # ── Fetch & Analyze from Folder ──────────────────────────
+                    st.markdown("---")
+                    st.markdown("### 📂 Fetch & Analyze Bank Statements from Folder")
+                    st.caption(
+                        "Search a borrower's folder for bank statement PDFs and run "
+                        "the full analysis on any file — right here."
+                    )
+
+                    # Pre-fill folder: last used → pipeline match → blank
+                    from crm import get_all_loans as _get_pipe_loans
+                    _default_bs_folder = st.session_state.get("last_fetch_folder", "")
+                    if not _default_bs_folder:
+                        for _pl in _get_pipe_loans():
+                            _fp = _pl.get("folder_path", "")
+                            if _fp and os.path.isdir(_fp):
+                                _default_bs_folder = _fp
+                                break
+
+                    bsf1, bsf2, bsf3 = st.columns([4, 2, 1])
+                    with bsf1:
+                        bs_folder = st.text_input(
+                            "Borrower folder:",
+                            value=_default_bs_folder,
+                            placeholder=r"C:\Loans\SmithJohn",
+                            key=f"bs_folder_{fkey}",
+                            label_visibility="collapsed",
+                        )
+                    with bsf2:
+                        bs_scope = st.selectbox(
+                            "Scope",
+                            ["Bank statements only", "All PDFs in folder"],
+                            key=f"bs_scope_{fkey}",
+                            label_visibility="collapsed",
+                        )
+                    with bsf3:
+                        bs_search = st.button(
+                            "🔍 Search", key=f"bs_search_{fkey}",
+                            use_container_width=True, type="primary",
+                        )
+
+                    if bs_search and bs_folder:
+                        st.session_state["last_fetch_folder"] = bs_folder
+                        from folder_search import find_bank_statements
+                        scope_val = "bank_only" if "only" in bs_scope else "all_pdfs"
+                        with st.spinner("Scanning folder..."):
+                            bs_hits = find_bank_statements(bs_folder, scope=scope_val)
+
+                        if not bs_hits:
+                            st.info(
+                                "No bank statement PDFs found. Try switching to "
+                                "**All PDFs in folder** or check the folder path."
+                            )
+                        else:
+                            st.session_state[f"bs_hits_{fkey}"] = bs_hits
+
+                    bs_hits = st.session_state.get(f"bs_hits_{fkey}", [])
+                    if bs_hits:
+                        st.markdown(
+                            f"<div style='font-size:13px;color:#a89ec9;margin-bottom:8px;'>"
+                            f"Found {len(bs_hits)} file(s) — click Analyze to run the 50-rule scan</div>",
+                            unsafe_allow_html=True,
+                        )
+                        for hi, hit in enumerate(bs_hits):
+                            conf_color = "#27ae60" if hit["score"] >= 70 else (
+                                "#f1c40f" if hit["score"] >= 40 else "#e74c3c"
+                            )
+                            conf_label = "High" if hit["score"] >= 70 else (
+                                "Medium" if hit["score"] >= 40 else "Low"
+                            )
+                            hc1, hc2, hc3 = st.columns([4, 2, 1])
+                            with hc1:
+                                st.markdown(
+                                    f'<div style="font-weight:600;color:#f0f6fc;font-size:13px;">'
+                                    f'{hit["file_name"]}</div>'
+                                    f'<div style="font-size:11px;color:#a89ec9;">'
+                                    f'{hit["snippet"][:120]}...</div>',
+                                    unsafe_allow_html=True,
+                                )
+                            with hc2:
+                                st.markdown(
+                                    f'<div style="font-size:12px;color:{conf_color};font-weight:700;">'
+                                    f'{conf_label} confidence ({hit["score"]}%)</div>'
+                                    f'<div style="font-size:11px;color:#a89ec9;">{hit["reason"]}</div>',
+                                    unsafe_allow_html=True,
+                                )
+                            with hc3:
+                                if st.button("Analyze", key=f"bs_analyze_{fkey}_{hi}",
+                                             use_container_width=True):
+                                    st.session_state[f"bs_analyzing_{fkey}"] = hit["file_path"]
+
+                            # If this file is selected for analysis, run it
+                            if st.session_state.get(f"bs_analyzing_{fkey}") == hit["file_path"]:
+                                with st.spinner(f"Running bank analysis on {hit['file_name']}..."):
+                                    from pypdf import PdfReader as _PR
+                                    from ai_engine import check_bank_rules as _cbr
+                                    try:
+                                        _rdr = _PR(hit["file_path"])
+                                        _txt = "\n".join(
+                                            (p.extract_text() or "") for p in _rdr.pages
+                                        )
+                                        _bank_out = _cbr(_txt)
+                                    except Exception as _e:
+                                        _bank_out = ""
+                                        st.error(f"Could not read file: {_e}")
+
+                                if _bank_out:
+                                    st.markdown(
+                                        f"<div style='font-size:13px;font-weight:700;"
+                                        f"color:#b794f4;margin:10px 0 6px 0;'>"
+                                        f"📊 Analysis: {hit['file_name']}</div>",
+                                        unsafe_allow_html=True,
+                                    )
+                                    _raw2 = _bank_out.strip().split("\n")
+                                    for _raw in _raw2:
+                                        _pts = _raw.split("|")
+                                        _tag = _pts[0] if _pts else ""
+                                        if _tag == "SUMMARY":
+                                            _ok2, _fl2, _ms2, _in2 = (
+                                                int(_pts[1]), int(_pts[2]),
+                                                int(_pts[3]), int(_pts[4]),
+                                            )
+                                            _s1, _s2, _s3, _s4 = st.columns(4)
+                                            for _col, _val, _clr, _lbl in [
+                                                (_s1, _ok2, "#27ae60", "✅ Passed"),
+                                                (_s2, _fl2, "#e74c3c", "🚩 Flagged"),
+                                                (_s3, _ms2, "#f1c40f", "⚠️ Missing"),
+                                                (_s4, _in2, "#5dade2", "ℹ️ Note"),
+                                            ]:
+                                                with _col:
+                                                    st.markdown(
+                                                        f'<div class="stat-card">'
+                                                        f'<div class="stat-num" style="color:{_clr};">{_val}</div>'
+                                                        f'<div class="stat-label">{_lbl}</div></div>',
+                                                        unsafe_allow_html=True,
+                                                    )
+                                        elif _tag == "SECTION":
+                                            st.markdown(
+                                                f'<div style="font-size:12px;font-weight:700;color:#b794f4;'
+                                                f'margin:10px 0 4px 0;text-transform:uppercase;">'
+                                                f'{_pts[1] if len(_pts)>1 else ""}</div>',
+                                                unsafe_allow_html=True,
+                                            )
+                                        elif _tag in ("OK", "FLAG", "MISSING", "INFO", "MANUAL"):
+                                            _lbl2 = _pts[2] if len(_pts) > 2 else ""
+                                            _msg2 = _pts[3] if len(_pts) > 3 else ""
+                                            _styles = {
+                                                "OK":     ("#152a1e", "#27ae60", "✓"),
+                                                "FLAG":   ("#3d1515", "#e74c3c", "🚩"),
+                                                "MISSING":("#3d3015", "#f1c40f", "⚠"),
+                                                "INFO":   ("#1a2a3d", "#5dade2", "ℹ"),
+                                                "MANUAL": ("#252040", "#6a56b8", "👁"),
+                                            }
+                                            _bg, _bdr, _ico = _styles.get(
+                                                _tag, ("#252040", "#6a56b8", "·")
+                                            )
+                                            st.markdown(
+                                                f'<div style="display:flex;gap:8px;'
+                                                f'background:{_bg};border-left:3px solid {_bdr};'
+                                                f'border-radius:5px;padding:5px 10px;margin-bottom:2px;">'
+                                                f'<span style="color:{_bdr};min-width:18px;">{_ico}</span>'
+                                                f'<div><span style="color:#f0f6fc;font-size:12px;'
+                                                f'font-weight:600;">{_lbl2}</span>'
+                                                + (f'<br><span style="color:#a89ec9;font-size:11px;">{_msg2}</span>' if _msg2 else "")
+                                                + f'</div></div>',
+                                                unsafe_allow_html=True,
+                                            )
+
+                    # skip the rest of the condition-rendering code for this file
+                    continue
+
+                # === CONDITIONS (the main output — non-bank-statement docs) ===
                 conditions_text = result["conditions"]
                 condition_rows = []
                 for line in conditions_text.split("\n"):
@@ -850,17 +1153,45 @@ def show_dashboard():
 
                             st.markdown("---")
 
+                            # ── Detect if condition is bank-statement-related ──
+                            _bs_keywords = {
+                                "bank statement", "bank stmt", "checking account",
+                                "savings account", "deposit", "bank", "statement",
+                                "60 days", "2 months", "3 months",
+                            }
+                            _desc_lower = cond["desc"].lower()
+                            _is_bs_cond = any(kw in _desc_lower for kw in _bs_keywords)
+
                             # ── Fetch from Folder ────────────────────────
-                            fa, fb = st.columns([1, 1])
+                            if _is_bs_cond:
+                                fa, fb, fc = st.columns([1, 1, 1])
+                            else:
+                                fa, fb = st.columns([1, 1])
+                                fc = None
+
                             with fa:
                                 fetch_btn = st.button("📂 Fetch from Folder",
                                     key=f"fetchbtn_{fkey}_{cnum}", use_container_width=True)
                             with fb:
                                 guide_btn = st.button("📋 Check Guidelines",
                                     key=f"guidebtn_{fkey}_{cnum}", use_container_width=True)
+                            if fc:
+                                with fc:
+                                    bs_fetch_btn = st.button(
+                                        "🏦 Find & Analyze Bank Stmt",
+                                        key=f"bsfetchbtn_{fkey}_{cnum}",
+                                        use_container_width=True,
+                                        help="Search borrower folder for bank statement PDFs and run the 50-rule analysis.",
+                                    )
+                            else:
+                                bs_fetch_btn = False
 
                             if fetch_btn:
                                 st.session_state[f"show_cfetch_{fkey}_{cnum}"] = True
+                            if bs_fetch_btn:
+                                st.session_state[f"show_bsfetch_{fkey}_{cnum}"] = True
+
+                            # ── Standard fetch flow ────────────────────
                             if st.session_state.get(f"show_cfetch_{fkey}_{cnum}"):
                                 folder_path = st.text_input(
                                     "Folder path:",
@@ -887,6 +1218,125 @@ def show_dashboard():
                                             progress_callback=lambda p, m: prog.progress(min(p,100), text=m))
                                         st.session_state[fetch_key] = res
                                         st.session_state[f"show_cfetch_{fkey}_{cnum}"] = False
+
+                            # ── Bank statement fetch + analyze flow ─────
+                            if st.session_state.get(f"show_bsfetch_{fkey}_{cnum}"):
+                                from crm import get_all_loans as _pipe_loans
+                                _def_bs = st.session_state.get("last_fetch_folder", "")
+                                if not _def_bs:
+                                    for _pl2 in _pipe_loans():
+                                        _fp2 = _pl2.get("folder_path", "")
+                                        if _fp2 and _os.path.isdir(_fp2):
+                                            _def_bs = _fp2
+                                            break
+
+                                bsf_path = st.text_input(
+                                    "Borrower folder:",
+                                    value=_def_bs,
+                                    key=f"bsfolder_{fkey}_{cnum}",
+                                    placeholder=r"C:\Loans\SmithJohn",
+                                )
+                                bsc1, bsc2, bsc3 = st.columns([2, 2, 1])
+                                with bsc1:
+                                    bss_scope = st.selectbox(
+                                        "Scope",
+                                        ["Bank statements only", "All PDFs"],
+                                        key=f"bsscope_{fkey}_{cnum}",
+                                        label_visibility="collapsed",
+                                    )
+                                with bsc2:
+                                    pass
+                                with bsc3:
+                                    bss_go = st.button(
+                                        "Search", key=f"bsgo_{fkey}_{cnum}",
+                                        use_container_width=True,
+                                    )
+                                if bss_go and bsf_path:
+                                    st.session_state["last_fetch_folder"] = bsf_path
+                                    from folder_search import find_bank_statements
+                                    _bss = "bank_only" if "only" in bss_scope else "all_pdfs"
+                                    with st.spinner("Searching for bank statements..."):
+                                        _bs_results = find_bank_statements(bsf_path, scope=_bss)
+                                    st.session_state[f"bshits_{fkey}_{cnum}"] = _bs_results
+
+                                _bs_hits2 = st.session_state.get(f"bshits_{fkey}_{cnum}", [])
+                                if _bs_hits2:
+                                    for _bhi, _bht in enumerate(_bs_hits2):
+                                        _conf_c = "#27ae60" if _bht["score"] >= 70 else (
+                                            "#f1c40f" if _bht["score"] >= 40 else "#e74c3c"
+                                        )
+                                        _bhc1, _bhc2, _bhc3, _bhc4 = st.columns([3, 2, 1, 1])
+                                        with _bhc1:
+                                            st.markdown(
+                                                f'<div style="font-weight:600;color:#f0f6fc;font-size:12px;">'
+                                                f'{_bht["file_name"]}</div>'
+                                                f'<div style="font-size:11px;color:#a89ec9;">'
+                                                f'{_bht["snippet"][:100]}</div>',
+                                                unsafe_allow_html=True,
+                                            )
+                                        with _bhc2:
+                                            st.markdown(
+                                                f'<div style="font-size:11px;color:{_conf_c};">'
+                                                f'{_bht["score"]}% match · {_bht["reason"][:40]}</div>',
+                                                unsafe_allow_html=True,
+                                            )
+                                        with _bhc3:
+                                            if st.button("Analyze", key=f"bsana_{fkey}_{cnum}_{_bhi}",
+                                                         use_container_width=True):
+                                                st.session_state[f"bsana_file_{fkey}_{cnum}"] = _bht["file_path"]
+                                        with _bhc4:
+                                            if st.button("Read", key=f"bsread_{fkey}_{cnum}_{_bhi}",
+                                                         use_container_width=True):
+                                                st.session_state["reader_open_file"] = {
+                                                    "name": _bht["file_name"],
+                                                    "path": _bht["file_path"],
+                                                    "ext": ".pdf",
+                                                }
+                                                st.session_state["page"] = "reader"
+                                                st.rerun()
+
+                                        # Inline analysis
+                                        if st.session_state.get(f"bsana_file_{fkey}_{cnum}") == _bht["file_path"]:
+                                            with st.spinner(f"Analyzing {_bht['file_name']}..."):
+                                                from pypdf import PdfReader as _PRx
+                                                from ai_engine import check_bank_rules as _cbrx
+                                                try:
+                                                    _rdrx = _PRx(_bht["file_path"])
+                                                    _txtx = "\n".join(
+                                                        (p.extract_text() or "") for p in _rdrx.pages
+                                                    )
+                                                    _bkout = _cbrx(_txtx)
+                                                except Exception as _ex:
+                                                    _bkout = ""
+                                                    st.error(str(_ex))
+
+                                            if _bkout:
+                                                _rawx = _bkout.strip().split("\n")
+                                                for _rx in _rawx:
+                                                    _ptx = _rx.split("|")
+                                                    _tgx = _ptx[0] if _ptx else ""
+                                                    if _tgx == "SUMMARY":
+                                                        _ox, _fx, _mx, _ix = int(_ptx[1]), int(_ptx[2]), int(_ptx[3]), int(_ptx[4])
+                                                        st.markdown(
+                                                            f'<div style="font-size:12px;color:#cdd9e5;padding:4px 0;">'
+                                                            f'✅ {_ox} Passed &nbsp; 🚩 {_fx} Flagged &nbsp; '
+                                                            f'⚠️ {_mx} Missing &nbsp; ℹ️ {_ix} Info</div>',
+                                                            unsafe_allow_html=True,
+                                                        )
+                                                    elif _tgx == "FLAG":
+                                                        st.markdown(
+                                                            f'<div style="background:#3d1515;border-left:2px solid #e74c3c;'
+                                                            f'border-radius:4px;padding:4px 8px;margin-bottom:2px;font-size:11px;color:#f0f6fc;">'
+                                                            f'🚩 {_ptx[2] if len(_ptx)>2 else ""} — {_ptx[3] if len(_ptx)>3 else ""}</div>',
+                                                            unsafe_allow_html=True,
+                                                        )
+                                                    elif _tgx == "MISSING":
+                                                        st.markdown(
+                                                            f'<div style="background:#3d3015;border-left:2px solid #f1c40f;'
+                                                            f'border-radius:4px;padding:4px 8px;margin-bottom:2px;font-size:11px;color:#f0f6fc;">'
+                                                            f'⚠ {_ptx[2] if len(_ptx)>2 else ""} — {_ptx[3] if len(_ptx)>3 else ""}</div>',
+                                                            unsafe_allow_html=True,
+                                                        )
 
                             # Fetch results for this condition
                             if st.session_state.get(fetch_key):
@@ -1102,11 +1552,20 @@ def show_pipeline():
         STATUS_OPTIONS, STATUS_EMOJI,
     )
 
+    import json as _json
+
     st.markdown("## 🗂️ My Pipeline")
     st.caption("Track every loan — color-coded by status, one-click actions.")
 
+    from db import get_all_users
+    all_users = get_all_users()
+    user_names = ["(Unassigned)"] + [
+        u.get("display_name") or u["email"] for u in all_users
+    ]
+    my_name = st.session_state.get("user_name", "")
+
     # ── Top action bar ──────────────────────────────────────────────────────
-    tb1, tb2, tb3, tb4 = st.columns([2, 2, 2, 2])
+    tb1, tb2, tb3, tb4, tb5 = st.columns([2, 2, 2, 1, 2])
     with tb1:
         if st.button("➕ Add Loan", use_container_width=True, type="primary"):
             st.session_state.pipeline_add_open = not st.session_state.get("pipeline_add_open", False)
@@ -1121,6 +1580,8 @@ def show_pipeline():
             key="pipeline_search", label_visibility="collapsed",
         )
     with tb4:
+        my_loans_only = st.checkbox("My loans", key="pipeline_myloans")
+    with tb5:
         st.markdown(
             " &nbsp; ".join(
                 f'<span class="status-chip status-{s.lower()}">{STATUS_EMOJI[s]} {s}</span>'
@@ -1149,14 +1610,24 @@ def show_pipeline():
                     "Borrower Folder Path (optional)", key="pl_new_folder",
                     placeholder=r"C:\Loans\SmithJohn",
                 )
+            fa1, fa2 = st.columns(2)
+            with fa1:
+                # Default assign-to the current user
+                default_idx = user_names.index(my_name) if my_name in user_names else 0
+                new_assigned = st.selectbox(
+                    "Assign To", user_names, index=default_idx, key="pl_new_assigned",
+                )
 
             sa1, sa2 = st.columns([1, 4])
             with sa1:
                 if st.button("Save Loan", use_container_width=True, key="pl_save_btn"):
                     if new_loan_num and new_borrower:
+                        assigned_val = "" if new_assigned == "(Unassigned)" else new_assigned
                         add_loan(
                             new_loan_num, new_borrower, new_status,
                             str(new_due), new_missing, new_folder,
+                            created_by=my_name,
+                            assigned_to=assigned_val,
                         )
                         st.session_state.pipeline_add_open = False
                         st.rerun()
@@ -1166,6 +1637,67 @@ def show_pipeline():
                 if st.button("Cancel", key="pl_cancel_btn"):
                     st.session_state.pipeline_add_open = False
                     st.rerun()
+
+    # ── Inbox (incoming shared loans) ────────────────────────────────────────
+    from sharing import scan_inbox, dismiss_from_inbox, inbox_count
+    inbox_items = scan_inbox()
+    if inbox_items:
+        n = len(inbox_items)
+        with st.expander(f"📬 Inbox — {n} shared loan{'s' if n != 1 else ''} waiting", expanded=True):
+            st.caption("Loans shared directly with you by teammates. Accept to add to your pipeline.")
+            for item in inbox_items:
+                ib1, ib2, ib3, ib4 = st.columns([3, 2, 1, 1])
+                share_id = item.get("share_id", "?")
+                with ib1:
+                    st.markdown(
+                        f"<div style='font-weight:700;color:#f0f6fc;'>"
+                        f"#{item.get('loan_num','—')} &nbsp; {item.get('borrower','—')}</div>"
+                        f"<div style='font-size:12px;color:#a89ec9;'>"
+                        f"From: {item.get('last_updated_by','?')} &nbsp;·&nbsp; "
+                        f"Updated: {item.get('last_updated','')[:10]}</div>",
+                        unsafe_allow_html=True,
+                    )
+                with ib2:
+                    shared_with_list = ", ".join(item.get("shared_with", []))
+                    st.markdown(
+                        f"<div style='font-size:12px;color:#cdd9e5;'>"
+                        f"Status: <b>{item.get('status','—')}</b><br>"
+                        f"Shared with: {shared_with_list or 'you'}</div>",
+                        unsafe_allow_html=True,
+                    )
+                with ib3:
+                    if st.button("✅ Accept", key=f"inbox_accept_{share_id}", use_container_width=True):
+                        # Import into local pipeline
+                        add_loan(
+                            loan_num=item.get("loan_num", ""),
+                            borrower=item.get("borrower", ""),
+                            status=item.get("status", "Pending"),
+                            due_date=item.get("due_date", ""),
+                            missing_docs=item.get("missing_docs", ""),
+                            folder_path=item.get("folder_path", ""),
+                            created_by=item.get("owner", ""),
+                            assigned_to=my_name,
+                        )
+                        # Store share metadata on the loan for "Send Update"
+                        all_local = get_all_loans()
+                        for ln in all_local:
+                            if ln.get("loan_num") == item.get("loan_num"):
+                                from crm import update_loan as _upd
+                                _upd(ln["id"],
+                                     share_id=item["share_id"],
+                                     share_owner=item.get("owner", ""),
+                                     share_owner_inbox=item.get("owner_inbox", ""),
+                                     share_with=_json.dumps(item.get("shared_with", [])),
+                                     share_version=item.get("version", 1))
+                                break
+                        dismiss_from_inbox(item["_file"])
+                        st.rerun()
+                with ib4:
+                    if st.button("Dismiss", key=f"inbox_dismiss_{share_id}", use_container_width=True):
+                        dismiss_from_inbox(item["_file"])
+                        st.rerun()
+                st.markdown('<div style="height:2px;border-bottom:1px solid #4a3a8a;"></div>',
+                            unsafe_allow_html=True)
 
     st.markdown("---")
 
@@ -1179,6 +1711,10 @@ def show_pipeline():
         loans = [l for l in loans
                  if q in l.get("loan_num", "").lower()
                  or q in l.get("borrower", "").lower()]
+    if my_loans_only and my_name:
+        loans = [l for l in loans
+                 if l.get("assigned_to") == my_name
+                 or l.get("created_by") == my_name]
 
     if not loans:
         st.info("No loans in pipeline yet. Click **➕ Add Loan** to get started.")
@@ -1217,11 +1753,23 @@ def show_pipeline():
         }
         border_color = border_colors.get(status, "#444")
 
+        created_by = loan.get("created_by", "")
+        assigned_to = loan.get("assigned_to", "")
+        team_line = ""
+        if created_by or assigned_to:
+            parts = []
+            if created_by:
+                parts.append(f"➕ {created_by}")
+            if assigned_to:
+                parts.append(f"👤 {assigned_to}")
+            team_line = f'<br><span style="font-size:11px;color:#a89ec9;">{" &nbsp;·&nbsp; ".join(parts)}</span>'
+
         st.markdown(
             f'<div class="loan-card" style="border-left: 4px solid {border_color};">'
             f'<span class="loan-num">#{loan.get("loan_num","—")}</span> &nbsp;'
             f'<span class="loan-name">{loan.get("borrower","—")}</span> &nbsp;'
             f'{_status_chip(status)}'
+            f'{team_line}'
             f'<br><span class="loan-due">📅 Due: {loan.get("due_date","—")}</span> &nbsp;'
             f'<span class="loan-missing">📋 Missing: {loan.get("missing_docs","—") or "None"}</span>'
             f'</div>',
@@ -1257,20 +1805,114 @@ def show_pipeline():
                     update_loan(lid, folder_path=folder_in)
                     st.rerun()
         with ac5:
-            notes = st.text_input(
-                "Notes:", value=loan.get("notes", ""),
-                key=f"notes_{lid}", label_visibility="collapsed",
-                placeholder="Notes...",
-            )
-            nc1, nc2 = st.columns([1, 1])
+            n_col, r_col = st.columns([3, 2])
+            with n_col:
+                notes = st.text_input(
+                    "Notes:", value=loan.get("notes", ""),
+                    key=f"notes_{lid}", label_visibility="collapsed",
+                    placeholder="Notes...",
+                )
+            with r_col:
+                cur_assigned = loan.get("assigned_to", "")
+                cur_idx = user_names.index(cur_assigned) if cur_assigned in user_names else 0
+                new_assignee = st.selectbox(
+                    "Assign:", user_names, index=cur_idx,
+                    key=f"assign_{lid}", label_visibility="collapsed",
+                )
+            nc1, nc2, nc3 = st.columns([1, 1, 1])
             with nc1:
                 if st.button("Save Notes", key=f"nsave_{lid}", use_container_width=True):
                     update_loan(lid, notes=notes)
                     st.rerun()
             with nc2:
+                if st.button("Reassign", key=f"rassign_{lid}", use_container_width=True):
+                    val = "" if new_assignee == "(Unassigned)" else new_assignee
+                    update_loan(lid, assigned_to=val)
+                    st.rerun()
+            with nc3:
                 if st.button("🗑️ Remove", key=f"del_{lid}", use_container_width=True):
                     delete_loan(lid)
                     st.rerun()
+
+        # ── Share this loan ──────────────────────────────────────────────────
+        from sharing import get_members, share_loan as _share_loan, send_update as _send_update
+        team_members = get_members()
+        team_names = [m["name"] for m in team_members]
+
+        # Show "Send Update" if this loan was shared with us
+        is_shared_loan = bool(loan.get("share_id"))
+        share_key = f"share_open_{lid}"
+
+        sh1, sh2 = st.columns([1, 6])
+        with sh1:
+            lbl = "📤 Send Update" if is_shared_loan else "🔗 Share"
+            if team_names and st.button(lbl, key=f"sharebtn_{lid}", use_container_width=True):
+                st.session_state[share_key] = not st.session_state.get(share_key, False)
+
+        if st.session_state.get(share_key) and team_names:
+            with st.container():
+                if is_shared_loan:
+                    # Send update back to owner + shared_with
+                    st.markdown(
+                        "<div style='font-size:13px;color:#cdd9e5;margin-bottom:6px;'>"
+                        f"Send updated status for <b>#{loan.get('loan_num')}</b> back to "
+                        f"<b>{loan.get('share_owner','owner')}</b> and shared teammates."
+                        "</div>",
+                        unsafe_allow_html=True,
+                    )
+                    if st.button("Send Update Now", key=f"sendupd_{lid}", type="primary"):
+                        shared_meta = {
+                            "share_id": loan.get("share_id"),
+                            "loan_num": loan.get("loan_num", ""),
+                            "borrower": loan.get("borrower", ""),
+                            "owner": loan.get("share_owner", ""),
+                            "owner_inbox": loan.get("share_owner_inbox", ""),
+                            "shared_with": _json.loads(loan.get("share_with", "[]")),
+                            "version": loan.get("share_version", 1),
+                        }
+                        updates = {
+                            "status": loan.get("status"),
+                            "missing_docs": loan.get("missing_docs", ""),
+                            "notes": loan.get("notes", ""),
+                            "due_date": loan.get("due_date", ""),
+                        }
+                        results = _send_update(shared_meta, my_name, updates)
+                        ok = [k for k, v in results.items() if v == "ok"]
+                        fail = [k for k, v in results.items() if v != "ok"]
+                        if ok:
+                            st.success(f"Sent to: {', '.join(ok)}")
+                        if fail:
+                            st.error(f"Failed: {', '.join(fail)}")
+                        st.session_state[share_key] = False
+                else:
+                    # Share a new loan with selected teammates
+                    st.markdown(
+                        "<div style='font-size:13px;color:#cdd9e5;margin-bottom:6px;'>"
+                        f"Share <b>#{loan.get('loan_num')} — {loan.get('borrower')}</b> with:</div>",
+                        unsafe_allow_html=True,
+                    )
+                    sp1, sp2 = st.columns([3, 1])
+                    with sp1:
+                        selected_recipients = st.multiselect(
+                            "Select teammates:",
+                            options=team_names,
+                            key=f"share_who_{lid}",
+                            label_visibility="collapsed",
+                        )
+                    with sp2:
+                        if st.button("Share Now", key=f"share_now_{lid}",
+                                     type="primary", use_container_width=True):
+                            if selected_recipients:
+                                results = _share_loan(loan, selected_recipients, my_name)
+                                ok = [k for k, v in results.items() if v == "ok"]
+                                fail = {k: v for k, v in results.items() if v != "ok"}
+                                if ok:
+                                    st.success(f"✅ Shared with: {', '.join(ok)}")
+                                for name, err in fail.items():
+                                    st.error(f"❌ {name}: {err}")
+                                st.session_state[share_key] = False
+                            else:
+                                st.warning("Pick at least one person to share with.")
 
         st.markdown('<div style="height:6px"></div>', unsafe_allow_html=True)
 
@@ -1462,6 +2104,132 @@ def show_reader():
             st.info("File type cannot be read here. Open it directly in File Explorer.")
 
 
+def show_team_page():
+    """Team setup: configure your inbox folder and add team members."""
+    from sharing import (
+        get_team_config, save_team_config, get_members,
+        add_member, remove_member, set_my_inbox, test_inbox,
+    )
+    from db import ROLE_OPTIONS
+
+    st.markdown("## 👥 My Team")
+    st.caption(
+        "Set your inbox folder so teammates can share loans directly with you. "
+        "Add each person once — after that, sharing is one click."
+    )
+
+    config = get_team_config()
+
+    # ── My Inbox Setup ──────────────────────────────────────────────────────
+    st.markdown("### My Inbox Folder")
+    st.markdown(
+        "This is **your private drop folder**. When someone shares a loan with you, "
+        "the app writes a file here. Give this path to anyone who wants to share with you."
+    )
+
+    ib1, ib2 = st.columns([4, 1])
+    with ib1:
+        my_inbox = st.text_input(
+            "My Inbox Path",
+            value=config.get("my_inbox", ""),
+            placeholder=r"e.g.  C:\Users\YourName\GopherInbox  or  \\OFFICE-NAS\Shared\YourName",
+            label_visibility="collapsed",
+        )
+    with ib2:
+        if st.button("Test & Save", use_container_width=True, key="test_inbox_btn"):
+            ok, msg = test_inbox(my_inbox)
+            my_name = st.session_state.get("user_name", "")
+            set_my_inbox(my_inbox, name=my_name)
+            if ok:
+                st.success(msg)
+            else:
+                st.error(f"Can't reach folder: {msg}")
+
+    st.markdown(
+        f"<div style='font-size:12px;color:#a89ec9;margin-top:4px;'>"
+        f"📋 Share this path with teammates so they can drop files for you: "
+        f"<code style='color:#b794f4;'>{config.get('my_inbox','(not set)')}</code>"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("---")
+
+    # ── Add Team Member ─────────────────────────────────────────────────────
+    st.markdown("### Add a Team Member")
+    st.caption(
+        "Add each person you work with. You'll need their inbox folder path — "
+        "just ask them to open this page and copy their path."
+    )
+
+    with st.form("add_member_form"):
+        am1, am2, am3 = st.columns([2, 2, 3])
+        with am1:
+            new_name = st.text_input("Their Name", placeholder="e.g. Jane Garcia")
+        with am2:
+            new_role = st.selectbox("Their Role", ROLE_OPTIONS)
+        with am3:
+            new_inbox = st.text_input(
+                "Their Inbox Path",
+                placeholder=r"e.g. C:\Users\Jane\GopherInbox  or  \\JANES-PC\GopherInbox",
+            )
+        submitted = st.form_submit_button("Add to Team", use_container_width=True)
+        if submitted:
+            if not new_name.strip() or not new_inbox.strip():
+                st.error("Name and inbox path are both required.")
+            else:
+                ok, msg = test_inbox(new_inbox)
+                add_member(new_name.strip(), new_role, new_inbox.strip())
+                if ok:
+                    st.success(f"✅ {new_name} added — inbox is reachable!")
+                else:
+                    st.warning(
+                        f"⚠️ {new_name} added, but can't reach their inbox right now: {msg}. "
+                        "You can still add them and share when the folder is accessible."
+                    )
+                st.rerun()
+
+    st.markdown("---")
+
+    # ── Current Team List ───────────────────────────────────────────────────
+    members = get_members()
+    st.markdown(f"### My Team &nbsp; <span style='font-size:13px;color:#a89ec9;'>({len(members)} people)</span>",
+                unsafe_allow_html=True)
+
+    if not members:
+        st.info("No team members yet. Add your first teammate above.")
+        return
+
+    for m in members:
+        with st.container():
+            mc1, mc2, mc3, mc4 = st.columns([2, 2, 4, 1])
+            with mc1:
+                st.markdown(
+                    f"<div style='font-weight:700;color:#f0f6fc;font-size:14px;'>{m['name']}</div>",
+                    unsafe_allow_html=True,
+                )
+            with mc2:
+                st.markdown(
+                    f"<div style='color:#b794f4;font-size:13px;'>{m.get('role','')}</div>",
+                    unsafe_allow_html=True,
+                )
+            with mc3:
+                inbox_path = m.get("inbox", "")
+                reachable = os.path.isdir(inbox_path) if inbox_path else False
+                dot = "🟢" if reachable else "🔴"
+                st.markdown(
+                    f"<div style='font-size:12px;color:#a89ec9;'>{dot} "
+                    f"<code style='color:#cdd9e5;'>{inbox_path or '(no path)'}</code></div>",
+                    unsafe_allow_html=True,
+                )
+            with mc4:
+                if st.button("Remove", key=f"rm_{m['name']}", use_container_width=True):
+                    remove_member(m["name"])
+                    st.rerun()
+            st.markdown('<div style="height:4px;border-bottom:1px solid #4a3a8a;margin-bottom:4px;"></div>',
+                        unsafe_allow_html=True)
+
+
 def show_history():
     """Show user's scan history."""
     st.markdown("## My History")
@@ -1499,6 +2267,8 @@ def main():
             show_dashboard()
         elif page == "pipeline":
             show_pipeline()
+        elif page == "team":
+            show_team_page()
         elif page == "history":
             show_history()
         elif page == "reader":

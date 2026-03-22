@@ -76,7 +76,8 @@ def get_all_loans() -> list:
 
 
 def add_loan(loan_num: str, borrower: str, status: str, due_date: str,
-             missing_docs: str, folder_path: str = "") -> dict:
+             missing_docs: str, folder_path: str = "",
+             created_by: str = "", assigned_to: str = "") -> dict:
     """Add a new loan to the pipeline. Returns the new loan dict."""
     loans = _load()
     new_loan = {
@@ -87,6 +88,8 @@ def add_loan(loan_num: str, borrower: str, status: str, due_date: str,
         "due_date": due_date,
         "missing_docs": missing_docs.strip(),
         "folder_path": folder_path.strip(),
+        "created_by": created_by,
+        "assigned_to": assigned_to,
         "created": datetime.now().isoformat()[:10],
         "updated": datetime.now().isoformat()[:10],
         "notes": "",

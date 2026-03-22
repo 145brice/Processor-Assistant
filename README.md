@@ -1,7 +1,8 @@
-# Processor Traien — Mortgage Document Processing App
+# Processor Traien — Offline Mortgage Processing App
 
 **100% offline. No cloud. No API keys. No internet after setup.**
 Runs on your local Windows machine using Python + Streamlit (opens in your browser).
+Built for mortgage processors, loan officers, and their teams.
 
 ---
 
@@ -18,7 +19,7 @@ Runs on your local Windows machine using Python + Streamlit (opens in your brows
    streamlit run app.py
    ```
 5. Browser opens automatically at **http://localhost:8501**
-6. Click **Try Sandbox** — you're in. No login required.
+6. Log in or click **⚡ Try Sandbox** to get started instantly.
 
 To stop the app: press `Ctrl+C` in the terminal.
 
@@ -34,22 +35,20 @@ python --version
 You should see `Python 3.10.x` or higher. If not, download Python from python.org.
 
 ### Step 2 — Install dependencies
-In the project folder terminal:
 ```
 pip install streamlit pypdf thefuzz python-Levenshtein python-dotenv
 ```
-That's it — 5 packages total. No API keys, no accounts, no .env file needed.
+5 packages total. No API keys, no accounts, no .env file needed.
 
-### Step 3 — Guideline PDFs (for the "Check Guidelines" feature)
+### Step 3 — Guideline PDFs (for "Check Guidelines")
 Place these two files exactly on your Desktop:
 ```
 C:\Users\user\OneDrive\Desktop\Fannie Mae.pdf
 C:\Users\user\OneDrive\Desktop\Freddie Mac.pdf
 ```
-- The filenames must match exactly (capital F, capital M, space between words).
-- These are the full Fannie Mae Selling Guide (1,191 pages) and Freddie Mac Seller/Servicer Guide (2,882 pages).
-- Download them free from FannieMae.com and FreddieMac.com.
-- **If you don't have them**, the rest of the app works fine — just skip "Check Guidelines."
+- Filenames must match exactly (capital F, capital M, space between words).
+- Download free from FannieMae.com and FreddieMac.com.
+- If you don't have them, everything else works fine — just skip "Check Guidelines."
 
 ### Step 4 — Run it
 ```
@@ -64,185 +63,256 @@ streamlit run app.py
 Processor-Assistant/
 │
 ├── app.py               ← MAIN FILE. All UI pages, navigation, buttons, layout.
-│                           Edit this to change how anything looks or routes.
 │
 ├── ai_engine.py         ← The brain. Reads PDFs, extracts conditions, drafts emails,
-│                           runs checklists, detects risk flags, pulls contacts.
+│                           runs checklists, detects risk flags, bank statement analysis.
 │                           No AI, no internet — pure Python regex + pattern matching.
 │
 ├── crm.py               ← Pipeline database logic. Reads/writes pipeline.json.
 │                           Handles add, update, delete, status changes, overdue detection.
+│                           Supports created_by and assigned_to fields per loan.
 │
 ├── folder_search.py     ← Folder search engine. Given a folder path + condition keywords,
 │                           walks every subfolder, fuzzy-matches filenames and PDF content.
+│                           Also includes find_bank_statements() for bank-specific searches.
 │
 ├── guidelines.py        ← Fannie/Freddie search engine. Indexes the PDFs into chunks,
 │                           caches the index, searches for relevant guideline sections.
 │
+├── sharing.py           ← Private loan sharing engine. Lets processors and LOs share
+│                           specific loans directly via personal inbox folders — no central
+│                           hub, no one sees what they weren't shared on.
+│
 ├── db.py                ← Local SQLite user accounts + scan history.
+│                           Stores name, role (Processor/LO/Manager), and login.
 │                           Creates processor.db automatically on first run.
 │
 ├── prompts.py           ← Output templates (stacking order, research links, risk labels).
+│
+├── team.json            ← Your personal team list. Auto-created when you add teammates.
+│                           Stores each person's name, role, and inbox folder path.
 │
 ├── pipeline.json        ← Your loan pipeline data. Auto-created. Edit directly if needed.
 │                           Backed up every time you push to GitHub.
 │
 ├── processor.db         ← SQLite database. Auto-created. Stores login accounts + history.
 │
-├── guidelines_index/    ← Auto-created folder. Stores the Fannie/Freddie index cache.
-│   ├── Fannie_Mae.json      (built on first "Check Guidelines" click — takes ~2 min)
-│   ├── Freddie_Mac.json     (built on first click — Freddie is ~2,882 pages, takes ~5 min)
-│   └── *.hash               (used to detect when PDFs have been updated)
+├── inbox/               ← Default local inbox folder for shared loans.
+│                           Files dropped here by teammates appear in your Pipeline inbox.
 │
-├── requirements.txt     ← Package list. Run `pip install -r requirements.txt` to install all.
+├── guidelines_index/    ← Auto-created. Stores the Fannie/Freddie index cache.
+│   ├── Fannie_Mae.json      (built on first "Check Guidelines" click — ~2 min)
+│   ├── Freddie_Mac.json     (built on first click — ~5 min for 2,882 pages)
+│   └── *.hash               (detects when PDFs have been updated)
+│
+├── requirements.txt     ← Run `pip install -r requirements.txt` to install all packages.
 └── README.md            ← This file.
 ```
 
 ---
 
-## THE FOUR PAGES — What each does
+## THE SIX PAGES — What each does
+
+---
 
 ### 1. 📋 Document Scanner
-The main workhorse. Upload a PDF, extract every condition, then act on them.
+The main workhorse. Upload a PDF, extract every condition, act on them.
 
 **How to use it:**
-1. Click **📋 Document Scanner** in the left sidebar
-2. Drag and drop a mortgage PDF onto the uploader (approval letter, CD, 1003, etc.)
+1. Click **📋 Document Scanner** in the sidebar
+2. Drag and drop a mortgage PDF (approval letter, CD, 1003, bank statement, etc.)
 3. Pick the **Document Type** from the dropdown
 4. Click **🔍 Scan Document**
-5. The condition table appears — every condition extracted from the actual PDF text
 
-**What you see in the condition table:**
-- `#` — condition number
-- `Condition` — the actual text from the PDF (not guessed — literally what's written)
-- Responsible Party — color-coded badge: 🔵 Borrower, 🟣 Title, 🟠 Underwriter, 🟢 Insurance, 🟡 Closer
-- Status — Needed / Received / Cleared / Waived
+**For approval letters and most docs — Condition Table:**
+- Each condition is a compact expandable row
+- Click any condition to expand: status buttons, party assignment, notes, Fetch, Guidelines
+- Condition status colors: 🔴 Important → 🟡 Needed → 🟠 Requested → 🟢 Ready to Clear → 🔵 Cleared
+- Conditions auto-sort by status priority, then by responsible party
+- Cleared conditions drop to a separate section at the bottom
 
-**After scanning — three action buttons appear:**
+**Draft Email (always visible at top):**
+- Check any conditions you want included
+- Pick Language (English or Spanish) and who to send to
+- Click **Draft Email** → professional ready-to-copy email appears
+- Works for: Borrower, Title, Underwriter, Insurance, Closer, Appraiser
 
-**Draft Email**
-- Check any conditions you want (you can check 1 or 20 — they all go in one email)
-- Pick Language: English or Spanish
-- Pick who to send to (Borrower, Title, Underwriter, etc.)
-- Click **Draft Email** → ready-to-copy professional email appears below
-- Copy and paste into Outlook
+**Inside each condition expander:**
+- Status buttons (mark Important / Needed / Requested / Ready to Clear / Cleared)
+- Party multiselect (assign Borrower + Title + Appraiser, etc. — multiple at once)
+- Notes field (add any update or summary)
+- **📂 Fetch from Folder** — search borrower's folder for matching documents
+- **📋 Check Guidelines** — look up Fannie/Freddie guideline sections for that condition
+- **🏦 Find & Analyze Bank Stmt** — appears automatically on conditions that mention bank
+  statements, deposits, or "2 months." Searches the folder specifically for bank statement
+  PDFs and runs the full 50-rule analysis right inside the condition.
 
-**Fetch from Folder**
-- Check conditions you need documents for
-- Click **Fetch from Folder**
-- Paste the borrower's full folder path, e.g.: `C:\Users\user\Loans\FishMartha\`
-- Click **Search**
-- App walks every subfolder, matches filenames AND PDF content to your conditions
-- Results show match score (🟢 80%+, 🟡 65-79%, 🔴 below 65%), page numbers, and a text snippet
+**For Bank Statement doc type — 50-Rule Analysis:**
+Selecting "Bank Statement" runs a completely separate analysis (not conditions):
+- ✅ Green — item confirmed in the statement
+- 🚩 Red — problem found (NSF, overdraft, returned item, crypto, gambling, etc.)
+- ⚠️ Yellow — required item not found (account number, period dates, etc.)
+- 🔵 Blue — optional item found that may need documentation (large deposit, tax refund, etc.)
+- 👁 Purple — cannot determine from text; must verify manually
 
-**Check Guidelines**
-- Check conditions you want to look up in Fannie/Freddie
-- Click **Check Guidelines**
-- First time: indexes both PDFs (progress bar shown — takes a few minutes)
-- Every time after: loads from cache in seconds
-- Results show: source (Fannie or Freddie), page number, section code, and the actual guideline text
+At the bottom of the bank statement results:
+**📂 Fetch & Analyze Bank Statements from Folder**
+- Paste borrower folder path (auto-filled from last search or pipeline)
+- Scope: "Bank statements only" (fast, filename-filtered) or "All PDFs"
+- Results ranked by how likely each PDF is to be a bank statement
+- **Analyze** — runs full 50-rule check on that file inline
+- **Read** — opens the file in Document Reader
 
 ---
 
 ### 2. 🗂️ My Pipeline
-Your color-coded loan tracking board. Every active loan in one place.
+Color-coded loan tracking board. Works like an offline LendingPad or Arrive.
 
-**Color key:**
-- 🔴 **Pending** — waiting on borrower or docs, nothing sent yet
-- 🟠 **Requested** — docs requested, waiting on response
-- 🟢 **Cleared** — all conditions met, ready to close
-- ⚫ **Overdue** — past due date, auto-flagged
-- ✅ **Closed** — funded and done
+**Status colors:**
+- 🔴 Pending — waiting on borrower or docs
+- 🟠 Requested — docs requested, waiting on response
+- 🟢 Cleared — all conditions met, ready to close
+- ⚫ Overdue — past due date, auto-flagged
+- ✅ Closed — funded and done
 
-**How to add a loan:**
-1. Click **➕ Add Loan** at the top
-2. Fill in: Loan #, Borrower Name, Status, Due Date, Missing Docs, Folder Path (optional)
-3. Click **Save Loan**
-4. It appears in the list immediately and is saved to `pipeline.json`
+**Each loan shows:**
+- Loan # · Borrower name · Status badge
+- Who created it and who it's assigned to
+- Due date · Missing docs
 
-**Per-loan actions (buttons on each row):**
-- **✅ Cleared** — marks the loan cleared (green)
-- **📤 Requested** — marks as requested (orange)
-- **⏰ Overdue** — marks as overdue (gray)
-- **📂 Open Folder** — opens the borrower's folder in File Explorer (Windows only)
-- **Notes** — type anything, click **Save Notes**
-- **🗑️ Remove** — permanently deletes the loan from pipeline
+**Per-loan actions:**
+- ✅ Cleared / 📤 Requested / ⏰ Overdue — one-click status change
+- 📂 Open Folder — opens borrower's folder in File Explorer
+- Notes field + Save Notes
+- Assign To dropdown — reassign to any teammate
+- 🔗 Share — share this loan privately with specific teammates
+- 📤 Send Update — push your latest status back to the loan owner and shared team
+- 🗑️ Remove — delete from pipeline
 
 **Filtering:**
-- Use the **Filter by status** dropdown to show only Pending, Requested, etc.
-- Use the **Search** box to find by loan number or borrower name
+- Filter by status dropdown
+- Search by loan number or borrower name
+- ☑ My loans — show only loans assigned to or created by you
 
-**Auto-overdue:** Any loan whose due date has passed and isn't Cleared or Closed gets automatically flagged Overdue when the page loads.
+**📬 Inbox:**
+When a teammate shares a loan with you, it appears at the top of the Pipeline page.
+- ✅ Accept — adds it to your pipeline
+- Dismiss — removes it from inbox without adding
 
-**Sample pipeline** is included — 7 realistic loans showing all 5 statuses so you can see how it looks right away. Replace them with your real loans any time.
+**Auto-overdue:** Any loan past its due date that isn't Cleared or Closed gets flagged automatically on page load.
 
 ---
 
-### 3. 📂 Document Reader
-Browse any local folder and read any file — without uploading it to the scanner.
+### 3. 👥 My Team
+Set up private loan sharing with your teammates. One-time setup per person.
 
-**Use this when:**
-- You want to look up something in a specific document
-- You want to read through a borrower's file before scanning
-- You fetched a document and want to read the actual pages
+**Step 1 — Set your inbox folder:**
+This is where teammates drop shared loans for you. Give this path to anyone who wants to share with you.
+Example: `C:\Users\YourName\GopherInbox` or `\\OFFICE-NAS\Shared\YourName`
+
+**Step 2 — Add teammates:**
+For each person you work with, add:
+- Their name
+- Their role (Processor / Loan Officer / Jr Underwriter / Manager)
+- Their inbox folder path (they copy this from their own Team page)
+
+Green dot = their folder is reachable right now. Red dot = offline or wrong path.
+
+**How sharing works (no central server, no hub):**
+1. You add a loan to your pipeline → click **🔗 Share** → pick teammates → **Share Now**
+2. The app writes one file directly into each person's inbox folder
+3. They open their app → see "📬 Inbox — 1 loan waiting" → Accept
+4. They make updates → click **📤 Send Update** → file goes back to your inbox
+5. You accept the update — status syncs
+
+Privacy: each person only sees loans shared with them specifically. No one has a view of the whole team's pipeline unless explicitly shared.
+
+Works over office WiFi (`\\JANES-PC\GopherInbox`), a mapped network drive, or even a shared OneDrive subfolder.
+
+---
+
+### 4. 📂 Document Reader
+Browse any local folder and read any PDF — without uploading to the scanner.
 
 **How to use it:**
-1. Click **📂 Document Reader** in the sidebar
-2. Paste the full folder path, e.g.: `C:\Users\user\Loans\FishMartha\`
-3. Click **Browse Folder** — all PDFs, TXTs, and CSVs in that folder are listed
-4. Pick a file from the dropdown
-5. Click **Open & Read**
+1. Paste folder path → **Browse Folder** → pick a file → **Open & Read**
 
-**Read mode (no search term):**
-- Use the page number input to jump to any page
-- Full text of that page shows in a scrollable box
+**Read mode:** Jump to any page number, read full text.
+**Search mode:** Type a keyword → every matching page shown with context.
 
-**Search mode (type a keyword first):**
-- Type something in the "Search inside document" box
-- Every page is scanned, and every match is shown with surrounding context
-- Good for: `appraisal`, `HOA`, `verification of mortgage`, `certificate of good standing`, any condition keyword
+You can also land here directly from a bank statement fetch result — click **Read** on any found file to open it instantly.
 
 ---
 
-### 4. 🕑 My History
-Only available when logged in (not sandbox). Shows all past scans saved to the local database.
+### 5. 🕑 My History
+Available when logged in (not sandbox). Shows all past scans saved to the local database.
+
+---
+
+### 6. ⚡ Sandbox Mode
+No account needed. Full access to all features except scan history. Results not saved between sessions.
+
+---
+
+## TEAM SETUP — For a processor + loan officer working together
+
+This app works like an offline Arrive or LendingPad. Anyone on the team can create a loan. You share it with exactly who you want. No one else sees it.
+
+**One-time setup (each person does this on their machine):**
+
+1. Create an account (Sign Up → enter your name and role)
+2. Go to **👥 My Team**
+3. Set your inbox folder path (e.g. `C:\Users\Maria\GopherInbox`)
+4. Add each teammate: their name, role, and their inbox path
+5. That's it — sharing is one click from now on
+
+**Day-to-day flow:**
+
+| Who | Action |
+|---|---|
+| LO creates a loan | Adds it in Pipeline → clicks Share → picks their processor |
+| Processor receives it | Opens app → sees inbox notification → accepts the loan |
+| Processor works it | Updates status, marks conditions, adds notes |
+| Processor sends update | Clicks "📤 Send Update" → LO sees new status in their inbox |
+| LO checks progress | Opens app → accepts update → sees exactly what changed |
 
 ---
 
 ## COMMON TASKS — Step by step
 
 ### "I just got an approval letter. What do I do?"
-1. Click **📋 Document Scanner**
-2. Upload the approval letter PDF
-3. Select **Approval Letter** from the Document Type dropdown
-4. Click **🔍 Scan Document**
-5. Review the condition table
-6. Check all Borrower conditions → pick **English** or **Spanish** → click **Draft Email** → copy to Outlook
-7. Check all Title conditions → pick **Title** → click **Draft Email** → copy to Outlook
-8. Add the loan to **My Pipeline** with a due date so you don't forget it
+1. **📋 Document Scanner** → upload the approval letter → select **Approval Letter** → **Scan**
+2. Review the condition table (sorted by priority: red first, then yellow, orange, green)
+3. Check Borrower conditions → set Language → **Draft Email** → copy to Outlook
+4. Check Title conditions → set Send To: Title → **Draft Email** → copy to Outlook
+5. Add the loan to **🗂️ My Pipeline** with a due date
 
-### "I need to find if the borrower already sent me the appraisal"
-1. Go to **📋 Document Scanner**, check the Appraisal condition
-2. Click **Fetch from Folder**
-3. Paste the borrower's folder path
-4. Click **Search** — it finds any PDF with "appraisal" in the filename or content
+### "The approval asks for bank statements. Do I already have them?"
+1. Open the condition that mentions bank statements → expand it
+2. Click **🏦 Find & Analyze Bank Stmt**
+3. Paste the borrower's folder path (or it auto-fills from last search)
+4. Click **Search** → app finds all bank statement PDFs in that folder
+5. Click **Analyze** on any result → full 50-rule analysis runs right there
+6. Or click **Read** to open the file in Document Reader
 
-### "What does Fannie Mae say about LLC vesting?"
-1. Go to **📋 Document Scanner**, check the LLC/entity condition
-2. Click **Check Guidelines**
-3. Results show the exact Fannie Mae sections about entity vesting with page numbers
+### "I need to scan a bank statement I received"
+1. **📋 Document Scanner** → upload the bank statement PDF → select **Bank Statement** → **Scan**
+2. Results show: ✅ Passed / 🚩 Flagged / ⚠️ Missing / ℹ️ Note / 👁 Manual review
+3. Any red flags (NSF, overdraft, crypto, gambling, returned items) are highlighted immediately
 
-### "I want to read page 3 of a doc without uploading it"
-1. Go to **📂 Document Reader**
-2. Browse to the folder → open the file → set page to 3
+### "What does Fannie Mae say about this condition?"
+1. Open any condition in the scanner → expand it → click **📋 Check Guidelines**
+2. Results show exact Fannie/Freddie sections with page numbers
 
 ### "I need to email conditions in Spanish"
-1. Scan the document
-2. Check the conditions you want to include
-3. Set **Language** to **Spanish**
-4. Set **Send to** to **Borrower**
-5. Click **Draft Email**
-6. Full professional Spanish email appears — copy to Outlook
+1. Scan the document → check the conditions → set **Language: Spanish** → **Draft Email**
+
+### "I want to share this loan with my loan officer"
+1. **🗂️ My Pipeline** → find the loan → click **🔗 Share** → pick the LO from your team list → **Share Now**
+
+### "My processor updated a loan — how do I see it?"
+1. Open the app → **🗂️ My Pipeline** → look for the **📬 Inbox** banner at the top
+2. Click **✅ Accept** on the update
 
 ---
 
@@ -250,14 +320,16 @@ Only available when logged in (not sandbox). Shows all past scans saved to the l
 
 | Problem | What to do |
 |---|---|
-| **App won't start** — `streamlit: command not found` | Run `pip install streamlit` then try again. Or use `python -m streamlit run app.py` |
-| **"No specific conditions found"** | The PDF is probably a scanned image. This app needs text-based PDFs (digitally created, not photographed). Open in Adobe Acrobat → Tools → Recognize Text, then re-upload. |
-| **Spanish email shows English** | Make sure you selected "Borrower" as the recipient — all party types now have Spanish templates. |
-| **Duplicate key error** | You uploaded the same PDF filename twice. Remove one from the uploader. |
-| **Fetch finds nothing** | The folder may only have scanned/image PDFs (no text layer). Or the condition text is too generic. Try lowering the threshold or searching a parent folder. |
-| **Guidelines indexing freezes** | Close the tab, reopen at http://localhost:8501, and click Check Guidelines again — it resumes from cache. |
-| **Port 8501 already in use** | Another Streamlit is running. Press Ctrl+C in that terminal first. Or run `streamlit run app.py --server.port 8502` |
-| **pipeline.json got wiped** | It's saved in the project folder. If git is set up, `git checkout pipeline.json` restores the last committed version. |
+| **App won't start** | Run `pip install streamlit` then try again. Or `python -m streamlit run app.py` |
+| **"No specific conditions found"** | PDF is a scanned image (photo, not digital text). Open in Adobe Acrobat → Tools → Recognize Text, then re-upload. |
+| **Bank statement shows conditions instead of analysis** | Make sure you selected **Bank Statement** as the document type before clicking Scan. |
+| **Spanish email shows English** | All party types support Spanish now. Make sure Language is set to Spanish before clicking Draft Email. |
+| **Fetch finds nothing** | Folder may contain scanned/image PDFs with no text layer. Try switching scope to "All PDFs" or searching a parent folder. |
+| **Share button says "not in team list"** | The person's inbox path isn't in your team.json yet. Go to **👥 My Team** and add them. |
+| **Inbox shows a loan but Accept fails** | The shared file may be corrupted. Dismiss it and ask the sender to reshare. |
+| **Guidelines indexing freezes** | Close the tab, reopen at http://localhost:8501, click Check Guidelines again — resumes from cache. |
+| **Port 8501 already in use** | Another Streamlit is running. Press Ctrl+C in that terminal. Or run `streamlit run app.py --server.port 8502` |
+| **pipeline.json got wiped** | Run `git checkout pipeline.json` to restore the last committed version. |
 
 ---
 
@@ -265,57 +337,46 @@ Only available when logged in (not sandbox). Shows all past scans saved to the l
 
 Your code is connected to GitHub at: `https://github.com/145brice/Processor-Assistant`
 
-**To save everything and push:**
 ```
 cd "C:\Users\user\OneDrive\Desktop\processor-traien\Processor-Assistant"
 git add .
-git commit -m "your note here"
+git commit -m "describe what changed"
 git push
 ```
 
 **What gets saved to GitHub:**
-- All `.py` files (app, engine, crm, search, guidelines, db, prompts)
+- All `.py` files (app, engine, crm, folder_search, guidelines, sharing, db, prompts)
 - `pipeline.json` (your loan pipeline)
-- `README.md`
-- `requirements.txt`
+- `team.json` (your team roster)
+- `README.md` + `requirements.txt`
 
-**What does NOT get saved (excluded by .gitignore or just local):**
-- `processor.db` (local user accounts — you'd need to recreate logins on a new machine)
-- `guidelines_index/` folder (rebuilt automatically from the PDFs — no need to push 500MB of JSON)
-
----
-
-## UPDATING THE APP
-
-When you want to add features or fix bugs:
-1. Make changes in VS Code
-2. Test by running `streamlit run app.py`
-3. When it works, push:
-   ```
-   git add .
-   git commit -m "describe what you changed"
-   git push
-   ```
+**What does NOT get saved:**
+- `processor.db` — local user accounts (recreate logins on a new machine)
+- `inbox/` — shared loan files (these come from teammates, not stored in git)
+- `guidelines_index/` — rebuilt automatically from the PDFs (too large for git)
 
 ---
 
 ## WHAT'S OFFLINE vs WHAT NEEDS INTERNET
 
-| Feature | Online? |
+| Feature | Status |
 |---|---|
-| Scan document | ✅ 100% offline |
-| Draft email | ✅ 100% offline |
-| Fetch from folder | ✅ 100% offline |
-| Check Guidelines | ✅ 100% offline (after PDFs are on Desktop) |
+| Scan document (approval letter, CD, 1003, etc.) | ✅ 100% offline |
+| Bank statement 50-rule analysis | ✅ 100% offline |
+| Draft email (English + Spanish) | ✅ 100% offline |
+| Fetch from folder / Find bank statements | ✅ 100% offline |
+| Check Guidelines (Fannie/Freddie) | ✅ 100% offline (after PDFs placed on Desktop) |
 | Document Reader | ✅ 100% offline |
 | My Pipeline | ✅ 100% offline |
-| Login/Signup | ✅ 100% offline (local SQLite) |
-| Push to GitHub | ❌ Needs internet (only for backup) |
+| Team sharing (via local network / inbox folders) | ✅ 100% offline (needs same network or shared drive) |
+| Login / Signup | ✅ 100% offline (local SQLite) |
+| Push to GitHub | ❌ Needs internet (backup only) |
 
 ---
 
 ## PRIVACY
 
-- PDFs you upload are **read in memory only** — never written to disk by this app.
-- Your pipeline and history are stored locally in `pipeline.json` and `processor.db`.
-- Nothing leaves your computer except when you push to GitHub (which you control).
+- PDFs you upload are **read in memory only** — never written to disk.
+- Shared loans travel as JSON files directly between personal inbox folders — no central server.
+- Your pipeline, history, and team list are stored locally only.
+- Nothing leaves your computer except when you push to GitHub (your choice).

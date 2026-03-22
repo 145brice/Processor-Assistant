@@ -360,96 +360,291 @@ def _guess_party(text: str) -> str:
 # ---------------------------------------------------------------------------
 
 def check_bank_rules(pdf_text: str, user_history=None) -> str:
-    """Run 50-rule bank statement analysis using regex."""
-    results = []
+    """
+    Bank statement analysis — 50 rules, three types:
+      REQUIRED  — must be present; MISSING = problem
+      FLAG      — must NOT be present; FOUND = problem
+      INFO      — optional; only surfaces if found (sourcing may be needed)
+    """
     t = pdf_text
+    results = []
+    ok_count = flag_count = missing_count = info_count = 0
 
+    # Each rule: (num, type, label, pattern, ok_msg, bad_msg)
+    # type: "required" | "flag" | "info"
     rules = [
-        (1, "Ending balance present", r'(?i)(?:ending|closing)\s*balance'),
-        (2, "Statement covers 60+ days", r'(?i)(?:statement\s*period|from.*through|beginning.*ending)'),
-        (3, "No overdraft", r'(?i)overdraft|OD\s*fee|insufficient\s*fund'),
-        (4, "Deposits match income", r'(?i)deposit|credit'),
-        (5, "No large unexplained deposits", r'(?i)(?:deposit|credit).*\$\d{4,}'),
-        (6, "Direct deposit / ACH present", r'(?i)(?:direct\s*deposit|ACH|payroll)'),
-        (7, "No account freeze", r'(?i)(?:freeze|hold|restrict|suspend)'),
-        (8, "All pages present", r'(?i)page\s*\d+\s*(?:of|/)\s*\d+'),
-        (9, "Account holder name", r'(?i)(?:account\s*(?:holder|owner|name)|name\s*on\s*account)'),
-        (10, "No negative balance", r'(?i)(?:negative|minus|\-\$)'),
-        (11, "Statement date recent", r'(?i)\b(?:20\d{2})\b'),
-        (12, "Account number present", r'(?i)account\s*(?:number|#|no)'),
-        (13, "Borrower name consistent", r'(?i)(?:account\s*(?:holder|owner|name))'),
-        (14, "Bank name/info present", r'(?i)(?:bank|credit\s*union|financial|N\.?A\.)'),
-        (15, "No NSF fees", r'(?i)NSF|non[\s-]*sufficient|returned\s*item'),
-        (16, "Average daily balance", r'(?i)average\s*(?:daily)?\s*balance'),
-        (17, "No unexplained wires", r'(?i)wire\s*transfer'),
-        (18, "No cash advances", r'(?i)cash\s*advance'),
-        (19, "Rent/housing payment", r'(?i)(?:rent|mortgage|housing)\s*(?:payment)?'),
-        (20, "Payroll consistent", r'(?i)payroll|direct\s*deposit|ACH'),
-        (21, "No gambling transactions", r'(?i)(?:casino|gambl|lottery|poker|bet|wager)'),
-        (22, "No crypto transactions", r'(?i)(?:coinbase|binance|crypto|bitcoin|ethereum)'),
-        (23, "Tax refund (if applicable)", r'(?i)(?:tax\s*refund|IRS|treasury)'),
-        (24, "Child support payments", r'(?i)child\s*support'),
-        (25, "Pension/retirement deposits", r'(?i)(?:pension|retirement|social\s*security|SSI|SSA)'),
-        (26, "Dividend/investment income", r'(?i)(?:dividend|interest\s*(?:earned|income)|investment)'),
-        (27, "Interest earned entries", r'(?i)interest\s*(?:earned|paid|credit)'),
-        (28, "No foreign currency", r'(?i)(?:foreign|currency\s*exchange|forex|FX)'),
-        (29, "Account type identified", r'(?i)(?:checking|savings|money\s*market)'),
-        (30, "Joint account match", r'(?i)(?:joint|and\s+\w+\s+\w+)'),
-        (31, "Opening balance positive", r'(?i)(?:opening|beginning)\s*balance'),
-        (32, "Closing balance positive", r'(?i)(?:closing|ending)\s*balance'),
-        (33, "No charge-off notices", r'(?i)charge[\s-]*off'),
-        (34, "No returned deposits", r'(?i)return(?:ed)?\s*(?:deposit|item|check)'),
-        (35, "No stop payments", r'(?i)stop\s*payment'),
-        (36, "Statement period dates shown", r'(?i)(?:period|from|through|beginning|ending)\s*:?\s*\d'),
-        (37, "Page count complete", r'(?i)page\s*\d+\s*(?:of|/)\s*\d+'),
-        (38, "No handwritten alterations", None),  # can't detect from text
-        (39, "Digital/official formatting", None),  # can't detect from text
-        (40, "No redacted information", r'(?i)(?:redact|black[\s-]*out|XXXX)'),
-        (41, "Currency is USD", r'(?i)(?:USD|\$|United\s*States\s*Dollar)'),
-        (42, "No high-risk merchants", r'(?i)(?:casino|payday|pawn|title\s*loan|check\s*cash)'),
-        (43, "Income sources consistent", r'(?i)(?:payroll|direct\s*deposit|ACH)'),
-        (44, "Normal expense patterns", r'(?i)(?:payment|purchase|debit)'),
-        (45, "No unknown loan payments", r'(?i)(?:loan\s*payment|installment|note\s*payment)'),
-        (46, "Savings rate reasonable", r'(?i)(?:transfer\s*to\s*savings|savings\s*deposit)'),
-        (47, "No bankruptcy transactions", r'(?i)(?:trustee|bankruptcy|chapter\s*[713])'),
-        (48, "Account established", r'(?i)(?:account\s*open|since|established)'),
-        (49, "No dormant periods", None),  # can't detect from text
-        (50, "Balance trend stable", r'(?i)(?:closing|ending)\s*balance'),
+        # ── Identity & structure ──────────────────────────────────────────────
+        (1,  "required", "Ending balance present",
+         r'(?i)(?:ending|closing)\s*balance',
+         "Ending / closing balance found on statement.",
+         "Ending balance not found — verify all pages are present."),
+
+        (2,  "required", "Statement period shown",
+         r'(?i)(?:statement\s*period|from.*through|beginning.*ending|\d{1,2}/\d{1,2}/\d{2,4}.*\d{1,2}/\d{1,2}/\d{2,4})',
+         "Statement period dates found.",
+         "Statement period dates not found — confirm coverage window."),
+
+        (8,  "required", "All pages present (page X of Y)",
+         r'(?i)page\s*\d+\s*(?:of|/)\s*\d+',
+         "Page numbering found (e.g. Page 1 of 3).",
+         "Page count not found — confirm no pages are missing."),
+
+        (11, "required", "Statement date is recent (2020+)",
+         r'(?i)\b20(2[0-9])\b',
+         "Recent year found on statement.",
+         "Could not confirm statement year — verify date is within required window."),
+
+        (12, "required", "Account number present",
+         r'(?i)account\s*(?:number|#|no\.?)\s*:?\s*[\dX\*]+',
+         "Account number found on statement.",
+         "Account number not found — statement may be incomplete."),
+
+        (14, "required", "Bank name / institution present",
+         r'(?i)(?:bank|credit\s*union|financial|savings|N\.?A\.|F\.?S\.?B\.?)',
+         "Bank / institution name found.",
+         "Bank name not detected — verify source institution is identified."),
+
+        (29, "required", "Account type identified (checking/savings)",
+         r'(?i)(?:checking|savings|money\s*market|share\s*draft)',
+         "Account type found (checking / savings / money market).",
+         "Account type not identified — confirm this is a deposit account statement."),
+
+        (31, "required", "Opening / beginning balance present",
+         r'(?i)(?:opening|beginning)\s*balance',
+         "Opening balance found.",
+         "Opening balance not found — verify first statement page is included."),
+
+        (36, "required", "Statement period dates shown",
+         r'(?i)(?:period|from|through|beginning|ending)\s*:?\s*\d',
+         "Period start/end dates found.",
+         "Period dates not clearly labeled — cross-check cover page."),
+
+        (41, "required", "Currency is USD",
+         r'(?i)(?:USD|\$)',
+         "USD / dollar symbol found — domestic account confirmed.",
+         "No USD indicator found — confirm this is a U.S. account."),
+
+        # ── Income verification ───────────────────────────────────────────────
+        (4,  "required", "Deposit activity present",
+         r'(?i)deposit|credit',
+         "Deposit / credit activity found.",
+         "No deposit or credit activity detected — statement may be empty or scanned."),
+
+        (6,  "required", "Direct deposit or ACH present",
+         r'(?i)(?:direct\s*deposit|ACH|payroll)',
+         "Direct deposit / ACH / payroll found.",
+         "No direct deposit or ACH detected — income sourcing may be needed."),
+
+        (20, "required", "Payroll / income entries present",
+         r'(?i)payroll|direct\s*deposit|ACH|salary|wages',
+         "Payroll / income transactions found.",
+         "No payroll entries found — confirm income source with VOE or pay stubs."),
+
+        (43, "required", "Income source consistent",
+         r'(?i)(?:payroll|direct\s*deposit|ACH|salary)',
+         "Income source entries are present.",
+         "Income source not clearly identified in statement."),
+
+        (44, "required", "Normal expense activity present",
+         r'(?i)(?:payment|purchase|debit|withdrawal)',
+         "Normal debit / expense activity found.",
+         "No expense activity detected — may indicate incomplete statement."),
+
+        (19, "info", "Rent or mortgage payment",
+         r'(?i)(?:rent|mortgage|housing)\s*(?:payment)?',
+         "Rent or mortgage payment found — document housing history.",
+         None),
+
+        (16, "info", "Average daily balance shown",
+         r'(?i)average\s*(?:daily)?\s*balance',
+         "Average daily balance figure found on statement.",
+         None),
+
+        # ── Red flags ─────────────────────────────────────────────────────────
+        (3,  "flag", "Overdraft / OD fees",
+         r'(?i)overdraft|OD\s*fee|insufficient\s*fund',
+         "No overdraft or OD fee language found.",
+         "Overdraft / OD fee language detected — document and explain."),
+
+        (15, "flag", "NSF fees",
+         r'(?i)NSF|non[\s-]*sufficient\s*fund|returned\s*item',
+         "No NSF fee language found.",
+         "NSF / non-sufficient funds language detected — review and explain."),
+
+        (34, "flag", "Returned deposits",
+         r'(?i)return(?:ed)?\s*(?:deposit|item|check)',
+         "No returned deposit language found.",
+         "Returned deposit / item detected — review transaction detail."),
+
+        (35, "flag", "Stop payments",
+         r'(?i)stop\s*payment',
+         "No stop-payment entries found.",
+         "Stop payment detected — obtain explanation from borrower."),
+
+        (10, "flag", "Negative balance",
+         r'(?i)(?:negative\s*balance|\-\s*\$\s*\d)',
+         "No negative balance detected.",
+         "Negative balance language found — review account history."),
+
+        (7,  "flag", "Account freeze / hold / restriction",
+         r'(?i)(?:freeze|account\s*hold|restrict(?:ed)?|suspend(?:ed)?)',
+         "No account freeze or restriction language found.",
+         "Account freeze / hold / restriction language detected — borrower must explain."),
+
+        (17, "flag", "Unexplained wire transfers",
+         r'(?i)wire\s*(?:transfer|out|in)',
+         "No wire transfer language found.",
+         "Wire transfer detected — source funds and obtain explanation letter if > 50% monthly income."),
+
+        (18, "flag", "Cash advances",
+         r'(?i)cash\s*advance',
+         "No cash advance entries found.",
+         "Cash advance detected — may indicate undisclosed liability; review."),
+
+        (21, "flag", "Gambling transactions",
+         r'(?i)(?:casino|gambl(?:ing)?|lottery|poker|bet(?:ting)?|wager)',
+         "No gambling transactions found.",
+         "Gambling transaction language detected — review frequency and amounts."),
+
+        (22, "flag", "Crypto transactions",
+         r'(?i)(?:coinbase|binance|crypto(?:currency)?|bitcoin|ethereum|blockchain)',
+         "No crypto transaction language found.",
+         "Crypto platform transaction detected — source and document if large."),
+
+        (28, "flag", "Foreign currency / exchange",
+         r'(?i)(?:foreign\s*currency|currency\s*exchange|forex|\bFX\b)',
+         "No foreign currency exchange found.",
+         "Foreign currency exchange detected — verify account is domestic."),
+
+        (33, "flag", "Charge-off notices",
+         r'(?i)charge[\s-]*off',
+         "No charge-off notices found.",
+         "Charge-off language detected — confirm this does not affect the loan."),
+
+        (40, "flag", "Redacted or obscured information",
+         r'(?i)(?:redact|black[\s-]*out|XXXX|censored)',
+         "No redacted information detected.",
+         "Redacted / XXXX content detected — obtain unredacted statement."),
+
+        (42, "flag", "High-risk merchants (payday, pawn, casino)",
+         r'(?i)(?:payday\s*loan|pawn|title\s*loan|check\s*(?:cash|advance))',
+         "No high-risk merchant transactions found.",
+         "High-risk merchant transaction detected — review and document."),
+
+        (47, "flag", "Bankruptcy-related transactions",
+         r'(?i)(?:trustee|bankruptcy|chapter\s*(?:7|11|13))',
+         "No bankruptcy-related transactions found.",
+         "Bankruptcy-related transaction detected — verify discharge status and lender eligibility."),
+
+        (45, "flag", "Undisclosed loan payments",
+         r'(?i)(?:loan\s*payment|installment|note\s*payment)',
+         "No undisclosed loan payment entries found.",
+         "Loan / installment payment detected — confirm all liabilities are on the 1003."),
+
+        # ── Optional / informational ──────────────────────────────────────────
+        (5,  "info", "Large deposits (>$1,000)",
+         r'(?i)(?:deposit|credit).*\$\s*[1-9]\d{3,}|\$\s*[1-9]\d{3,}.*(?:deposit|credit)',
+         "Large deposit(s) detected — may require sourcing letter if >50% of monthly income.",
+         None),
+
+        (23, "info", "Tax refund / IRS deposit",
+         r'(?i)(?:tax\s*refund|IRS|U\.?S\.?\s*Treasury)',
+         "Tax refund / IRS deposit found — document source.",
+         None),
+
+        (24, "info", "Child support payments",
+         r'(?i)child\s*support',
+         "Child support found — if income, verify court order and 3-year continuance.",
+         None),
+
+        (25, "info", "Social Security / pension / retirement",
+         r'(?i)(?:social\s*security|SSI|SSA|pension|retirement)',
+         "SSI / pension / retirement income found — document award letter.",
+         None),
+
+        (26, "info", "Dividend or investment income",
+         r'(?i)(?:dividend|investment\s*(?:income|return))',
+         "Dividend / investment income found — 2-year average may be required.",
+         None),
+
+        (27, "info", "Interest earned",
+         r'(?i)interest\s*(?:earned|paid|credit)',
+         "Interest income found on statement.",
+         None),
+
+        (30, "info", "Joint account holder",
+         r'(?i)(?:joint\s*account|\band\b\s+[A-Z][a-z]+\s+[A-Z][a-z]+)',
+         "Joint account holder may be present — verify name matches borrower.",
+         None),
+
+        (46, "info", "Transfer to savings / savings deposits",
+         r'(?i)(?:transfer\s*to\s*savings|savings\s*deposit)',
+         "Savings transfers found — supports reserves documentation.",
+         None),
+
+        # ── Cannot determine from text ────────────────────────────────────────
+        (9,  "manual", "Account holder name matches borrower", None, None, None),
+        (13, "manual", "Borrower name consistent across all pages", None, None, None),
+        (38, "manual", "No handwritten alterations", None, None, None),
+        (39, "manual", "Document appears digitally generated (not photographed)", None, None, None),
+        (48, "manual", "Account seasoning (established >60 days)", None, None, None),
+        (49, "manual", "No dormant periods (60+ days with no activity)", None, None, None),
+        (50, "manual", "Overall balance trend is stable or increasing", None, None, None),
     ]
 
-    found_count = 0
-    missing_count = 0
-    partial_count = 0
-    na_count = 0
+    lines_required = []
+    lines_flag = []
+    lines_info = []
+    lines_manual = []
 
-    for num, desc, pattern in rules:
-        time.sleep(0.05)  # micro-pause to not spike CPU
-        if pattern is None:
-            results.append(f"**Rule #{num}:** N/A - {desc} (cannot determine from text extraction)")
-            na_count += 1
-        elif num in (3, 7, 10, 15, 17, 18, 21, 22, 28, 33, 34, 35, 40, 42, 47):
-            # These are "bad if found" - reverse logic
-            if re.search(pattern, t):
-                results.append(f"**Rule #{num}:** FOUND (FLAG) - {desc} detected - review needed")
-                partial_count += 1
+    for num, rtype, label, pattern, ok_msg, bad_msg in rules:
+        if rtype == "manual":
+            lines_manual.append(f"MANUAL|{num}|{label}")
+            continue
+
+        matched = bool(pattern and re.search(pattern, t))
+
+        if rtype == "required":
+            if matched:
+                lines_required.append(f"OK|{num}|{label}|{ok_msg}")
+                ok_count += 1
             else:
-                results.append(f"**Rule #{num}:** FOUND - {desc} - no issues detected")
-                found_count += 1
-        else:
-            if re.search(pattern, t):
-                results.append(f"**Rule #{num}:** FOUND - {desc}")
-                found_count += 1
-            else:
-                results.append(f"**Rule #{num}:** MISSING - {desc} - not found in statement")
+                lines_required.append(f"MISSING|{num}|{label}|{bad_msg}")
                 missing_count += 1
 
-    summary = (
-        f"\n\n**SUMMARY:** {found_count} Found / {missing_count} Missing / "
-        f"{partial_count} Flagged / {na_count} N/A\n\n"
-        "**Note:** This is an offline regex scan. Manual review recommended for accuracy."
-    )
+        elif rtype == "flag":
+            if matched:
+                lines_flag.append(f"FLAG|{num}|{label}|{bad_msg}")
+                flag_count += 1
+            else:
+                lines_flag.append(f"OK|{num}|{label}|{ok_msg}")
+                ok_count += 1
 
-    return "\n".join(results) + summary
+        elif rtype == "info":
+            if matched:
+                lines_info.append(f"INFO|{num}|{label}|{ok_msg}")
+                info_count += 1
+            # Not found = irrelevant to this borrower, skip
+
+    # Build output string — sections separated by a divider the UI can key on
+    output_lines = []
+
+    output_lines.append(f"SUMMARY|{ok_count}|{flag_count}|{missing_count}|{info_count}")
+
+    output_lines.append("SECTION|Required Checks")
+    output_lines.extend(lines_required)
+
+    output_lines.append("SECTION|Red Flags")
+    output_lines.extend(lines_flag)
+
+    if lines_info:
+        output_lines.append("SECTION|Items Found — May Need Documentation")
+        output_lines.extend(lines_info)
+
+    output_lines.append("SECTION|Manual Review Required")
+    output_lines.extend(lines_manual)
+
+    return "\n".join(output_lines)
 
 
 # ---------------------------------------------------------------------------
@@ -1019,12 +1214,20 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None) -> dict
             "text_length": len(text) if text else 0,
         }
 
-    # Only extract conditions on upload - everything else is on-demand (a la carte)
-    conditions = extract_conditions(text, doc_type, user_history)
-
-    return {
+    result = {
         "success": True,
-        "conditions": conditions,
         "text_length": len(text),
         "doc_type": doc_type,
+        "bank_rules": "",
     }
+
+    if doc_type == "Bank Statement":
+        # For bank statements: run the 50-rule analysis as the primary output.
+        # Condition extraction on bank statement text produces meaningless results,
+        # so we skip it and store the bank analysis in bank_rules instead.
+        result["conditions"] = ""
+        result["bank_rules"] = check_bank_rules(text, user_history)
+    else:
+        result["conditions"] = extract_conditions(text, doc_type, user_history)
+
+    return result

@@ -309,3 +309,126 @@ def scan_folder(folder_path: str, selected_conditions: list, threshold: int = 60
         progress_callback(100, "Done!")
 
     return results
+
+
+# ---------------------------------------------------------------------------
+# Bank Statement Finder
+# ---------------------------------------------------------------------------
+
+# Filename keywords that strongly suggest a bank statement
+_BS_FILENAME_KEYWORDS = [
+    "bank", "statement", "stmt", "checking", "savings", "deposit",
+    "chase", "wells", "bofa", "bank of america", "citi", "usaa",
+    "navy federal", "pnc", "regions", "suntrust", "truist", "td bank",
+    "fifth third", "us bank", "ally", "capital one", "discover",
+    "huntington", "keybank", "bbt", "soa", "account",
+]
+
+# Content keywords found on the first page of real bank statements
+_BS_CONTENT_KEYWORDS = [
+    "statement period", "beginning balance", "ending balance",
+    "account number", "account summary", "available balance",
+    "deposits and additions", "checks and withdrawals",
+    "service charge", "direct deposit", "transaction history",
+    "bank statement", "checking account", "savings account",
+]
+
+
+def find_bank_statements(folder_path: str, scope: str = "bank_only",
+                         progress_callback=None) -> list:
+    """
+    Walk a folder and return PDFs ranked by how likely they are to be
+    bank statements.
+
+    scope:
+      "bank_only"  — only files whose name suggests a bank statement
+      "all_pdfs"   — every PDF, ranked by content match
+
+    Returns list of dicts: {file_path, file_name, score, reason, snippet}
+    sorted by score descending.
+    """
+    if not folder_path or not os.path.isdir(folder_path):
+        return []
+
+    MAX_FILES = 200
+    MAX_FILE_MB = 50
+
+    # Collect PDFs
+    pdf_files = []
+    for root, _, files in os.walk(folder_path):
+        for fname in files:
+            if not fname.lower().endswith(".pdf"):
+                continue
+            fpath = os.path.join(root, fname)
+            try:
+                size_mb = os.path.getsize(fpath) / (1_024 * 1_024)
+                if size_mb > MAX_FILE_MB:
+                    continue
+            except OSError:
+                continue
+            pdf_files.append((fpath, fname))
+            if len(pdf_files) >= MAX_FILES:
+                break
+        if len(pdf_files) >= MAX_FILES:
+            break
+
+    results = []
+    total = len(pdf_files)
+
+    for idx, (fpath, fname) in enumerate(pdf_files):
+        if progress_callback and total > 0:
+            progress_callback(int((idx / total) * 100), f"Checking {fname}...")
+
+        fname_lower = fname.lower()
+        score = 0
+        reasons = []
+
+        # ── Filename scoring ──────────────────────────────────────────────
+        fname_hits = [kw for kw in _BS_FILENAME_KEYWORDS if kw in fname_lower]
+        if fname_hits:
+            score += min(50, len(fname_hits) * 15)
+            reasons.append(f"filename: {', '.join(fname_hits[:3])}")
+
+        # Skip content scan for non-matching files in bank_only mode
+        if scope == "bank_only" and not fname_hits:
+            continue
+
+        # ── Content scoring (first 2 pages only — fast) ──────────────────
+        snippet = ""
+        try:
+            reader = PdfReader(fpath)
+            first_pages_text = ""
+            for pg in reader.pages[:2]:
+                txt = pg.extract_text() or ""
+                first_pages_text += txt + "\n"
+                if not snippet and txt.strip():
+                    # grab a readable excerpt from page 1
+                    lines = [l.strip() for l in txt.split("\n") if len(l.strip()) > 20]
+                    snippet = " · ".join(lines[:3])[:200]
+
+            content_lower = first_pages_text.lower()
+            content_hits = [kw for kw in _BS_CONTENT_KEYWORDS if kw in content_lower]
+            if content_hits:
+                score += min(50, len(content_hits) * 8)
+                reasons.append(f"content: {', '.join(content_hits[:3])}")
+        except Exception:
+            pass
+
+        if score == 0:
+            continue
+
+        results.append({
+            "file_path": fpath,
+            "file_name": fname,
+            "score": min(100, score),
+            "reason": "; ".join(reasons) if reasons else "low confidence",
+            "snippet": snippet or "(no readable text found)",
+        })
+
+        time.sleep(0.02)
+
+    if progress_callback:
+        progress_callback(100, f"Found {len(results)} file(s)")
+
+    results.sort(key=lambda x: x["score"], reverse=True)
+    return results
