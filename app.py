@@ -712,6 +712,7 @@ def show_dashboard():
                         "Closing Disclosure (CD)",
                         "Loan Estimate (LE)",
                         "1003 Application",
+                        "Purchase Contract",
                         "Credit Report",
                         "Bank Statement",
                         "Change of Circumstance (COC)",
@@ -1051,6 +1052,234 @@ def show_dashboard():
                                             )
 
                     # skip the rest of the condition-rendering code for this file
+                    continue
+
+                # === 1003 APPLICATION — structured data display ===
+                if doc_type == "1003 Application":
+                    data = result.get("extracted_data", {})
+                    if not data:
+                        st.warning("Could not extract structured data. The PDF may be a scanned image.")
+                        continue
+
+                    b = data.get("borrower", {})
+                    cb = data.get("co_borrower", {})
+                    emp = data.get("employment", {})
+                    loan = data.get("loan", {})
+                    missing = data.get("missing_required", [])
+
+                    st.markdown("## 📝 1003 Application — Extracted Fields")
+                    if missing:
+                        st.markdown(
+                            f'<div style="background:#3d1515;border-left:3px solid #e74c3c;border-radius:6px;'
+                            f'padding:8px 14px;margin-bottom:12px;font-size:13px;color:#f5b7b1;">'
+                            f'⚠️ <b>Missing required fields:</b> {", ".join(missing)}</div>',
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.markdown(
+                            '<div style="background:#152a1e;border-left:3px solid #27ae60;border-radius:6px;'
+                            'padding:8px 14px;margin-bottom:12px;font-size:13px;color:#a9dfbf;">'
+                            '✅ All required fields found.</div>',
+                            unsafe_allow_html=True,
+                        )
+
+                    _nf = '<i style="color:#6a56b8;">not found</i>'
+
+                    def _field(label, value, editable_key=None):
+                        dot = '<span style="color:#27ae60;font-weight:700;">●</span>' if value else \
+                              '<span style="color:#e74c3c;font-weight:700;">●</span>'
+                        disp = value if value else _nf
+                        st.markdown(
+                            f'<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:2px;">'
+                            f'{dot}<span style="color:#a89ec9;font-size:12px;min-width:140px;">{label}</span>'
+                            f'<span style="color:#f0f6fc;font-size:13px;font-weight:600;">{disp}</span></div>',
+                            unsafe_allow_html=True,
+                        )
+
+                    col_a, col_b = st.columns(2)
+                    with col_a:
+                        st.markdown("**🧑 Borrower**")
+                        _field("Name", b.get("name"))
+                        _field("SSN", b.get("ssn"))
+                        _field("Date of Birth", b.get("dob"))
+                        _field("Phone", b.get("phone"))
+                        _field("Email", b.get("email"))
+                        _field("Present Address", b.get("present_address"))
+                        _field("Previous Address", b.get("previous_address"))
+                        st.markdown("---")
+                        st.markdown("**💼 Employment**")
+                        _field("Employer", emp.get("employer"))
+                        _field("Position / Title", emp.get("position"))
+                        _field("Employer Phone", emp.get("employer_phone"))
+                        _field("Years on Job", emp.get("years_on_job"))
+                        _field("Years in Field", emp.get("years_in_field"))
+                        _field("Base Monthly Income", emp.get("base_monthly_income"))
+
+                    with col_b:
+                        st.markdown("**👥 Co-Borrower**")
+                        _field("Name", cb.get("name"))
+                        _field("SSN", cb.get("ssn"))
+                        _field("Employer", cb.get("employer"))
+                        st.markdown("---")
+                        st.markdown("**🏠 Loan / Property**")
+                        _field("Loan Amount", loan.get("amount"))
+                        _field("Loan Purpose", loan.get("purpose"))
+                        _field("Term", loan.get("term"))
+                        _field("Interest Rate", loan.get("interest_rate"))
+                        _field("Property Address", loan.get("property_address"))
+                        _field("Property Use", loan.get("property_use"))
+
+                    st.markdown("---")
+                    pp_col1, pp_col2 = st.columns([2, 1])
+                    with pp_col1:
+                        st.caption("Push to Pipeline to create a tracked loan from this 1003.")
+                    with pp_col2:
+                        if st.button("➕ Push to Pipeline", key=f"push1003_{fkey}", use_container_width=True, type="primary"):
+                            from crm import add_loan
+                            add_loan(
+                                loan_num=f"1003-{b.get('name', 'Unknown')[:8]}",
+                                borrower=b.get("name", "Unknown"),
+                                status="Pending",
+                                due_date="",
+                                missing_docs=", ".join(missing) if missing else "",
+                                folder_path="",
+                            )
+                            st.success(f"✅ Added {b.get('name', 'borrower')} to pipeline.")
+                    continue
+
+                # === PURCHASE CONTRACT — structured data display ===
+                if doc_type == "Purchase Contract":
+                    data = result.get("extracted_data", {})
+                    if not data:
+                        st.warning("Could not extract structured data. The PDF may be a scanned image.")
+                        continue
+
+                    buyer = data.get("buyer", {})
+                    seller = data.get("seller", {})
+                    prop = data.get("property", {})
+                    txn = data.get("transaction", {})
+                    la = data.get("listing_agent", {})
+                    sa = data.get("selling_agent", {})
+                    title = data.get("title", {})
+                    cont = data.get("contingencies", {})
+                    addendums = data.get("addendums", [])
+                    missing = data.get("missing_required", [])
+
+                    st.markdown("## 📃 Purchase Contract — Extracted Fields")
+                    if missing:
+                        st.markdown(
+                            f'<div style="background:#3d1515;border-left:3px solid #e74c3c;border-radius:6px;'
+                            f'padding:8px 14px;margin-bottom:12px;font-size:13px;color:#f5b7b1;">'
+                            f'⚠️ <b>Missing required fields:</b> {", ".join(missing)}</div>',
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.markdown(
+                            '<div style="background:#152a1e;border-left:3px solid #27ae60;border-radius:6px;'
+                            'padding:8px 14px;margin-bottom:12px;font-size:13px;color:#a9dfbf;">'
+                            '✅ All required fields found.</div>',
+                            unsafe_allow_html=True,
+                        )
+
+                    _nf2 = '<i style="color:#6a56b8;">not found</i>'
+
+                    def _cfield(label, value):
+                        dot = '<span style="color:#27ae60;font-weight:700;">●</span>' if value else \
+                              '<span style="color:#e74c3c;font-weight:700;">●</span>'
+                        disp = value if value else _nf2
+                        st.markdown(
+                            f'<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:2px;">'
+                            f'{dot}<span style="color:#a89ec9;font-size:12px;min-width:140px;">{label}</span>'
+                            f'<span style="color:#f0f6fc;font-size:13px;font-weight:600;">{disp}</span></div>',
+                            unsafe_allow_html=True,
+                        )
+
+                    pc1, pc2, pc3 = st.columns(3)
+                    with pc1:
+                        st.markdown("**🤝 Parties**")
+                        _cfield("Buyer", buyer.get("name"))
+                        _cfield("Buyer Phone", buyer.get("phone"))
+                        _cfield("Buyer Email", buyer.get("email"))
+                        _cfield("Seller", seller.get("name"))
+                        _cfield("Seller Phone", seller.get("phone"))
+                        st.markdown("---")
+                        st.markdown("**🏠 Property**")
+                        _cfield("Address", prop.get("address"))
+
+                    with pc2:
+                        st.markdown("**💵 Transaction**")
+                        _cfield("Purchase Price", txn.get("purchase_price"))
+                        _cfield("Closing Date", txn.get("closing_date"))
+                        _cfield("Earnest Money", txn.get("earnest_money"))
+                        _cfield("Down Payment", txn.get("down_payment"))
+                        _cfield("Seller Concessions", txn.get("seller_concessions"))
+                        st.markdown("---")
+                        st.markdown("**🏛️ Title Company**")
+                        _cfield("Company", title.get("company"))
+                        _cfield("Contact", title.get("contact"))
+                        _cfield("Phone", title.get("phone"))
+
+                    with pc3:
+                        st.markdown("**🏡 Listing Agent**")
+                        _cfield("Name", la.get("name"))
+                        _cfield("Brokerage", la.get("brokerage"))
+                        _cfield("Phone", la.get("phone"))
+                        _cfield("Email", la.get("email"))
+                        st.markdown("---")
+                        st.markdown("**🤝 Selling / Buyer's Agent**")
+                        _cfield("Name", sa.get("name"))
+                        _cfield("Brokerage", sa.get("brokerage"))
+                        _cfield("Phone", sa.get("phone"))
+                        _cfield("Email", sa.get("email"))
+
+                    st.markdown("---")
+                    st.markdown("**📋 Contingencies**")
+                    conc1, conc2, conc3 = st.columns(3)
+                    with conc1:
+                        _cfield("Inspection", cont.get("inspection"))
+                    with conc2:
+                        _cfield("Appraisal", cont.get("appraisal"))
+                    with conc3:
+                        _cfield("Financing", cont.get("financing"))
+
+                    if addendums:
+                        st.markdown("**📎 Addendums / Riders**")
+                        for add in addendums:
+                            st.markdown(
+                                f'<div style="color:#cdd9e5;font-size:12px;margin-left:12px;">• {add}</div>',
+                                unsafe_allow_html=True,
+                            )
+
+                    st.markdown("---")
+                    act_c1, act_c2, act_c3 = st.columns(3)
+                    with act_c1:
+                        if st.button("➕ Push to Pipeline", key=f"pushpc_{fkey}", use_container_width=True, type="primary"):
+                            from crm import add_loan
+                            add_loan(
+                                loan_num=f"PC-{buyer.get('name', 'Unknown')[:8]}",
+                                borrower=buyer.get("name", "Unknown"),
+                                status="Pending",
+                                due_date=txn.get("closing_date", ""),
+                                missing_docs=", ".join(missing) if missing else "",
+                                folder_path="",
+                            )
+                            st.success(f"✅ Added {buyer.get('name', 'buyer')} to pipeline.")
+                    with act_c2:
+                        if title.get("company") and st.button("✉️ Draft Title Email", key=f"titlemailpc_{fkey}", use_container_width=True):
+                            title_body = (
+                                f"Dear {title.get('contact') or title.get('company')} Team,\n\n"
+                                f"Please be advised that we are working on the following transaction "
+                                f"and require your assistance:\n\n"
+                                f"  Property: {prop.get('address', 'See contract')}\n"
+                                f"  Buyer: {buyer.get('name', '')}\n"
+                                f"  Seller: {seller.get('name', '')}\n"
+                                f"  Purchase Price: ${txn.get('purchase_price', '')}\n"
+                                f"  Closing Date: {txn.get('closing_date', '')}\n\n"
+                                f"Please provide your title commitment, CPL, wiring instructions, "
+                                f"and preliminary CD at your earliest convenience.\n\n"
+                                f"Thank you,\n[Your Name]"
+                            )
+                            st.text_area("Title Company Email — copy to Outlook:", title_body, height=260, key=f"titleemailout_{fkey}")
                     continue
 
                 # === CONDITIONS (the main output — non-bank-statement docs) ===

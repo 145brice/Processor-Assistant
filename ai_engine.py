@@ -1195,6 +1195,338 @@ def run_mega_checklist(pdf_text: str, user_history=None) -> str:
 
 
 # ---------------------------------------------------------------------------
+# 1003 Application Parser
+# ---------------------------------------------------------------------------
+
+def extract_1003(text: str) -> dict:
+    """
+    Extract structured fields from a Uniform Residential Loan Application (1003).
+    Returns a dict with borrower, co-borrower, employment, loan, and missing_required.
+    100% offline — regex only.
+    """
+    import re
+
+    def _find(patterns, default=""):
+        for p in patterns:
+            m = re.search(p, text, re.IGNORECASE | re.MULTILINE)
+            if m:
+                val = (m.group(1) if m.lastindex else m.group(0)).strip()
+                val = re.sub(r'\s+', ' ', val)
+                if val and len(val) > 1:
+                    return val
+        return default
+
+    # ── Borrower ────────────────────────────────────────────────────────────
+    borrower_name = _find([
+        r"(?:Borrower'?s?\s*Name|Borrower\s*Name|I\.\s*BORROWER)[:\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
+        r"(?:^|\n)\s*Borrower[:\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
+        r"(?:Applicant|APPLICANT)[:\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
+    ])
+    co_borrower_name = _find([
+        r"(?:Co-?Borrower'?s?\s*Name|CO-?BORROWER\s*NAME)[:\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
+        r"(?:Co-?Applicant)[:\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
+    ])
+
+    # SSN — first match = borrower, second = co-borrower
+    ssn_all = re.findall(r"\b(\d{3}[-\s]\d{2}[-\s]\d{4})\b", text)
+    ssn = ssn_all[0] if ssn_all else _find([
+        r"(?:Social\s*Security\s*(?:Number|No\.?|#)|SSN)[:\s#]*(\d{3}[-\s]\d{2}[-\s]\d{4})",
+    ])
+    co_ssn = ssn_all[1] if len(ssn_all) >= 2 else ""
+
+    dob = _find([
+        r"(?:Date\s*of\s*Birth|DOB|Birth\s*Date)[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+    ])
+    phone = _find([
+        r"(?:Home\s*Phone|Cell\s*Phone|Phone\s*No|Telephone)[:\s]+([\(\d][\d\s\(\)\-\.]{7,16}\d)",
+    ])
+    email = _find([
+        r"(?:E-?mail)[:\s]+([\w\.\+\-]+@[\w\.\-]+\.\w{2,})",
+        r"\b([\w\.\+\-]+@[\w\.\-]+\.\w{2,})\b",
+    ])
+    present_address = _find([
+        r"(?:Present\s*Address|Current\s*Address|Mailing\s*Address)[:\s]+([0-9][^\n]{4,80})",
+        r"(?:Residing\s*at|Lives?\s*at)[:\s]+([0-9][^\n]{4,60})",
+    ])
+    previous_address = _find([
+        r"(?:Former\s*Address|Previous\s*Address|Prior\s*Address)[:\s]+([0-9][^\n]{4,80})",
+        r"(?:If\s*residing\s*at|If\s*less\s*than\s*\d)[^\n]{0,20}:\s*([0-9][^\n]{4,60})",
+    ])
+
+    # ── Employment ──────────────────────────────────────────────────────────
+    employers = re.findall(
+        r"(?:Employer'?s?\s*Name|Name\s*of\s*Employer|Employer)[:\s]+([^\n]{3,60})",
+        text, re.IGNORECASE,
+    )
+    employer = employers[0].strip() if employers else ""
+    co_employer = employers[1].strip() if len(employers) >= 2 else ""
+
+    employer_phone = _find([
+        r"(?:Business\s*Phone|Employer\s*Phone|Work\s*Phone|Office\s*Phone)[:\s]+([\(\d][\d\s\(\)\-\.]{7,16}\d)",
+    ])
+    position = _find([
+        r"(?:Position\/Title|Job\s*Title|Position|Title\s*of\s*Position)[:\s]+([^\n]{2,50})",
+        r"(?:Self-?Employed\s*as|Type\s*of\s*Business)[:\s]+([^\n]{2,40})",
+    ])
+    years_on_job = _find([
+        r"(?:Years\s*on\s*(?:this\s*)?[Jj]ob|Time\s*on\s*Job)[:\s]+([^\n]{1,20})",
+        r"(\d+\.?\d*)\s+[Yy]ears?\s+(?:on|at|with)\s+",
+    ])
+    years_in_field = _find([
+        r"(?:Years\s*employed\s*in\s*this|Total\s*years\s*in)[:\s]+([^\n]{1,20})",
+        r"(\d+\.?\d*)\s+years?\s+(?:in\s+)?(?:this\s+)?(?:field|industry|profession|line)",
+    ])
+    base_income = _find([
+        r"(?:Base\s*(?:Employ\.?\s*)?Income|Monthly\s*Gross\s*Income|Gross\s*Monthly\s*Income)[:\s]+\$?([\d,\.]+)",
+    ])
+
+    # ── Loan info ────────────────────────────────────────────────────────────
+    loan_amount = _find([
+        r"(?:Loan\s*Amount|Amount\s*of\s*(?:this\s*)?(?:Loan|Mortgage)|Mortgage\s*Amount)[:\s]+\$?([\d,\.]+)",
+    ])
+    property_address = _find([
+        r"(?:Subject\s*Property\s*Address|Property\s*Street\s*Address|Property\s*Address)[:\s]+([^\n]{5,100})",
+    ])
+    loan_purpose = _find([
+        r"(?:Purpose\s*of\s*(?:the\s*)?Loan|Loan\s*Purpose)[:\s]+([^\n]{3,40})",
+    ])
+    property_use = _find([
+        r"(?:Property\s*will\s*be\s*used|Occupancy\s*Type|Property\s*Use)[:\s]+([^\n]{3,40})",
+    ])
+    interest_rate = _find([
+        r"(?:Interest\s*Rate|Rate)[:\s]+(\d+\.?\d*\s*%)",
+    ])
+    loan_term = _find([
+        r"(?:Number\s*of\s*Months|Loan\s*Term|Term\s*of\s*Loan)[:\s]+(\d+\s*(?:months?|years?)?)",
+    ])
+
+    # ── Missing required fields check ────────────────────────────────────────
+    required = {
+        "Borrower Name": borrower_name,
+        "SSN": ssn,
+        "Present Address": present_address,
+        "Employer": employer,
+        "Loan Amount": loan_amount,
+        "Property Address": property_address,
+    }
+    missing = [k for k, v in required.items() if not v]
+
+    return {
+        "borrower": {
+            "name": borrower_name,
+            "ssn": ssn,
+            "dob": dob,
+            "phone": phone,
+            "email": email,
+            "present_address": present_address,
+            "previous_address": previous_address,
+        },
+        "co_borrower": {
+            "name": co_borrower_name,
+            "ssn": co_ssn,
+            "employer": co_employer,
+        },
+        "employment": {
+            "employer": employer,
+            "employer_phone": employer_phone,
+            "position": position,
+            "years_on_job": years_on_job,
+            "years_in_field": years_in_field,
+            "base_monthly_income": base_income,
+        },
+        "loan": {
+            "amount": loan_amount,
+            "purpose": loan_purpose,
+            "term": loan_term,
+            "interest_rate": interest_rate,
+            "property_address": property_address,
+            "property_use": property_use,
+        },
+        "missing_required": missing,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Purchase Contract Parser
+# ---------------------------------------------------------------------------
+
+def extract_purchase_contract(text: str) -> dict:
+    """
+    Extract structured fields from a residential purchase contract.
+    Returns parties, transaction terms, agents, title, and contingencies.
+    100% offline — regex only.
+    """
+    import re
+
+    def _find(patterns, default=""):
+        for p in patterns:
+            m = re.search(p, text, re.IGNORECASE | re.MULTILINE)
+            if m:
+                val = (m.group(1) if m.lastindex else m.group(0)).strip()
+                val = re.sub(r'\s+', ' ', val)
+                if val and len(val) > 1:
+                    return val
+        return default
+
+    # ── Parties ──────────────────────────────────────────────────────────────
+    buyer_name = _find([
+        r"(?:Buyer[:\s]+|Purchaser[:\s]+)([A-Z][a-zA-Z\-']+(?:\s+(?:and\s+)?[A-Z][a-zA-Z\-']+){1,5})",
+        r"BUYER[s]?\s*[:\|]\s*([^\n]{3,60})",
+        r"(?:hereinafter\s+(?:referred\s+to\s+as\s+)?[""']?Buyer[""']?)[,\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
+    ])
+    seller_name = _find([
+        r"(?:Seller[:\s]+)([A-Z][a-zA-Z\-']+(?:\s+(?:and\s+)?[A-Z][a-zA-Z\-']+){1,5})",
+        r"SELLER[s]?\s*[:\|]\s*([^\n]{3,60})",
+        r"(?:hereinafter\s+(?:referred\s+to\s+as\s+)?[""']?Seller[""']?)[,\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
+    ])
+    buyer_phone = _find([
+        r"(?:Buyer'?s?\s*Phone|Buyer\s*Tel)[:\s]+([\(\d][\d\s\(\)\-\.]{7,16}\d)",
+    ])
+    buyer_email = _find([
+        r"(?:Buyer'?s?\s*E-?mail)[:\s]+([\w\.\+\-]+@[\w\.\-]+\.\w{2,})",
+    ])
+    seller_phone = _find([
+        r"(?:Seller'?s?\s*Phone|Seller\s*Tel)[:\s]+([\(\d][\d\s\(\)\-\.]{7,16}\d)",
+    ])
+
+    # ── Property ─────────────────────────────────────────────────────────────
+    property_address = _find([
+        r"(?:Property\s*(?:Address|Description|Location)|Subject\s*Property)[:\s]+([^\n]{5,100})",
+        r"(?:real\s*property\s*(?:known\s*as|located\s*at|described\s*as))[:\s]+([^\n]{5,100})",
+        r"(?:located\s*at|address\s*of)[:\s]+([0-9][^\n]{4,80})",
+    ])
+
+    # ── Transaction ──────────────────────────────────────────────────────────
+    purchase_price = _find([
+        r"(?:Purchase\s*Price|Sales?\s*Price|Contract\s*Price|Total\s*Price)[:\s]+\$?\s*([\d,]+(?:\.\d{1,2})?)",
+        r"\$\s*([\d,]+(?:\.\d{2})?)\s*(?:\([A-Za-z\s]+dollars?\))",
+    ])
+    closing_date = _find([
+        r"(?:Closing\s*Date|Close\s*of\s*Escrow|Settlement\s*Date|Closing\s*shall)[:\s]+([^\n]{3,40})",
+        r"(?:close|closing|settlement)\s+(?:on|by|no\s+later\s+than)\s+([\w\s,/]+\d{4})",
+    ])
+    earnest_money = _find([
+        r"(?:Earnest\s*Money\s*Deposit|EMD|Initial\s*Deposit|Escrow\s*Deposit)[:\s]+\$?\s*([\d,]+(?:\.\d{1,2})?)",
+    ])
+    down_payment = _find([
+        r"(?:Down\s*Payment|Cash\s*Down)[:\s]+\$?\s*([\d,]+(?:\.\d{1,2})?)",
+    ])
+    seller_concessions = _find([
+        r"(?:Seller\s*(?:Concession|Credit|Contribution|Closing\s*Cost)[s]?)[:\s]+\$?\s*([\d,]+(?:\.\d{1,2})?[^\n]{0,60})",
+        r"(?:closing\s*cost\s*(?:credit|contribution)|seller\s*to\s*pay\s*(?:up\s*to)?)[:\s]+\$?\s*([\d,]+(?:\.\d{1,2})?[^\n]{0,40})",
+    ])
+
+    # ── Title company ─────────────────────────────────────────────────────────
+    title_company = _find([
+        r"(?:Title\s*Company|Title\s*Co\.?|Escrow\s*Company|Settlement\s*Agent|Title\s*Insurance\s*Co)[:\s]+([^\n]{3,60})",
+    ])
+    title_contact = _find([
+        r"(?:Title\s*(?:Officer|Agent|Contact|Rep)|Escrow\s*Officer)[:\s]+([^\n]{3,40})",
+    ])
+    title_phone = _find([
+        r"(?:Title|Escrow)\s*(?:Company)?\s*Phone[:\s]+([\(\d][\d\s\(\)\-\.]{7,16}\d)",
+    ])
+
+    # ── Listing agent (seller's agent) ────────────────────────────────────────
+    listing_agent = _find([
+        r"(?:Listing\s*Agent|Seller'?s?\s*Agent|Seller'?s?\s*Broker\s*Agent)[:\s]+([^\n]{3,50})",
+        r"(?:L\.?A\.?\s*Name|Listing\s*Broker)[:\s]+([^\n]{3,50})",
+    ])
+    listing_brokerage = _find([
+        r"(?:Listing\s*(?:Broker|Brokerage|Office)|Seller'?s?\s*(?:Broker|Brokerage|Company))[:\s]+([^\n]{3,60})",
+    ])
+    listing_phone = _find([
+        r"(?:Listing\s*Agent\s*Phone|L\.?A\.?\s*Phone)[:\s]+([\(\d][\d\s\(\)\-\.]{7,16}\d)",
+    ])
+    listing_email = _find([
+        r"(?:Listing\s*Agent\s*E-?mail)[:\s]+([\w\.\+\-]+@[\w\.\-]+\.\w{2,})",
+    ])
+
+    # ── Selling/buyer's agent ─────────────────────────────────────────────────
+    selling_agent = _find([
+        r"(?:Selling\s*Agent|Buyer'?s?\s*Agent|Cooperating\s*Agent|Co-?op\s*Agent)[:\s]+([^\n]{3,50})",
+        r"(?:S\.?A\.?\s*Name|Selling\s*Broker)[:\s]+([^\n]{3,50})",
+    ])
+    selling_brokerage = _find([
+        r"(?:Selling\s*(?:Broker|Brokerage|Office)|Buyer'?s?\s*(?:Broker|Brokerage|Company))[:\s]+([^\n]{3,60})",
+    ])
+    selling_phone = _find([
+        r"(?:Selling\s*Agent\s*Phone|Buyer'?s?\s*Agent\s*Phone|S\.?A\.?\s*Phone)[:\s]+([\(\d][\d\s\(\)\-\.]{7,16}\d)",
+    ])
+    selling_email = _find([
+        r"(?:Selling\s*Agent\s*E-?mail|Buyer'?s?\s*Agent\s*E-?mail)[:\s]+([\w\.\+\-]+@[\w\.\-]+\.\w{2,})",
+    ])
+
+    # ── Contingencies ─────────────────────────────────────────────────────────
+    inspection_days = _find([
+        r"(?:Inspection\s*(?:Period|Contingency|Days))[:\s]+(\d+\s*(?:calendar|business)?\s*days?[^\n]{0,40})",
+        r"(\d+)\s*(?:calendar|business)?\s*days?\s+(?:to|for)\s+inspect",
+    ])
+    appraisal_contingency = _find([
+        r"(?:Appraisal\s*(?:Contingency|Condition|Clause))[:\s]+([^\n]{3,80})",
+        r"subject\s+to\s+(?:an?\s+)?appraisal\s*(?:of\s+not\s+less\s+than)?\s*([^\n]{3,60})",
+    ])
+    financing_contingency = _find([
+        r"(?:Financing\s*(?:Contingency|Condition|Clause)|Loan\s*Contingency)[:\s]+([^\n]{3,80})",
+        r"(?:conditioned?\s+upon|subject\s+to)\s+(?:Buyer\s+)?obtaining\s+(?:a\s+)?(?:loan|mortgage|financing)[^\n]{0,60}",
+    ])
+
+    # ── Addendums ─────────────────────────────────────────────────────────────
+    addendums = re.findall(
+        r"(?:Addendum|Rider|Exhibit|Amendment|Attachment)\s*[:\-#]?\s*([A-Z0-9][^\n]{0,60})",
+        text, re.IGNORECASE,
+    )
+    addendums = list(dict.fromkeys(a.strip() for a in addendums[:12]))
+
+    # ── Missing required fields check ─────────────────────────────────────────
+    required = {
+        "Buyer Name": buyer_name,
+        "Seller Name": seller_name,
+        "Property Address": property_address,
+        "Purchase Price": purchase_price,
+        "Closing Date": closing_date,
+    }
+    missing = [k for k, v in required.items() if not v]
+
+    return {
+        "buyer": {"name": buyer_name, "phone": buyer_phone, "email": buyer_email},
+        "seller": {"name": seller_name, "phone": seller_phone},
+        "property": {"address": property_address},
+        "transaction": {
+            "purchase_price": purchase_price,
+            "closing_date": closing_date,
+            "earnest_money": earnest_money,
+            "down_payment": down_payment,
+            "seller_concessions": seller_concessions,
+        },
+        "listing_agent": {
+            "name": listing_agent,
+            "brokerage": listing_brokerage,
+            "phone": listing_phone,
+            "email": listing_email,
+        },
+        "selling_agent": {
+            "name": selling_agent,
+            "brokerage": selling_brokerage,
+            "phone": selling_phone,
+            "email": selling_email,
+        },
+        "title": {
+            "company": title_company,
+            "contact": title_contact,
+            "phone": title_phone,
+        },
+        "contingencies": {
+            "inspection": inspection_days,
+            "appraisal": appraisal_contingency,
+            "financing": financing_contingency,
+        },
+        "addendums": addendums,
+        "missing_required": missing,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Main Processing Function
 # ---------------------------------------------------------------------------
 
@@ -1222,11 +1554,14 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None) -> dict
     }
 
     if doc_type == "Bank Statement":
-        # For bank statements: run the 50-rule analysis as the primary output.
-        # Condition extraction on bank statement text produces meaningless results,
-        # so we skip it and store the bank analysis in bank_rules instead.
         result["conditions"] = ""
         result["bank_rules"] = check_bank_rules(text, user_history)
+    elif doc_type == "1003 Application":
+        result["conditions"] = ""
+        result["extracted_data"] = extract_1003(text)
+    elif doc_type == "Purchase Contract":
+        result["conditions"] = ""
+        result["extracted_data"] = extract_purchase_contract(text)
     else:
         result["conditions"] = extract_conditions(text, doc_type, user_history)
 
