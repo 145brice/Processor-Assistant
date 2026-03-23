@@ -3,6 +3,7 @@ Processor Traien - Mortgage Document Processing App
 Main Streamlit application.
 """
 
+import os
 import streamlit as st
 
 # --- Page Config ---
@@ -699,6 +700,9 @@ def show_sidebar():
         if st.button("📧 Email Watch", use_container_width=True):
             st.session_state.page = "email_watch"
             st.rerun()
+        if st.button("🤖 Ollama", use_container_width=True):
+            st.session_state.page = "ollama"
+            st.rerun()
         if not is_sandbox:
             if st.button("🕑 My History", use_container_width=True):
                 st.session_state.page = "history"
@@ -721,8 +725,24 @@ def show_sidebar():
         _badge = f' <span style="background:#7c6ff7;color:#fff;font-size:10px;border-radius:8px;padding:1px 6px;">{_ew_pending}</span>' if _ew_pending else ""
         st.markdown(
             f'<div style="background:#1e1645;border:1px solid #4a3a8a;border-radius:8px;'
-            f'padding:7px 10px;margin-bottom:8px;cursor:default;">'
+            f'padding:7px 10px;margin-bottom:4px;cursor:default;">'
             f'<span style="font-size:12px;color:#cdd9e5;">{_dot} {_label}{_badge}</span></div>',
+            unsafe_allow_html=True,
+        )
+
+        # ── Ollama status indicator ───────────────────────────────────────────
+        import ollama_client as _oc
+        _oc_cfg = _oc.get_config()
+        if _oc_cfg.get("enabled"):
+            _oc_ok, _ = _oc.ping(_oc_cfg.get("endpoint"))
+            _oc_dot   = "🟣" if _oc_ok else "🔴"
+            _oc_label = f"Ollama · {_oc_cfg.get('model','?')}" if _oc_ok else "Ollama · offline"
+        else:
+            _oc_dot, _oc_label = "⚫", "Ollama off"
+        st.markdown(
+            f'<div style="background:#1e1645;border:1px solid #4a3a8a;border-radius:8px;'
+            f'padding:7px 10px;margin-bottom:8px;cursor:default;">'
+            f'<span style="font-size:12px;color:#cdd9e5;">{_oc_dot} {_oc_label}</span></div>',
             unsafe_allow_html=True,
         )
 
@@ -1914,8 +1934,14 @@ def show_dashboard():
                     else:
                         st.caption("Check conditions below to include them")
 
-                draft_clicked = st.button("✉️ Draft Email", key=f"draft_{fkey}",
-                                          type="primary", use_container_width=False)
+                _draft_col1, _draft_col2 = st.columns([1, 1])
+                with _draft_col1:
+                    draft_clicked = st.button("✉️ Draft Email", key=f"draft_{fkey}",
+                                              type="primary", use_container_width=True)
+                with _draft_col2:
+                    ollama_draft_clicked = st.button("🤖 Draft with Ollama", key=f"odraft_{fkey}",
+                                                     use_container_width=True)
+
                 if draft_clicked:
                     from ai_engine import draft_email
                     if pre_selected:
@@ -1925,6 +1951,22 @@ def show_dashboard():
                     email_text = draft_email("\n".join(cond_lines), recipient, email_lang)
                     st.container(border=True).markdown(email_text)
                     st.caption("Copy and paste into your email client. Review before sending.")
+
+                if ollama_draft_clicked:
+                    import ollama_client as _oc
+                    if not _oc.is_enabled():
+                        st.warning("Ollama is disabled. Enable it in the 🤖 Ollama page.")
+                    else:
+                        conds_for_ollama = pre_selected if pre_selected else []
+                        with st.spinner("Drafting with Ollama…"):
+                            _oe_text, _oe_log = _oc.draft_email_enhanced(
+                                conds_for_ollama, recipient, email_lang
+                            )
+                        if _oe_text:
+                            st.container(border=True).markdown(_oe_text)
+                            st.caption(f"🤖 Ollama draft · {_oe_log.split('|')[-1].strip() if '|' in _oe_log else ''}")
+                        else:
+                            st.info("Ollama didn't return a draft — is it running? Check the 🤖 Ollama page.")
 
                 st.markdown("---")
                 st.markdown("### 📋 Conditions")
@@ -3097,6 +3139,103 @@ def show_email_watch_page():
         """)
 
 
+# --- Ollama Settings Page ---
+def show_ollama_page():
+    import ollama_client as _oc
+
+    st.title("🤖 Ollama — Local AI Enhancement")
+    st.caption("Optional. Connects to a locally running Ollama instance for smarter document analysis. 100% offline.")
+
+    cfg = _oc.get_config()
+
+    # ── Status card ──────────────────────────────────────────────────────────
+    ok, msg = _oc.ping(cfg.get("endpoint", _oc.DEFAULT_ENDPOINT))
+    if cfg.get("enabled"):
+        if ok:
+            st.success(f"🟣 Ollama is running · {cfg.get('endpoint')} · model: {cfg.get('model')}")
+        else:
+            st.error(f"🔴 Ollama enabled but unreachable — {msg}")
+            st.info("Make sure Ollama is running: open a terminal and run `ollama serve`")
+    else:
+        st.info("⚫ Ollama is disabled. Enable it below to activate AI-enhanced features.")
+
+    st.markdown("---")
+
+    # ── Settings form ────────────────────────────────────────────────────────
+    with st.form("ollama_settings_form"):
+        enabled = st.toggle("Enable Ollama", value=bool(cfg.get("enabled")), key="oc_enabled")
+        endpoint = st.text_input("Ollama endpoint", value=cfg.get("endpoint", _oc.DEFAULT_ENDPOINT),
+                                 key="oc_endpoint",
+                                 help="Default: http://localhost:11434")
+
+        # Model: try to list from server, fall back to text input
+        available_models = _oc.list_models(endpoint) if ok else []
+        current_model = cfg.get("model", _oc.DEFAULT_MODEL)
+        if available_models:
+            if current_model not in available_models:
+                available_models.insert(0, current_model)
+            model = st.selectbox("Model", available_models,
+                                 index=available_models.index(current_model),
+                                 key="oc_model")
+        else:
+            model = st.text_input("Model name", value=current_model, key="oc_model_txt",
+                                  help="e.g. llama3.2 · Run: ollama pull llama3.2")
+
+        save_btn = st.form_submit_button("💾 Save Settings", type="primary")
+
+    if save_btn:
+        _oc.save_config(enabled, endpoint, model if available_models else st.session_state.get("oc_model_txt", model))
+        st.success("Settings saved.")
+        st.rerun()
+
+    # ── Quick setup guide ────────────────────────────────────────────────────
+    with st.expander("📖 How to set up Ollama (one-time)"):
+        st.markdown("""
+**Step 1 — Install Ollama**
+Download from [ollama.com](https://ollama.com) and run the installer. It adds a system tray icon.
+
+**Step 2 — Pull a model** (in your terminal)
+```
+ollama pull llama3.2
+```
+`llama3.2` is fast and works well. For more accuracy try `mistral` or `llama3.1`.
+
+**Step 3 — Start the server** (if not auto-started)
+```
+ollama serve
+```
+
+**Step 4 — Enable here**
+Toggle "Enable Ollama" above and click Save.
+
+---
+**What Ollama enhances:**
+- 🤖 **Draft with Ollama** — richer, context-aware document request emails
+- 🤖 **Enhance conditions** — catches conditions the script might miss
+- 🤖 **Interpret guidelines** — explains what a guideline means in plain English
+- 🤖 **Summarize doc** — quick overview of any uploaded document
+
+All processing stays on your machine. No internet. No API key.
+        """)
+
+    # ── Recent processing log ─────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("### 📋 Recent Processing Log")
+    st.caption("Shows which mode was used for each analysis (script-only vs Ollama-enhanced).")
+
+    log_lines = _oc.get_recent_log(40)
+    if log_lines:
+        log_c1, log_c2 = st.columns([5, 1])
+        with log_c2:
+            if st.button("🗑 Clear Log", key="oc_clear_log"):
+                _oc.clear_log()
+                st.rerun()
+        log_text = "\n".join(reversed(log_lines))
+        st.code(log_text, language=None)
+    else:
+        st.info("No processing log yet — scan a document or draft an email to see entries here.")
+
+
 # --- Main ---
 def main():
     if not st.session_state.authenticated:
@@ -3112,6 +3251,8 @@ def main():
             show_team_page()
         elif page == "email_watch":
             show_email_watch_page()
+        elif page == "ollama":
+            show_ollama_page()
         elif page == "history":
             show_history()
         elif page == "reader":
