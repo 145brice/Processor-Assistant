@@ -700,8 +700,11 @@ def show_sidebar():
         if st.button("📧 Email Watch", use_container_width=True):
             st.session_state.page = "email_watch"
             st.rerun()
-        if st.button("🤖 Ollama", use_container_width=True):
+        if st.button("🤖 AI Settings", use_container_width=True):
             st.session_state.page = "ollama"
+            st.rerun()
+        if st.button("💳 Usage & Billing", use_container_width=True):
+            st.session_state.page = "billing"
             st.rerun()
         if not is_sandbox:
             if st.button("🕑 My History", use_container_width=True):
@@ -997,11 +1000,13 @@ def show_dashboard():
                         st.session_state.scan_results = result
                         if not st.session_state.sandbox_mode and st.session_state.user_id != "sandbox":
                             from db import save_result, log_pattern
+                            import billing as _bill
                             save_result(
                                 st.session_state.user_id, doc_type,
                                 result["conditions"], result.get("risks", ""),
                                 result.get("bank_rules", ""),
                             )
+                            _bill.log_scan(st.session_state.user_id, doc_type)
                             log_pattern(doc_type, {
                                 "text_length": result["text_length"],
                             })
@@ -3363,6 +3368,119 @@ ollama serve
         st.info("No processing log yet — scan a document or draft an email to see entries here.")
 
 
+# --- Billing & Usage Page ---
+def show_billing_page():
+    import billing as _bl
+
+    uid  = st.session_state.get("user_id", "")
+    role = st.session_state.get("user_role", "Processor")
+
+    st.title("💳 Usage & Billing")
+    st.caption("Tracks document scans processed each month and calculates your monthly cost.")
+
+    # ── Current month summary ─────────────────────────────────────────────────
+    usage = _bl.get_usage(uid)
+    month_label = _bl.format_month(usage["year_month"])
+
+    st.markdown(f"### {month_label}")
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Scans This Month", usage["scans"])
+    col2.metric("Included in Plan", usage["included"])
+    col3.metric("Overage Scans", usage["overage"],
+                delta=f"+${usage['overage_cost']:.2f}" if usage["overage"] else None,
+                delta_color="inverse")
+    col4.metric("Monthly Total", f"${usage['total_cost']:.2f}",
+                help=f"${_bl.MONTHLY_BASE:.0f} base + ${usage['overage_cost']:.2f} overage")
+
+    # ── Usage bar ─────────────────────────────────────────────────────────────
+    pct = usage["pct_used"]
+    bar_color = "#27ae60" if pct < 80 else ("#f39c12" if pct < 100 else "#e74c3c")
+    st.markdown(
+        f'<div style="background:#1e1645;border-radius:8px;padding:12px 16px;margin:8px 0 16px;">'
+        f'<div style="font-size:13px;color:#cdd9e5;margin-bottom:6px;">'
+        f'Quota: {usage["scans"]} / {usage["included"]} scans used ({pct}%)</div>'
+        f'<div style="background:#2d2060;border-radius:4px;height:10px;">'
+        f'<div style="background:{bar_color};width:{min(pct,100)}%;height:10px;border-radius:4px;'
+        f'transition:width 0.4s;"></div></div></div>',
+        unsafe_allow_html=True,
+    )
+
+    # ── Breakdown by doc type ──────────────────────────────────────────────────
+    if usage["by_doc_type"]:
+        st.markdown("#### Scans by Document Type")
+        rows = sorted(usage["by_doc_type"].items(), key=lambda x: -x[1])
+        for dtype, count in rows:
+            pct_dt = round(count / max(usage["scans"], 1) * 100)
+            st.markdown(
+                f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">'
+                f'<span style="font-size:13px;color:#cdd9e5;width:220px;">{dtype or "Unknown"}</span>'
+                f'<div style="flex:1;background:#2d2060;border-radius:4px;height:8px;">'
+                f'<div style="background:#7c6ff7;width:{pct_dt}%;height:8px;border-radius:4px;"></div></div>'
+                f'<span style="font-size:13px;color:#cdd9e5;width:40px;text-align:right;">{count}</span>'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+
+    # ── Billing note ──────────────────────────────────────────────────────────
+    st.markdown("---")
+    with st.expander("📝 Add a billing note for this month"):
+        note_text = st.text_input("Note (e.g. 'Batch of 5 rush closings')", key="billing_note")
+        if st.button("Add Note", key="billing_add_note"):
+            if note_text.strip():
+                _bl.add_note(uid, note_text)
+                st.success("Note saved.")
+                st.rerun()
+    notes = _bl.get_notes(uid)
+    if notes:
+        for n in notes:
+            st.markdown(f'<div style="font-size:13px;color:#a89ec9;">· {n}</div>',
+                        unsafe_allow_html=True)
+
+    # ── Monthly history ───────────────────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("### Monthly History")
+    history = _bl.get_history(uid, months=6)
+    if history:
+        for h in history:
+            c1, c2, c3 = st.columns([3, 2, 2])
+            c1.markdown(f"**{_bl.format_month(h['year_month'])}**")
+            c2.markdown(f"{h['scans']} scans"
+                        + (f" · {h['overage']} overage" if h["overage"] else ""))
+            c3.markdown(f"**${h['total_cost']:.2f}**")
+    else:
+        st.info("No billing history yet — scan a document to start tracking.")
+
+    # ── Pricing reference ─────────────────────────────────────────────────────
+    st.markdown("---")
+    with st.expander("📄 Plan Details"):
+        st.markdown(f"""
+| Item | Amount |
+|------|--------|
+| Monthly base | **${_bl.MONTHLY_BASE:.2f}** |
+| Included scans | **{_bl.INCLUDED_FILES} / month** |
+| Overage rate | **${_bl.OVERAGE_RATE:.2f} / scan** |
+| Reset | 1st of each month (UTC) |
+
+Scans include all document uploads processed through the Scanner.
+        """)
+
+    # ── Admin view (Manager role only) ────────────────────────────────────────
+    if role == "Manager":
+        st.markdown("---")
+        st.markdown("### 🔑 All Users — Current Month")
+        all_usage = _bl.get_all_users_usage()
+        if all_usage:
+            for u in all_usage:
+                ua1, ua2, ua3, ua4 = st.columns([3, 2, 2, 2])
+                ua1.markdown(f"**{u['display_name'] or u['email']}** · {u['role']}")
+                ua2.markdown(f"{u['scans']} scans")
+                ua3.markdown(f"{u['overage']} overage" if u["overage"] else "—")
+                ua4.markdown(f"**${u['total_cost']:.2f}**")
+        else:
+            st.info("No scan data for current month.")
+
+
 # --- Main ---
 def main():
     if not st.session_state.authenticated:
@@ -3380,6 +3498,8 @@ def main():
             show_email_watch_page()
         elif page == "ollama":
             show_ollama_page()
+        elif page == "billing":
+            show_billing_page()
         elif page == "history":
             show_history()
         elif page == "reader":
