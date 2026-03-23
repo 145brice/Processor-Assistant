@@ -730,19 +730,28 @@ def show_sidebar():
             unsafe_allow_html=True,
         )
 
-        # ── Ollama status indicator ───────────────────────────────────────────
-        import ollama_client as _oc
-        _oc_cfg = _oc.get_config()
-        if _oc_cfg.get("enabled"):
-            _oc_ok, _ = _oc.ping(_oc_cfg.get("endpoint"))
-            _oc_dot   = "🟣" if _oc_ok else "🔴"
-            _oc_label = f"Ollama · {_oc_cfg.get('model','?')}" if _oc_ok else "Ollama · offline"
+        # ── AI status indicator ───────────────────────────────────────────────
+        import ai_router as _ar
+        _ar_status = _ar.get_status()
+        _pref = _ar_status["preferred"]
+        if _pref == "cloud" and _ar_status["cloud_enabled"]:
+            _ai_dot   = "☁️"
+            _ai_label = f"Cloud AI · {_ar_status['cloud_provider'].title()}"
+        elif _pref == "ollama" and _ar_status["ollama_enabled"]:
+            _ai_dot   = "🟣"
+            _ai_label = f"Ollama · {_ar_status['ollama_model']}"
+        elif _ar_status["cloud_enabled"]:
+            _ai_dot   = "☁️"
+            _ai_label = f"Cloud AI (fallback) · {_ar_status['cloud_provider'].title()}"
+        elif _ar_status["ollama_enabled"]:
+            _ai_dot   = "🟣"
+            _ai_label = f"Ollama (fallback) · {_ar_status['ollama_model']}"
         else:
-            _oc_dot, _oc_label = "⚫", "Ollama off"
+            _ai_dot, _ai_label = "⚫", "AI — script only"
         st.markdown(
             f'<div style="background:#1e1645;border:1px solid #4a3a8a;border-radius:8px;'
             f'padding:7px 10px;margin-bottom:8px;cursor:default;">'
-            f'<span style="font-size:12px;color:#cdd9e5;">{_oc_dot} {_oc_label}</span></div>',
+            f'<span style="font-size:12px;color:#cdd9e5;">{_ai_dot} {_ai_label}</span></div>',
             unsafe_allow_html=True,
         )
 
@@ -1939,8 +1948,8 @@ def show_dashboard():
                     draft_clicked = st.button("✉️ Draft Email", key=f"draft_{fkey}",
                                               type="primary", use_container_width=True)
                 with _draft_col2:
-                    ollama_draft_clicked = st.button("🤖 Draft with Ollama", key=f"odraft_{fkey}",
-                                                     use_container_width=True)
+                    ai_draft_clicked = st.button("🤖 Draft with AI", key=f"odraft_{fkey}",
+                                                 use_container_width=True)
 
                 if draft_clicked:
                     from ai_engine import draft_email
@@ -1952,21 +1961,23 @@ def show_dashboard():
                     st.container(border=True).markdown(email_text)
                     st.caption("Copy and paste into your email client. Review before sending.")
 
-                if ollama_draft_clicked:
-                    import ollama_client as _oc
-                    if not _oc.is_enabled():
-                        st.warning("Ollama is disabled. Enable it in the 🤖 Ollama page.")
+                if ai_draft_clicked:
+                    import ai_router as _ar
+                    backend = _ar.get_preferred_backend()
+                    if backend == "script":
+                        st.warning("AI is set to Script Only. Go to 🤖 AI Settings to enable Cloud AI or Ollama.")
                     else:
-                        conds_for_ollama = pre_selected if pre_selected else []
-                        with st.spinner("Drafting with Ollama…"):
-                            _oe_text, _oe_log = _oc.draft_email_enhanced(
-                                conds_for_ollama, recipient, email_lang
+                        conds_for_ai = pre_selected if pre_selected else []
+                        _backend_label = "Cloud AI" if backend == "cloud" else "Ollama"
+                        with st.spinner(f"Drafting with {_backend_label}…"):
+                            _ai_text, _ai_log = _ar.draft_email_enhanced(
+                                conds_for_ai, recipient, email_lang
                             )
-                        if _oe_text:
-                            st.container(border=True).markdown(_oe_text)
-                            st.caption(f"🤖 Ollama draft · {_oe_log.split('|')[-1].strip() if '|' in _oe_log else ''}")
+                        if _ai_text:
+                            st.container(border=True).markdown(_ai_text)
+                            st.caption(f"🤖 AI draft · {_ai_log.split('|')[-1].strip() if '|' in _ai_log else ''}")
                         else:
-                            st.info("Ollama didn't return a draft — is it running? Check the 🤖 Ollama page.")
+                            st.info("AI didn't return a draft — check 🤖 AI Settings to verify your backend is configured.")
 
                 st.markdown("---")
                 st.markdown("### 📋 Conditions")
@@ -3139,99 +3150,215 @@ def show_email_watch_page():
         """)
 
 
-# --- Ollama Settings Page ---
+# --- AI Settings Page ---
 def show_ollama_page():
     import ollama_client as _oc
+    import cloud_client  as _cc
+    import ai_router     as _ar
 
-    st.title("🤖 Ollama — Local AI Enhancement")
-    st.caption("Optional. Connects to a locally running Ollama instance for smarter document analysis. 100% offline.")
+    st.title("🤖 AI Settings")
+    st.caption("Choose your preferred AI backend for enhanced document analysis, condition extraction, and email drafting.")
 
-    cfg = _oc.get_config()
+    status = _ar.get_status()
 
-    # ── Status card ──────────────────────────────────────────────────────────
-    ok, msg = _oc.ping(cfg.get("endpoint", _oc.DEFAULT_ENDPOINT))
-    if cfg.get("enabled"):
-        if ok:
-            st.success(f"🟣 Ollama is running · {cfg.get('endpoint')} · model: {cfg.get('model')}")
+    # ── Status overview ───────────────────────────────────────────────────────
+    s1, s2, s3 = st.columns(3)
+    with s1:
+        if status["preferred"] == "cloud" and status["cloud_enabled"]:
+            s1.success(f"☁️ Cloud AI · {status['cloud_provider'].title()} · {status['cloud_model']}")
+        elif status["cloud_enabled"]:
+            s1.info(f"☁️ Cloud AI ready · {status['cloud_provider'].title()}")
         else:
-            st.error(f"🔴 Ollama enabled but unreachable — {msg}")
-            st.info("Make sure Ollama is running: open a terminal and run `ollama serve`")
-    else:
-        st.info("⚫ Ollama is disabled. Enable it below to activate AI-enhanced features.")
+            s1.warning("☁️ Cloud AI — not configured")
+    with s2:
+        if status["preferred"] == "ollama" and status["ollama_enabled"]:
+            s2.success(f"🟣 Ollama · {status['ollama_model']}")
+        elif status["ollama_enabled"]:
+            s2.info(f"🟣 Ollama ready · {status['ollama_model']}")
+        else:
+            s2.warning("🟣 Ollama — disabled")
+    with s3:
+        preferred_label = {
+            "cloud":  "☁️ Cloud AI (primary)",
+            "ollama": "🟣 Ollama (primary)",
+            "script": "📜 Script only",
+        }.get(status["preferred"], status["preferred"])
+        s3.info(f"Active: {preferred_label}")
 
     st.markdown("---")
 
-    # ── Settings form ────────────────────────────────────────────────────────
-    with st.form("ollama_settings_form"):
-        enabled = st.toggle("Enable Ollama", value=bool(cfg.get("enabled")), key="oc_enabled")
-        endpoint = st.text_input("Ollama endpoint", value=cfg.get("endpoint", _oc.DEFAULT_ENDPOINT),
-                                 key="oc_endpoint",
-                                 help="Default: http://localhost:11434")
+    # ── Backend preference ────────────────────────────────────────────────────
+    st.markdown("### 🎛 Preferred Backend")
+    ar_cfg = _ar.get_config()
 
-        # Model: try to list from server, fall back to text input
-        available_models = _oc.list_models(endpoint) if ok else []
-        current_model = cfg.get("model", _oc.DEFAULT_MODEL)
+    pref_options = ["script", "ollama", "cloud"]
+    pref_labels  = {
+        "script": "📜 Script only — no AI (fastest, fully offline)",
+        "ollama": "🟣 Ollama first — local AI, falls back to Cloud if enabled",
+        "cloud":  "☁️ Cloud AI first — Claude / OpenAI, falls back to Ollama if enabled",
+    }
+    current_pref = ar_cfg.get("preferred_backend", "script")
+    new_pref = st.radio(
+        "When you click '🤖 Draft with AI' or any AI button:",
+        pref_options,
+        index=pref_options.index(current_pref),
+        format_func=lambda x: pref_labels[x],
+        key="ar_pref",
+    )
+    fallback_on = st.checkbox(
+        "If preferred backend fails, try the other AI automatically",
+        value=bool(ar_cfg.get("fallback_enabled", True)),
+        key="ar_fallback",
+    )
+    if st.button("💾 Save Backend Preference", key="ar_save", type="primary"):
+        _ar.save_config(new_pref, fallback_on)
+        st.success("Backend preference saved.")
+        st.rerun()
+
+    st.markdown("---")
+
+    # ── Cloud AI settings ─────────────────────────────────────────────────────
+    st.markdown("### ☁️ Cloud AI (Claude / OpenAI)")
+    st.caption("Requires an internet connection and API key. More powerful than local models.")
+
+    cc_cfg = _cc.get_config()
+
+    with st.form("cloud_settings_form"):
+        cc_enabled  = st.toggle("Enable Cloud AI", value=bool(cc_cfg.get("enabled")), key="cc_enabled")
+        cc_provider = st.selectbox(
+            "Provider",
+            ["claude", "openai"],
+            index=0 if cc_cfg.get("provider", "claude") == "claude" else 1,
+            format_func=lambda x: "Anthropic Claude" if x == "claude" else "OpenAI (GPT)",
+            key="cc_provider",
+        )
+        _default_models = {
+            "claude": ["claude-sonnet-4-6", "claude-haiku-4-5-20251001", "claude-opus-4-6"],
+            "openai": ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
+        }
+        cc_model = st.selectbox(
+            "Model",
+            _default_models.get(cc_provider, ["claude-sonnet-4-6"]),
+            index=0,
+            key="cc_model",
+        )
+        cc_key = st.text_input(
+            "API Key",
+            value=cc_cfg.get("api_key", ""),
+            type="password",
+            key="cc_key",
+            help="Claude: get from console.anthropic.com · OpenAI: platform.openai.com/api-keys",
+        )
+        cc_save = st.form_submit_button("💾 Save Cloud Settings", type="primary")
+
+    if cc_save:
+        _cc.save_config(cc_enabled, cc_provider, cc_key, cc_model)
+        st.success("Cloud AI settings saved.")
+        st.rerun()
+
+    if st.button("🔗 Test Cloud Connection", key="cc_test"):
+        if not cc_cfg.get("api_key"):
+            st.warning("Save an API key first.")
+        else:
+            with st.spinner("Testing…"):
+                ok, msg = _cc.ping()
+            if ok:
+                st.success(f"✅ {msg}")
+            else:
+                st.error(f"❌ {msg}")
+
+    with st.expander("📖 Getting an API key"):
+        st.markdown("""
+**Anthropic Claude** (recommended — same AI powering this assistant)
+1. Go to [console.anthropic.com](https://console.anthropic.com)
+2. Create an account → API Keys → Create Key
+3. Paste the key above and select a Claude model
+
+**OpenAI (GPT)**
+1. Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+2. Create a key and paste it above
+
+**Cost:** Claude Sonnet runs about $0.003 per document analysis.
+`claude-haiku-4-5-20251001` is even cheaper for lighter tasks.
+`gpt-4o-mini` is the most affordable OpenAI option.
+        """)
+
+    st.markdown("---")
+
+    # ── Ollama settings ───────────────────────────────────────────────────────
+    st.markdown("### 🟣 Ollama (Local — 100% Offline)")
+    st.caption("Runs entirely on your machine. No internet required. No API key. Slower but private.")
+
+    oc_cfg = _oc.get_config()
+    oc_ok, oc_msg = _oc.ping(oc_cfg.get("endpoint", _oc.DEFAULT_ENDPOINT))
+
+    if oc_cfg.get("enabled"):
+        if oc_ok:
+            st.success(f"🟣 Ollama running · {oc_cfg.get('endpoint')} · {oc_cfg.get('model')}")
+        else:
+            st.error(f"🔴 Ollama enabled but unreachable — {oc_msg}")
+            st.caption("Run `ollama serve` in a terminal to start it.")
+    else:
+        st.info("⚫ Ollama disabled.")
+
+    with st.form("ollama_settings_form"):
+        oc_enabled  = st.toggle("Enable Ollama", value=bool(oc_cfg.get("enabled")), key="oc_enabled")
+        oc_endpoint = st.text_input("Endpoint", value=oc_cfg.get("endpoint", _oc.DEFAULT_ENDPOINT),
+                                    key="oc_endpoint", help="Default: http://localhost:11434")
+        available_models = _oc.list_models(oc_endpoint) if oc_ok else []
+        current_model    = oc_cfg.get("model", _oc.DEFAULT_MODEL)
         if available_models:
             if current_model not in available_models:
                 available_models.insert(0, current_model)
-            model = st.selectbox("Model", available_models,
-                                 index=available_models.index(current_model),
-                                 key="oc_model")
+            oc_model = st.selectbox("Model", available_models,
+                                    index=available_models.index(current_model), key="oc_model")
         else:
-            model = st.text_input("Model name", value=current_model, key="oc_model_txt",
-                                  help="e.g. llama3.2 · Run: ollama pull llama3.2")
+            oc_model = st.text_input("Model name", value=current_model, key="oc_model_txt",
+                                     help="e.g. llama3.2 · Run: ollama pull llama3.2")
 
-        save_btn = st.form_submit_button("💾 Save Settings", type="primary")
+        oc_save = st.form_submit_button("💾 Save Ollama Settings", type="primary")
 
-    if save_btn:
-        _oc.save_config(enabled, endpoint, model if available_models else st.session_state.get("oc_model_txt", model))
-        st.success("Settings saved.")
+    if oc_save:
+        _oc.save_config(oc_enabled, oc_endpoint,
+                        oc_model if available_models else st.session_state.get("oc_model_txt", oc_model))
+        st.success("Ollama settings saved.")
         st.rerun()
 
-    # ── Quick setup guide ────────────────────────────────────────────────────
-    with st.expander("📖 How to set up Ollama (one-time)"):
+    with st.expander("📖 How to set up Ollama"):
         st.markdown("""
-**Step 1 — Install Ollama**
-Download from [ollama.com](https://ollama.com) and run the installer. It adds a system tray icon.
+**Step 1** — Download and install Ollama from [ollama.com](https://ollama.com)
 
-**Step 2 — Pull a model** (in your terminal)
+**Step 2** — Pull a model (run in terminal):
 ```
 ollama pull llama3.2
 ```
-`llama3.2` is fast and works well. For more accuracy try `mistral` or `llama3.1`.
+Recommended: `llama3.2` (fast) · `mistral` (more thorough) · `llama3.1` (best quality)
 
-**Step 3 — Start the server** (if not auto-started)
+**Step 3** — Start the server (if not auto-started):
 ```
 ollama serve
 ```
 
-**Step 4 — Enable here**
-Toggle "Enable Ollama" above and click Save.
-
----
-**What Ollama enhances:**
-- 🤖 **Draft with Ollama** — richer, context-aware document request emails
-- 🤖 **Enhance conditions** — catches conditions the script might miss
-- 🤖 **Interpret guidelines** — explains what a guideline means in plain English
-- 🤖 **Summarize doc** — quick overview of any uploaded document
-
-All processing stays on your machine. No internet. No API key.
+**Step 4** — Enable above, paste the endpoint, and save.
         """)
 
-    # ── Recent processing log ─────────────────────────────────────────────
+    # ── Processing log ────────────────────────────────────────────────────────
     st.markdown("---")
-    st.markdown("### 📋 Recent Processing Log")
-    st.caption("Shows which mode was used for each analysis (script-only vs Ollama-enhanced).")
+    st.markdown("### 📋 Processing Log")
+    st.caption("Every AI call is logged here — shows which backend handled each request.")
 
-    log_lines = _oc.get_recent_log(40)
-    if log_lines:
+    oc_lines = _oc.get_recent_log(20)
+    cc_lines = _cc.get_recent_log(20)
+    all_lines = sorted(oc_lines + cc_lines, reverse=True)[:40]
+
+    if all_lines:
         log_c1, log_c2 = st.columns([5, 1])
         with log_c2:
-            if st.button("🗑 Clear Log", key="oc_clear_log"):
+            if st.button("🗑 Clear All Logs", key="ai_clear_log"):
                 _oc.clear_log()
+                _cc.clear_log()
                 st.rerun()
-        log_text = "\n".join(reversed(log_lines))
-        st.code(log_text, language=None)
+        st.code("\n".join(all_lines), language=None)
     else:
         st.info("No processing log yet — scan a document or draft an email to see entries here.")
 
