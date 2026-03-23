@@ -1985,6 +1985,98 @@ def show_dashboard():
                             st.info("AI didn't return a draft — check 🤖 AI Settings to verify your backend is configured.")
 
                 st.markdown("---")
+
+                # ── Quick Copy + Export row ──────────────────────────────────
+                _qc_label = "📋 Quick Copy & Export"
+                with st.expander(_qc_label, expanded=False):
+                    # Build loan context from pipeline match
+                    _loan_info = {}
+                    try:
+                        from crm import get_all_loans as _gcl
+                        for _pl in _gcl():
+                            _pf = _pl.get("folder_path", "")
+                            _pn = _pl.get("loan_num", "")
+                            if (_pf and result.get("text_length", 0) > 0) or True:
+                                # Best match: look at borrower from structured result
+                                _struct = result.get("extracted_data", {})
+                                _bname = (_struct.get("borrower", {}).get("name", "") or
+                                          _struct.get("buyer", {}).get("name", ""))
+                                if _bname and _bname.lower() in _pl.get("borrower", "").lower():
+                                    _loan_info = _pl
+                                    break
+                    except Exception:
+                        pass
+
+                    # Quick-copy code blocks for key fields
+                    _struct = result.get("extracted_data", {})
+                    if _struct:
+                        _b = _struct.get("borrower", _struct.get("buyer", {}))
+                        _copy_fields = [
+                            ("Borrower Name",    _b.get("name", "")),
+                            ("SSN",              _b.get("ssn", "")),
+                            ("Property Address", (_struct.get("loan", _struct.get("property", {}))
+                                                 .get("property_address",
+                                                      _struct.get("property", {}).get("address", "")))),
+                            ("Loan Amount",      _struct.get("loan", _struct.get("transaction", {}))
+                                                 .get("amount",
+                                                      _struct.get("transaction", {}).get("purchase_price", ""))),
+                            ("Closing Date",     _struct.get("transaction", {}).get("closing_date", "")),
+                        ]
+                        _has_fields = any(v for _, v in _copy_fields)
+                        if _has_fields:
+                            st.markdown("**Copy key fields** (click the copy icon ▶️)")
+                            _cf_cols = st.columns(min(len([f for f in _copy_fields if f[1]]), 3))
+                            _ci = 0
+                            for _lbl, _val in _copy_fields:
+                                if _val:
+                                    with _cf_cols[_ci % len(_cf_cols)]:
+                                        st.caption(_lbl)
+                                        st.code(_val, language=None)
+                                    _ci += 1
+                        st.markdown("---")
+
+                    # Download buttons
+                    _dl1, _dl2 = st.columns(2)
+                    with _dl1:
+                        _csv_bytes = None
+                        try:
+                            import export as _exp
+                            _csv_bytes = _exp.conditions_to_csv(condition_rows, _loan_info)
+                        except Exception:
+                            pass
+                        if _csv_bytes:
+                            _csv_fname = f"conditions_{fkey}.csv"
+                            st.download_button(
+                                "⬇️ Download CSV",
+                                data=_csv_bytes,
+                                file_name=_csv_fname,
+                                mime="text/csv",
+                                use_container_width=True,
+                                key=f"dl_csv_{fkey}",
+                            )
+                    with _dl2:
+                        _html_bytes = None
+                        try:
+                            import export as _exp
+                            _proc = st.session_state.get("user_name", "")
+                            _snap_html = _exp.snapshot_html(
+                                condition_rows, _loan_info, doc_type, _proc
+                            )
+                            _html_bytes = _snap_html.encode("utf-8")
+                        except Exception:
+                            pass
+                        if _html_bytes:
+                            _html_fname = f"snapshot_{fkey}.html"
+                            st.download_button(
+                                "📄 Condition Snapshot (print-to-PDF)",
+                                data=_html_bytes,
+                                file_name=_html_fname,
+                                mime="text/html",
+                                use_container_width=True,
+                                key=f"dl_snap_{fkey}",
+                                help="Download → open in browser → Ctrl+P → Save as PDF",
+                            )
+
                 st.markdown("### 📋 Conditions")
 
                 # ── Split into active and cleared ──────────────────────────
@@ -2142,6 +2234,66 @@ def show_pipeline():
     st.markdown("## 🗂️ My Pipeline")
     st.caption("Track every loan — color-coded by status, one-click actions.")
 
+    # ── Closing Countdown & Lock Expiry Alert Bar ───────────────────────────
+    try:
+        from datetime import date as _cd_date, datetime as _cd_dt
+        _cd_loans = get_all_loans()
+        _cd_today = _cd_date.today()
+        _urgents = []
+        for _cdl in _cd_loans:
+            if _cdl.get("status") in ("Cleared", "Closed"):
+                continue
+            _due = _cdl.get("due_date", "")
+            _lck = _cdl.get("lock_expiry", "")
+            _bor = _cdl.get("borrower", "")
+            _num = _cdl.get("loan_num", "")
+            if _due:
+                try:
+                    _due_d = _cd_dt.strptime(_due, "%Y-%m-%d").date()
+                    _days  = (_due_d - _cd_today).days
+                    if _days <= 10:
+                        _urgents.append((_days, _num, _bor, "closing", _due))
+                except Exception:
+                    pass
+            if _lck:
+                try:
+                    _lck_d = _cd_dt.strptime(_lck, "%Y-%m-%d").date()
+                    _ldays = (_lck_d - _cd_today).days
+                    if _ldays <= 14:
+                        _urgents.append((_ldays, _num, _bor, "lock", _lck))
+                except Exception:
+                    pass
+        if _urgents:
+            _urgents.sort(key=lambda x: x[0])
+            _alert_parts = []
+            for _days, _num, _bor, _kind, _date in _urgents[:5]:
+                if _days < 0:
+                    _tag = f"{'🔴 CLOSING' if _kind == 'closing' else '🔴 LOCK'} EXPIRED {abs(_days)}d ago"
+                elif _days == 0:
+                    _tag = f"{'📅 CLOSING' if _kind == 'closing' else '🔒 LOCK'} TODAY"
+                else:
+                    _tag = f"{'📅' if _kind == 'closing' else '🔒'} {_days}d → {'closing' if _kind == 'closing' else 'lock exp.'}"
+                _color = "#e74c3c" if _days <= 3 else ("#f39c12" if _days <= 7 else "#f1c40f")
+                _alert_parts.append(
+                    f'<span style="background:{_color};color:#fff;padding:3px 10px;'
+                    f'border-radius:10px;font-size:12px;font-weight:700;margin-right:8px;">'
+                    f'{_tag}</span>'
+                    f'<span style="color:#cdd9e5;font-size:12px;margin-right:16px;">'
+                    f'{_bor} #{_num}</span>'
+                )
+            st.markdown(
+                f'<div style="background:#1e1645;border:1px solid #4a3a8a;border-radius:8px;'
+                f'padding:10px 14px;margin-bottom:12px;display:flex;flex-wrap:wrap;'
+                f'align-items:center;gap:4px;">'
+                f'<span style="font-size:11px;color:#7c6ff7;font-weight:700;margin-right:8px;">'
+                f'UPCOMING</span>'
+                f'{"".join(_alert_parts)}'
+                f'</div>',
+                unsafe_allow_html=True,
+            )
+    except Exception:
+        pass
+
     from db import get_all_users
     all_users = get_all_users()
     user_names = ["(Unassigned)"] + [
@@ -2186,6 +2338,8 @@ def show_pipeline():
             with f2:
                 new_status = st.selectbox("Status", STATUS_OPTIONS, key="pl_new_status")
                 new_due = st.date_input("Due Date", key="pl_new_due")
+                new_lock = st.date_input("🔒 Rate Lock Expires", key="pl_new_lock",
+                                         value=None, help="Rate lock expiration date — alerts when ≤14 days out")
             with f3:
                 new_missing = st.text_area(
                     "Missing Docs (comma separated)",
@@ -2208,11 +2362,13 @@ def show_pipeline():
                 if st.button("Save Loan", use_container_width=True, key="pl_save_btn"):
                     if new_loan_num and new_borrower:
                         assigned_val = "" if new_assigned == "(Unassigned)" else new_assigned
+                        lock_str = str(new_lock) if new_lock else ""
                         add_loan(
                             new_loan_num, new_borrower, new_status,
                             str(new_due), new_missing, new_folder,
                             created_by=my_name,
                             assigned_to=assigned_val,
+                            lock_expiry=lock_str,
                         )
                         st.session_state.pipeline_add_open = False
                         st.rerun()
@@ -2349,11 +2505,35 @@ def show_pipeline():
                 parts.append(f"👤 {assigned_to}")
             team_line = f'<br><span style="font-size:11px;color:#a89ec9;">{" &nbsp;·&nbsp; ".join(parts)}</span>'
 
+        # Lock expiry badge
+        _lock_exp = loan.get("lock_expiry", "")
+        _lock_badge = ""
+        if _lock_exp:
+            try:
+                from datetime import date as _dt_date, datetime as _dt_datetime
+                _lock_d = _dt_datetime.strptime(_lock_exp, "%Y-%m-%d").date()
+                _lock_days = (_lock_d - _dt_date.today()).days
+                if _lock_days < 0:
+                    _lock_clr, _lock_lbl = "#e74c3c", f"🔒 LOCK EXPIRED ({abs(_lock_days)}d ago)"
+                elif _lock_days <= 7:
+                    _lock_clr, _lock_lbl = "#e74c3c", f"🔒 Lock expires in {_lock_days}d"
+                elif _lock_days <= 14:
+                    _lock_clr, _lock_lbl = "#f39c12", f"🔒 Lock {_lock_days}d"
+                else:
+                    _lock_clr, _lock_lbl = "#27ae60", f"🔒 Lock {_lock_exp}"
+                _lock_badge = (
+                    f'&nbsp;<span style="background:{_lock_clr};color:#fff;'
+                    f'padding:1px 7px;border-radius:10px;font-size:11px;">{_lock_lbl}</span>'
+                )
+            except Exception:
+                pass
+
         st.markdown(
             f'<div class="loan-card" style="border-left: 4px solid {border_color};">'
             f'<span class="loan-num">#{loan.get("loan_num","—")}</span> &nbsp;'
             f'<span class="loan-name">{loan.get("borrower","—")}</span> &nbsp;'
             f'{_status_chip(status)}'
+            f'{_lock_badge}'
             f'{team_line}'
             f'<br><span class="loan-due">📅 Due: {loan.get("due_date","—")}</span> &nbsp;'
             f'<span class="loan-missing">📋 Missing: {loan.get("missing_docs","—") or "None"}</span>'
