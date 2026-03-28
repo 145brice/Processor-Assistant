@@ -1,5 +1,5 @@
 """
-Billing & Usage Tracker — Processor Traien
+Billing & Usage Tracker — Pipeline Manager
 Tracks monthly document scans per user and calculates costs.
 
 Pricing model:

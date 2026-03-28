@@ -1,5 +1,5 @@
 """
-Prompt Templates for Processor Traien (Offline Mode)
+Prompt Templates for Pipeline Manager (Offline Mode)
 These are no longer sent to an AI API - they are kept here as reference
 for the regex patterns and document type context used in ai_engine.py.
 """

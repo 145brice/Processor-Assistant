@@ -1,5 +1,5 @@
 """
-AI Router — Processor Traien
+AI Router — Pipeline Manager
 Single entry point for all AI-enhanced features.
 
 Backend priority (set in ai_config.json):
@@ -158,4 +158,20 @@ def summarize_document(text: str, doc_type: str) -> tuple[str, str]:
         lambda: _cc.summarize_document(text, doc_type),
         lambda: _oc.summarize_document(text, doc_type),
         "",
+    )
+
+
+def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
+    """
+    AI-powered purchase contract extraction. Handles any state form.
+    Merges with or replaces regex extraction output.
+    Returns (extracted_dict, log_line).
+    """
+    import cloud_client as _cc
+    import ollama_client as _oc
+    return _dispatch(
+        "pc_extract",
+        lambda: _cc.extract_purchase_contract_ai(raw_text),
+        lambda: _oc.extract_purchase_contract_ai(raw_text),
+        {},
     )

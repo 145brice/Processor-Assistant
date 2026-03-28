@@ -1,8 +1,10 @@
-# Processor Traien — Offline Mortgage Processing App
+# Pipeline Manager — Offline Mortgage Processing App
 
-**100% offline. No cloud. No AI APIs. No internet required after setup.**
+**100% offline. No cloud required. No internet required after setup.**
 Runs on your local Windows machine. Opens in your browser like a website — but everything stays on your computer.
 Built for mortgage processors, loan officers, processing managers, and their teams.
+
+Optional cloud AI and local LLM integrations available for enhanced features — the core app works fully offline without them.
 
 ---
 
@@ -16,7 +18,7 @@ Built for mortgage processors, loan officers, processing managers, and their tea
    streamlit run app.py
    ```
 4. Browser opens at **http://localhost:8501**
-5. Log in with your account, or click **⚡ Try Sandbox** to explore without an account
+5. Log in with your account, or click **Try Sandbox** to explore without an account
 
 To stop: press `Ctrl+C` in the terminal
 
@@ -34,7 +36,7 @@ Need 3.10 or higher. Download from python.org if not installed.
 ```
 pip install streamlit pypdf thefuzz python-Levenshtein python-dotenv
 ```
-5 packages. No API keys. No accounts. No `.env` file needed.
+5 packages. No API keys. No accounts. No `.env` file needed for core features.
 
 ### Step 3 — Fannie/Freddie guideline PDFs (optional but powerful)
 Place these exact filenames on your Desktop:
@@ -56,423 +58,362 @@ streamlit run app.py
 
 ```
 Processor-Assistant/
-│
-├── app.py                ← Main file. Every page, button, form, and layout lives here.
-│                            Edit this file to change how anything looks or behaves.
-│
-├── ai_engine.py          ← The processing brain. No AI — pure Python regex + pattern matching.
-│                            Reads PDFs, extracts conditions, drafts emails, runs the bank
-│                            statement 50-rule analysis, detects risk flags, extracts contacts,
-│                            parses 1003 applications, parses purchase contracts.
-│
-├── doc_verify.py         ← Quick Doc Verify engine. Figures out what type of document a
-│                            PDF is, counts pages, extracts dates to check freshness, and
-│                            fuzzy-matches borrower names against your pipeline.
-│                            Used by both email_watch.py and the Quick Verify section in the UI.
-│
-├── email_watch.py        ← Email inbox watcher. Connects to Gmail/Outlook/Yahoo via IMAP,
-│                            checks for unread emails with PDF attachments every N minutes,
-│                            downloads them, runs doc_verify on each one, and queues a
-│                            "Pending Review" card in the UI. Toggle on/off. No auto-save.
-│
-├── crm.py                ← Pipeline data layer. All create/read/update/delete for loans.
-│                            Reads and writes pipeline.json. Auto-flags overdue loans.
-│                            Supports created_by, assigned_to, and share_id fields per loan.
-│
-├── folder_search.py      ← Folder search engine. Walks every subfolder under a given path,
-│                            fuzzy-matches filenames and PDF text content to condition keywords.
-│                            Also has find_bank_statements() — filters specifically for bank
-│                            statement PDFs by filename and content scoring.
-│
-├── guidelines.py         ← Fannie/Freddie index and search engine. Breaks the PDFs into
-│                            overlapping 1,500-character chunks, caches them to disk as JSON,
-│                            then does fuzzy keyword search per condition. First run takes
-│                            2–5 minutes. Every run after is instant from cache.
-│
-├── sharing.py            ← Private loan sharing engine. Each user has a personal inbox folder.
-│                            Sharing a loan = writing a JSON file into someone's inbox folder.
-│                            No central hub. No one sees what they weren't shared on.
-│
-├── db.py                 ← Local SQLite database. Stores user accounts (name, role, password hash)
-│                            and scan history. Creates processor.db automatically on first run.
-│
-├── prompts.py            ← Output templates — stacking order format, research link patterns,
-│                            risk flag labels.
-│
-├── team.json             ← Your personal team roster. Auto-created when you add teammates.
-│                            Stores: name, role, inbox folder path per person.
-│
-├── email_config.json     ← Email watch credentials. Created when you save settings in the
-│                            Email Watch page. Stored locally — never sent anywhere.
-│
-├── pipeline.json         ← All loan pipeline data. Auto-created on first run. Comes pre-loaded
-│                            with 7 sample loans showing all statuses. Replace with real loans.
-│
-├── processor.db          ← SQLite database file. Auto-created. Holds login accounts + history.
-│
-├── incoming/             ← Where email attachment PDFs land when Email Watch downloads them.
-│                            Files sit here until you Save or Dismiss them from the UI.
-│
-├── guidelines_index/     ← Cache folder for Fannie/Freddie index. Auto-created.
-│   ├── Fannie_Mae.json       Built on first "Check Guidelines" use (~2 min, 1,191 pages)
-│   ├── Freddie_Mac.json      Built on first use (~5 min, 2,882 pages)
-│   └── *.hash                Detects when the source PDFs have changed → rebuilds cache
-│
-├── requirements.txt      ← Full package list. Run: pip install -r requirements.txt
-└── README.md             ← This file.
+|
+|-- app.py                 Main file. Every page, button, form, and layout lives here.
+|                          Edit this file to change how anything looks or behaves.
+|                          Professional UI with tight layout, clean icons, and
+|                          status-colored badges throughout.
+|
+|-- ai_engine.py           The processing brain. Pure Python regex + pattern matching.
+|                          Reads PDFs, extracts conditions, drafts emails, runs the
+|                          bank statement 50-rule analysis, detects risk flags,
+|                          extracts contacts, parses 1003 applications, parses
+|                          purchase contracts.
+|
+|-- ai_router.py           Single entry point for all AI-enhanced features.
+|                          Routes requests to Cloud AI, Ollama, or the offline
+|                          engine based on user config. Falls back gracefully
+|                          if a backend is unavailable.
+|
+|-- cloud_client.py        Optional cloud AI backend. Supports Anthropic Claude
+|                          and OpenAI. Requires an internet connection and a valid
+|                          API key. Used for enhanced condition extraction, smarter
+|                          email drafting, and AI-powered document analysis.
+|
+|-- ollama_client.py       Optional local LLM enhancement. Connects to a locally
+|                          running Ollama instance (e.g., Llama, Mistral).
+|                          All offline — no internet, no API keys, no cloud.
+|
+|-- doc_verify.py          Quick Doc Verify engine. Identifies document type,
+|                          counts pages, checks date freshness, fuzzy-matches
+|                          borrower names against your pipeline.
+|
+|-- email_watch.py         Email inbox watcher. Connects to Gmail/Outlook/Yahoo
+|                          via IMAP, checks for unread emails with PDF attachments,
+|                          downloads them, runs doc_verify, queues for review.
+|
+|-- crm.py                 Pipeline data layer. All CRUD for loans. Reads/writes
+|                          pipeline.json. Auto-flags overdue loans. Supports
+|                          created_by, assigned_to, share_id, lock expiry,
+|                          closing dates, and condition tracking per loan.
+|
+|-- billing.py             Billing and usage tracker. Tracks monthly document
+|                          scans per user and calculates costs against the
+|                          pricing tiers.
+|
+|-- fraud_check.py         Fraud detection engine. Scans W-2, pay stub, and
+|                          bank statement PDFs for common fraud indicators.
+|                          Flags when 2+ clues found. 100% offline — regex only.
+|
+|-- export.py              Export module. Generates downloadable outputs from
+|                          scan results: CSV condition tables and HTML condition
+|                          snapshot reports (print-to-PDF ready).
+|
+|-- folder_search.py       Folder search engine. Walks subfolders, fuzzy-matches
+|                          filenames and PDF content to condition keywords.
+|                          Includes find_bank_statements() for targeted searches.
+|
+|-- guidelines.py          Fannie/Freddie index and search engine. Breaks PDFs
+|                          into overlapping 1,500-char chunks, caches as JSON.
+|                          First run: 2-5 min. After that: instant from cache.
+|
+|-- sharing.py             Private loan sharing. Each user has a personal inbox
+|                          folder. Sharing = writing a JSON file into someone's
+|                          inbox folder. No central hub.
+|
+|-- db.py                  Local SQLite database. Stores user accounts (name,
+|                          role, password hash) and scan history. Creates
+|                          processor.db automatically on first run.
+|
+|-- prompts.py             Output templates — stacking order format, research
+|                          link patterns, risk flag labels.
+|
+|-- test_extraction.py     Extraction test suite. Runs all document extraction
+|                          functions against realistic mock text. No real PDFs
+|                          needed — tests the regex/pattern logic directly.
+|
+|-- pipeline.json          All loan pipeline data. Auto-created on first run.
+|                          Pre-loaded with sample loans showing all statuses.
+|
+|-- team.json              Personal team roster. Auto-created when you add
+|                          teammates. Stores name, role, inbox path per person.
+|
+|-- email_config.json      Email watch credentials. Created when you save
+|                          settings. Stored locally — never sent anywhere.
+|
+|-- processor.db           SQLite database file. Auto-created. Holds logins
+|                          and scan history.
+|
+|-- loan_activity/         Per-loan activity logs. Tracks status changes,
+|                          reassignments, note edits, and other actions
+|                          with timestamps and user attribution.
+|
+|-- removed/               Removed/trashed loans with configurable retention
+|                          (7-90 days or forever). Restore or permanently
+|                          delete from the Removed section in Pipeline.
+|
+|-- incoming/              Where email attachment PDFs land when Email Watch
+|                          downloads them. Files sit here until you act on them.
+|
+|-- guidelines_index/      Cache folder for Fannie/Freddie index. Auto-created.
+|   |-- Fannie_Mae.json    Built on first use (~2 min, 1,191 pages)
+|   |-- Freddie_Mac.json   Built on first use (~5 min, 2,882 pages)
+|   +-- *.hash             Detects when source PDFs changed; rebuilds cache
+|
+|-- requirements.txt       Full package list. Run: pip install -r requirements.txt
++-- README.md              This file.
 ```
 
 ---
 
-## THE EIGHT PAGES
+## THE APP PAGES
 
 ---
 
-### 1. 📋 Document Scanner
-The main workhorse. Upload any mortgage PDF, and the app processes it based on what type it is.
+### 1. Document Scanner
+The main workhorse. Upload any mortgage PDF, and the app processes it based on document type.
 
-#### Quick Verify (always at the top — use this first)
-Before you even select a doc type, there's a **📥 Quick Verify** expander at the very top of the scanner. Drop any PDF here — no configuration needed. In seconds you get a full check:
-
-**What Quick Verify checks automatically:**
+#### Quick Verify (top of scanner — use this first)
+Drop any PDF — no configuration needed. Instant checks:
 
 | Check | What it does |
 |---|---|
-| **Doc type** | Reads the text, identifies the document from 14 known types (bank statement, pay stub, W-2, 1099, VOE, appraisal, 1003, purchase contract, approval letter, title doc, closing disclosure, credit report, insurance, loan estimate, tax return) |
-| **Page count** | Counts pages and compares to type-specific minimums. Bank statements need 2+ pages. Appraisals need 8+. Flags if short. |
-| **Date freshness** | Finds every date in the document, picks the newest one, calculates how old it is. Bank statements and pay stubs flagged if older than 30 days. Yellow if 31–60 days. Red if older. Other docs flagged at 90+ days. |
-| **Borrower match** | Reads borrower names from the PDF text, fuzzy-matches against every loan in your pipeline. 80%+ = green match. 50–79% = yellow possible. Below 50% = no match. |
+| **Doc type** | Identifies from 14+ known types (bank statement, pay stub, W-2, 1099, VOE, appraisal, 1003, purchase contract, approval letter, title doc, closing disclosure, credit report, insurance, loan estimate, tax return) |
+| **Page count** | Compares to type-specific minimums. Bank statements need 2+, appraisals need 8+. |
+| **Date freshness** | Finds newest date, calculates age. Flags bank statements/pay stubs older than 30 days. |
+| **Borrower match** | Fuzzy-matches names from the PDF against every loan in your pipeline. |
 
 **Verdict card:**
-- ✅ Green — all checks pass, high confidence — "Ready for review"
-- ⚠️ Yellow — minor flag, probably right — "Double-check flagged items"
-- 🔍 Red — needs attention before saving
+- Green — all checks pass, ready for review
+- Yellow — minor flag, double-check flagged items
+- Red — needs attention before saving
 
-**Action buttons (nothing saves without you clicking):**
-- **💾 Save to folder** — copies the file to the matched borrower's pipeline folder. If no folder is set, you type the path yourself.
-- **📋 Scan this doc** — promotes it to the full condition scanner below
-- **📂 Open in Reader** — opens in Document Reader for manual review
-
-When Email Watch is running, incoming email attachments also appear inside this expander — same verify card, same Save/Dismiss controls.
+**Actions:** Save to folder, Scan this doc (full scan), Open in Reader
 
 ---
 
 #### Full Document Scan (below Quick Verify)
 
-1. Upload a PDF (or multiple PDFs)
-2. Pick the **Document Type** from the dropdown
-3. Click **🔍 Scan Document**
+1. Upload a PDF (or multiple)
+2. Pick the document type
+3. Click Scan Document
 
-The app routes to different output depending on the document type:
+Routes to different outputs by document type:
 
----
+**Approval Letter, CD, LE, Credit Report, COC, Broker Package** — Condition table with expandable rows sorted by priority. Each condition row has:
+- Status buttons (Important / Needed / Requested / Ready to Clear / Cleared)
+- Party multiselect (Borrower, Title, Appraiser, etc.)
+- Notes field
+- Fetch from Folder — search borrower's folder for matching files
+- Check Guidelines — search Fannie/Freddie for relevant sections
+- Find & Analyze Bank Stmt — auto-appears on conditions mentioning deposits/bank statements
 
-**Approval Letter, CD, LE, Credit Report, COC, Broker Package → Condition Table**
+**Draft Email** — Check conditions, pick language (English/Spanish), pick recipient (Borrower, Title, Underwriter, Insurance, Closer, Appraiser), generate professional email instantly. Works for all 6 recipient types in both languages.
 
-Each condition is a compact, expandable row. Sorted by priority then party:
-- 🔴 Important (top)
-- 🟡 Needed
-- 🟠 Requested
-- 🟢 Ready to Clear
-- 🔵 Cleared (moved to a separate section at the bottom)
+**Condition Export** — Download conditions as CSV or generate a printable HTML snapshot report.
 
-Click any condition row to expand it:
-- **Status buttons** — mark as Important / Needed / Requested / Ready to Clear / Cleared
-- **Party multiselect** — assign Borrower + Title + Appraiser + anyone else at the same time
-- **Notes field** — add updates, summaries, or follow-up reminders
-- **📂 Fetch from Folder** — search the borrower's folder for files that might satisfy this condition
-- **📋 Check Guidelines** — search Fannie/Freddie for guideline sections relevant to this condition
-- **🏦 Find & Analyze Bank Stmt** — appears automatically on conditions that mention "bank statement," "deposit," or "2 months." Searches the folder for bank statement PDFs and runs the full 50-rule analysis inline.
+**Bank Statement** — 50-rule analysis. No conditions, no email draft. Checks:
+- Green: item confirmed in the statement
+- Red: problem found (NSF, overdraft, returned item, gambling, crypto, foreign currency, charge-off)
+- Yellow: required item not found (account number, statement period, holder name)
+- Blue: optional item found that may need a letter (large deposit, tax refund, pension)
+- Purple: cannot determine from text — verify manually
 
-**Draft Email (always visible above the condition list):**
-- Check any conditions to include them
-- Pick Language: English or Spanish
-- Pick who to send to: Borrower, Title, Underwriter, Insurance, Closer, Appraiser
-- Click **Draft Email** → professional ready-to-copy email appears instantly
-- Copy and paste into Outlook
-- Works for all 6 recipient types in both languages
+**1003 Application** — Two-column structured field extraction (borrower info, loan terms, property). Missing fields shown in red. Push to Pipeline in one click.
+
+**Purchase Contract** — Three-column extraction (parties, transaction/title, agents). Includes contingencies and addendums. Draft Title Email generates a ready-to-send email with all transaction details.
+
+**Fraud Check** — Available for W-2, pay stubs, and bank statements. Scans for common fraud indicators using regex pattern matching. Flags when 2+ clues detected. 100% offline.
 
 ---
 
-**Bank Statement → 50-Rule Analysis**
-
-Completely separate output — no conditions, no email draft. Runs 50 specific bank statement rules:
-
-| Icon | Meaning |
-|---|---|
-| ✅ Green | Item confirmed in the statement |
-| 🚩 Red | Problem found — NSF fee, overdraft, returned item, gambling transaction, crypto, foreign currency, charge-off, etc. |
-| ⚠️ Yellow | Required item not found — account number, statement period, account holder name, etc. |
-| ℹ️ Blue | Optional item found that may need a letter — large deposit, tax refund, pension income, etc. |
-| 👁 Purple | Cannot determine from text extraction — must verify manually (handwritten alterations, digital formatting) |
-
-Summary bar at top shows total count per category.
-
-At the bottom of bank statement results: **📂 Fetch & Analyze Bank Statements from Folder**
-- Paste a folder path (auto-fills from pipeline or last search)
-- Scope: "Bank statements only" (filename-filtered, fast) or "All PDFs in folder"
-- Results scored by how likely each file is to be a bank statement
-- **Analyze** — runs full 50-rule check on that file inline
-- **Read** — opens in Document Reader
-
----
-
-**1003 Application → Structured Field Extraction**
-
-Instead of conditions, you get a two-column organized field panel:
-
-Left column:
-- Borrower name, SSN, Date of Birth, Phone, Email
-- Present Address, Previous Address
-- Employer, Position, Employer Phone
-- Years on Job, Years in Field, Base Monthly Income
-
-Right column:
-- Co-borrower name, SSN, Co-borrower Employer
-- Loan Amount, Loan Purpose, Term, Interest Rate
-- Property Address, Property Use
-
-**Missing required fields** shown in a red bar at top (Name, SSN, Present Address, Employer, Loan Amount, Property Address).
-
-Green dot = found. Red dot = not found in this PDF.
-
-**➕ Push to Pipeline** — one-click creates a tracked loan from the extracted data.
-
----
-
-**Purchase Contract → Structured Field Extraction**
-
-Three-column layout:
-
-Left column (Parties):
-- Buyer name, phone, email
-- Seller name, phone
-- Property address
-
-Center column (Transaction + Title):
-- Purchase price, Closing date, Earnest money, Down payment
-- Seller concessions
-- Title company name, contact, phone
-
-Right column (Agents):
-- Listing agent name, brokerage, phone, email
-- Selling/buyer's agent name, brokerage, phone, email
-
-Below that:
-- Inspection contingency, Appraisal contingency, Financing contingency
-- Addendums / Riders list
-
-**Action buttons:**
-- **➕ Push to Pipeline** — creates a loan pre-filled with buyer name and closing date
-- **✉️ Draft Title Email** — generates a ready-to-copy email to the title company with all transaction details filled in (property address, buyer, seller, price, closing date, request for commitment/CPL/wiring instructions)
-
----
-
-### 2. 🗂️ My Pipeline
-Your loan tracking board. Works like an offline Arrive or LendingPad.
+### 2. My Pipeline
+Loan tracking dashboard. Works like an offline LOS pipeline.
 
 **Status colors:**
-- 🔴 Pending — waiting on borrower or docs, nothing sent yet
-- 🟠 Requested — docs requested, waiting on response
-- 🟢 Cleared — all conditions met, ready to close
-- ⚫ Overdue — past due date, auto-flagged on page load
-- ✅ Closed — funded and done
+- Red (Pending) — waiting on borrower or docs
+- Orange (Requested) — docs requested, waiting on response
+- Green (Cleared) — all conditions met, ready to close
+- Gray (Overdue) — past due date, auto-flagged on page load
+- Closed — funded and done
 
 **Each loan card shows:**
-- Loan number · Borrower name · Status badge
-- Who created it · Who it's assigned to
-- Due date · Missing docs summary
+- Loan number, borrower name, status badge
+- Created by / assigned to
+- Closing date and lock expiry
+- Color-coded badges on a separate row: lock expiry warnings (red/orange/green), missing docs
 
-**Per-loan actions:**
-- **✅ Cleared / 📤 Requested / ⏰ Overdue** — one-click status change
-- **📂 Open Folder** — opens the borrower's folder in Windows File Explorer
-- **Notes** — type anything, save it
-- **Assign To** — reassign to any teammate from your team list
-- **🔗 Share** — share this loan with specific teammates (see Team Sharing below)
-- **📤 Send Update** — push your latest changes back to the loan owner and everyone shared on it
-- **🗑️ Remove** — permanently deletes from pipeline
+**Per-loan detail view:**
+- Status change, folder open, notes, assignment
+- Share with teammates, send updates
+- Full condition tracking with party assignments
+- Contact management (borrower, title, agents)
+- Activity log with timestamped history
+- Lock expiry and closing date countdown
 
-**Filtering:**
-- Filter by status dropdown
-- Search by loan number or borrower name
-- ☑ My Loans — show only loans you created or are assigned to
+**Upcoming Deadlines** — sidebar widget showing loans with approaching lock/closing dates, sorted by urgency.
 
-**📬 Inbox:** When a teammate shares a loan with you, a banner appears at the top of the Pipeline page showing how many loans are waiting. Each card shows the loan details, who shared it, and gives you Accept or Dismiss.
+**Filtering:** by status, search by loan number or borrower name, "My Loans" toggle.
 
-**Auto-overdue:** Any loan whose due date has passed and isn't Cleared or Closed gets automatically flagged Overdue every time the page loads.
+**Inbox:** Shared loans appear as a banner at the top. Accept or dismiss.
+
+**Removed Loans:** Configurable retention (7-90 days or forever). Restore or permanently delete.
+
+**Auto-overdue:** Loans past due date automatically flagged on page load.
 
 ---
 
-### 3. 👥 My Team
+### 3. My Team
 One-time setup for private loan sharing. No server. No hub.
 
-**Step 1 — Set your inbox folder:**
-This is the folder where teammates drop shared loans for you. Copy this path and give it to anyone who needs to share with you.
-Example: `C:\Users\YourName\GopherInbox` or `\\OFFICE-SERVER\Shared\YourName`
+1. Set your inbox folder path
+2. Add teammates: name, role, their inbox path
+3. Green dot = reachable. Red dot = offline or wrong path.
 
-**Step 2 — Add teammates:**
-For each person on your team, add:
-- Their name
-- Their role (Processor / Loan Officer / Jr Underwriter / Manager)
-- Their inbox folder path (they get this from their own Team page)
-
-Green dot next to a teammate = their inbox folder is reachable right now.
-Red dot = their machine is offline or the path is wrong.
-
-**How sharing works (completely private, no central server):**
-1. You click **🔗 Share** on any loan → pick teammates → **Share Now**
-2. App writes a JSON file directly into each person's inbox folder
-3. They open the app → **📬 Inbox** at the top of Pipeline → **✅ Accept**
+**How sharing works:**
+1. Share on any loan — pick teammates — Share Now
+2. App writes JSON directly into each person's inbox folder
+3. They accept from their Inbox banner
 4. They work on the loan, update status/notes
-5. They click **📤 Send Update** → file goes back into your inbox
-6. You accept the update → their changes sync into your pipeline
+5. Send Update pushes changes back
+6. You accept the update — changes sync
 
-No one on the team has a master view of everyone's loans unless something was explicitly shared with them. Works over office WiFi (`\\JANE-PC\GopherInbox`), a mapped network drive, or shared OneDrive subfolder.
-
----
-
-### 4. 📧 Email Watch
-Auto-checks your inbox for new PDF attachments, verifies each one, and stages it for your review.
-
-**One-time setup:**
-1. Go to **📧 Email Watch** → expand **⚙️ Email Credentials**
-2. Pick your provider (Gmail / Outlook / Yahoo / Custom)
-3. Enter your email address
-4. Enter your **App Password** — this is NOT your real password:
-   - **Gmail:** myaccount.google.com → Security → 2-Step Verification → App Passwords → Mail → Windows Computer → Generate → copy the 16-character code
-   - **Outlook:** account.microsoft.com → Security → Advanced security → App passwords
-5. Pick check interval: 2 / 5 / 10 / 15 / 30 minutes
-6. Click **Save Credentials**
-7. Click **▶ Start Watching**
-
-**What happens when a PDF arrives:**
-1. App connects to your inbox, downloads the attachment to the `incoming/` folder, disconnects
-2. Runs Quick Doc Verify: identifies doc type, counts pages, checks date freshness, matches borrower name to pipeline
-3. Queues a Pending Review card — you see it in:
-   - The **📬 Email Watch** page
-   - The **📥 Quick Verify** section in Document Scanner (auto-opens)
-   - The sidebar status indicator
-
-**Each card shows:**
-- Filename, sender, time received
-- ✅ Passed checks (green list)
-- ⚑ Flagged items (red list)
-- Pipeline match: borrower name, loan number, confidence %
-
-**Actions (nothing auto-saves):**
-- **💾 Save to folder** — copies file to the matched borrower's pipeline folder
-- **Open in Reader** — read it before deciding
-- **Dismiss** — delete the card, file stays in `incoming/`
-
-**Sidebar indicator:**
-- `🟢 Watching · 2:34 PM` — running, shows last check time
-- `⚫ Inbox watch off` — stopped
-- Purple badge shows how many attachments are waiting for action
-
-**Toggle:** One button starts and stops the watcher. When stopped, the background thread exits within a few seconds — no more inbox access at all.
+Works over office WiFi, mapped network drives, or shared OneDrive subfolders.
 
 ---
 
-### 5. 📂 Document Reader
-Browse any local folder and read any PDF — without uploading it to the scanner.
+### 4. Email Watch
+Auto-checks your inbox for new PDF attachments, verifies each one, stages for review.
 
-**How to use:**
-1. Paste folder path → **Browse Folder** → file list appears
-2. Pick a file → **Open & Read**
+**Setup:** Pick provider (Gmail/Outlook/Yahoo/Custom), enter email and App Password, set check interval, save and start.
 
-**Read mode (no search term):** Jump to any page number, read full text of that page.
-**Search mode (type a keyword):** Every matching page shown with surrounding context. Good for: `appraisal`, `HOA`, `verification of mortgage`, any condition keyword.
+**What happens:** Downloads attachment to `incoming/`, runs Quick Doc Verify, queues a review card. You see it in Email Watch, Quick Verify, and the sidebar indicator.
 
-Can be launched directly from Quick Verify results or bank statement fetch results — click **Read** to open that specific file instantly.
+**Actions:** Save to folder, Open in Reader, Dismiss. Nothing auto-saves.
 
 ---
 
-### 6. 🕑 My History
-Available when logged in (not in Sandbox). Shows all past document scans saved to the local database — date, doc type, conditions extracted, bank rules, risk flags.
+### 5. Document Reader
+Browse any local folder and read any PDF without uploading to the scanner.
+
+- Paste folder path, browse, open any file
+- Jump to any page or search by keyword
+- Launchable directly from Quick Verify and bank statement results
 
 ---
 
-### 7. ⚡ Sandbox Mode
-No account needed. Full access to every feature except scan history. Nothing is saved between sessions. Good for demos or trying things out.
+### 6. My History
+Available when logged in (not Sandbox). Shows all past document scans saved to the local database — date, doc type, conditions extracted, bank rules, risk flags.
+
+---
+
+### 7. Sandbox Mode
+No account needed. Full access to every feature except scan history. Nothing saved between sessions. Good for demos or evaluation.
+
+---
+
+### 8. Settings
+Configure optional AI backends and app preferences.
+
+**Cloud AI** — Connect Anthropic Claude or OpenAI for enhanced document analysis, smarter email drafting, and AI-powered condition extraction. Requires API key and internet.
+
+**Ollama (Local LLM)** — Connect to a locally running Ollama instance for AI features without cloud dependency. No internet, no API keys.
+
+**AI Router** — Automatically routes AI requests to the best available backend (Cloud > Ollama > Offline engine). Falls back gracefully.
+
+**Billing** — Track monthly scan usage per user against pricing tiers.
+
+---
+
+## AI BACKENDS
+
+Pipeline Manager works in three modes:
+
+| Mode | Requirements | What it does |
+|---|---|---|
+| **Offline (default)** | Nothing extra | Full app with regex-based extraction, pattern matching, rule engines |
+| **Ollama (local LLM)** | Ollama installed + running locally | Enhanced extraction, smarter drafting, local AI — still no internet |
+| **Cloud AI** | API key + internet | Anthropic Claude or OpenAI for highest-quality AI features |
+
+The AI router (`ai_router.py`) manages backend selection and fallback. You can configure priority in the Settings page. The offline engine is always available as the final fallback.
 
 ---
 
 ## TEAM SETUP — Processor + Loan Officer working together
 
-Anyone on the team can create a loan. You choose exactly who to share each one with. No one sees what they weren't shared on.
+Anyone on the team can create a loan. You choose exactly who to share each one with.
 
 **One-time per person:**
-1. Sign Up → enter your name and role
-2. Go to **👥 My Team**
+1. Sign Up with name and role
+2. Go to My Team
 3. Set your inbox folder path
 4. Add each teammate: name, role, their inbox path
-5. Done — sharing is now one click from any loan
 
 **Day-to-day workflow:**
 
 | Who | Action |
 |---|---|
-| LO creates a loan | Adds it in Pipeline → clicks 🔗 Share → picks their processor → Share Now |
-| Processor receives it | Opens app → sees 📬 Inbox banner → Accept |
+| LO creates a loan | Adds it in Pipeline, shares with processor |
+| Processor receives it | Opens app, sees Inbox banner, Accept |
 | Processor works it | Updates status, marks conditions, adds notes |
-| Processor sends update | Clicks 📤 Send Update |
-| LO checks progress | Opens app → 📬 Inbox → Accept update → sees exactly what changed |
-| Either one adds more people | Clicks 🔗 Share again, adds manager or underwriter |
+| Processor sends update | Clicks Send Update |
+| LO checks progress | Opens app, accepts update, sees changes |
+| Either adds more people | Share again, add manager or underwriter |
 
 ---
 
-## COMMON TASKS — Step by step
+## COMMON TASKS
 
 ### "I just got an approval letter"
-1. **📋 Document Scanner** → upload → select **Approval Letter** → **Scan**
-2. Review conditions (sorted red → yellow → orange → green)
-3. Check Borrower conditions → Language: English or Spanish → **Draft Email** → copy to Outlook
-4. Check Title conditions → Send to: Title → **Draft Email** → copy to Outlook
-5. Add to **🗂️ My Pipeline** with a due date
+1. Document Scanner — upload — select Approval Letter — Scan
+2. Review conditions (sorted by priority)
+3. Check borrower conditions — pick language — Draft Email — copy to Outlook
+4. Check title conditions — send to Title — Draft Email — copy to Outlook
+5. Add to Pipeline with a due date
 
-### "A borrower emailed me something — what is it and does it belong to an open loan?"
-1. Email Watch picks it up automatically (if toggle is on)
-   OR go to **📋 Document Scanner** → **📥 Quick Verify** → drop the PDF
-2. Verdict card shows: what type it is, how many pages, how old the dates are, which borrower it matches
-3. Click **💾 Save to folder** to put it in the right place — or **Dismiss** if it's junk
+### "A borrower emailed me something — what is it?"
+1. Email Watch picks it up automatically (if running)
+   OR Document Scanner — Quick Verify — drop the PDF
+2. Verdict card shows: type, pages, date age, pipeline match
+3. Save to folder or Dismiss
 
 ### "The approval asks for bank statements — do I already have them?"
-1. Open the condition that mentions bank statements → expand it
-2. Click **🏦 Find & Analyze Bank Stmt**
-3. Paste the borrower's folder path (auto-fills from last search or pipeline)
-4. Click **Search** → app finds all bank statement PDFs in that folder
-5. Click **Analyze** on any result → full 50-rule analysis runs right there
-6. Or click **Read** to open it in Document Reader first
+1. Open the condition — expand it
+2. Click Find & Analyze Bank Stmt
+3. Paste folder path (auto-fills) — Search
+4. Click Analyze on any result for full 50-rule analysis
 
-### "I need to scan a bank statement I received"
-1. **📋 Document Scanner** → upload → select **Bank Statement** → **Scan**
-2. Results show all 50 rules: ✅ Pass / 🚩 Flag / ⚠️ Missing / ℹ️ Info / 👁 Manual
-3. Red flags (NSF, overdraft, crypto, gambling, returned items) are highlighted immediately
+### "I need to scan a bank statement"
+1. Document Scanner — upload — select Bank Statement — Scan
+2. 50 rules checked: Pass / Flag / Missing / Info / Manual
 
-### "I got a 1003 and need to pull all the borrower info"
-1. **📋 Document Scanner** → upload → select **1003 Application** → **Scan**
-2. Two-column field panel shows everything extracted: name, SSN, DOB, phone, email, address, employer, income, loan amount, property
-3. Red dots show what's missing from the PDF
-4. Click **➕ Push to Pipeline** to create a tracked loan from the data
+### "I got a 1003 and need borrower info"
+1. Document Scanner — upload — select 1003 Application — Scan
+2. Two-column field panel shows everything extracted
+3. Red dots = missing. Push to Pipeline in one click.
 
-### "I got a purchase contract and need to email the title company"
-1. **📋 Document Scanner** → upload → select **Purchase Contract** → **Scan**
-2. Three-column panel shows all parties, transaction terms, title company, agents, contingencies
-3. Click **✉️ Draft Title Email** → ready-to-send email pre-filled with all transaction details
+### "I got a purchase contract"
+1. Document Scanner — upload — select Purchase Contract — Scan
+2. Three-column panel: parties, transaction, agents, contingencies
+3. Draft Title Email generates a ready-to-send email
 
 ### "What does Fannie Mae say about this condition?"
-1. Open the condition in the scanner → expand it → click **📋 Check Guidelines**
-2. Results show exact Fannie/Freddie sections with page numbers
+1. Open the condition — expand — Check Guidelines
+2. Exact Fannie/Freddie sections with page numbers
 
 ### "I need to email conditions in Spanish"
-1. Scan the approval letter → check the conditions → set Language: **Spanish** → **Draft Email**
+1. Scan the approval letter — check conditions — Language: Spanish — Draft Email
 
-### "I want to share this loan with my loan officer manager"
-1. **🗂️ My Pipeline** → find the loan → click **🔗 Share** → pick from your team list → **Share Now**
+### "I want to share this loan"
+1. My Pipeline — find the loan — Share — pick teammates — Share Now
 
-### "My processor updated a loan — how do I see it?"
-1. Open the app → **🗂️ My Pipeline** → look for the **📬 Inbox** banner at the top
-2. Click **✅ Accept** on the update
+### "I need to check a document for fraud indicators"
+1. Document Scanner — upload W-2, pay stub, or bank statement
+2. Fraud check runs automatically, flags 2+ indicators
+
+### "I need to export conditions"
+1. After scanning, use the CSV export for spreadsheet data
+2. Or generate an HTML snapshot report for printing/sharing
 
 ---
 
@@ -481,18 +422,19 @@ Anyone on the team can create a loan. You choose exactly who to share each one w
 | Problem | Fix |
 |---|---|
 | **App won't start — streamlit not found** | Run `pip install streamlit` then try again. Or use `python -m streamlit run app.py` |
-| **"No specific conditions found"** | PDF is a scanned image (photographed, not digital text). Open in Adobe Acrobat → Tools → Recognize Text, then re-upload. |
-| **Bank statement shows conditions instead of analysis** | Make sure you selected **Bank Statement** as the document type before clicking Scan |
-| **Quick Verify shows "unknown" for doc type** | The PDF may be image-only with no text layer. Try OCR in Adobe first. Or the doc type isn't in the 14-type list — use full scan instead. |
-| **Email Watch says "Error: Login failed"** | You're using your real email password instead of an App Password. Follow the Gmail/Outlook App Password setup steps in the Email Watch page. |
-| **Email Watch says "Error: connection refused"** | Gmail/Outlook may have IMAP disabled. Go to email settings → Enable IMAP access. |
-| **Share button says "not in team list"** | Go to **👥 My Team** and add that person with their inbox folder path. |
-| **Teammate's inbox shows red dot** | Their machine is offline, or the path you saved for them is wrong. Ask them for their correct inbox path from their Team page. |
-| **Fetch finds nothing** | Folder may contain image PDFs with no text layer. Try switching scope to "All PDFs" or searching a parent folder. |
-| **Guidelines indexing freezes** | Reopen at http://localhost:8501, click Check Guidelines again — it resumes from the cache where it left off. |
-| **Port 8501 already in use** | Another Streamlit is running. Press Ctrl+C in that terminal, or run with `--server.port 8502` |
-| **pipeline.json got wiped** | Run `git checkout pipeline.json` to restore the last committed version. |
-| **Duplicate file key error** | You uploaded the same PDF filename twice in the same session. Remove one from the uploader. |
+| **"No specific conditions found"** | PDF is a scanned image. Open in Adobe Acrobat — Tools — Recognize Text, then re-upload. |
+| **Bank statement shows conditions instead of analysis** | Make sure you selected Bank Statement as the document type before scanning |
+| **Quick Verify shows "unknown" for doc type** | PDF may be image-only with no text layer. Try OCR first. |
+| **Email Watch says "Login failed"** | Use an App Password, not your real password. Follow setup steps in Email Watch page. |
+| **Email Watch says "Connection refused"** | Enable IMAP access in your email provider settings. |
+| **Share button says "not in team list"** | Go to My Team and add that person with their inbox folder path. |
+| **Teammate's inbox shows red dot** | Their machine is offline or the path is wrong. |
+| **Fetch finds nothing** | Folder may have image PDFs with no text. Try "All PDFs" scope or search parent folder. |
+| **Guidelines indexing freezes** | Reopen at http://localhost:8501, click Check Guidelines again — resumes from cache. |
+| **Port 8501 already in use** | Another Streamlit is running. Ctrl+C in that terminal, or use `--server.port 8502` |
+| **pipeline.json got wiped** | Run `git checkout pipeline.json` to restore last committed version. |
+| **Ollama not connecting** | Make sure Ollama is running locally (`ollama serve`). Check Settings page for connection status. |
+| **Cloud AI not working** | Verify your API key in Settings. Check internet connection. The app falls back to offline mode automatically. |
 
 ---
 
@@ -508,16 +450,18 @@ git push
 ```
 
 **What gets saved to GitHub:**
-- All `.py` files (app, ai_engine, doc_verify, email_watch, crm, folder_search, guidelines, sharing, db, prompts)
-- `pipeline.json` (your loan data)
-- `team.json` (your team roster)
-- `README.md` + `requirements.txt`
+- All `.py` files (app, ai_engine, ai_router, cloud_client, ollama_client, doc_verify, email_watch, crm, billing, fraud_check, export, folder_search, guidelines, sharing, db, prompts, test_extraction)
+- `pipeline.json` (loan data)
+- `team.json` (team roster)
+- `README.md`, `SETUP.md`, `requirements.txt`
 
 **What does NOT get saved (stays local only):**
-- `email_config.json` — your email credentials (never push this)
+- `email_config.json` — email credentials (never push this)
+- `ai_config.json` — API keys for cloud AI (never push this)
 - `processor.db` — login accounts (recreate on a new machine)
 - `incoming/` — downloaded email attachments (temporary staging)
 - `guidelines_index/` — Fannie/Freddie cache (too large, rebuilt automatically)
+- `.env` — environment variables (if used)
 
 ---
 
@@ -525,20 +469,24 @@ git push
 
 | Feature | Status |
 |---|---|
-| Scan any mortgage PDF | ✅ 100% offline |
-| Quick Doc Verify (type, pages, dates, borrower match) | ✅ 100% offline |
-| Bank statement 50-rule analysis | ✅ 100% offline |
-| Draft email — English + Spanish, all 6 recipient types | ✅ 100% offline |
-| Fetch from folder / Find bank statements | ✅ 100% offline |
-| Check Fannie/Freddie Guidelines | ✅ 100% offline (after PDFs placed on Desktop) |
-| Document Reader | ✅ 100% offline |
-| My Pipeline | ✅ 100% offline |
-| 1003 field extraction | ✅ 100% offline |
-| Purchase Contract field extraction + title email | ✅ 100% offline |
-| Team sharing (loan handoff between teammates) | ✅ 100% offline (needs same network or shared drive) |
-| Login / Signup | ✅ 100% offline (local SQLite) |
-| Email Watch (inbox polling) | ✅ Offline — uses your local IMAP connection, no cloud |
-| Push to GitHub | ❌ Needs internet (backup only — your choice) |
+| Scan any mortgage PDF | 100% offline |
+| Quick Doc Verify (type, pages, dates, borrower match) | 100% offline |
+| Bank statement 50-rule analysis | 100% offline |
+| Fraud check (W-2, pay stub, bank statement) | 100% offline |
+| Draft email — English + Spanish, all 6 recipient types | 100% offline |
+| Condition export (CSV + HTML snapshot) | 100% offline |
+| Fetch from folder / Find bank statements | 100% offline |
+| Check Fannie/Freddie Guidelines | 100% offline (after PDFs placed on Desktop) |
+| Document Reader | 100% offline |
+| My Pipeline (with lock expiry, conditions, activity log) | 100% offline |
+| 1003 field extraction | 100% offline |
+| Purchase Contract extraction + title email | 100% offline |
+| Team sharing (loan handoff between teammates) | 100% offline (needs same network or shared drive) |
+| Login / Signup | 100% offline (local SQLite) |
+| Email Watch (inbox polling) | Offline — uses local IMAP connection, no cloud |
+| Ollama local LLM | Offline — runs on your machine |
+| Cloud AI (Claude / OpenAI) | Needs internet + API key |
+| Push to GitHub | Needs internet (backup only — your choice) |
 
 ---
 
@@ -547,6 +495,8 @@ git push
 - PDFs you upload for scanning are **read in memory only** — never written to disk by this app.
 - Email Watch downloads PDFs to your local `incoming/` folder — nothing goes to any cloud.
 - Your email credentials are saved in `email_config.json` on your machine — never transmitted.
+- API keys for cloud AI are stored in `ai_config.json` locally — never shared.
 - Shared loans travel as JSON files directly between personal inbox folders — no central server.
-- Your pipeline, history, and team list are stored locally only.
-- Nothing leaves your computer except when you push to GitHub (your choice, your repo).
+- Your pipeline, history, activity logs, and team list are stored locally only.
+- Fraud checks run entirely offline using regex — no data leaves your machine.
+- Nothing leaves your computer except when you explicitly use Cloud AI or push to GitHub.

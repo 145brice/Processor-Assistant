@@ -1,5 +1,5 @@
 """
-Cloud AI Integration — Processor Traien
+Cloud AI Integration — Pipeline Manager
 Optional cloud AI backend. Supports Anthropic Claude and OpenAI.
 Requires an internet connection and a valid API key.
 
@@ -387,3 +387,103 @@ Be concise. Each bullet should be one sentence."""
         return response, log
     except Exception as e:
         return "", _log("SCRIPT", "doc_summary", f"Cloud error: {str(e)[:60]}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Feature: Purchase contract AI extraction (handles any state form)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_PC_JSON_TEMPLATE = """{
+  "buyer": {"name": "", "phone": "", "email": ""},
+  "seller": {"name": "", "phone": "", "email": ""},
+  "property": {"address": ""},
+  "transaction": {"purchase_price": "", "closing_date": "", "earnest_money": "", "down_payment": "", "seller_concessions": ""},
+  "listing_agent": {"name": "", "brokerage": "", "phone": "", "email": ""},
+  "selling_agent": {"name": "", "brokerage": "", "phone": "", "email": ""},
+  "title": {"company": "", "contact": "", "phone": ""},
+  "contingencies": {"inspection": "", "appraisal": "", "financing": ""},
+  "addendums": []
+}"""
+
+
+def _smart_sample(raw_text: str, max_chars: int = 12000) -> str:
+    """
+    For purchase contracts, important data is scattered across the document:
+      - Buyer/seller/price near the top (pages 1-3)
+      - Title company, closing date in the middle (pages 4-5)
+      - Agent names, MLS info, signatures at the end (last 2 pages)
+    Send the first third + last third so the AI sees everything.
+    """
+    if len(raw_text) <= max_chars:
+        return raw_text
+    half = max_chars // 2
+    top = raw_text[:half]
+    bottom = raw_text[-half:]
+    return top + "\n\n[...middle of document omitted...]\n\n" + bottom
+
+
+def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
+    """
+    Use cloud AI to extract purchase contract fields from any state form.
+    Returns (extracted_dict, log_line).
+    """
+    cfg = get_config()
+    if not cfg.get("enabled") or not cfg.get("api_key"):
+        return {}, _log("SCRIPT", "pc_extract", "Cloud disabled")
+
+    sampled = _smart_sample(raw_text)
+
+    system = (
+        "You are a senior mortgage loan processor. You read residential purchase "
+        "contracts every day — Ohio REALTORS, CA CAR, TX TREC, MN STAR, WI WB, "
+        "FL FAR, and custom forms. You know that in digitally-signed PDFs (dotloop, "
+        "DocuSign, Skyslope), the filled-in values often appear as a block at the "
+        "bottom of each page, separate from the form template text. You always look "
+        "at the ENTIRE document including the signature pages and MLS section to find "
+        "agent names and brokerage info. Return only valid JSON — no markdown fences, "
+        "no explanation, no extra text."
+    )
+    prompt = f"""Read this purchase contract carefully and extract every field you can find.
+Return ONLY a JSON object matching this exact structure. Leave fields as empty string "" if truly not present.
+
+{_PC_JSON_TEMPLATE}
+
+FIELD DEFINITIONS:
+- buyer.name: The person(s) purchasing the property. Look for "BUYER", "Purchaser", or the name on signature lines.
+- seller.name: The person(s) selling the property. Look for "SELLER", "LANDLORD", or the counter-signature. Often appears right after the buyer name or on the acceptance/signature page.
+- property.address: Full street address including city, state, zip if available.
+- transaction.purchase_price: The total purchase price. Digits and commas only (e.g. "180,000"). Look for "PRICE:", "Purchase Price:", "sum of $", or a standalone large dollar amount.
+- transaction.closing_date: When the deal closes. Use the format as written (e.g. "03/25/2022" or "March 25, 2022"). Look for "on or before", "title shall transfer", "Closing Date:", or date fields in the closing section.
+- transaction.earnest_money: Earnest money deposit amount. Digits and commas only.
+- transaction.down_payment: Down payment amount or description (e.g. "5%" or "25,000").
+- transaction.seller_concessions: Any seller credits, concessions, or closing cost contributions.
+- listing_agent: The SELLER's agent. Check the MLS section at the end of the document, signature blocks, or "Listing Agent:" labels.
+- selling_agent: The BUYER's agent (also called "Selling Agent" or "Cooperating Agent"). Check MLS section.
+- title.company: Title company, escrow company, or settlement agent handling the closing.
+- contingencies: Inspection period, appraisal contingency, financing contingency — include timeframes if stated.
+- addendums: List of addendum/rider names attached to the contract.
+
+IMPORTANT:
+- IGNORE blank underscore lines (________), template placeholder text ("as specified below", "will be represented by"), and page numbers.
+- In dotloop/DocuSign PDFs, look for filled values at the BOTTOM of pages after the form template text.
+- The MLS section near the end often has: (Listing Agent Name) then actual name, (Listing Brokerage Name) then actual brokerage, etc.
+- Buyer and seller names often appear together on the Agency Disclosure page (address → buyer → seller on consecutive lines).
+- Dotloop signatures show as "Name\\ndotloop verified\\ndate" — these ARE the real party names.
+
+CONTRACT TEXT:
+{sampled}"""
+
+    try:
+        provider = cfg.get("provider", DEFAULT_PROVIDER)
+        response = _generate(prompt, system, provider, cfg["api_key"], cfg["model"])
+        response = response.strip()
+        if response.startswith("```"):
+            response = response.split("```")[1]
+            if response.startswith("json"):
+                response = response[4:]
+        import json as _json
+        data = _json.loads(response.strip())
+        log = _log("CLOUD", "pc_extract", f"{provider} · {cfg.get('model')}")
+        return data, log
+    except Exception as e:
+        return {}, _log("SCRIPT", "pc_extract", f"Cloud error: {str(e)[:80]}")

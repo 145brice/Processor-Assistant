@@ -1,4 +1,4 @@
-# Processor Traien — Setup Guide
+# Pipeline Manager — Setup Guide
 
 Complete installation and configuration guide. Everything runs locally on your machine. No cloud account required.
 
@@ -457,4 +457,4 @@ The scanner adds a small delay per page to avoid CPU spikes. For large documents
 
 ---
 
-*Processor Traien — 100% local, no cloud required.*
+*Pipeline Manager — 100% local, no cloud required.*

@@ -1,5 +1,5 @@
 """
-Quick Doc Verify — Processor Traien
+Quick Doc Verify — Pipeline Manager
 Checks any incoming PDF in seconds:
   - Figures out what type of document it is
   - Counts pages

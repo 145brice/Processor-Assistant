@@ -1,5 +1,5 @@
 """
-Sharing Engine — Processor Traien
+Sharing Engine — Pipeline Manager
 Private loan sharing between team members via personal inbox folders.
 
 How it works:

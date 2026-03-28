@@ -1,5 +1,5 @@
 """
-Ollama Integration — Processor Traien
+Ollama Integration — Pipeline Manager
 Optional local LLM enhancement. Connects to a locally running Ollama instance.
 All offline — no internet, no API keys, no cloud.
 
@@ -369,3 +369,63 @@ Be concise. Each bullet should be one sentence."""
         return response, log
     except Exception as e:
         return "", _log("SCRIPT", "doc_summary", f"Ollama error: {str(e)[:60]}")
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Feature: Purchase contract AI extraction (handles any state form)
+# ─────────────────────────────────────────────────────────────────────────────
+
+_PC_JSON_TEMPLATE = """{
+  "buyer": {"name": "", "phone": "", "email": ""},
+  "seller": {"name": "", "phone": ""},
+  "property": {"address": ""},
+  "transaction": {"purchase_price": "", "closing_date": "", "earnest_money": "", "down_payment": "", "seller_concessions": ""},
+  "listing_agent": {"name": "", "brokerage": "", "phone": "", "email": ""},
+  "selling_agent": {"name": "", "brokerage": "", "phone": "", "email": ""},
+  "title": {"company": "", "contact": "", "phone": ""},
+  "contingencies": {"inspection": "", "appraisal": "", "financing": ""},
+  "addendums": []
+}"""
+
+
+def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
+    """
+    Use Ollama to extract purchase contract fields from any state form.
+    Returns (extracted_dict, log_line).
+    """
+    cfg = get_config()
+    if not cfg.get("enabled"):
+        return {}, _log("SCRIPT", "pc_extract", "Ollama disabled")
+
+    ok, msg = ping(cfg["endpoint"])
+    if not ok:
+        return {}, _log("SCRIPT", "pc_extract", f"offline — {msg}")
+
+    prompt = f"""Extract fields from this purchase contract. Return ONLY a JSON object matching this exact structure (leave fields as empty string if not found):
+
+{_PC_JSON_TEMPLATE}
+
+Rules:
+- purchase_price and earnest_money: digits and commas only (e.g. "485,000")
+- closing_date: YYYY-MM-DD if possible, otherwise as written
+- addendums: list of short strings
+- Do NOT include template boilerplate or blank underscore lines
+
+CONTRACT TEXT:
+{raw_text[:5000]}
+
+Return only the JSON object. No explanation."""
+
+    try:
+        response = _generate(prompt, model=cfg.get("model"))
+        response = response.strip()
+        if response.startswith("```"):
+            response = response.split("```")[1]
+            if response.startswith("json"):
+                response = response[4:]
+        import json as _json
+        data = _json.loads(response.strip())
+        log = _log("OLLAMA", "pc_extract", cfg.get("model", ""))
+        return data, log
+    except Exception as e:
+        return {}, _log("SCRIPT", "pc_extract", f"Ollama error: {str(e)[:80]}")

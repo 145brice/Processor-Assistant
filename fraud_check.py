@@ -1,5 +1,5 @@
 """
-Fraud Check — Processor Traien
+Fraud Check — Pipeline Manager
 Scans W-2, pay stub, and bank statement PDFs for common fraud indicators.
 Flags if 2+ clues are found. 100% offline — regex only, no AI.
 

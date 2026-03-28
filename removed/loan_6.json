@@ -1,0 +1,14 @@
+{
+  "id": 6,
+  "loan_num": "5000001123456",
+  "borrower": "Lisa Thames-Warfield",
+  "status": "Pending",
+  "due_date": "2026-03-30",
+  "missing_docs": "Delinquent Lien Payoff, Final Title Policy, E&O",
+  "folder_path": "",
+  "created": "2026-03-19",
+  "updated": "2026-03-20",
+  "notes": "PUD detached. Title clearing items 7 and 8. Waiting on settlement agent.",
+  "deleted_on": "2026-03-24",
+  "expires_on": "2026-04-23"
+}

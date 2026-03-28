@@ -1,5 +1,5 @@
 """
-Folder Search Engine for Processor Traien
+Folder Search Engine for Pipeline Manager
 Searches a local folder for documents matching mortgage conditions.
 100% offline - fuzzy matches filenames and PDF content.
 """

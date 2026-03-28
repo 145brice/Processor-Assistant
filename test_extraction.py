@@ -1,5 +1,5 @@
 """
-Extraction Test Suite — Processor Traien
+Extraction Test Suite — Pipeline Manager
 Runs all document extraction functions against realistic mock document text.
 No real PDFs needed — tests the regex/pattern logic directly.
 

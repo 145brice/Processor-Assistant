@@ -1,5 +1,5 @@
 """
-Local SQLite Database for Processor Traien
+Local SQLite Database for Pipeline Manager
 Fully offline - no cloud, no Supabase.
 Stores user accounts and scan history locally.
 """
