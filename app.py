@@ -24,7 +24,7 @@ html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 .stApp {
-    background: #f5f5f5;
+    background: #d5d7da;
 }
 
 /* ── Hide Streamlit chrome ────────────────────────────────────── */
@@ -34,7 +34,7 @@ html, body, [class*="css"] {
 /* ── Sidebar ──────────────────────────────────────────────────── */
 [data-testid="stSidebar"] {
     background: #fafafa !important;
-    border-right: 1px solid #e0e0e0 !important;
+    border-right: 1px solid #888 !important;
 }
 [data-testid="stSidebar"] > div:first-child {
     padding: 1rem 0.75rem;
@@ -45,7 +45,7 @@ html, body, [class*="css"] {
 [data-testid="stSidebar"] button {
     background: transparent !important;
     border: 1px solid transparent !important;
-    color: #1a1a1a !important;
+    color: #374151 !important;
     border-radius: 4px !important;
     font-size: 13px !important;
     font-weight: 500 !important;
@@ -118,7 +118,7 @@ label { color: #222 !important; font-size: 13px !important; font-weight: 500 !im
 [data-testid="stMarkdownContainer"] p,
 [data-testid="stMarkdownContainer"] li,
 [data-testid="stMarkdownContainer"] span {
-    color: #1a1a1a !important;
+    color: #374151 !important;
     font-size: 13px !important;
 }
 [data-testid="stMarkdownContainer"] strong {
@@ -128,7 +128,7 @@ label { color: #222 !important; font-size: 13px !important; font-weight: 500 !im
 
 /* Checkbox labels */
 [data-testid="stCheckbox"] label p {
-    color: #1a1a1a !important;
+    color: #374151 !important;
     font-size: 13px !important;
     font-weight: 500 !important;
 }
@@ -144,16 +144,16 @@ label { color: #222 !important; font-size: 13px !important; font-weight: 500 !im
 [data-testid="stNumberInput"] label,
 [data-testid="stDateInput"] label,
 [data-testid="stTextArea"] label {
-    color: #1a1a1a !important;
+    color: #374151 !important;
     font-size: 13px !important;
     font-weight: 500 !important;
 }
 
 /* ── Buttons ──────────────────────────────────────────────────── */
 button[kind="primary"] {
-    background: #2563eb !important;
+    background: #3b82f6 !important;
     color: #fff !important;
-    border: none !important;
+    border: 1px solid #2563eb !important;
     border-radius: 4px !important;
     font-weight: 600 !important;
     font-size: 13px !important;
@@ -163,14 +163,14 @@ button[kind="primary"] {
     transition: background 0.15s !important;
 }
 button[kind="primary"]:hover {
-    background: #1d4ed8 !important;
+    background: #2563eb !important;
     box-shadow: none !important;
     transform: none !important;
 }
 button[kind="secondary"] {
     background: #fff !important;
-    color: #1a1a1a !important;
-    border: 1px solid #d0d0d0 !important;
+    color: #374151 !important;
+    border: 1px solid #888 !important;
     border-radius: 4px !important;
     font-weight: 500 !important;
     font-size: 13px !important;
@@ -179,9 +179,9 @@ button[kind="secondary"] {
     box-shadow: none !important;
 }
 button[kind="secondary"]:hover {
-    border-color: #999 !important;
+    border-color: #9ca3af !important;
     color: #111 !important;
-    background: #f5f5f5 !important;
+    background: #f9fafb !important;
     box-shadow: none !important;
     transform: none !important;
 }
@@ -192,7 +192,7 @@ button[kind="secondary"]:hover {
 [data-testid="stSelectbox"] > div > div,
 [data-testid="stNumberInput"] input {
     background: #fff !important;
-    border: 1px solid #d0d0d0 !important;
+    border: 1px solid #888 !important;
     border-radius: 3px !important;
     color: #111 !important;
     font-size: 13px !important;
@@ -208,7 +208,7 @@ button[kind="secondary"]:hover {
 /* ── File uploader ────────────────────────────────────────────── */
 [data-testid="stFileUploader"] {
     background: #fff !important;
-    border: 1px dashed #ccc !important;
+    border: 1px dashed #888 !important;
     border-radius: 4px !important;
     padding: 14px !important;
     transition: border-color 0.15s !important;
@@ -223,14 +223,14 @@ button[kind="secondary"]:hover {
 /* Uploaded file chip */
 [data-testid="stFileUploaderFile"] {
     background: #f7f7f7 !important;
-    border: 1px solid #ddd !important;
+    border: 1px solid #888 !important;
     border-radius: 3px !important;
-    color: #1a1a1a !important;
+    color: #374151 !important;
 }
 [data-testid="stFileUploaderFile"] span,
 [data-testid="stFileUploaderFile"] small,
 [data-testid="stFileUploaderFile"] p {
-    color: #1a1a1a !important;
+    color: #374151 !important;
     font-weight: 500 !important;
 }
 [data-testid="stFileUploaderFileName"] {
@@ -246,8 +246,8 @@ button[kind="secondary"]:hover {
 [data-testid="stForm"] button[kind="primaryFormSubmit"],
 [data-testid="stForm"] button[kind="secondaryFormSubmit"] {
     background: #fff !important;
-    border: 1px solid #d0d0d0 !important;
-    color: #1a1a1a !important;
+    border: 1px solid #888 !important;
+    color: #374151 !important;
     font-weight: 500 !important;
     border-radius: 4px !important;
     box-shadow: none !important;
@@ -262,7 +262,7 @@ button[kind="secondary"]:hover {
 /* ── Expanders ────────────────────────────────────────────────── */
 [data-testid="stExpander"] {
     background: #fff !important;
-    border: 1px solid #ddd !important;
+    border: 1px solid #888 !important;
     border-radius: 4px !important;
     margin-bottom: 3px !important;
     box-shadow: none !important;
@@ -293,7 +293,7 @@ button[kind="secondary"]:hover {
 }
 
 /* ── Dividers ─────────────────────────────────────────────────── */
-hr { border-color: #ddd !important; margin: 10px 0 !important; }
+hr { border-color: #888 !important; margin: 10px 0 !important; }
 
 /* ── Tabs ─────────────────────────────────────────────────────── */
 [data-testid="stTabs"] [role="tab"] {
@@ -312,7 +312,7 @@ hr { border-color: #ddd !important; margin: 10px 0 !important; }
 /* ── Checkbox ─────────────────────────────────────────────────── */
 [data-testid="stCheckbox"] label {
     font-size: 13px !important;
-    color: #1a1a1a !important;
+    color: #374151 !important;
 }
 
 /* ── Caption / small text ─────────────────────────────────────── */
@@ -332,7 +332,7 @@ hr { border-color: #ddd !important; margin: 10px 0 !important; }
 /* ── Containers (bordered) ────────────────────────────────────── */
 [data-testid="stVerticalBlockBorderWrapper"] {
     background: #fff !important;
-    border: 1px solid #ddd !important;
+    border: 1px solid #888 !important;
     border-radius: 4px !important;
     padding: 12px !important;
     box-shadow: none !important;
@@ -345,7 +345,7 @@ hr { border-color: #ddd !important; margin: 10px 0 !important; }
 [data-baseweb="popover"] ul,
 [data-baseweb="menu"] {
     background: #fff !important;
-    border: 1px solid #ddd !important;
+    border: 1px solid #888 !important;
     border-radius: 3px !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
 }
@@ -363,7 +363,7 @@ hr { border-color: #ddd !important; margin: 10px 0 !important; }
 }
 [data-baseweb="select"] > div {
     background: #fff !important;
-    border-color: #d0d0d0 !important;
+    border-color: #888 !important;
     color: #111 !important;
 }
 
@@ -384,13 +384,13 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
 /* ── Multiselect ──────────────────────────────────────────────── */
 [data-testid="stMultiSelect"] > div {
     background: #fff !important;
-    border: 1px solid #d0d0d0 !important;
+    border: 1px solid #888 !important;
     border-radius: 3px !important;
 }
 [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
     background: #f0f0f0 !important;
-    color: #1a1a1a !important;
-    border: 1px solid #ccc !important;
+    color: #374151 !important;
+    border: 1px solid #888 !important;
     border-radius: 3px !important;
     font-size: 12px !important;
     font-weight: 500 !important;
@@ -410,26 +410,26 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     overflow: hidden !important;
     font-size: 13px !important;
     box-shadow: none !important;
-    border: 1px solid #ddd !important;
+    border: 1px solid #888 !important;
 }
 [data-testid="stMarkdownContainer"] thead tr {
     background: #f7f7f7 !important;
 }
 [data-testid="stMarkdownContainer"] th {
-    color: #1a1a1a !important;
+    color: #374151 !important;
     font-size: 11px !important;
     font-weight: 600 !important;
     padding: 6px 10px !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
-    border-bottom: 1px solid #ddd !important;
+    border-bottom: 1px solid #888 !important;
 }
 [data-testid="stMarkdownContainer"] td {
     color: #111 !important;
     font-size: 13px !important;
     font-weight: 400 !important;
     padding: 5px 10px !important;
-    border-bottom: 1px solid #eee !important;
+    border-bottom: 1px solid #888 !important;
 }
 [data-testid="stMarkdownContainer"] tr:hover td {
     background: #f7f7f7 !important;
@@ -444,7 +444,7 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     border-radius: 3px;
     padding: 3px;
     margin-bottom: 12px;
-    border: 1px solid #ddd;
+    border: 1px solid #888;
     box-shadow: none;
     position: sticky;
     top: 0;
@@ -462,7 +462,7 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     text-decoration: none;
     transition: background 0.15s;
     line-height: 1.3;
-    color: #444;
+    color: #5c6370;
 }
 .pn-step.done    { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
 .pn-step.active  { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
@@ -489,7 +489,7 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
 .badge-jr          { background: #fce4ec; color: #c2185b; border: 1px solid #f8bbd0; }
 .badge-manager     { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
 .badge-appraiser   { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-.badge-default     { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+.badge-default     { background: #f5f5f5; color: #333; border: 1px solid #888; }
 
 /* ── Pipeline status chips ────────────────────────────────────── */
 .status-chip {
@@ -503,13 +503,13 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
 .status-pending   { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
 .status-requested { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
 .status-cleared   { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-.status-overdue   { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
-.status-closed    { background: #f5f5f5; color: #333; border: 1px solid #ddd; }
+.status-overdue   { background: #f5f5f5; color: #333; border: 1px solid #888; }
+.status-closed    { background: #f5f5f5; color: #333; border: 1px solid #888; }
 
 /* ── Loan pipeline cards ──────────────────────────────────────── */
 .loan-card {
     background: #fff;
-    border: 1px solid #ddd;
+    border: 1px solid #888;
     border-radius: 3px;
     padding: 8px 12px;
     margin: 0 0 2px 0;
@@ -525,7 +525,7 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
 }
 .loan-num   { font-size: 13px; font-weight: 700; color: #1565c0; font-family: 'Inter', monospace; }
 .loan-name  { font-size: 13px; color: #111; font-weight: 600; }
-.loan-due   { font-size: 11px; color: #444; font-weight: 400; }
+.loan-due   { font-size: 11px; color: #5c6370; font-weight: 400; }
 .loan-missing { font-size: 11px; color: #c62828; font-weight: 500; }
 
 /* ── Stat cards (pipeline counts — inline chips now) ─────────── */
@@ -534,18 +534,18 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     padding: 6px 8px;
     border-radius: 3px;
     background: #fff;
-    border: 1px solid #ddd;
+    border: 1px solid #888;
     box-shadow: none;
 }
 .stat-num  { font-size: 18px; font-weight: 700; color: #111; line-height: 1; }
-.stat-label { font-size: 10px; color: #444; margin-top: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+.stat-label { font-size: 10px; color: #5c6370; margin-top: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
 
 /* ── Login card ───────────────────────────────────────────────── */
 .login-card {
     max-width: 400px;
     margin: 40px auto 0 auto;
     background: #fff;
-    border: 1px solid #ddd;
+    border: 1px solid #888;
     border-radius: 4px;
     padding: 28px 24px;
     box-shadow: none;
@@ -559,7 +559,7 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
 }
 .login-sub {
     font-size: 12px;
-    color: #444;
+    color: #5c6370;
     text-align: center;
     margin-bottom: 20px;
 }
@@ -572,7 +572,7 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
 div[data-testid="stToast"] > div {
     background: #fff !important;
     color: #111 !important;
-    border: 1px solid #ddd !important;
+    border: 1px solid #888 !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
     border-radius: 3px !important;
 }
@@ -585,7 +585,7 @@ div[role="alert"],
 div[data-baseweb="notification"] {
     background: #fff !important;
     color: #111 !important;
-    border-color: #ddd !important;
+    border-color: #888 !important;
     border-radius: 3px !important;
 }
 div[data-baseweb="notification"] div {
@@ -632,7 +632,7 @@ div[data-baseweb="popover"],
 div[data-baseweb="tooltip"],
 ul[data-testid="stSelectboxVirtualDropdown"] {
     background: #fff !important;
-    border: 1px solid #ddd !important;
+    border: 1px solid #888 !important;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
     border-radius: 3px !important;
 }
@@ -805,23 +805,23 @@ def show_sidebar():
           <div style="font-size:20px; font-weight:800; color:#222222; letter-spacing:-0.3px;">
             Pipeline Manager
           </div>
-          <div style="font-size:11px; color:#444; margin-top:4px;">Offline · Local · No cloud</div>
+          <div style="font-size:11px; color:#5c6370; margin-top:4px;">Offline · Local · No cloud</div>
         </div>
         """, unsafe_allow_html=True)
 
         # ── Who's logged in ──────────────────────────────────────────────────
         if is_sandbox:
             st.markdown(
-                '<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
+                '<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
                 'padding:8px 12px;margin-bottom:12px;">'
-                '<span style="font-size:12px;color:#444;">* Sandbox Mode</span></div>',
+                '<span style="font-size:12px;color:#5c6370;">* Sandbox Mode</span></div>',
                 unsafe_allow_html=True,
             )
         elif user_name:
             role_color = {"Loan Officer": "#e67e22", "Manager": "#2980b9",
                           "Jr Underwriter": "#c0392b"}.get(user_role, "#2563eb")
             st.markdown(
-                f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
+                f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
                 f'padding:8px 12px;margin-bottom:12px;">'
                 f'<div style="font-size:13px;font-weight:700;color:#111111;">{user_name}</div>'
                 f'<div style="font-size:11px;color:{role_color};font-weight:600;">{user_role}</div>'
@@ -873,7 +873,7 @@ def show_sidebar():
             _label = "Inbox watch off"
         _badge = f' <span style="background:#2563eb;color:#fff;font-size:10px;border-radius:8px;padding:1px 6px;">{_ew_pending}</span>' if _ew_pending else ""
         st.markdown(
-            f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
+            f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
             f'padding:7px 10px;margin-bottom:4px;cursor:default;">'
             f'<span style="font-size:12px;color:#333333;">{_dot} {_label}{_badge}</span></div>',
             unsafe_allow_html=True,
@@ -898,7 +898,7 @@ def show_sidebar():
         else:
             _ai_dot, _ai_label = "●", "AI — script only"
         st.markdown(
-            f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
+            f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
             f'padding:7px 10px;margin-bottom:8px;cursor:default;">'
             f'<span style="font-size:12px;color:#333333;">{_ai_dot} {_ai_label}</span></div>',
             unsafe_allow_html=True,
@@ -956,7 +956,7 @@ def show_dashboard():
                 f'border-radius:8px;padding:12px 16px;margin:12px 0;">'
                 f'<div style="font-size:15px;font-weight:700;color:#111111;">'
                 f'{vcard_icon} {result["doc_type"]} · {vcard_title}</div>'
-                f'<div style="font-size:12px;color:#444;margin-top:4px;">{qv_file.name}</div>'
+                f'<div style="font-size:12px;color:#5c6370;margin-top:4px;">{qv_file.name}</div>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -983,7 +983,7 @@ def show_dashboard():
                         )
                 else:
                     st.markdown(
-                        '<span style="color:#444;font-size:13px;">No flags — all clear</span>',
+                        '<span style="color:#5c6370;font-size:13px;">No flags — all clear</span>',
                         unsafe_allow_html=True,
                     )
 
@@ -995,12 +995,12 @@ def show_dashboard():
 
             if borrower:
                 st.markdown(
-                    f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
+                    f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
                     f'padding:10px 14px;margin-bottom:10px;">'
                     f'<span style="font-size:13px;color:#333333;">Pipeline match: </span>'
                     f'<span style="font-size:14px;font-weight:700;color:#111111;">{borrower}</span>'
                     f'<span style="font-size:12px;color:#2563eb;margin-left:8px;">Loan {loan_num}</span>'
-                    f'<span style="font-size:12px;color:#444;margin-left:8px;">'
+                    f'<span style="font-size:12px;color:#5c6370;margin-left:8px;">'
                     f'{result["confidence"]}% confidence</span></div>',
                     unsafe_allow_html=True,
                 )
@@ -1158,8 +1158,8 @@ def show_dashboard():
         # Header row
         st.markdown(
             '<div style="display:grid;grid-template-columns:3fr 2fr 1fr 2fr;gap:8px;'
-            'padding:6px 12px;font-size:11px;font-weight:700;color:#444;'
-            'text-transform:uppercase;border-bottom:1px solid #d1d5db;">'
+            'padding:6px 12px;font-size:11px;font-weight:700;color:#5c6370;'
+            'text-transform:uppercase;border-bottom:1px solid #888;">'
             '<span>File</span><span>Detected Type</span>'
             '<span>Confidence</span><span>Override</span></div>',
             unsafe_allow_html=True,
@@ -1178,7 +1178,7 @@ def show_dashboard():
                 st.markdown(
                     f'<div style="font-size:12px;font-weight:600;color:#111111;padding-top:8px;">'
                     f'{_det["name"]}</div>'
-                    f'<div style="font-size:10px;color:#444;font-style:italic;">{_signals_str}</div>',
+                    f'<div style="font-size:10px;color:#5c6370;font-style:italic;">{_signals_str}</div>',
                     unsafe_allow_html=True,
                 )
             with _rc2:
@@ -1381,7 +1381,7 @@ def show_dashboard():
 
                 with st.expander(f"✓ {_br_name} — {_br_dtype}", expanded=False):
                     st.markdown(
-                        f'<div style="font-size:12px;color:#444;margin-bottom:8px;">'
+                        f'<div style="font-size:12px;color:#5c6370;margin-bottom:8px;">'
                         f'{_summary_str} · {_br_chars:,} chars</div>',
                         unsafe_allow_html=True,
                     )
@@ -1391,7 +1391,7 @@ def show_dashboard():
                             st.markdown(
                                 f'<span style="color:#f1c40f;font-size:12px;">●</span> '
                                 f'<span style="color:#111111;font-size:12px;">#{_bc["num"]} {_bc["desc"][:80]}</span> '
-                                f'<span style="color:#444;font-size:11px;">— {_bc["party"]}</span>',
+                                f'<span style="color:#5c6370;font-size:11px;">— {_bc["party"]}</span>',
                                 unsafe_allow_html=True,
                             )
                     # Show bank rules if any
@@ -1419,7 +1419,7 @@ def show_dashboard():
                     # Show contacts preview if any
                     if _br_data:
                         st.markdown(
-                            f'<div style="font-size:11px;color:#444;margin-top:4px;">'
+                            f'<div style="font-size:11px;color:#5c6370;margin-top:4px;">'
                             f'Extracted data: {", ".join(k for k,v in _br_data.items() if v)}</div>',
                             unsafe_allow_html=True,
                         )
@@ -1428,9 +1428,9 @@ def show_dashboard():
             if _all_conds or _all_contacts:
                 st.markdown("---")
                 st.markdown(
-                    f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
-                    f'padding:10px;margin:8px 0;font-size:12px;color:#444;">'
-                    f'<b style="color:#79c0ff;">Bulk scan totals:</b> '
+                    f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
+                    f'padding:10px;margin:8px 0;font-size:12px;color:#5c6370;">'
+                    f'<b style="color:#2563eb;">Bulk scan totals:</b> '
                     f'{len(_all_conds)} condition(s) · '
                     f'{len(_all_contacts)} contact group(s)'
                     + (f' · closing date: {_all_closing}' if _all_closing else "")
@@ -1587,8 +1587,94 @@ def show_dashboard():
                         st.warning("Bank statement analysis returned no results. The PDF may be a scanned image with no readable text.")
                         continue
 
-                    st.markdown("## Bank Bank Statement Analysis")
+                    st.markdown("## Bank Statement Analysis")
                     st.caption("Offline pattern scan — manual review always recommended.")
+
+                    # ── Account Summary Card ───────────────────────────────
+                    _bf = result.get("bank_fields", {})
+                    if _bf:
+                        _names = ", ".join(_bf.get("holder_names") or []) or "—"
+                        _acct  = _bf.get("account_number") or "—"
+                        _inst  = _bf.get("institution") or "—"
+                        _month = _bf.get("statement_month") or ""
+                        _period = ""
+                        if _bf.get("period_start") and _bf.get("period_end"):
+                            _period = f'{_bf["period_start"]} – {_bf["period_end"]}'
+                        elif _month:
+                            _period = _month
+                        _beg  = f'${_bf["beginning_balance"]}' if _bf.get("beginning_balance") else "—"
+                        _end  = f'${_bf["ending_balance"]}' if _bf.get("ending_balance") else "—"
+                        _low  = f'${_bf["lowest_balance"]}' if _bf.get("lowest_balance") else "—"
+                        _dep  = f'${_bf["deposits_total"]}' if _bf.get("deposits_total") else "—"
+                        _wd   = f'${_bf["withdrawals_total"]}' if _bf.get("withdrawals_total") else "—"
+
+                        st.markdown(
+                            f'<div style="background:#fff;border:1px solid #888;border-radius:3px;'
+                            f'padding:12px 16px;margin-bottom:14px;">'
+                            f'<div style="font-size:12px;font-weight:700;color:#2563eb;'
+                            f'text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">'
+                            f'Account Summary</div>'
+                            f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">'
+                            # row 1
+                            f'<div><div style="font-size:11px;color:#5c6370;">Account Holder(s)</div>'
+                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_names}</div></div>'
+                            f'<div><div style="font-size:11px;color:#5c6370;">Account Number</div>'
+                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_acct}</div></div>'
+                            f'<div><div style="font-size:11px;color:#5c6370;">Institution</div>'
+                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_inst}</div></div>'
+                            # row 2
+                            f'<div><div style="font-size:11px;color:#5c6370;">Statement Period</div>'
+                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_period or "—"}</div></div>'
+                            f'<div><div style="font-size:11px;color:#5c6370;">Beginning Balance</div>'
+                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_beg}</div></div>'
+                            f'<div><div style="font-size:11px;color:#5c6370;">Ending Balance</div>'
+                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_end}</div></div>'
+                            # row 3
+                            f'<div><div style="font-size:11px;color:#5c6370;">Lowest Balance</div>'
+                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_low}</div></div>'
+                            f'<div><div style="font-size:11px;color:#5c6370;">Total Deposits</div>'
+                            f'<div style="font-size:13px;font-weight:600;color:#27ae60;">{_dep}</div></div>'
+                            f'<div><div style="font-size:11px;color:#5c6370;">Total Withdrawals</div>'
+                            f'<div style="font-size:13px;font-weight:600;color:#c0392b;">{_wd}</div></div>'
+                            f'</div></div>',
+                            unsafe_allow_html=True,
+                        )
+
+                    # ── Approval Cross-Reference ───────────────────────────
+                    from ai_engine import cross_reference_approval as _xref
+                    _xref_key = f"xref_notes_{fkey}"
+                    _xref_notes = st.text_area(
+                        "Approval Condition Notes (paste to cross-reference against statement)",
+                        key=_xref_key,
+                        height=90,
+                        placeholder="e.g. Source $4,500 deposit 01/15 from ABC Company. Verify $1,200 payment to Chase Auto.",
+                        label_visibility="visible",
+                    )
+                    if _xref_notes.strip() and result.get("bank_raw_text"):
+                        _xref_results = _xref(result["bank_raw_text"], _xref_notes)
+                        if _xref_results:
+                            st.markdown(
+                                '<div style="font-size:12px;font-weight:700;color:#2563eb;'
+                                'text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 6px 0;">'
+                                'Cross-Reference Results</div>',
+                                unsafe_allow_html=True,
+                            )
+                            for _xr in _xref_results:
+                                _xr_bg  = "#152a1e" if _xr["found"] else "#3d1515"
+                                _xr_col = "#27ae60" if _xr["found"] else "#e74c3c"
+                                _xr_lbl = "✓ Found" if _xr["found"] else "✗ Not Found"
+                                _xr_icon = "amount" if _xr["type"] == "amount" else "name"
+                                st.markdown(
+                                    f'<div style="display:flex;gap:10px;align-items:center;'
+                                    f'background:{_xr_bg};border-left:3px solid {_xr_col};'
+                                    f'border-radius:3px;padding:6px 12px;margin-bottom:3px;">'
+                                    f'<span style="color:{_xr_col};font-weight:700;font-size:12px;min-width:72px;">{_xr_lbl}</span>'
+                                    f'<span style="color:#5c6370;font-size:11px;min-width:44px;">[{_xr_icon}]</span>'
+                                    f'<span style="color:#111;font-size:13px;font-weight:600;">{_xr["query"]}</span>'
+                                    f'</div>',
+                                    unsafe_allow_html=True,
+                                )
+                    st.markdown("---")
 
                     # Parse structured output
                     raw_lines = bank_rules.strip().split("\n")
@@ -1648,7 +1734,7 @@ def show_dashboard():
                                 f'border-radius:6px;padding:7px 12px;margin-bottom:3px;">'
                                 f'<span style="color:#27ae60;font-weight:700;font-size:12px;min-width:20px;">✓</span>'
                                 f'<div><span style="color:#333333;font-size:13px;font-weight:600;">{label}</span>'
-                                f'<br><span style="color:#444;font-size:12px;">{msg}</span></div></div>',
+                                f'<br><span style="color:#5c6370;font-size:12px;">{msg}</span></div></div>',
                                 unsafe_allow_html=True,
                             )
 
@@ -1692,10 +1778,10 @@ def show_dashboard():
                             num, label = parts[1], parts[2] if len(parts) > 2 else ""
                             st.markdown(
                                 f'<div style="display:flex;gap:10px;align-items:center;'
-                                f'background:#252040;border-left:3px solid #d1d5db;'
+                                f'background:#252040;border-left:3px solid #888;'
                                 f'border-radius:6px;padding:6px 12px;margin-bottom:3px;">'
                                 f'<span style="color:#d1d5db;font-size:12px;min-width:20px;">View</span>'
-                                f'<span style="color:#444;font-size:13px;">{label}</span>'
+                                f'<span style="color:#5c6370;font-size:13px;">{label}</span>'
                                 f'</div>',
                                 unsafe_allow_html=True,
                             )
@@ -1758,7 +1844,7 @@ def show_dashboard():
                     bs_hits = st.session_state.get(f"bs_hits_{fkey}", [])
                     if bs_hits:
                         st.markdown(
-                            f"<div style='font-size:13px;color:#444;margin-bottom:8px;'>"
+                            f"<div style='font-size:13px;color:#5c6370;margin-bottom:8px;'>"
                             f"Found {len(bs_hits)} file(s) — click Analyze to run the 50-rule scan</div>",
                             unsafe_allow_html=True,
                         )
@@ -1774,7 +1860,7 @@ def show_dashboard():
                                 st.markdown(
                                     f'<div style="font-weight:600;color:#111111;font-size:13px;">'
                                     f'{hit["file_name"]}</div>'
-                                    f'<div style="font-size:11px;color:#444;">'
+                                    f'<div style="font-size:11px;color:#5c6370;">'
                                     f'{hit["snippet"][:120]}...</div>',
                                     unsafe_allow_html=True,
                                 )
@@ -1782,7 +1868,7 @@ def show_dashboard():
                                 st.markdown(
                                     f'<div style="font-size:12px;color:{conf_color};font-weight:700;">'
                                     f'{conf_label} confidence ({hit["score"]}%)</div>'
-                                    f'<div style="font-size:11px;color:#444;">{hit["reason"]}</div>',
+                                    f'<div style="font-size:11px;color:#5c6370;">{hit["reason"]}</div>',
                                     unsafe_allow_html=True,
                                 )
                             with hc3:
@@ -1862,7 +1948,7 @@ def show_dashboard():
                                                 f'<span style="color:{_bdr};min-width:18px;">{_ico}</span>'
                                                 f'<div><span style="color:#111111;font-size:12px;'
                                                 f'font-weight:600;">{_lbl2}</span>'
-                                                + (f'<br><span style="color:#444;font-size:11px;">{_msg2}</span>' if _msg2 else "")
+                                                + (f'<br><span style="color:#5c6370;font-size:11px;">{_msg2}</span>' if _msg2 else "")
                                                 + f'</div></div>',
                                                 unsafe_allow_html=True,
                                             )
@@ -1948,7 +2034,7 @@ def show_dashboard():
                         disp = value if value else _nf
                         st.markdown(
                             f'<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:2px;">'
-                            f'{dot}<span style="color:#444;font-size:12px;min-width:140px;">{label}</span>'
+                            f'{dot}<span style="color:#5c6370;font-size:12px;min-width:140px;">{label}</span>'
                             f'<span style="color:#111111;font-size:13px;font-weight:600;">{disp}</span></div>',
                             unsafe_allow_html=True,
                         )
@@ -2053,7 +2139,7 @@ def show_dashboard():
                         disp = value if value else _nf2
                         st.markdown(
                             f'<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:2px;">'
-                            f'{dot}<span style="color:#444;font-size:12px;min-width:140px;">{label}</span>'
+                            f'{dot}<span style="color:#5c6370;font-size:12px;min-width:140px;">{label}</span>'
                             f'<span style="color:#111111;font-size:13px;font-weight:600;">{disp}</span></div>',
                             unsafe_allow_html=True,
                         )
@@ -2454,7 +2540,7 @@ def show_dashboard():
                                             st.markdown(
                                                 f'<div style="font-weight:600;color:#111111;font-size:12px;">'
                                                 f'{_bht["file_name"]}</div>'
-                                                f'<div style="font-size:11px;color:#444;">'
+                                                f'<div style="font-size:11px;color:#5c6370;">'
                                                 f'{_bht["snippet"][:100]}</div>',
                                                 unsafe_allow_html=True,
                                             )
@@ -2898,7 +2984,7 @@ def show_pipeline():
     st.markdown(
         '<div style="margin-bottom:2px;">'
         '<span style="font-size:16px;font-weight:700;color:#111;">My Pipeline</span>'
-        '&nbsp;&nbsp;<span style="font-size:11px;color:#444;">Track loans by status</span>'
+        '&nbsp;&nbsp;<span style="font-size:11px;color:#5c6370;">Track loans by status</span>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -2958,36 +3044,66 @@ def show_pipeline():
                 'text-transform:uppercase;">Upcoming Deadlines</span></div>',
                 unsafe_allow_html=True,
             )
+            def _cal_svg(color):
+                return (
+                    f'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" '
+                    f'xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:4px;">'
+                    f'<rect x="1" y="3" width="14" height="12" rx="1.5" stroke="{color}" stroke-width="1.5" fill="none"/>'
+                    f'<line x1="1" y1="7" x2="15" y2="7" stroke="{color}" stroke-width="1.5"/>'
+                    f'<line x1="5" y1="1" x2="5" y2="5" stroke="{color}" stroke-width="1.5" stroke-linecap="round"/>'
+                    f'<line x1="11" y1="1" x2="11" y2="5" stroke="{color}" stroke-width="1.5" stroke-linecap="round"/>'
+                    f'<rect x="4" y="9" width="2.5" height="2.5" rx="0.5" fill="{color}"/>'
+                    f'<rect x="6.75" y="9" width="2.5" height="2.5" rx="0.5" fill="{color}"/>'
+                    f'</svg>'
+                )
+
             for _days, _num, _bor, _kind, _closing, _lock, _commit, _ulid in _deduped[:6]:
                 if _days < 0:
-                    _icon = "●"
                     _label = f"EXPIRED {abs(_days)}d ago"
-                    _color = "#e74c3c"
+                    _color = "#c62828"
+                    _bg    = "#ffebee"
+                    _bdr   = "#ef9a9a"
                 elif _days == 0:
-                    _icon = "●"
-                    _label = "TODAY"
-                    _color = "#e74c3c"
+                    _label = "DUE TODAY"
+                    _color = "#c62828"
+                    _bg    = "#ffebee"
+                    _bdr   = "#ef9a9a"
                 elif _days <= 3:
-                    _icon = "●"
                     _label = f"{_days}d left"
-                    _color = "#e74c3c"
+                    _color = "#b71c1c"
+                    _bg    = "#ffebee"
+                    _bdr   = "#ef9a9a"
                 elif _days <= 7:
-                    _icon = "●"
                     _label = f"{_days}d left"
-                    _color = "#f39c12"
+                    _color = "#e65100"
+                    _bg    = "#fff3e0"
+                    _bdr   = "#ffcc80"
                 else:
-                    _icon = "●"
                     _label = f"{_days}d left"
-                    _color = "#f1c40f"
-                _close_display = _closing if _closing else "Not set"
-                _lock_display = _lock if _lock else "Not set"
-                _commit_display = _commit if _commit else "Not set"
-                # Clickable row — opens loan detail
-                _btn_label = f"{_icon} {_label}  ·  #{_num} {_bor}  ·  Close: {_close_display}  ·  Lock: {_lock_display}  ·  Commit: {_commit_display}"
-                if st.button(_btn_label, key=f"urgent_{_kind}_{_ulid}", use_container_width=True):
-                    st.session_state.detail_loan_id = _ulid
-                    st.session_state.page = "loan_detail"
-                    st.rerun()
+                    _color = "#2e7d32"
+                    _bg    = "#e8f5e9"
+                    _bdr   = "#c8e6c9"
+                _close_display = _closing if _closing else "—"
+                _lock_display  = _lock if _lock else "—"
+                _row_col, _btn_col = st.columns([5, 1])
+                with _row_col:
+                    st.markdown(
+                        f'<div style="background:{_bg};border:1px solid {_bdr};border-left:3px solid {_color};'
+                        f'border-radius:3px;padding:5px 10px;margin-bottom:2px;display:flex;align-items:center;gap:6px;">'
+                        f'{_cal_svg(_color)}'
+                        f'<div>'
+                        f'<span style="color:{_color};font-size:11px;font-weight:700;">{_label}</span>'
+                        f'&nbsp;&nbsp;<span style="color:#374151;font-size:12px;font-weight:600;">#{_num} {_bor}</span>'
+                        f'<br><span style="color:#5c6370;font-size:10px;">'
+                        f'Close: {_close_display} &nbsp;·&nbsp; Lock: {_lock_display}</span>'
+                        f'</div></div>',
+                        unsafe_allow_html=True,
+                    )
+                with _btn_col:
+                    if st.button("Open", key=f"urgent_{_kind}_{_ulid}", use_container_width=True):
+                        st.session_state.detail_loan_id = _ulid
+                        st.session_state.page = "loan_detail"
+                        st.rerun()
     except Exception:
         pass
 
@@ -3326,9 +3442,9 @@ def show_pipeline():
                     _ok = sum(1 for s in _sc if s["status"] == "ok")
                     _skip = sum(1 for s in _sc if s["status"] != "ok")
                     st.markdown(
-                        f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
-                        f'padding:10px;margin:6px 0;font-size:12px;color:#444;">'
-                        f'<b style="color:#79c0ff;">Scanned {len(_sc)} file(s):</b> '
+                        f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
+                        f'padding:10px;margin:6px 0;font-size:12px;color:#5c6370;">'
+                        f'<b style="color:#2563eb;">Scanned {len(_sc)} file(s):</b> '
                         f'{_ok} processed, {_skip} skipped<br>'
                         + "".join(
                             f'<span style="color:{"#27ae60" if s["status"]=="ok" else "#e74c3c"};">'
@@ -3416,7 +3532,7 @@ def show_pipeline():
 
             st.markdown("---")
             st.markdown(
-                '<span style="font-size:12px;font-weight:700;color:#444;text-transform:uppercase;'
+                '<span style="font-size:12px;font-weight:700;color:#5c6370;text-transform:uppercase;'
                 'letter-spacing:0.5px;">Loan Details</span>',
                 unsafe_allow_html=True,
             )
@@ -3448,10 +3564,10 @@ def show_pipeline():
             _bf_contacts = _bf.get("contacts", {})
             if _bf_conds or _bf_contacts:
                 st.markdown(
-                    f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
-                    f'padding:8px 12px;margin:4px 0;font-size:12px;color:#444;">'
-                    f'From bulk scan: <b style="color:#79c0ff;">{len(_bf_conds)}</b> condition(s) '
-                    f'and <b style="color:#79c0ff;">{len(_bf_contacts)}</b> contact group(s) '
+                    f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
+                    f'padding:8px 12px;margin:4px 0;font-size:12px;color:#5c6370;">'
+                    f'From bulk scan: <b style="color:#2563eb;">{len(_bf_conds)}</b> condition(s) '
+                    f'and <b style="color:#2563eb;">{len(_bf_contacts)}</b> contact group(s) '
                     f'will be attached to this loan on save.</div>',
                     unsafe_allow_html=True,
                 )
@@ -3514,7 +3630,7 @@ def show_pipeline():
                     st.markdown(
                         f"<div style='font-weight:700;color:#111111;'>"
                         f"#{item.get('loan_num','—')} &nbsp; {item.get('borrower','—')}</div>"
-                        f"<div style='font-size:12px;color:#444;'>"
+                        f"<div style='font-size:12px;color:#5c6370;'>"
                         f"From: {item.get('last_updated_by','?')} &nbsp;·&nbsp; "
                         f"Updated: {item.get('last_updated','')[:10]}</div>",
                         unsafe_allow_html=True,
@@ -3560,7 +3676,7 @@ def show_pipeline():
                     if st.button("Dismiss", key=f"inbox_dismiss_{share_id}", use_container_width=True):
                         dismiss_from_inbox(item["_file"])
                         st.rerun()
-                st.markdown('<div style="height:2px;border-bottom:1px solid #d1d5db;"></div>',
+                st.markdown('<div style="height:2px;border-bottom:1px solid #888;"></div>',
                             unsafe_allow_html=True)
 
     # ── Load and filter loans ────────────────────────────────────────────────
@@ -3633,6 +3749,38 @@ def show_pipeline():
         unsafe_allow_html=True,
     )
 
+    # ── Pipeline-wide progress bar ────────────────────────────────────────────
+    _total_loans = len(all_loans)
+    if _total_loans:
+        _closed = counts.get("Cleared", 0) + counts.get("Closed", 0)
+        _in_prog = counts.get("Requested", 0)
+        _pipeline_pct = int((_closed / _total_loans) * 100)
+        _pipeline_bar_html = (
+            f'<div style="background:#fff;border:1px solid #888;border-radius:3px;'
+            f'padding:6px 10px;margin-bottom:8px;">'
+            f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+            f'<span style="font-size:11px;font-weight:600;color:#374151;">Pipeline Progress</span>'
+            f'<span style="font-size:11px;color:#5c6370;">'
+            f'{_closed} cleared / closed &nbsp;·&nbsp; {_in_prog} in progress &nbsp;·&nbsp; {_total_loans} total</span>'
+            f'</div>'
+            f'<div style="background:#d5d7da;border-radius:2px;height:8px;overflow:hidden;position:relative;">'
+            # cleared/closed portion (green)
+            f'<div style="background:#2e7d32;width:{_pipeline_pct}%;height:100%;'
+            f'border-radius:2px 0 0 2px;position:absolute;left:0;"></div>'
+            # in-progress portion (orange) stacked after green
+            f'<div style="background:#e65100;'
+            f'width:{int((_in_prog/_total_loans)*100)}%;height:100%;'
+            f'position:absolute;left:{_pipeline_pct}%;"></div>'
+            f'</div>'
+            f'<div style="display:flex;gap:12px;margin-top:4px;">'
+            f'<span style="font-size:10px;color:#2e7d32;font-weight:600;">&#9632; Cleared/Closed {_pipeline_pct}%</span>'
+            f'<span style="font-size:10px;color:#e65100;font-weight:600;">&#9632; In Progress {int((_in_prog/_total_loans)*100)}%</span>'
+            f'<span style="font-size:10px;color:#c62828;font-weight:600;">&#9632; Pending/Overdue {100 - _pipeline_pct - int((_in_prog/_total_loans)*100)}%</span>'
+            f'</div>'
+            f'</div>'
+        )
+        st.markdown(_pipeline_bar_html, unsafe_allow_html=True)
+
     # ── Loan rows ────────────────────────────────────────────────────────────
     for loan in loans:
         lid = loan.get("id")
@@ -3659,7 +3807,7 @@ def show_pipeline():
                 parts.append(f"+{created_by}")
             if assigned_to:
                 parts.append(f"{assigned_to}")
-            team_line = f'<div style="font-size:10px;color:#444;margin-top:1px;">{" · ".join(parts)}</div>'
+            team_line = f'<div style="font-size:10px;color:#5c6370;margin-top:1px;">{" · ".join(parts)}</div>'
 
         # Lock expiry badge
         _lock_exp = loan.get("lock_expiry", "")
@@ -3690,6 +3838,52 @@ def show_pipeline():
         _dates_html += f' &nbsp;·&nbsp; Lock: {_lock_dt if _lock_dt else "Not set"}'
         _missing_txt = loan.get("missing_docs", "") or "None"
 
+        # ── Progress calculation ─────────────────────────────────────
+        _conds = loan.get("conditions", [])
+        if _conds:
+            _total_c = len(_conds)
+            _cleared_c = sum(1 for c in _conds if c.get("status") in ("Cleared", "Ready to Clear"))
+            _pct = int((_cleared_c / _total_c) * 100) if _total_c else 0
+            # Boost for Closed status
+            if status == "Closed":
+                _pct = 100
+            _pct_label = f"{_cleared_c}/{_total_c} conditions cleared"
+        else:
+            # No conditions — use milestone-based progress
+            _milestone_pct = {"Pending": 10, "Requested": 30, "Cleared": 75, "Overdue": 20, "Closed": 100}
+            _pct = _milestone_pct.get(status, 10)
+            # Bonus points for key fields being set
+            if loan.get("closing_date") or loan.get("due_date"):
+                _pct = min(_pct + 10, 100)
+            if loan.get("lock_expiry"):
+                _pct = min(_pct + 10, 100)
+            if loan.get("folder_path"):
+                _pct = min(_pct + 5, 100)
+            if not (loan.get("missing_docs") or "").strip() or loan.get("missing_docs") == "None":
+                _pct = min(_pct + 5, 100)
+            _pct_label = f"{status}"
+
+        # Progress bar color
+        if _pct >= 75:
+            _bar_color = "#2e7d32"
+        elif _pct >= 40:
+            _bar_color = "#e65100"
+        else:
+            _bar_color = "#c62828"
+
+        _progress_html = (
+            f'<div style="margin-top:4px;">'
+            f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">'
+            f'<span style="font-size:10px;color:#5c6370;font-weight:500;">{_pct_label}</span>'
+            f'<span style="font-size:11px;color:{_bar_color};font-weight:700;">{_pct}%</span>'
+            f'</div>'
+            f'<div style="background:#d5d7da;border-radius:2px;height:6px;overflow:hidden;">'
+            f'<div style="background:{_bar_color};width:{_pct}%;height:100%;border-radius:2px;'
+            f'transition:width 0.3s;"></div>'
+            f'</div>'
+            f'</div>'
+        )
+
         # Clickable loan card — opens detail view
         _card_label = f"#{loan.get('loan_num','—')}  ·  {loan.get('borrower','—')}  ·  {emoji} {status}"
         if st.button(_card_label, key=f"open_{lid}", use_container_width=True):
@@ -3716,11 +3910,12 @@ def show_pipeline():
         st.markdown(
             f'<div style="background:#fff;border-left:3px solid {border_color};'
             f'border-radius:0 0 3px 3px;padding:4px 10px;margin-top:-10px;margin-bottom:2px;'
-            f'border:1px solid #ddd;border-left:3px solid {border_color};">'
+            f'border:1px solid #888;border-left:3px solid {border_color};">'
             f'{team_line}'
-            f'<div style="font-size:11px;color:#444;font-weight:400;">Closing: {_closing_dt}'
+            f'<div style="font-size:11px;color:#5c6370;font-weight:400;">Closing: {_closing_dt}'
             f' &nbsp;·&nbsp; Lock: {_lock_dt if _lock_dt else "Not set"}</div>'
             f'{_badges_row}'
+            f'{_progress_html}'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -3858,7 +4053,7 @@ def show_pipeline():
                             else:
                                 st.warning("Pick at least one person to share with.")
 
-        st.markdown('<div style="height:2px;border-bottom:1px solid #2a1f5e;margin:2px 0;"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:2px;border-bottom:1px solid #888;margin:2px 0;"></div>', unsafe_allow_html=True)
 
     # ── Removed / Recover Section ────────────────────────────────────────────
     trash_items = get_trash()
@@ -3902,16 +4097,16 @@ def show_pipeline():
                     if _exp_days <= 3:
                         _exp_tag = f'<span style="color:#e74c3c;font-size:10px;font-weight:600;">deletes in {max(0,_exp_days)}d</span>'
                     else:
-                        _exp_tag = f'<span style="color:#444;font-size:10px;">deletes in {_exp_days}d</span>'
+                        _exp_tag = f'<span style="color:#5c6370;font-size:10px;">deletes in {_exp_days}d</span>'
                 else:
-                    _exp_tag = '<span style="color:#444;font-size:10px;">kept forever</span>'
+                    _exp_tag = '<span style="color:#5c6370;font-size:10px;">kept forever</span>'
 
                 tc1, tc2, tc3 = st.columns([4, 1, 1])
                 with tc1:
                     st.markdown(
-                        f'<span style="font-weight:700;color:#79c0ff;">#{tl.get("loan_num", "—")}</span>'
+                        f'<span style="font-weight:700;color:#2563eb;">#{tl.get("loan_num", "—")}</span>'
                         f' &nbsp;{tl.get("borrower", "—")}'
-                        f' &nbsp;<span style="color:#444;font-size:10px;">removed {tl.get("deleted_on", "?")}</span>'
+                        f' &nbsp;<span style="color:#5c6370;font-size:10px;">removed {tl.get("deleted_on", "?")}</span>'
                         f' &nbsp;{_exp_tag}',
                         unsafe_allow_html=True,
                     )
@@ -4156,7 +4351,7 @@ def show_team_page():
                 st.error(f"Can't reach folder: {msg}")
 
     st.markdown(
-        f"<div style='font-size:12px;color:#444;margin-top:4px;'>"
+        f"<div style='font-size:12px;color:#5c6370;margin-top:4px;'>"
         f"Share this path with teammates so they can drop files for you: "
         f"<code style='color:#2563eb;'>{config.get('my_inbox','(not set)')}</code>"
         f"</div>",
@@ -4203,7 +4398,7 @@ def show_team_page():
 
     # ── Current Team List ───────────────────────────────────────────────────
     members = get_members()
-    st.markdown(f"### My Team &nbsp; <span style='font-size:13px;color:#444;'>({len(members)} people)</span>",
+    st.markdown(f"### My Team &nbsp; <span style='font-size:13px;color:#5c6370;'>({len(members)} people)</span>",
                 unsafe_allow_html=True)
 
     if not members:
@@ -4228,7 +4423,7 @@ def show_team_page():
                 reachable = os.path.isdir(inbox_path) if inbox_path else False
                 dot = "●" if reachable else "●"
                 st.markdown(
-                    f"<div style='font-size:12px;color:#444;'>{dot} "
+                    f"<div style='font-size:12px;color:#5c6370;'>{dot} "
                     f"<code style='color:#333333;'>{inbox_path or '(no path)'}</code></div>",
                     unsafe_allow_html=True,
                 )
@@ -4236,7 +4431,7 @@ def show_team_page():
                 if st.button("Remove", key=f"rm_{m['name']}", use_container_width=True):
                     remove_member(m["name"])
                     st.rerun()
-            st.markdown('<div style="height:4px;border-bottom:1px solid #d1d5db;margin-bottom:4px;"></div>',
+            st.markdown('<div style="height:4px;border-bottom:1px solid #888;margin-bottom:4px;"></div>',
                         unsafe_allow_html=True)
 
 
@@ -4292,9 +4487,9 @@ def show_email_watch_page():
         )
     else:
         st.markdown(
-            f'<div style="background:#ffffff;border-left:4px solid #d1d5db;border-radius:8px;'
+            f'<div style="background:#ffffff;border-left:4px solid #888;border-radius:8px;'
             f'padding:10px 16px;margin-bottom:16px;">'
-            f'<span style="font-size:14px;font-weight:700;color:#444;">● Inbox watch is off</span>'
+            f'<span style="font-size:14px;font-weight:700;color:#5c6370;">● Inbox watch is off</span>'
             + (f'<span style="font-size:12px;color:#d1d5db;margin-left:12px;">'
                f'Last check: {status["last_time"]} · {status["last_status"]}</span>'
                if status["last_time"] else "")
@@ -4346,8 +4541,8 @@ def show_email_watch_page():
                 mc1, mc2 = st.columns([3, 1])
                 with mc1:
                     st.markdown(
-                        f'<div style="font-size:12px;color:#444;">From: {m["sender"]}</div>'
-                        f'<div style="font-size:12px;color:#444;">Subject: {m["subject"]}</div>'
+                        f'<div style="font-size:12px;color:#5c6370;">From: {m["sender"]}</div>'
+                        f'<div style="font-size:12px;color:#5c6370;">Subject: {m["subject"]}</div>'
                         f'<div style="font-size:13px;font-weight:700;color:{conf_color};margin-top:6px;">'
                         f'{conf_label}</div>',
                         unsafe_allow_html=True,
@@ -4398,7 +4593,7 @@ def show_email_watch_page():
     with st.expander(_iq_label, expanded=bool(_inbox_files)):
         if not _inbox_files:
             st.markdown(
-                '<span style="color:#444;font-size:13px;">No files in the incoming folder. '
+                '<span style="color:#5c6370;font-size:13px;">No files in the incoming folder. '
                 'Files appear here when Email Watch downloads attachments.</span>',
                 unsafe_allow_html=True,
             )
@@ -4438,7 +4633,7 @@ def show_email_watch_page():
                         f'border-radius:6px;padding:8px 12px;margin-bottom:6px;">'
                         f'<span style="font-weight:700;color:#111111;font-size:13px;">'
                         f'{_v_icon} {_qfname}</span>'
-                        f'<span style="font-size:12px;color:#444;">{_match_label}</span><br>'
+                        f'<span style="font-size:12px;color:#5c6370;">{_match_label}</span><br>'
                         f'<span style="font-size:11px;color:#2563eb;">{_qv.get("doc_type","Document")} · '
                         f'{_qv.get("page_count",0)} pages · '
                         f'{_qv.get("days_old","?")}d old</span></div>',
@@ -4859,7 +5054,7 @@ def show_billing_page():
     notes = _bl.get_notes(uid)
     if notes:
         for n in notes:
-            st.markdown(f'<div style="font-size:13px;color:#444;">· {n}</div>',
+            st.markdown(f'<div style="font-size:13px;color:#5c6370;">· {n}</div>',
                         unsafe_allow_html=True)
 
     # ── Monthly history ───────────────────────────────────────────────────────
@@ -4940,15 +5135,38 @@ def show_loan_detail():
         st.rerun()
 
     # ── Header ────────────────────────────────────────────────────────────
+    # Compute progress for detail view
+    _ld_conds = loan.get("conditions", [])
+    if _ld_conds:
+        _ld_total = len(_ld_conds)
+        _ld_cleared = sum(1 for c in _ld_conds if c.get("status") in ("Cleared", "Ready to Clear"))
+        _ld_pct = int((_ld_cleared / _ld_total) * 100) if _ld_total else 0
+        if status == "Closed": _ld_pct = 100
+        _ld_label = f"{_ld_cleared} of {_ld_total} conditions cleared"
+    else:
+        _ld_pct = {"Pending": 10, "Requested": 35, "Cleared": 80, "Overdue": 20, "Closed": 100}.get(status, 10)
+        if loan.get("closing_date"): _ld_pct = min(_ld_pct + 10, 100)
+        if loan.get("lock_expiry"):  _ld_pct = min(_ld_pct + 10, 100)
+        _ld_label = f"{status} — no conditions tracked yet"
+    _ld_bar_color = "#2e7d32" if _ld_pct >= 75 else ("#e65100" if _ld_pct >= 40 else "#c62828")
+
     st.markdown(
-        f'<div style="background:#fff;border:1px solid #ddd;border-left:3px solid {border_color};'
+        f'<div style="background:#fff;border:1px solid #888;border-left:3px solid {border_color};'
         f'border-radius:3px;padding:12px 14px;margin:4px 0;">'
-        f'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
+        f'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">'
         f'<span style="font-size:16px;font-weight:700;color:#1565c0;">#{loan.get("loan_num","—")}</span>'
         f'<span style="font-size:15px;font-weight:600;color:#111;">{loan.get("borrower","—")}</span>'
         f'<span class="status-chip status-{status.lower()}" style="font-size:13px;">'
         f'<span style="color:{border_color};font-size:10px;">●</span> {status}</span>'
-        f'</div></div>',
+        f'</div>'
+        f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'
+        f'<span style="font-size:11px;color:#5c6370;">{_ld_label}</span>'
+        f'<span style="font-size:12px;font-weight:700;color:{_ld_bar_color};">{_ld_pct}% to close</span>'
+        f'</div>'
+        f'<div style="background:#d5d7da;border-radius:2px;height:8px;overflow:hidden;">'
+        f'<div style="background:{_ld_bar_color};width:{_ld_pct}%;height:100%;border-radius:2px;"></div>'
+        f'</div>'
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -4978,15 +5196,15 @@ def show_loan_detail():
             elif diff <= 7:
                 return f'<span style="color:#f39c12;font-weight:700;"> ({diff}d left)</span>'
             else:
-                return f'<span style="color:#444;"> ({diff}d)</span>'
+                return f'<span style="color:#5c6370;"> ({diff}d)</span>'
         except Exception:
             return ""
 
     d1, d2, d3, d4, d5 = st.columns(5)
     with d1:
         st.markdown(
-            f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;padding:10px;">'
-            f'<div style="font-size:10px;color:#79c0ff;font-weight:700;text-transform:uppercase;">Closing Date</div>'
+            f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;padding:10px;">'
+            f'<div style="font-size:10px;color:#2563eb;font-weight:700;text-transform:uppercase;">Closing Date</div>'
             f'<div style="font-size:16px;font-weight:700;color:#111111;margin-top:4px;">'
             f'{_closing or "Not set"}{_days_away(_closing)}</div></div>',
             unsafe_allow_html=True,
@@ -5009,15 +5227,15 @@ def show_loan_detail():
         )
     with d4:
         st.markdown(
-            f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;padding:10px;">'
-            f'<div style="font-size:10px;color:#444;font-weight:700;text-transform:uppercase;">Created</div>'
+            f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;padding:10px;">'
+            f'<div style="font-size:10px;color:#5c6370;font-weight:700;text-transform:uppercase;">Created</div>'
             f'<div style="font-size:14px;color:#111111;margin-top:4px;">{_created or "—"}</div></div>',
             unsafe_allow_html=True,
         )
     with d5:
         st.markdown(
-            f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;padding:10px;">'
-            f'<div style="font-size:10px;color:#444;font-weight:700;text-transform:uppercase;">Last Updated</div>'
+            f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;padding:10px;">'
+            f'<div style="font-size:10px;color:#5c6370;font-weight:700;text-transform:uppercase;">Last Updated</div>'
             f'<div style="font-size:14px;color:#111111;margin-top:4px;">{_updated or "—"}</div></div>',
             unsafe_allow_html=True,
         )
@@ -5038,7 +5256,7 @@ def show_loan_detail():
             ("Assigned To", loan.get("assigned_to") or "Unassigned"),
         ]
         _rows_html = "".join(
-            f'<tr><td style="padding:4px 12px 4px 0;color:#444;font-size:12px;font-weight:600;'
+            f'<tr><td style="padding:4px 12px 4px 0;color:#5c6370;font-size:12px;font-weight:600;'
             f'white-space:nowrap;vertical-align:top;">{k}</td>'
             f'<td style="padding:4px 0;color:#111111;font-size:13px;">{v}</td></tr>'
             for k, v in _fields_left
@@ -5056,7 +5274,7 @@ def show_loan_detail():
             ("Folder", loan.get("folder_path") or "Not set"),
         ]
         _rows_html2 = "".join(
-            f'<tr><td style="padding:4px 12px 4px 0;color:#444;font-size:12px;font-weight:600;'
+            f'<tr><td style="padding:4px 12px 4px 0;color:#5c6370;font-size:12px;font-weight:600;'
             f'white-space:nowrap;vertical-align:top;">{k}</td>'
             f'<td style="padding:4px 0;color:#111111;font-size:13px;">{v}</td></tr>'
             for k, v in _fields_right
@@ -5115,7 +5333,7 @@ def show_loan_detail():
             _p_color = _PC.get(_c_party, "#6c757d")
             _cond_rows_html += (
                 f'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;'
-                f'border-bottom:1px solid #2a1f5e;">'
+                f'border-bottom:1px solid #888;">'
                 f'<span style="min-width:18px;font-size:13px;">{_c_emoji}</span>'
                 f'<span style="flex:1;color:#111111;font-size:13px;">{_c_desc}</span>'
                 f'<span style="background:{_p_color};color:#fff;font-size:10px;font-weight:600;'
@@ -5127,7 +5345,7 @@ def show_loan_detail():
         st.markdown(_cond_rows_html, unsafe_allow_html=True)
     else:
         st.markdown(
-            '<span style="color:#444;font-size:12px;">No conditions attached to this loan yet. '
+            '<span style="color:#5c6370;font-size:12px;">No conditions attached to this loan yet. '
             'Upload and scan a document to extract conditions.</span>',
             unsafe_allow_html=True,
         )
@@ -5173,17 +5391,17 @@ def show_loan_detail():
                 _detail_parts.append(f'{_caddr}')
             _detail_str = " &nbsp;·&nbsp; ".join(_detail_parts) if _detail_parts else '<span style="color:#6c757d;">No details</span>'
             _contact_html += (
-                f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;padding:10px;">'
-                f'<div style="font-size:10px;color:#79c0ff;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
+                f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;padding:10px;">'
+                f'<div style="font-size:10px;color:#2563eb;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
                 f'<div style="color:#111111;font-size:13px;font-weight:600;">{_cname or "—"}</div>'
-                f'<div style="color:#444;font-size:11px;margin-top:3px;">{_detail_str}</div>'
+                f'<div style="color:#5c6370;font-size:11px;margin-top:3px;">{_detail_str}</div>'
                 f'</div>'
             )
         _contact_html += '</div>'
         st.markdown(_contact_html, unsafe_allow_html=True)
     else:
         st.markdown(
-            '<span style="color:#444;font-size:12px;">No contact information attached. '
+            '<span style="color:#5c6370;font-size:12px;">No contact information attached. '
             'Upload a Purchase Contract or 1003 to populate parties.</span>',
             unsafe_allow_html=True,
         )
@@ -5243,9 +5461,9 @@ def show_loan_detail():
                 _pc_txn = _pcd.get("transaction", {})
 
                 st.markdown(
-                    '<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
-                    'padding:10px;margin:8px 0;font-size:12px;color:#444;">'
-                    '<b style="color:#79c0ff;">Purchase Contract found:</b><br>'
+                    '<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
+                    'padding:10px;margin:8px 0;font-size:12px;color:#5c6370;">'
+                    '<b style="color:#2563eb;">Purchase Contract found:</b><br>'
                     f'Buyer: {_pc_buyer.get("name","—")} · Seller: {_pc_seller.get("name","—")}<br>'
                     f'Price: ${_pc_txn.get("purchase_price","—")} · Close: {_pc_txn.get("closing_date","—")}'
                     '</div>',
@@ -5284,9 +5502,9 @@ def show_loan_detail():
                 _app_emp = _app.get("employment", {})
 
                 st.markdown(
-                    '<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
-                    'padding:10px;margin:8px 0;font-size:12px;color:#444;">'
-                    '<b style="color:#79c0ff;">1003 Application found:</b><br>'
+                    '<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
+                    'padding:10px;margin:8px 0;font-size:12px;color:#5c6370;">'
+                    '<b style="color:#2563eb;">1003 Application found:</b><br>'
                     f'Borrower: {_app_b.get("name","—")} · Phone: {_app_b.get("phone","—")}<br>'
                     f'Employer: {_app_emp.get("employer","—")}'
                     '</div>',
@@ -5326,9 +5544,9 @@ def show_loan_detail():
 
                 if _new_conds:
                     st.markdown(
-                        f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
-                        f'padding:10px;margin:8px 0;font-size:12px;color:#444;">'
-                        f'<b style="color:#79c0ff;">{_sr_dtype} scanned:</b> '
+                        f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
+                        f'padding:10px;margin:8px 0;font-size:12px;color:#5c6370;">'
+                        f'<b style="color:#2563eb;">{_sr_dtype} scanned:</b> '
                         f'{len(_new_conds)} condition(s) found</div>',
                         unsafe_allow_html=True,
                     )
@@ -5337,7 +5555,7 @@ def show_loan_detail():
                         st.markdown(
                             f'<span style="color:#f1c40f;font-size:12px;">●</span> '
                             f'<span style="color:#111111;font-size:12px;">{_nc["desc"]}</span> '
-                            f'<span style="color:#444;font-size:11px;">— {_nc["party"]}</span>',
+                            f'<span style="color:#5c6370;font-size:11px;">— {_nc["party"]}</span>',
                             unsafe_allow_html=True,
                         )
 
@@ -5362,9 +5580,9 @@ def show_loan_detail():
             # ── Bank Statement → show rules ──
             elif _sr.get("bank_rules"):
                 st.markdown(
-                    f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
-                    f'padding:10px;margin:8px 0;font-size:12px;color:#444;">'
-                    f'<b style="color:#79c0ff;">Bank Statement Analysis:</b></div>',
+                    f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
+                    f'padding:10px;margin:8px 0;font-size:12px;color:#5c6370;">'
+                    f'<b style="color:#2563eb;">Bank Statement Analysis:</b></div>',
                     unsafe_allow_html=True,
                 )
                 st.markdown(_sr["bank_rules"])
@@ -5481,12 +5699,12 @@ def show_loan_detail():
             _af_borrower = _af_data["borrower"]
 
             st.markdown(
-                f'<div style="background:#ffffff;border:1px solid #d1d5db;border-radius:8px;'
+                f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
                 f'padding:10px;margin:8px 0;">'
                 f'<div style="display:flex;justify-content:space-between;align-items:center;">'
                 f'<div>'
-                f'<span style="color:#79c0ff;font-weight:700;font-size:13px;">Approval Letter Scanned</span><br>'
-                f'<span style="color:#444;font-size:12px;">Borrower: <b style="color:#111111;">'
+                f'<span style="color:#2563eb;font-weight:700;font-size:13px;">Approval Letter Scanned</span><br>'
+                f'<span style="color:#5c6370;font-size:12px;">Borrower: <b style="color:#111111;">'
                 f'{_af_borrower or "Unknown"}</b> · '
                 f'{_af_data["cond_count"]} condition(s) extracted · '
                 f'{_af_data["text_length"]:,} chars'
@@ -5597,9 +5815,9 @@ def show_loan_detail():
                                 f'<span style="color:#a8d8a8;font-size:11px;">{_best["file_name"]}'
                                 f' &nbsp;·&nbsp; <span style="color:{_conf_color};">{_best["score"]}% match</span>'
                                 f' &nbsp;·&nbsp; {_best["match_type"]}</span>'
-                                + (f'<br><span style="color:#444;font-size:11px;font-style:italic;">'
+                                + (f'<br><span style="color:#5c6370;font-size:11px;font-style:italic;">'
                                    f'{_best["snippet"][:120]}</span>' if _best.get("snippet") else "")
-                                + (f'<br><span style="color:#444;font-size:10px;">'
+                                + (f'<br><span style="color:#5c6370;font-size:10px;">'
                                    f'+{len(_matches)-1} more file(s)</span>' if len(_matches) > 1 else "")
                                 + f'</div>'
                                 f'<span style="background:{_conf_color};color:#fff;font-size:10px;'
@@ -5776,7 +5994,7 @@ def show_loan_detail():
     activity = get_activity(lid)
     if not activity:
         st.markdown(
-            '<span style="color:#444;font-size:12px;">No activity recorded yet. '
+            '<span style="color:#5c6370;font-size:12px;">No activity recorded yet. '
             'Actions on this loan will appear here.</span>',
             unsafe_allow_html=True,
         )
@@ -5799,13 +6017,13 @@ def show_loan_detail():
             _detail = entry.get("detail", "")
             _user = entry.get("user", "")
             _icon = _act_icons.get(_action, "●")
-            _user_tag = f'<span style="color:#79c0ff;font-weight:600;">{_user}</span> · ' if _user else ""
+            _user_tag = f'<span style="color:#2563eb;font-weight:600;">{_user}</span> · ' if _user else ""
             st.markdown(
-                f'<div style="display:flex;gap:10px;padding:4px 0;border-bottom:1px solid #2a1f5e;">'
+                f'<div style="display:flex;gap:10px;padding:4px 0;border-bottom:1px solid #888;">'
                 f'<span style="font-size:14px;min-width:20px;">{_icon}</span>'
                 f'<div>'
                 f'<span style="color:#111111;font-size:12px;">{_detail}</span><br>'
-                f'<span style="color:#444;font-size:10px;">{_user_tag}{_ts}</span>'
+                f'<span style="color:#5c6370;font-size:10px;">{_user_tag}{_ts}</span>'
                 f'</div></div>',
                 unsafe_allow_html=True,
             )

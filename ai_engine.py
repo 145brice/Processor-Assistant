@@ -356,6 +356,177 @@ def _guess_party(text: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Bank Statement — Key Field Extraction
+# ---------------------------------------------------------------------------
+
+def extract_bank_statement_fields(pdf_text: str) -> dict:
+    """
+    Extract specific data points from a bank statement:
+    account holder names, account number, statement period,
+    beginning balance, ending balance, institution name.
+    Returns a dict of extracted values (None if not found).
+    """
+    t = pdf_text
+    result = {
+        "holder_names":      [],
+        "account_number":    None,
+        "institution":       None,
+        "statement_month":   None,
+        "period_start":      None,
+        "period_end":        None,
+        "beginning_balance": None,
+        "ending_balance":    None,
+        "lowest_balance":    None,
+        "deposits_total":    None,
+        "withdrawals_total": None,
+    }
+
+    # ── Institution name ─────────────────────────────────────────────────────
+    inst_m = re.search(
+        r'(?i)^([A-Z][A-Za-z\s&,\.]+(?:Bank|Credit Union|Financial|Savings|N\.?A\.|F\.?S\.?B\.))',
+        t, re.MULTILINE
+    )
+    if inst_m:
+        result["institution"] = inst_m.group(1).strip()
+
+    # ── Account holder name(s) ───────────────────────────────────────────────
+    # Look for lines near "Account Holder", "Name:", "Primary Owner", etc.
+    name_patterns = [
+        r'(?i)(?:account\s*holder|primary\s*owner|name\s*on\s*account|account\s*name)\s*[:\-]?\s*([A-Z][A-Za-z\-\']+(?:\s+[A-Z][A-Za-z\-\']+){1,4})',
+        r'(?i)(?:statement\s*(?:for|prepared\s*for)|account\s*of)\s*([A-Z][A-Za-z\-\']+(?:\s+[A-Z][A-Za-z\-\']+){1,3})',
+    ]
+    names_found = []
+    for pat in name_patterns:
+        for m in re.finditer(pat, t):
+            name = m.group(1).strip()
+            if name and name not in names_found:
+                names_found.append(name)
+    # Also try: lines that look like "JOHN A SMITH" or "John Smith" at top of doc
+    top_text = t[:800]
+    for m in re.finditer(r'\b([A-Z][A-Z\-\']+\s+(?:[A-Z]\s+)?[A-Z][A-Z\-\']{2,})\b', top_text):
+        candidate = m.group(1).strip()
+        # Skip obvious non-name all-caps institution words
+        skip = {"BANK", "ACCOUNT", "STATEMENT", "BALANCE", "CHECKING", "SAVINGS",
+                 "MEMBER", "FDIC", "INSURED", "PERIOD", "ENDING", "BEGINNING"}
+        if not any(w in candidate.split() for w in skip) and len(candidate) > 5:
+            if candidate not in names_found:
+                names_found.append(candidate)
+    result["holder_names"] = names_found[:3]  # max 3
+
+    # ── Account number ────────────────────────────────────────────────────────
+    acct_m = re.search(
+        r'(?i)account\s*(?:number|#|no\.?)\s*[:\-]?\s*([\dX\*\-]{4,20})',
+        t
+    )
+    if not acct_m:
+        # Try masked format like "****1234" or "XXXX-1234"
+        acct_m = re.search(r'(?i)(?:acct\.?|account)\s*[:\-]?\s*([X\*\-\d]{6,20})', t)
+    if not acct_m:
+        # Last 4 format
+        acct_m = re.search(r'(?i)(?:ending|last)\s*(?:in|with)?\s*(\d{4})\b', t)
+    if acct_m:
+        result["account_number"] = acct_m.group(1).strip()
+
+    # ── Statement period ──────────────────────────────────────────────────────
+    # "Statement Period: 01/01/2024 - 01/31/2024"
+    period_m = re.search(
+        r'(?i)(?:statement\s*period|from|period)\s*[:\-]?\s*'
+        r'(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*(?:through|to|\-|–)\s*'
+        r'(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})',
+        t
+    )
+    if period_m:
+        result["period_start"] = period_m.group(1)
+        result["period_end"]   = period_m.group(2)
+        # Derive month label
+        try:
+            from datetime import datetime
+            dt = datetime.strptime(period_m.group(2), "%m/%d/%Y")
+            result["statement_month"] = dt.strftime("%B %Y")
+        except Exception:
+            result["statement_month"] = period_m.group(2)
+    else:
+        # Try "January 2024 Statement" style
+        month_m = re.search(
+            r'(?i)(January|February|March|April|May|June|July|August|September|October|November|December)'
+            r'\s+(\d{4})',
+            t
+        )
+        if month_m:
+            result["statement_month"] = f"{month_m.group(1)} {month_m.group(2)}"
+
+    # ── Balances ──────────────────────────────────────────────────────────────
+    def _extract_dollar(pattern, text):
+        m = re.search(pattern, text, re.IGNORECASE)
+        if m:
+            return m.group(1).replace(",", "").strip()
+        return None
+
+    result["beginning_balance"] = _extract_dollar(
+        r'(?:beginning|opening|start(?:ing)?)\s*balance\s*[\$:]?\s*([\$\d,]+\.\d{2})', t
+    )
+    result["ending_balance"] = _extract_dollar(
+        r'(?:ending|closing|end(?:ing)?)\s*balance\s*[\$:]?\s*([\$\d,]+\.\d{2})', t
+    )
+    result["lowest_balance"] = _extract_dollar(
+        r'(?:low(?:est)?|minimum)\s*balance\s*[\$:]?\s*([\$\d,]+\.\d{2})', t
+    )
+    result["deposits_total"] = _extract_dollar(
+        r'(?:total\s*deposits?|deposits?\s*total|total\s*credits?)\s*[\$:]?\s*([\$\d,]+\.\d{2})', t
+    )
+    result["withdrawals_total"] = _extract_dollar(
+        r'(?:total\s*withdrawals?|withdrawals?\s*total|total\s*debits?|total\s*checks?)\s*[\$:]?\s*([\$\d,]+\.\d{2})', t
+    )
+
+    return result
+
+
+def cross_reference_approval(bank_text: str, approval_notes: str) -> list:
+    """
+    Given bank statement text and freeform approval condition notes,
+    look for dollar amounts and payees mentioned in the approval notes
+    inside the bank statement. Returns a list of match result dicts.
+    """
+    results = []
+    if not approval_notes.strip():
+        return results
+
+    # Extract dollar amounts from approval notes
+    amounts = re.findall(r'\$\s*([\d,]+(?:\.\d{2})?)', approval_notes)
+    for amt_str in amounts:
+        amt_clean = amt_str.replace(",", "")
+        # Search bank text for same amount
+        pattern = re.escape(amt_str.replace(",", "")) + r'|' + re.escape(amt_str)
+        found = bool(re.search(pattern, bank_text))
+        results.append({
+            "type":  "amount",
+            "query": f"${amt_str}",
+            "found": found,
+            "note":  f"Amount ${amt_str} {'found in statement' if found else 'NOT found in statement'}",
+        })
+
+    # Extract payee/company names from approval notes (capitalized words 3+ chars)
+    payees = re.findall(r'\b([A-Z][a-z]{2,}(?:\s+[A-Z][a-z]{2,}){0,3})\b', approval_notes)
+    # Deduplicate and filter common words
+    skip = {"The", "And", "For", "With", "From", "That", "This", "Per", "Any",
+            "All", "Bank", "Loan", "Must", "Will", "See", "Also"}
+    seen = set()
+    for payee in payees:
+        if payee in skip or payee in seen:
+            continue
+        seen.add(payee)
+        found = bool(re.search(re.escape(payee), bank_text, re.IGNORECASE))
+        results.append({
+            "type":  "payee",
+            "query": payee,
+            "found": found,
+            "note":  f"'{payee}' {'found in statement' if found else 'not found in statement'}",
+        })
+
+    return results
+
+
+# ---------------------------------------------------------------------------
 # Bank Statement Analysis (50-rule offline check)
 # ---------------------------------------------------------------------------
 
@@ -2647,6 +2818,8 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None) -> dict
     if doc_type == "Bank Statement":
         result["conditions"] = ""
         result["bank_rules"] = check_bank_rules(text, user_history)
+        result["bank_fields"] = extract_bank_statement_fields(text)
+        result["bank_raw_text"] = text[:20000]  # kept for cross-reference
     elif doc_type == "1003 Application":
         result["conditions"] = ""
         result["extracted_data"] = extract_1003(text)
