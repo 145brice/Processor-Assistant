@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(taskkill *)",
+      "Bash(timeout *)",
+      "Bash(streamlit *)",
+      "Bash(python *)",
+      "Bash(tasklist)",
+      "Bash(findstr *)",
+      "Bash(netstat *)",
+      "Bash(curl *)",
+      "Bash(cd *)",
+      "Bash(type *)",
+      "Bash(do *)",
+      "Bash(wmic *)"
+    ]
+  },
+  "$version": 3
+}
