@@ -400,15 +400,14 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     margin-bottom: 0 !important;
 }
 
-/* ── Collapse vertical gaps between loan card elements ──────────── */
-[data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
-[data-testid="stVerticalBlock"] > [data-testid="element-container"],
-[data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"] {
-    margin-bottom: 0 !important;
-    margin-top: 0 !important;
-}
+/* ── Tighten vertical gaps globally but not to zero ─────────────── */
 [data-testid="stVerticalBlock"] {
-    gap: 0 !important;
+    gap: 4px !important;
+}
+/* Login / form pages need more breathing room — override back */
+[data-testid="stForm"] [data-testid="stVerticalBlock"],
+[data-testid="stTabs"] [data-testid="stVerticalBlock"] {
+    gap: 8px !important;
 }
 
 /* ── Multiselect ──────────────────────────────────────────────── */
@@ -3119,13 +3118,16 @@ def show_pipeline():
                 with _row_col:
                     st.markdown(
                         f'<div style="background:{_bg};border:1px solid {_bdr};border-left:3px solid {_color};'
-                        f'border-radius:3px;padding:5px 10px;margin-bottom:2px;display:flex;align-items:center;gap:6px;">'
-                        f'{_cal_svg(_color)}'
-                        f'<div>'
+                        f'border-radius:3px;padding:5px 10px;margin-bottom:2px;display:flex;align-items:center;'
+                        f'gap:6px;min-width:0;overflow:hidden;">'
+                        f'<div style="flex-shrink:0;">{_cal_svg(_color)}</div>'
+                        f'<div style="min-width:0;flex:1;">'
+                        f'<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
                         f'<span style="color:{_color};font-size:11px;font-weight:700;">{_label}</span>'
                         f'&nbsp;&nbsp;<span style="color:#374151;font-size:12px;font-weight:600;">#{_num} {_bor}</span>'
-                        f'<br><span style="color:#5c6370;font-size:10px;">'
-                        f'Close: {_close_display} &nbsp;·&nbsp; Lock: {_lock_display}</span>'
+                        f'</div>'
+                        f'<div style="color:#5c6370;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
+                        f'Close: {_close_display} &nbsp;·&nbsp; Lock: {_lock_display}</div>'
                         f'</div></div>',
                         unsafe_allow_html=True,
                     )
