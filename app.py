@@ -381,6 +381,36 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     border-radius: 3px !important;
 }
 
+/* ── Pipeline action row buttons (status, share, delete) ─────── */
+[data-testid="stHorizontalBlock"] button[kind="secondaryFormSubmit"],
+[data-testid="stHorizontalBlock"] button[kind="primaryFormSubmit"],
+[data-testid="stHorizontalBlock"] button[kind="secondary"] {
+    height: 24px !important;
+    font-size: 11px !important;
+    padding: 0 6px !important;
+    min-height: 0 !important;
+    line-height: 1 !important;
+}
+[data-testid="stHorizontalBlock"] select {
+    height: 24px !important;
+    font-size: 11px !important;
+    padding: 1px 4px !important;
+}
+[data-testid="stHorizontalBlock"] > div > div {
+    margin-bottom: 0 !important;
+}
+
+/* ── Collapse vertical gaps between loan card elements ──────────── */
+[data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
+[data-testid="stVerticalBlock"] > [data-testid="element-container"],
+[data-testid="stVerticalBlock"] > [data-testid="stHorizontalBlock"] {
+    margin-bottom: 0 !important;
+    margin-top: 0 !important;
+}
+[data-testid="stVerticalBlock"] {
+    gap: 0 !important;
+}
+
 /* ── Multiselect ──────────────────────────────────────────────── */
 [data-testid="stMultiSelect"] > div {
     background: #fff !important;
@@ -511,10 +541,10 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     background: #fff;
     border: 1px solid #888;
     border-radius: 3px;
-    padding: 8px 12px;
-    margin: 0 0 2px 0;
+    padding: 4px 8px;
+    margin: 0 0 1px 0;
     transition: background 0.15s;
-    line-height: 1.4;
+    line-height: 1.2;
     box-shadow: none;
 }
 .loan-card:hover {
@@ -523,10 +553,10 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     box-shadow: none;
     transform: none;
 }
-.loan-num   { font-size: 13px; font-weight: 700; color: #1565c0; font-family: 'Inter', monospace; }
-.loan-name  { font-size: 13px; color: #111; font-weight: 600; }
-.loan-due   { font-size: 11px; color: #5c6370; font-weight: 400; }
-.loan-missing { font-size: 11px; color: #c62828; font-weight: 500; }
+.loan-num   { font-size: 12px; font-weight: 700; color: #1565c0; font-family: 'Inter', monospace; }
+.loan-name  { font-size: 12px; color: #111; font-weight: 600; }
+.loan-due   { font-size: 10px; color: #5c6370; font-weight: 400; }
+.loan-missing { font-size: 10px; color: #c62828; font-weight: 500; }
 
 /* ── Stat cards (pipeline counts — inline chips now) ─────────── */
 .stat-card {
@@ -565,7 +595,7 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
 }
 
 /* ── Subtle layout tightening ────────────────────────────────── */
-[data-testid="stHorizontalBlock"] { gap: 0.4rem; }
+[data-testid="stHorizontalBlock"] { gap: 0.2rem !important; }
 
 /* ── Toasts, alerts, and popups ──────────────────────────────── */
 [data-testid="stToast"],
@@ -3807,7 +3837,7 @@ def show_pipeline():
                 parts.append(f"+{created_by}")
             if assigned_to:
                 parts.append(f"{assigned_to}")
-            team_line = f'<div style="font-size:10px;color:#5c6370;margin-top:1px;">{" · ".join(parts)}</div>'
+            team_line = f'<div style="font-size:9px;color:#5c6370;margin-top:0px;">{" · ".join(parts)}</div>'
 
         # Lock expiry badge
         _lock_exp = loan.get("lock_expiry", "")
@@ -3872,12 +3902,12 @@ def show_pipeline():
             _bar_color = "#c62828"
 
         _progress_html = (
-            f'<div style="margin-top:4px;">'
-            f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px;">'
-            f'<span style="font-size:10px;color:#5c6370;font-weight:500;">{_pct_label}</span>'
-            f'<span style="font-size:11px;color:{_bar_color};font-weight:700;">{_pct}%</span>'
+            f'<div style="margin-top:2px;">'
+            f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1px;">'
+            f'<span style="font-size:9px;color:#5c6370;font-weight:500;">{_pct_label}</span>'
+            f'<span style="font-size:10px;color:{_bar_color};font-weight:700;">{_pct}%</span>'
             f'</div>'
-            f'<div style="background:#d5d7da;border-radius:2px;height:6px;overflow:hidden;">'
+            f'<div style="background:#d5d7da;border-radius:2px;height:4px;overflow:hidden;">'
             f'<div style="background:{_bar_color};width:{_pct}%;height:100%;border-radius:2px;'
             f'transition:width 0.3s;"></div>'
             f'</div>'
@@ -3903,16 +3933,16 @@ def show_pipeline():
         _badges_row = ""
         if _status_items:
             _badges_row = (
-                f'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px;">'
+                f'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:1px;">'
                 f'{"".join(_status_items)}</div>'
             )
 
         st.markdown(
             f'<div style="background:#fff;border-left:3px solid {border_color};'
-            f'border-radius:0 0 3px 3px;padding:4px 10px;margin-top:-10px;margin-bottom:2px;'
+            f'border-radius:0 0 3px 3px;padding:1px 8px 3px 8px;margin-top:-4px;margin-bottom:6px;'
             f'border:1px solid #888;border-left:3px solid {border_color};">'
             f'{team_line}'
-            f'<div style="font-size:11px;color:#5c6370;font-weight:400;">Closing: {_closing_dt}'
+            f'<div style="font-size:10px;color:#5c6370;font-weight:400;">Closing: {_closing_dt}'
             f' &nbsp;·&nbsp; Lock: {_lock_dt if _lock_dt else "Not set"}</div>'
             f'{_badges_row}'
             f'{_progress_html}'
@@ -3920,8 +3950,38 @@ def show_pipeline():
             unsafe_allow_html=True,
         )
 
-        # ── Action row: status buttons + folder ───────────────────────────
-        ac1, ac2, ac3, ac4, ac5, ac6 = st.columns([1, 1, 1, 1, 1, 1])
+        # ── Action row: status buttons + folder + remove ────────────────────
+        _del_key = f"confirm_del_{lid}"
+        _del_open = st.session_state.get(_del_key)
+
+        # Process query params for remove actions
+        _qp = st.query_params
+        _qp_del = _qp.get("del", "")
+        if isinstance(_qp_del, list):
+            _qp_del = _qp_del[0] if _qp_del else ""
+        if _qp_del == str(lid):
+            st.session_state[_del_key] = True
+            st.query_params.clear()
+            st.rerun()
+        _qp_confirm = _qp.get("confirm_del", "")
+        if isinstance(_qp_confirm, list):
+            _qp_confirm = _qp_confirm[0] if _qp_confirm else ""
+        if _qp_confirm == str(lid):
+            log_activity(lid, "removed", "Loan moved to Trash", user=my_name)
+            delete_loan(lid)
+            st.session_state.pop(_del_key, None)
+            st.query_params.clear()
+            st.toast("Moved to Trash", icon="🗑️")
+            st.rerun()
+        _qp_cancel = _qp.get("cancel_del", "")
+        if isinstance(_qp_cancel, list):
+            _qp_cancel = _qp_cancel[0] if _qp_cancel else ""
+        if _qp_cancel == str(lid):
+            st.session_state.pop(_del_key, None)
+            st.query_params.clear()
+            st.rerun()
+
+        ac1, ac2, ac3, ac4, ac5, ac6 = st.columns([1, 1, 1, 1, 1.5, 0.8])
         with ac1:
             if st.button("✓ Cleared", key=f"clr_{lid}", use_container_width=True):
                 set_status(lid, "Cleared")
@@ -3957,21 +4017,28 @@ def show_pipeline():
                 st.toast(f"Reassigned to {new_assignee}", icon="User")
                 st.rerun()
         with ac6:
-            _del_key = f"confirm_del_{lid}"
-            if st.session_state.get(_del_key):
-                if st.button("✗ Yes, remove", key=f"ydel_{lid}", type="primary", use_container_width=True):
-                    log_activity(lid, "removed", "Loan moved to Removed", user=my_name)
-                    delete_loan(lid)
-                    st.session_state.pop(_del_key, None)
-                    st.toast("Moved to Trash", icon="Remove️")
-                    st.rerun()
-                if st.button("↩ Cancel", key=f"ndel_{lid}", use_container_width=True):
-                    st.session_state.pop(_del_key, None)
-                    st.rerun()
+            if _del_open:
+                st.markdown(
+                    f'<div style="display:flex;flex-direction:column;gap:3px;">'
+                    f'<a href="?confirm_del={lid}" style="display:block;text-align:center;'
+                    f'background:#c0392b;color:#fff;font-weight:700;font-size:10px;'
+                    f'padding:8px 4px;border-radius:4px;text-decoration:none;'
+                    f'letter-spacing:0.4px;text-transform:uppercase;">Confirm</a>'
+                    f'<a href="?cancel_del={lid}" style="display:block;text-align:center;'
+                    f'background:#f0f0f0;color:#555;font-weight:600;font-size:10px;'
+                    f'padding:6px 4px;border-radius:4px;text-decoration:none;'
+                    f'border:1px solid #888;">Cancel</a>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
             else:
-                if st.button("Remove️ Remove", key=f"del_{lid}", use_container_width=True):
-                    st.session_state[_del_key] = True
-                    st.rerun()
+                st.markdown(
+                    f'<a href="?del={lid}" style="display:block;text-align:center;'
+                    f'background:#c0392b;color:#fff;font-weight:700;font-size:10px;'
+                    f'padding:8px 4px;border-radius:4px;text-decoration:none;'
+                    f'letter-spacing:0.4px;text-transform:uppercase;">Remove</a>',
+                    unsafe_allow_html=True,
+                )
 
         # ── Share this loan ──────────────────────────────────────────────────
         from sharing import get_members, share_loan as _share_loan, send_update as _send_update
@@ -3982,7 +4049,7 @@ def show_pipeline():
         is_shared_loan = bool(loan.get("share_id"))
         share_key = f"share_open_{lid}"
 
-        sh1, sh2, sh3, sh4, sh5, sh6 = st.columns(6)
+        sh1 = st.columns(1)[0]
         with sh1:
             lbl = "Export Update" if is_shared_loan else "Share"
             if team_names and st.button(lbl, key=f"sharebtn_{lid}", use_container_width=True):
