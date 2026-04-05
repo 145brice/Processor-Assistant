@@ -705,7 +705,7 @@ div[data-testid="stCaptionContainer"] p {
 
 # --- Session State Defaults ---
 DEFAULTS = {
-    "page": "pipeline",
+    "page": "dashboard",
     "authenticated": False,
     "user_id": None,
     "user_email": "",
@@ -778,7 +778,7 @@ def show_login_page():
             st.session_state.user_name = "Sandbox User"
             st.session_state.user_role = "Processor"
             st.session_state.sandbox_mode = True
-            st.session_state.page = "pipeline"
+            st.session_state.page = "dashboard"
             st.rerun()
         st.caption("Free & unlimited — results not saved between sessions")
 
@@ -802,7 +802,7 @@ def show_login_page():
                     st.session_state.user_name = result.get("display_name") or result["email"].split("@")[0]
                     st.session_state.user_role = result.get("role", "Processor")
                     st.session_state.sandbox_mode = False
-                    st.session_state.page = "pipeline"
+                    st.session_state.page = "dashboard"
                     st.rerun()
                 else:
                     st.error(result.get("error", "Login failed"))
@@ -1560,25 +1560,100 @@ def show_dashboard():
     # ══════════════════════════════════════════════════════════════════════
     # MANUAL LABEL MODE (existing behavior)
     # ══════════════════════════════════════════════════════════════════════
+    _MANUAL_DOC_TYPES = [
+        "Approval Letter", "Closing Disclosure (CD)", "Loan Estimate (LE)",
+        "1003 Application", "Purchase Contract", "Credit Report",
+        "Bank Statement", "Change of Circumstance (COC)", "Broker Package (BP)",
+    ]
+
+    # ── Duplicate detection across all uploaded files ─────────────────────
+    import hashlib as _hashlib
+    _file_hashes = {}
+    _dupes = set()
+    for _fi, _uf in enumerate(uploaded_files):
+        _fbytes = _uf.read(); _uf.seek(0)
+        _fhash = _hashlib.md5(_fbytes).hexdigest()
+        if _fhash in _file_hashes:
+            _dupes.add(_fi)
+            _dupes.add(_file_hashes[_fhash])
+        else:
+            _file_hashes[_fhash] = _fi
+    if _dupes:
+        st.warning(f"Duplicate files detected: {', '.join(uploaded_files[i].name for i in sorted(_dupes))} — review before scanning.")
+
+    # ── Page-grouping prompt: multiple PDFs that likely belong together ────
+    if len(uploaded_files) > 1:
+        from ai_engine import detect_doc_type as _pg_det
+        _pg_groups = {}  # doc_type -> list of file indices
+        for _pgi, _pgf in enumerate(uploaded_files):
+            if _pgi in _dupes:
+                continue
+            _pgk = f"autodet_{_pgf.name}_{_pgi}"
+            if _pgk in st.session_state:
+                _pgt = st.session_state[_pgk]
+            else:
+                _pgb = _pgf.read(); _pgf.seek(0)
+                _pgt = _pg_det(_pgb).get("doc_type", "Unknown")
+                st.session_state[_pgk] = _pgt
+            _pg_groups.setdefault(_pgt, []).append(_pgi)
+
+        _mergeable = {t: idxs for t, idxs in _pg_groups.items() if len(idxs) > 1}
+        if _mergeable:
+            for _mtype, _midxs in _mergeable.items():
+                _mnames = [uploaded_files[i].name for i in _midxs]
+                _merge_key = f"merge_prompt_{_mtype}"
+                st.info(
+                    f"**{len(_midxs)} {_mtype} files detected** — these may be pages of the same document: "
+                    f"{', '.join(_mnames)}"
+                )
+                _mc1, _mc2 = st.columns([1, 3])
+                with _mc1:
+                    if st.button(f"Merge into one PDF", key=f"merge_btn_{_mtype}", type="primary"):
+                        import io
+                        try:
+                            import pypdf as _pypdf
+                        except ImportError:
+                            import PyPDF2 as _pypdf
+                        _merger = _pypdf.PdfWriter()
+                        for _mi in _midxs:
+                            _mf = uploaded_files[_mi]
+                            _mb = _mf.read(); _mf.seek(0)
+                            _merger.append(io.BytesIO(_mb))
+                        _merged_buf = io.BytesIO()
+                        _merger.write(_merged_buf)
+                        _merged_buf.seek(0)
+                        _merged_name = f"merged_{_mtype.replace(' ','_').replace('(','').replace(')','')}.pdf"
+                        st.download_button(
+                            f"Download merged PDF",
+                            data=_merged_buf,
+                            file_name=_merged_name,
+                            mime="application/pdf",
+                            key=f"dl_merged_{_mtype}",
+                        )
+                        st.success(f"Merged {len(_midxs)} files into {_merged_name}")
+
     for file_idx, uploaded_file in enumerate(uploaded_files):
         fkey = f"{uploaded_file.name}_{file_idx}"
-        with st.expander(f"{uploaded_file.name}", expanded=True):
+        _is_dupe = file_idx in _dupes
+        _expander_label = f"{'[DUPE] ' if _is_dupe else ''}{uploaded_file.name}"
+        with st.expander(_expander_label, expanded=not _is_dupe):
             col1, col2 = st.columns([1, 2])
 
             with col1:
+                # Auto-detect doc type for this file
+                _det_key = f"autodet_{fkey}"
+                if _det_key not in st.session_state:
+                    from ai_engine import detect_doc_type as _det_fn
+                    _fb = uploaded_file.read(); uploaded_file.seek(0)
+                    _det_result = _det_fn(_fb)
+                    st.session_state[_det_key] = _det_result.get("doc_type", "Approval Letter")
+                _auto_type = st.session_state[_det_key]
+                _auto_idx = _MANUAL_DOC_TYPES.index(_auto_type) if _auto_type in _MANUAL_DOC_TYPES else 0
+
                 doc_type = st.selectbox(
                     "Document Type",
-                    [
-                        "Approval Letter",
-                        "Closing Disclosure (CD)",
-                        "Loan Estimate (LE)",
-                        "1003 Application",
-                        "Purchase Contract",
-                        "Credit Report",
-                        "Bank Statement",
-                        "Change of Circumstance (COC)",
-                        "Broker Package (BP)",
-                    ],
+                    _MANUAL_DOC_TYPES,
+                    index=_auto_idx,
                     key=f"doctype_{fkey}",
                 )
                 scan_btn = st.button(
