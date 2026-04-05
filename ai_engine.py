@@ -361,12 +361,12 @@ def _guess_party(text: str) -> str:
 
 def extract_bank_statement_fields(pdf_text: str) -> dict:
     """
-    Extract specific data points from a bank statement:
-    account holder names, account number, statement period,
-    beginning balance, ending balance, institution name.
-    Returns a dict of extracted values (None if not found).
+    Extract key fields from a bank statement.
+    Handles Chase, BofA, Wells Fargo, US Bank, credit unions, and most common formats.
+    Labels and values are often on separate lines — patterns account for that.
     """
     t = pdf_text
+    lines = t.splitlines()
     result = {
         "holder_names":      [],
         "account_number":    None,
@@ -381,101 +381,159 @@ def extract_bank_statement_fields(pdf_text: str) -> dict:
         "withdrawals_total": None,
     }
 
-    # ── Institution name ─────────────────────────────────────────────────────
-    inst_m = re.search(
-        r'(?i)^([A-Z][A-Za-z\s&,\.]+(?:Bank|Credit Union|Financial|Savings|N\.?A\.|F\.?S\.?B\.))',
-        t, re.MULTILINE
-    )
-    if inst_m:
-        result["institution"] = inst_m.group(1).strip()
+    def _find_dollar(label_pattern, text, window=120):
+        """Find a dollar amount near a label — label and amount may be on separate lines."""
+        m = re.search(label_pattern, text, re.IGNORECASE)
+        if not m:
+            return None
+        # Look for dollar amount within `window` chars after the label
+        snippet = text[m.start(): m.start() + len(m.group()) + window]
+        amt = re.search(r'\$?\s*([\d,]+\.\d{2})', snippet)
+        if amt:
+            return amt.group(1).replace(",", "")
+        return None
+
+    # ── Institution ──────────────────────────────────────────────────────────
+    inst_patterns = [
+        r'^(Chase|Bank of America|Wells Fargo|U\.?S\.? Bank|Citibank|Truist|PNC|TD Bank|'
+        r'Capital One|Regions|SunTrust|BB&T|Fifth Third|KeyBank|Huntington|'
+        r'Citizens Bank|Ally Bank|Discover Bank|Navy Federal|USAA|'
+        r'[A-Z][A-Za-z\s&]+(?:Bank|Credit Union|Financial|Savings|N\.A\.|FSB|FCU))',
+    ]
+    for pat in inst_patterns:
+        m = re.search(pat, t[:600], re.MULTILINE)
+        if m:
+            result["institution"] = m.group(1).strip()
+            break
 
     # ── Account holder name(s) ───────────────────────────────────────────────
-    # Look for lines near "Account Holder", "Name:", "Primary Owner", etc.
-    name_patterns = [
-        r'(?i)(?:account\s*holder|primary\s*owner|name\s*on\s*account|account\s*name)\s*[:\-]?\s*([A-Z][A-Za-z\-\']+(?:\s+[A-Z][A-Za-z\-\']+){1,4})',
-        r'(?i)(?:statement\s*(?:for|prepared\s*for)|account\s*of)\s*([A-Z][A-Za-z\-\']+(?:\s+[A-Z][A-Za-z\-\']+){1,3})',
-    ]
     names_found = []
-    for pat in name_patterns:
+
+    # Pattern 1: explicit label on same line
+    for pat in [
+        r'(?i)(?:account\s*holder|primary\s*owner|name\s*on\s*account|account\s*name|prepared\s*for|statement\s*for)\s*[:\-]?\s*([A-Z][A-Za-z\'\-]+(?:\s+[A-Z][A-Za-z\'\-]+){1,4})',
+        r'(?i)(?:account\s*of|owner)\s*[:\-]\s*([A-Z][A-Za-z\'\-]+(?:\s+[A-Z][A-Za-z\'\-]+){1,3})',
+    ]:
         for m in re.finditer(pat, t):
-            name = m.group(1).strip()
-            if name and name not in names_found:
-                names_found.append(name)
-    # Also try: lines that look like "JOHN A SMITH" or "John Smith" at top of doc
-    top_text = t[:800]
-    for m in re.finditer(r'\b([A-Z][A-Z\-\']+\s+(?:[A-Z]\s+)?[A-Z][A-Z\-\']{2,})\b', top_text):
+            n = m.group(1).strip()
+            if n not in names_found:
+                names_found.append(n)
+
+    # Pattern 2: label on one line, name on next line
+    for i, line in enumerate(lines[:60]):
+        if re.search(r'(?i)(account\s*holder|primary\s*owner|customer\s*name|name\b)', line):
+            # Check next 1-2 lines for a name
+            for j in range(1, 3):
+                if i + j < len(lines):
+                    candidate = lines[i + j].strip()
+                    if re.match(r'^[A-Z][A-Za-z\'\-]+(\s+[A-Z][A-Za-z\'\-]+){1,4}$', candidate):
+                        if candidate not in names_found:
+                            names_found.append(candidate)
+
+    # Pattern 3: all-caps name at top of doc (address block style: "JOHN A SMITH")
+    top_text = t[:1200]
+    _skip_words = {"BANK", "ACCOUNT", "STATEMENT", "BALANCE", "CHECKING", "SAVINGS",
+                   "MEMBER", "FDIC", "INSURED", "PERIOD", "ENDING", "BEGINNING",
+                   "DEPOSIT", "SUMMARY", "ACTIVITY", "PAGE", "DATE", "ONLINE",
+                   "BANKING", "CUSTOMER", "SERVICE", "ACCOUNT", "NUMBER"}
+    for m in re.finditer(r'^([A-Z][A-Z\'\-]{1,}\s+(?:[A-Z]{1,2}\s+)?[A-Z][A-Z\'\-]{1,}(?:\s+[A-Z][A-Z\'\-]{1,})?)$', top_text, re.MULTILINE):
         candidate = m.group(1).strip()
-        # Skip obvious non-name all-caps institution words
-        skip = {"BANK", "ACCOUNT", "STATEMENT", "BALANCE", "CHECKING", "SAVINGS",
-                 "MEMBER", "FDIC", "INSURED", "PERIOD", "ENDING", "BEGINNING"}
-        if not any(w in candidate.split() for w in skip) and len(candidate) > 5:
+        words = candidate.split()
+        if not any(w in _skip_words for w in words) and 2 <= len(words) <= 5 and len(candidate) > 5:
             if candidate not in names_found:
                 names_found.append(candidate)
-    result["holder_names"] = names_found[:3]  # max 3
 
-    # ── Account number ────────────────────────────────────────────────────────
-    acct_m = re.search(
-        r'(?i)account\s*(?:number|#|no\.?)\s*[:\-]?\s*([\dX\*\-]{4,20})',
-        t
-    )
-    if not acct_m:
-        # Try masked format like "****1234" or "XXXX-1234"
-        acct_m = re.search(r'(?i)(?:acct\.?|account)\s*[:\-]?\s*([X\*\-\d]{6,20})', t)
-    if not acct_m:
-        # Last 4 format
-        acct_m = re.search(r'(?i)(?:ending|last)\s*(?:in|with)?\s*(\d{4})\b', t)
-    if acct_m:
-        result["account_number"] = acct_m.group(1).strip()
+    # Pattern 4: Title-case name in address block
+    for m in re.finditer(r'^([A-Z][a-z]+\s+(?:[A-Z]\.\s+)?[A-Z][a-z]{2,}(?:\s+[A-Z][a-z]+)?)$', top_text, re.MULTILINE):
+        candidate = m.group(1).strip()
+        if len(candidate.split()) >= 2 and len(candidate) > 5:
+            if candidate not in names_found:
+                names_found.append(candidate)
 
-    # ── Statement period ──────────────────────────────────────────────────────
-    # "Statement Period: 01/01/2024 - 01/31/2024"
+    result["holder_names"] = names_found[:3]
+
+    # ── Account number ───────────────────────────────────────────────────────
+    acct_patterns = [
+        r'(?i)account\s*(?:number|#|no\.?|num\.?)\s*[:\-]?\s*([\dX\*\•\-]{4,20})',
+        r'(?i)acct\.?\s*(?:#|no\.?)?\s*[:\-]?\s*([\dX\*\•\-]{6,20})',
+        r'(?i)account\s*ending\s+(?:in\s+)?(\d{4})',
+        r'(?i)(?:checking|savings)\s+(?:account\s+)?(?:#|no\.?)?\s*([\dX\*\•]{4,20})',
+        # Chase/BofA style: "Account number: ••••1234"
+        r'(?i)account\s+number[:\s]+[•\*x]{0,8}\s*(\d{4,17})',
+        # Standalone masked: "****1234" or "...1234"
+        r'(?<!\d)([\*•\.]{3,}\s*\d{4})(?!\d)',
+    ]
+    for pat in acct_patterns:
+        m = re.search(pat, t)
+        if m:
+            result["account_number"] = m.group(1).strip()
+            break
+
+    # ── Statement period ─────────────────────────────────────────────────────
+    date_re = r'(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})'
+    # "Statement Period: 01/01/2024 - 01/31/2024" (same line)
     period_m = re.search(
-        r'(?i)(?:statement\s*period|from|period)\s*[:\-]?\s*'
-        r'(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})\s*(?:through|to|\-|–)\s*'
-        r'(\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4})',
+        r'(?i)(?:statement\s*period|period\s*covered|billing\s*period|from|cycle)\s*[:\-]?\s*'
+        + date_re + r'\s*(?:through|thru|to|\-|–|–)\s*' + date_re,
         t
     )
+    if not period_m:
+        # Label on one line, dates on next
+        for i, line in enumerate(lines):
+            if re.search(r'(?i)(statement\s*period|period\s*covered|billing\s*period)', line):
+                nearby = " ".join(lines[i:i+3])
+                period_m = re.search(date_re + r'\s*(?:through|thru|to|\-|–)\s*' + date_re, nearby)
+                if period_m:
+                    break
+    if not period_m:
+        # "01/01/2024 through 01/31/2024" anywhere
+        period_m = re.search(date_re + r'\s*(?:through|thru)\s*' + date_re, t)
+
     if period_m:
         result["period_start"] = period_m.group(1)
         result["period_end"]   = period_m.group(2)
-        # Derive month label
         try:
-            from datetime import datetime
-            dt = datetime.strptime(period_m.group(2), "%m/%d/%Y")
-            result["statement_month"] = dt.strftime("%B %Y")
+            from datetime import datetime as _dt
+            for fmt in ("%m/%d/%Y", "%m-%d-%Y", "%m/%d/%y", "%m-%d-%y"):
+                try:
+                    dt = _dt.strptime(period_m.group(2), fmt)
+                    result["statement_month"] = dt.strftime("%B %Y")
+                    break
+                except ValueError:
+                    continue
         except Exception:
             result["statement_month"] = period_m.group(2)
     else:
-        # Try "January 2024 Statement" style
+        # "January 2024" or "Jan 2024" style
         month_m = re.search(
-            r'(?i)(January|February|March|April|May|June|July|August|September|October|November|December)'
-            r'\s+(\d{4})',
+            r'(?i)(January|February|March|April|May|June|July|August|'
+            r'September|October|November|December|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'
+            r'\.?\s+(\d{4})',
             t
         )
         if month_m:
             result["statement_month"] = f"{month_m.group(1)} {month_m.group(2)}"
 
-    # ── Balances ──────────────────────────────────────────────────────────────
-    def _extract_dollar(pattern, text):
-        m = re.search(pattern, text, re.IGNORECASE)
-        if m:
-            return m.group(1).replace(",", "").strip()
-        return None
-
-    result["beginning_balance"] = _extract_dollar(
-        r'(?:beginning|opening|start(?:ing)?)\s*balance\s*[\$:]?\s*([\$\d,]+\.\d{2})', t
+    # ── Balances — label + value often on separate lines ────────────────────
+    result["beginning_balance"] = _find_dollar(
+        r'(?:beginning|opening|start(?:ing)?|prior|previous)\s*(?:statement\s*)?balance', t
     )
-    result["ending_balance"] = _extract_dollar(
-        r'(?:ending|closing|end(?:ing)?)\s*balance\s*[\$:]?\s*([\$\d,]+\.\d{2})', t
+    result["ending_balance"] = _find_dollar(
+        r'(?:ending|closing|end(?:ing)?|new|current)\s*(?:statement\s*)?balance', t
     )
-    result["lowest_balance"] = _extract_dollar(
-        r'(?:low(?:est)?|minimum)\s*balance\s*[\$:]?\s*([\$\d,]+\.\d{2})', t
+    # Also try: "Balance on MM/DD" pattern (Chase)
+    if not result["ending_balance"]:
+        result["ending_balance"] = _find_dollar(
+            r'balance\s+(?:on|as\s+of)\s+\d{1,2}[\/\-]\d{1,2}', t
+        )
+    result["lowest_balance"] = _find_dollar(
+        r'(?:low(?:est)?|minimum|min\.?)\s*(?:daily\s*)?balance', t
     )
-    result["deposits_total"] = _extract_dollar(
-        r'(?:total\s*deposits?|deposits?\s*total|total\s*credits?)\s*[\$:]?\s*([\$\d,]+\.\d{2})', t
+    result["deposits_total"] = _find_dollar(
+        r'(?:total\s*)?(?:deposits?|credits?|additions?)\s*(?:total|this\s*period)?', t
     )
-    result["withdrawals_total"] = _extract_dollar(
-        r'(?:total\s*withdrawals?|withdrawals?\s*total|total\s*debits?|total\s*checks?)\s*[\$:]?\s*([\$\d,]+\.\d{2})', t
+    result["withdrawals_total"] = _find_dollar(
+        r'(?:total\s*)?(?:withdrawals?|debits?|checks?\s*(?:and\s*)?(?:debits?)?|subtractions?|payments?)\s*(?:total|this\s*period)?', t
     )
 
     return result
