@@ -537,7 +537,7 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
 
 /* ── Scrollable pipeline container ───────────────────────────── */
 .pipeline-scroll {
-    max-height: 55vh;
+    max-height: 75vh;
     overflow-y: auto;
     overflow-x: hidden;
     border: 1px solid #888;
