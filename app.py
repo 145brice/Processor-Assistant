@@ -1566,6 +1566,13 @@ def show_dashboard():
         "Bank Statement", "Change of Circumstance (COC)", "Broker Package (BP)",
     ]
 
+    # ── Scan All button ───────────────────────────────────────────────────
+    _sa1, _sa2 = st.columns([1, 4])
+    with _sa1:
+        _scan_all = st.button("Scan All", key="scan_all_btn", type="primary", use_container_width=True)
+    if _scan_all:
+        st.session_state["scan_all_trigger"] = True
+
     # ── Duplicate detection across all uploaded files ─────────────────────
     import hashlib as _hashlib
     _file_hashes = {}
@@ -1635,70 +1642,73 @@ def show_dashboard():
     for file_idx, uploaded_file in enumerate(uploaded_files):
         fkey = f"{uploaded_file.name}_{file_idx}"
         _is_dupe = file_idx in _dupes
-        _expander_label = f"{'[DUPE] ' if _is_dupe else ''}{uploaded_file.name}"
-        with st.expander(_expander_label, expanded=not _is_dupe):
-            col1, col2 = st.columns([1, 2])
 
-            with col1:
-                # Auto-detect doc type for this file
-                _det_key = f"autodet_{fkey}"
-                if _det_key not in st.session_state:
-                    from ai_engine import detect_doc_type as _det_fn
-                    _fb = uploaded_file.read(); uploaded_file.seek(0)
-                    _det_result = _det_fn(_fb)
-                    st.session_state[_det_key] = _det_result.get("doc_type", "Approval Letter")
-                _auto_type = st.session_state[_det_key]
-                _auto_idx = _MANUAL_DOC_TYPES.index(_auto_type) if _auto_type in _MANUAL_DOC_TYPES else 0
+        # Auto-detect doc type for this file
+        _det_key = f"autodet_{fkey}"
+        if _det_key not in st.session_state:
+            from ai_engine import detect_doc_type as _det_fn
+            _fb = uploaded_file.read(); uploaded_file.seek(0)
+            _det_result = _det_fn(_fb)
+            st.session_state[_det_key] = _det_result.get("doc_type", "Approval Letter")
+        _auto_type = st.session_state[_det_key]
+        _auto_idx = _MANUAL_DOC_TYPES.index(_auto_type) if _auto_type in _MANUAL_DOC_TYPES else 0
 
-                doc_type = st.selectbox(
-                    "Document Type",
-                    _MANUAL_DOC_TYPES,
-                    index=_auto_idx,
-                    key=f"doctype_{fkey}",
-                )
-                scan_btn = st.button(
-                    "Scan Document",
-                    key=f"scan_{fkey}",
-                    use_container_width=True,
-                )
+        # Compact pill row: filename | type dropdown | scan button
+        _pill_bg = "#fff3e0" if _is_dupe else "#fff"
+        _pill_border = "#ffcc80" if _is_dupe else "#888"
+        st.markdown(
+            f'<div style="background:{_pill_bg};border:1px solid {_pill_border};border-radius:3px;'
+            f'padding:0 6px;margin-bottom:2px;display:flex;align-items:center;gap:4px;height:26px;">'
+            f'<span style="font-size:10px;color:{"#bf360c" if _is_dupe else "#374151"};'
+            f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;flex-shrink:0;">'
+            f'{"[DUPE] " if _is_dupe else ""}{uploaded_file.name}</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        col1, col2 = st.columns([2, 1])
+        with col1:
+            doc_type = st.selectbox(
+                "Type", _MANUAL_DOC_TYPES, index=_auto_idx,
+                key=f"doctype_{fkey}", label_visibility="collapsed",
+            )
+        with col2:
+            scan_btn = st.button("Scan", key=f"scan_{fkey}", use_container_width=True)
 
-            with col2:
-                if scan_btn:
-                    progress = st.progress(0, text="Starting scan...")
-                    from ai_engine import process_document
+            _trigger = scan_btn or st.session_state.get("scan_all_trigger", False)
+            if _trigger:
+                progress = st.progress(0, text=f"Scanning {uploaded_file.name}...")
+                from ai_engine import process_document
 
-                    pdf_bytes = uploaded_file.read()
+                pdf_bytes = uploaded_file.read()
 
-                    user_history = []
-                    if st.session_state.user_id and st.session_state.user_id != "sandbox":
-                        from db import get_history
-                        user_history = get_history(st.session_state.user_id, 5)
+                user_history = []
+                if st.session_state.user_id and st.session_state.user_id != "sandbox":
+                    from db import get_history
+                    user_history = get_history(st.session_state.user_id, 5)
 
-                    progress.progress(10, text="Extracting conditions...")
+                progress.progress(10, text="Extracting conditions...")
 
-                    result = process_document(pdf_bytes, doc_type, user_history)
-                    del pdf_bytes
+                result = process_document(pdf_bytes, doc_type, user_history)
+                del pdf_bytes
 
-                    progress.progress(100, text="Done!")
+                progress.progress(100, text="Done!")
 
-                    if result["success"]:
-                        st.session_state.scan_results = result
-                        if not st.session_state.sandbox_mode and st.session_state.user_id != "sandbox":
-                            from db import save_result, log_pattern
-                            import billing as _bill
-                            save_result(
-                                st.session_state.user_id, doc_type,
-                                result["conditions"], result.get("risks", ""),
-                                result.get("bank_rules", ""),
-                            )
-                            _bill.log_scan(st.session_state.user_id, doc_type)
-                            log_pattern(doc_type, {
-                                "text_length": result["text_length"],
-                            })
-                    else:
-                        st.error(result.get("error", "Processing failed"))
+                if result["success"]:
+                    st.session_state.scan_results = result
+                    if not st.session_state.sandbox_mode and st.session_state.user_id != "sandbox":
+                        from db import save_result, log_pattern
+                        import billing as _bill
+                        save_result(
+                            st.session_state.user_id, doc_type,
+                            result["conditions"], result.get("risks", ""),
+                            result.get("bank_rules", ""),
+                        )
+                        _bill.log_scan(st.session_state.user_id, doc_type)
+                        log_pattern(doc_type, {"text_length": result["text_length"]})
+                else:
+                    st.error(f"{uploaded_file.name}: {result.get('error', 'Processing failed')}")
 
-            # === DISPLAY RESULTS ===
+        # === DISPLAY RESULTS ===
             if st.session_state.scan_results and st.session_state.scan_results.get("doc_type") == doc_type:
                 result = st.session_state.scan_results
 
@@ -3063,6 +3073,9 @@ def show_dashboard():
                     f"Processed {result['text_length']:,} characters | "
                     f"{'Sandbox' if st.session_state.sandbox_mode else 'Live'} mode"
                 )
+
+    # Clear scan-all trigger after all files processed
+    st.session_state.pop("scan_all_trigger", None)
 
 
 def _party_badge(party: str) -> str:
