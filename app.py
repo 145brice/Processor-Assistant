@@ -535,6 +535,21 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
 .status-overdue   { background: #f5f5f5; color: #333; border: 1px solid #888; }
 .status-closed    { background: #f5f5f5; color: #333; border: 1px solid #888; }
 
+/* ── Scrollable pipeline container ───────────────────────────── */
+.pipeline-scroll {
+    max-height: 33vh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: 1px solid #888;
+    border-radius: 3px;
+    padding: 2px 4px;
+    background: #d5d7da;
+    margin-bottom: 8px;
+}
+.pipeline-scroll::-webkit-scrollbar { width: 6px; }
+.pipeline-scroll::-webkit-scrollbar-track { background: #d5d7da; }
+.pipeline-scroll::-webkit-scrollbar-thumb { background: #999; border-radius: 3px; }
+
 /* ── Loan pipeline cards ──────────────────────────────────────── */
 .loan-card {
     background: #fff;
@@ -3813,7 +3828,8 @@ def show_pipeline():
         )
         st.markdown(_pipeline_bar_html, unsafe_allow_html=True)
 
-    # ── Loan rows ────────────────────────────────────────────────────────────
+    # ── Loan rows (scrollable container ~33vh) ───────────────────────────────
+    st.markdown('<div class="pipeline-scroll">', unsafe_allow_html=True)
     for loan in loans:
         lid = loan.get("id")
         status = loan.get("status", "Pending")
@@ -3939,15 +3955,33 @@ def show_pipeline():
                 f'{"".join(_status_items)}</div>'
             )
 
+        # Inline badges string for compact row
+        _inline_badges = ""
+        if _lock_badge:
+            _inline_badges += f"&nbsp;{_lock_badge}"
+        if _missing_txt and _missing_txt != "None":
+            _inline_badges += (
+                f'&nbsp;<span style="background:#fff3e0;color:#bf360c;padding:1px 5px;'
+                f'border-radius:3px;font-size:9px;font-weight:500;border:1px solid #ffcc80;">'
+                f'Missing</span>'
+            )
         st.markdown(
             f'<div style="background:#fff;border-left:3px solid {border_color};'
-            f'border-radius:0 0 3px 3px;padding:1px 8px 3px 8px;margin-top:-4px;margin-bottom:6px;'
-            f'border:1px solid #888;border-left:3px solid {border_color};">'
-            f'{team_line}'
-            f'<div style="font-size:10px;color:#5c6370;font-weight:400;">Closing: {_closing_dt}'
-            f' &nbsp;·&nbsp; Lock: {_lock_dt if _lock_dt else "Not set"}</div>'
-            f'{_badges_row}'
-            f'{_progress_html}'
+            f'border:1px solid #888;border-left:3px solid {border_color};'
+            f'padding:1px 8px 2px 8px;margin-top:-4px;margin-bottom:6px;">'
+            # single compact line: dates + inline badges
+            f'<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">'
+            f'<span style="font-size:10px;color:#5c6370;white-space:nowrap;">'
+            f'Close: {_closing_dt} &nbsp;·&nbsp; Lock: {_lock_dt if _lock_dt else "—"}</span>'
+            f'{_inline_badges}'
+            f'</div>'
+            # progress bar (slim)
+            f'<div style="display:flex;align-items:center;gap:6px;margin-top:2px;">'
+            f'<div style="flex:1;background:#d5d7da;border-radius:2px;height:3px;overflow:hidden;">'
+            f'<div style="background:{_bar_color};width:{_pct}%;height:100%;"></div>'
+            f'</div>'
+            f'<span style="font-size:9px;color:{_bar_color};font-weight:700;white-space:nowrap;">{_pct}%</span>'
+            f'</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -4123,6 +4157,8 @@ def show_pipeline():
                                 st.warning("Pick at least one person to share with.")
 
         st.markdown('<div style="height:2px;border-bottom:1px solid #888;margin:2px 0;"></div>', unsafe_allow_html=True)
+
+    st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Removed / Recover Section ────────────────────────────────────────────
     trash_items = get_trash()
