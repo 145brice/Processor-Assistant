@@ -171,10 +171,13 @@ button[kind="secondary"] {
     background: #fff !important;
     color: #374151 !important;
     border: 1px solid #888 !important;
-    border-radius: 4px !important;
+    border-radius: 2px !important;
     font-weight: 500 !important;
-    font-size: 13px !important;
-    height: 34px !important;
+    font-size: 11px !important;
+    height: 22px !important;
+    min-height: 0 !important;
+    line-height: 1 !important;
+    padding: 0 8px !important;
     transition: background 0.15s !important;
     box-shadow: none !important;
 }
@@ -385,16 +388,16 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
 [data-testid="stHorizontalBlock"] button[kind="secondaryFormSubmit"],
 [data-testid="stHorizontalBlock"] button[kind="primaryFormSubmit"],
 [data-testid="stHorizontalBlock"] button[kind="secondary"] {
-    height: 24px !important;
-    font-size: 11px !important;
-    padding: 0 6px !important;
+    height: 20px !important;
+    font-size: 10px !important;
+    padding: 0 4px !important;
     min-height: 0 !important;
     line-height: 1 !important;
 }
 [data-testid="stHorizontalBlock"] select {
-    height: 24px !important;
-    font-size: 11px !important;
-    padding: 1px 4px !important;
+    height: 20px !important;
+    font-size: 10px !important;
+    padding: 0 3px !important;
 }
 [data-testid="stHorizontalBlock"] > div > div {
     margin-bottom: 0 !important;
@@ -3966,22 +3969,16 @@ def show_pipeline():
                 f'Missing</span>'
             )
         st.markdown(
-            f'<div style="background:#fff;border-left:3px solid {border_color};'
-            f'border:1px solid #888;border-left:3px solid {border_color};'
-            f'padding:1px 8px 2px 8px;margin-top:-4px;margin-bottom:6px;">'
-            # single compact line: dates + inline badges
-            f'<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;">'
-            f'<span style="font-size:10px;color:#5c6370;white-space:nowrap;">'
-            f'Close: {_closing_dt} &nbsp;·&nbsp; Lock: {_lock_dt if _lock_dt else "—"}</span>'
+            f'<div style="background:#fff;border:1px solid #888;border-left:3px solid {border_color};'
+            f'padding:0 8px 1px 8px;margin-top:-3px;margin-bottom:4px;'
+            f'display:flex;align-items:center;gap:8px;min-width:0;">'
+            f'<span style="font-size:9px;color:#5c6370;white-space:nowrap;flex-shrink:0;">'
+            f'Close: {_closing_dt} · Lock: {_lock_dt if _lock_dt else "—"}</span>'
             f'{_inline_badges}'
-            f'</div>'
-            # progress bar (slim)
-            f'<div style="display:flex;align-items:center;gap:6px;margin-top:2px;">'
-            f'<div style="flex:1;background:#d5d7da;border-radius:2px;height:3px;overflow:hidden;">'
+            f'<div style="flex:1;background:#d5d7da;border-radius:1px;height:2px;overflow:hidden;min-width:30px;">'
             f'<div style="background:{_bar_color};width:{_pct}%;height:100%;"></div>'
             f'</div>'
-            f'<span style="font-size:9px;color:{_bar_color};font-weight:700;white-space:nowrap;">{_pct}%</span>'
-            f'</div>'
+            f'<span style="font-size:9px;color:{_bar_color};font-weight:700;white-space:nowrap;flex-shrink:0;">{_pct}%</span>'
             f'</div>',
             unsafe_allow_html=True,
         )
