@@ -17,55 +17,93 @@ st.set_page_config(
 # --- Custom CSS ---
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
 
-/* ── Global reset & base ──────────────────────────────────────── */
+/* ═══════════════════════════════════════════════════════════════
+   BRIGHT CLEAN THEME — Mortgage Pipeline Manager
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+    --bg-primary:    #ffffff;
+    --bg-secondary:  #f1f5f9;
+    --bg-card:       #f9fbfd;
+    --bg-card-hover: #eef3fb;
+    --bg-input:      #ffffff;
+    --accent:        #2563eb;
+    --accent-light:  #3b82f6;
+    --accent-glow:   rgba(37,99,235,0.10);
+    --accent-grad:   linear-gradient(135deg, #2563eb, #3b82f6);
+    --red:           #dc2626;
+    --red-bg:        rgba(220,38,38,0.06);
+    --red-border:    rgba(220,38,38,0.2);
+    --green:         #16a34a;
+    --green-bg:      rgba(22,163,74,0.08);
+    --green-border:  rgba(22,163,74,0.25);
+    --amber:         #ea580c;
+    --amber-bg:      rgba(234,88,12,0.06);
+    --amber-border:  rgba(234,88,12,0.25);
+    --purple:        #9333ea;
+    --purple-bg:     rgba(147,51,234,0.06);
+    --purple-border: rgba(147,51,234,0.2);
+    --text-primary:  #0f172a;
+    --text-secondary:#475569;
+    --text-muted:    #94a3b8;
+    --border:        #e2e8f0;
+    --border-light:  #cbd5e1;
+    --shadow-sm:     0 1px 4px rgba(0,0,0,0.04);
+    --shadow-md:     0 4px 16px rgba(37,99,235,0.08);
+    --shadow-lg:     0 8px 32px rgba(0,0,0,0.08);
+    --shadow-accent: 0 4px 20px rgba(37,99,235,0.12);
+    --radius-sm:     6px;
+    --radius-md:     10px;
+    --radius-lg:     14px;
+    --radius-xl:     20px;
+}
+
+/* ── Global reset & base ─────────────────────────────────────── */
 html, body, [class*="css"] {
     font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
 }
 .stApp {
-    background: #d5d7da;
+    background: var(--bg-primary) !important;
 }
 
-/* ── Hide Streamlit chrome ────────────────────────────────────── */
+/* ── Hide Streamlit chrome ───────────────────────────────────── */
 #MainMenu, footer, header { visibility: hidden; height: 0; }
 .stDeployButton { display: none; }
 
-/* ── Sidebar ──────────────────────────────────────────────────── */
+/* ── Sidebar ─────────────────────────────────────────────────── */
 [data-testid="stSidebar"] {
-    background: #fafafa !important;
-    border-right: 1px solid #888 !important;
+    background: var(--bg-secondary) !important;
+    border-right: 1px solid var(--border) !important;
 }
 [data-testid="stSidebar"] > div:first-child {
-    padding: 1rem 0.75rem;
+    padding: 1.25rem 0.75rem;
 }
-
-/* Sidebar nav buttons */
 [data-testid="stSidebar"] button[kind="secondary"],
 [data-testid="stSidebar"] button {
     background: transparent !important;
     border: 1px solid transparent !important;
-    color: #374151 !important;
-    border-radius: 4px !important;
+    color: var(--text-secondary) !important;
+    border-radius: var(--radius-sm) !important;
     font-size: 13px !important;
     font-weight: 500 !important;
     text-align: left !important;
     justify-content: flex-start !important;
-    padding: 6px 10px !important;
-    margin-bottom: 1px !important;
-    transition: background 0.15s !important;
+    padding: 8px 12px !important;
+    margin-bottom: 2px !important;
+    transition: all 0.2s ease !important;
     width: 100% !important;
     box-shadow: none !important;
 }
 [data-testid="stSidebar"] button[kind="secondary"]:hover,
 [data-testid="stSidebar"] button:hover {
-    background: #e8e8e8 !important;
-    border-color: transparent !important;
-    color: #111 !important;
+    background: var(--bg-card) !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary) !important;
     box-shadow: none !important;
     transform: none !important;
 }
-/* Force all sidebar button inner content left */
 [data-testid="stSidebar"] button p,
 [data-testid="stSidebar"] button span,
 [data-testid="stSidebar"] button div {
@@ -78,406 +116,360 @@ button {
     text-align: left !important;
     justify-content: flex-start !important;
 }
-button * {
-    text-align: left !important;
-}
-button p {
-    text-align: left !important;
-    width: 100% !important;
-}
-/* Streamlit button inner flex container */
-button > div {
-    justify-content: flex-start !important;
-    text-align: left !important;
-}
-button > div > p {
-    text-align: left !important;
-}
+button * { text-align: left !important; }
+button p { text-align: left !important; width: 100% !important; }
+button > div { justify-content: flex-start !important; text-align: left !important; }
+button > div > p { text-align: left !important; }
 
 /* Sidebar toggle */
 [data-testid="stSidebar"] [data-testid="stToggle"] label {
     font-size: 13px !important;
-    color: #4b5563 !important;
+    color: var(--text-secondary) !important;
     font-weight: 500 !important;
 }
 
-/* ── Main content area ────────────────────────────────────────── */
+/* ── Main content area ───────────────────────────────────────── */
 .block-container {
-    padding: 1rem 1.5rem 2rem 1.5rem !important;
-    max-width: 1100px !important;
+    padding: 1.25rem 2rem 2.5rem 2rem !important;
+    max-width: 1200px !important;
 }
 
 /* Page headings */
-h1 { font-size: 20px !important; font-weight: 700 !important; color: #111 !important; letter-spacing: -0.3px; margin-bottom: 0.25rem !important; }
-h2 { font-size: 16px !important; font-weight: 600 !important; color: #111 !important; }
-h3 { font-size: 14px !important; font-weight: 600 !important; color: #222 !important; }
-p, li { color: #333 !important; font-size: 13px !important; font-weight: 400 !important; }
-label { color: #222 !important; font-size: 13px !important; font-weight: 500 !important; }
+h1 { font-size: 22px !important; font-weight: 800 !important; color: var(--text-primary) !important; letter-spacing: -0.4px; margin-bottom: 0.25rem !important; }
+h2 { font-size: 17px !important; font-weight: 700 !important; color: var(--text-primary) !important; }
+h3 { font-size: 14px !important; font-weight: 600 !important; color: var(--text-primary) !important; }
+p, li { color: var(--text-secondary) !important; font-size: 13px !important; font-weight: 400 !important; }
+label { color: var(--text-primary) !important; font-size: 13px !important; font-weight: 500 !important; }
 
-/* Markdown text inside the app */
+/* Markdown text */
 [data-testid="stMarkdownContainer"] p,
 [data-testid="stMarkdownContainer"] li,
 [data-testid="stMarkdownContainer"] span {
-    color: #374151 !important;
+    color: var(--text-secondary) !important;
     font-size: 13px !important;
 }
 [data-testid="stMarkdownContainer"] strong {
-    color: #111 !important;
+    color: var(--text-primary) !important;
     font-weight: 600 !important;
 }
 
-/* Checkbox labels */
-[data-testid="stCheckbox"] label p {
-    color: #374151 !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-}
-
-/* Selectbox selected value text */
-[data-testid="stSelectbox"] > div > div > div {
-    color: #111 !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-}
-
-/* Radio / number input labels */
-[data-testid="stNumberInput"] label,
-[data-testid="stDateInput"] label,
-[data-testid="stTextArea"] label {
-    color: #374151 !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-}
-
-/* ── Buttons ──────────────────────────────────────────────────── */
+/* ── Buttons ─────────────────────────────────────────────────── */
 button[kind="primary"] {
-    background: #3b82f6 !important;
+    background: var(--accent-grad) !important;
     color: #fff !important;
-    border: 1px solid #2563eb !important;
-    border-radius: 4px !important;
+    border: none !important;
+    border-radius: var(--radius-md) !important;
     font-weight: 600 !important;
     font-size: 13px !important;
-    padding: 0 16px !important;
-    height: 34px !important;
-    box-shadow: none !important;
-    transition: background 0.15s !important;
+    padding: 0 20px !important;
+    height: 36px !important;
+    box-shadow: var(--shadow-accent) !important;
+    transition: all 0.2s ease !important;
 }
 button[kind="primary"]:hover {
-    background: #2563eb !important;
-    box-shadow: none !important;
-    transform: none !important;
+    box-shadow: 0 6px 28px rgba(37,99,235,0.22) !important;
+    transform: translateY(-1px) !important;
 }
 button[kind="secondary"] {
-    background: #fff !important;
-    color: #374151 !important;
-    border: 1px solid #888 !important;
-    border-radius: 2px !important;
+    background: var(--bg-card) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
     font-weight: 500 !important;
-    font-size: 11px !important;
-    height: 22px !important;
-    min-height: 0 !important;
-    line-height: 1 !important;
-    padding: 0 8px !important;
-    transition: background 0.15s !important;
-    box-shadow: none !important;
+    font-size: 12px !important;
+    height: 34px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: var(--shadow-sm) !important;
 }
 button[kind="secondary"]:hover {
-    border-color: #9ca3af !important;
-    color: #111 !important;
-    background: #f9fafb !important;
-    box-shadow: none !important;
+    border-color: var(--accent-light) !important;
+    color: var(--accent) !important;
+    background: var(--bg-card-hover) !important;
+    box-shadow: var(--shadow-md) !important;
     transform: none !important;
 }
 
-/* ── Inputs & selects ─────────────────────────────────────────── */
+/* ── Inputs & selects ────────────────────────────────────────── */
 [data-testid="stTextInput"] input,
 [data-testid="stTextArea"] textarea,
 [data-testid="stSelectbox"] > div > div,
 [data-testid="stNumberInput"] input {
-    background: #fff !important;
-    border: 1px solid #888 !important;
-    border-radius: 3px !important;
-    color: #111 !important;
+    background: var(--bg-input) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
+    color: var(--text-primary) !important;
     font-size: 13px !important;
     font-family: 'Inter', sans-serif !important;
     box-shadow: none !important;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
 }
 [data-testid="stTextInput"] input:focus,
 [data-testid="stTextArea"] textarea:focus {
-    border-color: #2563eb !important;
-    box-shadow: 0 0 0 2px rgba(37,99,235,0.12) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 3px var(--accent-glow) !important;
 }
 
-/* ── File uploader ────────────────────────────────────────────── */
+/* ── File uploader ───────────────────────────────────────────── */
 [data-testid="stFileUploader"] {
-    background: #fff !important;
-    border: 1px dashed #888 !important;
-    border-radius: 4px !important;
-    padding: 14px !important;
-    transition: border-color 0.15s !important;
+    background: var(--bg-card) !important;
+    border: 1px dashed var(--border-light) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 16px !important;
+    transition: border-color 0.2s ease !important;
 }
 [data-testid="stFileUploader"]:hover {
-    border-color: #999 !important;
-    background: #fff !important;
+    border-color: var(--accent) !important;
+    background: var(--bg-card-hover) !important;
 }
-[data-testid="stFileUploader"] label {
-    color: #333 !important;
-}
-/* Uploaded file chip */
+[data-testid="stFileUploader"] label { color: var(--text-secondary) !important; }
 [data-testid="stFileUploaderFile"] {
-    background: #f7f7f7 !important;
-    border: 1px solid #888 !important;
-    border-radius: 3px !important;
-    color: #374151 !important;
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
+    color: var(--text-secondary) !important;
 }
 [data-testid="stFileUploaderFile"] span,
 [data-testid="stFileUploaderFile"] small,
 [data-testid="stFileUploaderFile"] p {
-    color: #374151 !important;
+    color: var(--text-secondary) !important;
     font-weight: 500 !important;
 }
 [data-testid="stFileUploaderFileName"] {
-    color: #111 !important;
+    color: var(--text-primary) !important;
     font-weight: 600 !important;
 }
-[data-testid="stFileUploaderFileData"] {
-    color: #444 !important;
-}
+[data-testid="stFileUploaderFileData"] { color: var(--text-muted) !important; }
 
-/* ── Form submit buttons (Add to Team, Save, etc.) ────────────── */
+/* ── Form submit buttons ─────────────────────────────────────── */
 [data-testid="stForm"] [data-testid="stBaseButton-secondaryFormSubmit"],
 [data-testid="stForm"] button[kind="primaryFormSubmit"],
 [data-testid="stForm"] button[kind="secondaryFormSubmit"] {
-    background: #fff !important;
-    border: 1px solid #888 !important;
-    color: #374151 !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    color: var(--text-secondary) !important;
     font-weight: 500 !important;
-    border-radius: 4px !important;
-    box-shadow: none !important;
+    border-radius: var(--radius-sm) !important;
+    box-shadow: var(--shadow-sm) !important;
 }
 [data-testid="stForm"] button[kind="primaryFormSubmit"]:hover,
 [data-testid="stForm"] button[kind="secondaryFormSubmit"]:hover {
-    background: #f5f5f5 !important;
-    border-color: #999 !important;
-    color: #111 !important;
+    background: var(--bg-card-hover) !important;
+    border-color: var(--accent-light) !important;
+    color: var(--accent) !important;
 }
 
-/* ── Expanders ────────────────────────────────────────────────── */
+/* ── Expanders ───────────────────────────────────────────────── */
 [data-testid="stExpander"] {
-    background: #fff !important;
-    border: 1px solid #888 !important;
-    border-radius: 4px !important;
-    margin-bottom: 3px !important;
-    box-shadow: none !important;
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-md) !important;
+    margin-bottom: 6px !important;
+    box-shadow: var(--shadow-sm) !important;
+    transition: box-shadow 0.2s ease !important;
+}
+[data-testid="stExpander"]:hover {
+    box-shadow: var(--shadow-md) !important;
 }
 [data-testid="stExpander"] summary {
     font-weight: 600 !important;
-    color: #111 !important;
+    color: var(--text-primary) !important;
     font-size: 13px !important;
-    padding: 6px 10px !important;
+    padding: 10px 14px !important;
     min-height: 0 !important;
     line-height: 1.4 !important;
 }
 [data-testid="stExpander"] summary:hover {
-    color: #111 !important;
-    background: #f5f5f5 !important;
-    border-radius: 4px !important;
+    color: var(--accent) !important;
+    background: var(--bg-card-hover) !important;
+    border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
 }
-/* Compact the expanded content area */
 [data-testid="stExpander"] > div[data-testid="stExpanderDetails"] {
-    padding: 6px 10px 10px 10px !important;
+    padding: 8px 14px 14px 14px !important;
 }
 
 /* ── Info / warning / error boxes ────────────────────────────── */
 [data-testid="stAlert"] {
-    border-radius: 3px !important;
+    border-radius: var(--radius-sm) !important;
     border-width: 1px !important;
     font-size: 13px !important;
 }
 
-/* ── Dividers ─────────────────────────────────────────────────── */
-hr { border-color: #888 !important; margin: 10px 0 !important; }
+/* ── Dividers ────────────────────────────────────────────────── */
+hr { border-color: var(--border) !important; margin: 12px 0 !important; }
 
-/* ── Tabs ─────────────────────────────────────────────────────── */
+/* ── Tabs ────────────────────────────────────────────────────── */
 [data-testid="stTabs"] [role="tab"] {
     font-size: 13px !important;
     font-weight: 500 !important;
-    color: #444 !important;
-    border-radius: 0 !important;
-    padding: 6px 14px !important;
+    color: var(--text-muted) !important;
+    border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
+    padding: 8px 16px !important;
+    transition: all 0.2s ease !important;
 }
 [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-    color: #111 !important;
-    border-bottom: 2px solid #333 !important;
+    color: var(--accent) !important;
+    border-bottom: 2px solid var(--accent) !important;
     background: transparent !important;
+    font-weight: 600 !important;
 }
 
-/* ── Checkbox ─────────────────────────────────────────────────── */
+/* ── Checkbox ────────────────────────────────────────────────── */
 [data-testid="stCheckbox"] label {
     font-size: 13px !important;
-    color: #374151 !important;
+    color: var(--text-secondary) !important;
 }
 
-/* ── Caption / small text ─────────────────────────────────────── */
+/* ── Caption / small text ────────────────────────────────────── */
 [data-testid="stCaptionContainer"] p,
-.stCaption { color: #777 !important; font-size: 11px !important; font-weight: 500 !important; }
+.stCaption { color: var(--text-muted) !important; font-size: 11px !important; font-weight: 500 !important; }
 
-/* ── Progress bar ─────────────────────────────────────────────── */
+/* ── Progress bar ────────────────────────────────────────────── */
 [data-testid="stProgress"] > div > div {
-    background: #2563eb !important;
-    border-radius: 2px !important;
+    background: var(--accent-grad) !important;
+    border-radius: 4px !important;
 }
 [data-testid="stProgress"] {
-    background: #e0e0e0 !important;
-    border-radius: 2px !important;
-}
-
-/* ── Containers (bordered) ────────────────────────────────────── */
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background: #fff !important;
-    border: 1px solid #888 !important;
+    background: var(--bg-secondary) !important;
     border-radius: 4px !important;
-    padding: 12px !important;
-    box-shadow: none !important;
 }
 
-/* ── Selectbox dropdown ───────────────────────────────────────── */
-[data-testid="stSelectbox"] svg { color: #333 !important; }
+/* ── Containers (bordered) ───────────────────────────────────── */
+[data-testid="stVerticalBlockBorderWrapper"] {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-md) !important;
+    padding: 16px !important;
+    box-shadow: var(--shadow-sm) !important;
+}
 
-/* Dropdown popup list */
+/* ── Selectbox dropdown ──────────────────────────────────────── */
+[data-testid="stSelectbox"] svg { color: var(--text-secondary) !important; }
 [data-baseweb="popover"] ul,
 [data-baseweb="menu"] {
-    background: #fff !important;
-    border: 1px solid #888 !important;
-    border-radius: 3px !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
+    box-shadow: var(--shadow-md) !important;
 }
 [data-baseweb="popover"] li,
 [data-baseweb="menu"] li {
-    background: #fff !important;
-    color: #111 !important;
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
     font-size: 13px !important;
     font-weight: 500 !important;
 }
 [data-baseweb="popover"] li:hover,
 [data-baseweb="menu"] li:hover {
-    background: #f5f5f5 !important;
-    color: #111 !important;
+    background: var(--bg-card-hover) !important;
+    color: var(--accent) !important;
 }
 [data-baseweb="select"] > div {
-    background: #fff !important;
-    border-color: #888 !important;
-    color: #111 !important;
+    background: var(--bg-input) !important;
+    border-color: var(--border) !important;
+    color: var(--text-primary) !important;
 }
 
-/* ── Toggle ───────────────────────────────────────────────────── */
+/* ── Toggle ──────────────────────────────────────────────────── */
 [data-testid="stToggle"] > label > div[data-checked="true"] {
-    background: #2563eb !important;
+    background: var(--accent) !important;
 }
 
-/* ── Condition status buttons (inside expander) ──────────────── */
+/* ── Condition status buttons ────────────────────────────────── */
 div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     font-size: 12px !important;
     font-weight: 600 !important;
-    padding: 3px 6px !important;
-    height: 28px !important;
-    border-radius: 3px !important;
+    padding: 3px 8px !important;
+    height: 30px !important;
+    border-radius: var(--radius-sm) !important;
 }
 
-/* ── Pipeline action row buttons (status, share, delete) ─────── */
+/* ── Pipeline action row buttons ─────────────────────────────── */
 [data-testid="stHorizontalBlock"] button[kind="secondaryFormSubmit"],
 [data-testid="stHorizontalBlock"] button[kind="primaryFormSubmit"],
 [data-testid="stHorizontalBlock"] button[kind="secondary"] {
-    height: 20px !important;
-    font-size: 10px !important;
-    padding: 0 4px !important;
+    height: 32px !important;
+    font-size: 11px !important;
+    padding: 0 10px !important;
     min-height: 0 !important;
     line-height: 1 !important;
 }
 [data-testid="stHorizontalBlock"] select {
-    height: 20px !important;
-    font-size: 10px !important;
-    padding: 0 3px !important;
+    height: 32px !important;
+    font-size: 11px !important;
+    padding: 2px 6px !important;
 }
 [data-testid="stHorizontalBlock"] > div > div {
-    margin-bottom: 0 !important;
+    margin-bottom: 2px !important;
 }
 
-/* ── Tighten vertical gaps globally but not to zero ─────────────── */
-[data-testid="stVerticalBlock"] {
-    gap: 4px !important;
-}
-/* Login / form pages need more breathing room — override back */
+/* ── Tighten vertical gaps ───────────────────────────────────── */
+[data-testid="stVerticalBlock"] { gap: 6px !important; }
 [data-testid="stForm"] [data-testid="stVerticalBlock"],
-[data-testid="stTabs"] [data-testid="stVerticalBlock"] {
-    gap: 8px !important;
-}
+[data-testid="stTabs"] [data-testid="stVerticalBlock"] { gap: 10px !important; }
 
-/* ── Multiselect ──────────────────────────────────────────────── */
+/* ── Multiselect ─────────────────────────────────────────────── */
 [data-testid="stMultiSelect"] > div {
-    background: #fff !important;
-    border: 1px solid #888 !important;
-    border-radius: 3px !important;
+    background: var(--bg-input) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
 }
 [data-testid="stMultiSelect"] span[data-baseweb="tag"] {
-    background: #f0f0f0 !important;
-    color: #374151 !important;
-    border: 1px solid #888 !important;
-    border-radius: 3px !important;
+    background: var(--bg-secondary) !important;
+    color: var(--text-secondary) !important;
+    border: 1px solid var(--border) !important;
+    border-radius: var(--radius-sm) !important;
     font-size: 12px !important;
     font-weight: 500 !important;
 }
 [data-testid="stMultiSelect"] input {
-    color: #111 !important;
+    color: var(--text-primary) !important;
     background: transparent !important;
     border: none !important;
 }
 
-/* ── Markdown tables (conditions output) ─────────────────────── */
+/* ── Markdown tables ─────────────────────────────────────────── */
 [data-testid="stMarkdownContainer"] table {
     width: 100% !important;
     border-collapse: collapse !important;
-    background: #fff !important;
-    border-radius: 0 !important;
+    background: var(--bg-card) !important;
+    border-radius: var(--radius-sm) !important;
     overflow: hidden !important;
     font-size: 13px !important;
-    box-shadow: none !important;
-    border: 1px solid #888 !important;
+    box-shadow: var(--shadow-sm) !important;
+    border: 1px solid var(--border) !important;
 }
-[data-testid="stMarkdownContainer"] thead tr {
-    background: #f7f7f7 !important;
-}
+[data-testid="stMarkdownContainer"] thead tr { background: var(--bg-secondary) !important; }
 [data-testid="stMarkdownContainer"] th {
-    color: #374151 !important;
+    color: var(--text-secondary) !important;
     font-size: 11px !important;
     font-weight: 600 !important;
-    padding: 6px 10px !important;
+    padding: 8px 12px !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
-    border-bottom: 1px solid #888 !important;
+    border-bottom: 2px solid var(--border) !important;
 }
 [data-testid="stMarkdownContainer"] td {
-    color: #111 !important;
+    color: var(--text-primary) !important;
     font-size: 13px !important;
     font-weight: 400 !important;
-    padding: 5px 10px !important;
-    border-bottom: 1px solid #888 !important;
+    padding: 6px 12px !important;
+    border-bottom: 1px solid var(--border) !important;
 }
 [data-testid="stMarkdownContainer"] tr:hover td {
-    background: #f7f7f7 !important;
-    color: #111 !important;
+    background: var(--bg-card-hover) !important;
+    color: var(--text-primary) !important;
 }
 
-/* ── Progress nav bar ─────────────────────────────────────────── */
+/* ── Progress nav bar ────────────────────────────────────────── */
 .progress-nav {
     display: flex;
-    gap: 2px;
-    background: #f7f7f7;
-    border-radius: 3px;
-    padding: 3px;
-    margin-bottom: 12px;
-    border: 1px solid #888;
-    box-shadow: none;
+    gap: 3px;
+    background: var(--bg-secondary);
+    border-radius: var(--radius-md);
+    padding: 4px;
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
     position: sticky;
     top: 0;
     z-index: 999;
@@ -487,219 +479,202 @@ div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
     flex: 1;
     min-width: 70px;
     text-align: center;
-    padding: 5px 4px;
-    border-radius: 3px;
+    padding: 6px 6px;
+    border-radius: var(--radius-sm);
     font-size: 10px;
     font-weight: 500;
     text-decoration: none;
-    transition: background 0.15s;
+    transition: all 0.2s ease;
     line-height: 1.3;
-    color: #5c6370;
+    color: var(--text-muted);
 }
-.pn-step.done    { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-.pn-step.active  { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
-.pn-step.pending { background: transparent; color: #333; }
-.pn-step:hover   { background: #eee; color: #333; }
+.pn-step.done    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.pn-step.active  { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(37,99,235,0.2); }
+.pn-step.pending { background: transparent; color: var(--text-muted); }
+.pn-step:hover   { background: var(--bg-card-hover); color: var(--accent); }
 .pn-num { display: block; font-size: 12px; font-weight: 600; margin-bottom: 1px; }
 .section-anchor  { display: block; position: relative; top: -100px; visibility: hidden; }
 
-/* ── Party / condition badges ─────────────────────────────────── */
+/* ── Party / condition badges ────────────────────────────────── */
 .badge {
     display: inline-block;
     padding: 2px 8px;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     font-size: 11px;
     font-weight: 500;
     margin: 1px 2px;
     letter-spacing: 0.2px;
 }
-.badge-borrower    { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
-.badge-title       { background: #f3e5f5; color: #6a1b9a; border: 1px solid #e1bee7; }
-.badge-underwriter { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
-.badge-insurance   { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-.badge-closer      { background: #fffde7; color: #f57f17; border: 1px solid #fff59d; }
-.badge-jr          { background: #fce4ec; color: #c2185b; border: 1px solid #f8bbd0; }
-.badge-manager     { background: #e3f2fd; color: #1565c0; border: 1px solid #bbdefb; }
-.badge-appraiser   { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-.badge-default     { background: #f5f5f5; color: #333; border: 1px solid #888; }
+.badge-borrower    { background: rgba(37,99,235,0.08); color: #2563eb; border: 1px solid rgba(37,99,235,0.2); }
+.badge-title       { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
+.badge-underwriter { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+.badge-insurance   { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.badge-closer      { background: rgba(202,138,4,0.08); color: #ca8a04; border: 1px solid rgba(202,138,4,0.2); }
+.badge-jr          { background: rgba(219,39,119,0.08); color: #db2777; border: 1px solid rgba(219,39,119,0.2); }
+.badge-manager     { background: rgba(37,99,235,0.08); color: #2563eb; border: 1px solid rgba(37,99,235,0.2); }
+.badge-appraiser   { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.badge-default     { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); }
 
-/* ── Pipeline status chips ────────────────────────────────────── */
+/* ── Pipeline status chips ───────────────────────────────────── */
 .status-chip {
     display: inline-block;
     padding: 2px 8px;
-    border-radius: 3px;
+    border-radius: var(--radius-sm);
     font-size: 11px;
     font-weight: 600;
     letter-spacing: 0.2px;
 }
-.status-pending   { background: #ffebee; color: #c62828; border: 1px solid #ef9a9a; }
-.status-requested { background: #fff3e0; color: #e65100; border: 1px solid #ffcc80; }
-.status-cleared   { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
-.status-overdue   { background: #f5f5f5; color: #333; border: 1px solid #888; }
-.status-closed    { background: #f5f5f5; color: #333; border: 1px solid #888; }
+.status-pending   { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+.status-requested { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+.status-cleared   { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.status-overdue   { background: var(--bg-secondary); color: var(--text-muted); border: 1px solid var(--border); }
+.status-closed    { background: var(--bg-secondary); color: var(--text-muted); border: 1px solid var(--border); }
 
 /* ── Scrollable pipeline container ───────────────────────────── */
 .pipeline-scroll {
     max-height: 75vh;
     overflow-y: auto;
     overflow-x: hidden;
-    border: 1px solid #888;
-    border-radius: 3px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
     padding: 2px 4px;
-    background: #d5d7da;
+    background: var(--bg-primary);
     margin-bottom: 8px;
 }
 .pipeline-scroll::-webkit-scrollbar { width: 6px; }
-.pipeline-scroll::-webkit-scrollbar-track { background: #d5d7da; }
-.pipeline-scroll::-webkit-scrollbar-thumb { background: #999; border-radius: 3px; }
+.pipeline-scroll::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 3px; }
+.pipeline-scroll::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
+.pipeline-scroll::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
 
-/* ── Loan pipeline cards ──────────────────────────────────────── */
+/* ── Loan pipeline cards ─────────────────────────────────────── */
 .loan-card {
-    background: #fff;
-    border: 1px solid #888;
-    border-radius: 3px;
-    padding: 4px 8px;
-    margin: 0 0 1px 0;
-    transition: background 0.15s;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 4px 10px;
+    margin: 0 0 2px 0;
+    transition: all 0.2s ease;
     line-height: 1.2;
-    box-shadow: none;
+    box-shadow: var(--shadow-sm);
 }
 .loan-card:hover {
-    border-color: #bbb;
-    background: #f7f7f7;
-    box-shadow: none;
-    transform: none;
+    border-color: var(--accent-light);
+    background: var(--bg-card-hover);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
 }
-.loan-num   { font-size: 12px; font-weight: 700; color: #1565c0; font-family: 'Inter', monospace; }
-.loan-name  { font-size: 12px; color: #111; font-weight: 600; }
-.loan-due   { font-size: 10px; color: #5c6370; font-weight: 400; }
-.loan-missing { font-size: 10px; color: #c62828; font-weight: 500; }
+.loan-num   { font-size: 12px; font-weight: 700; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+.loan-name  { font-size: 12px; color: var(--text-primary); font-weight: 600; }
+.loan-due   { font-size: 10px; color: var(--text-muted); font-weight: 400; }
+.loan-missing { font-size: 10px; color: var(--red); font-weight: 500; }
 
-/* ── Stat cards (pipeline counts — inline chips now) ─────────── */
+/* ── Stat cards ──────────────────────────────────────────────── */
 .stat-card {
     text-align: left;
-    padding: 6px 8px;
-    border-radius: 3px;
-    background: #fff;
-    border: 1px solid #888;
-    box-shadow: none;
+    padding: 8px 12px;
+    border-radius: var(--radius-md);
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
 }
-.stat-num  { font-size: 18px; font-weight: 700; color: #111; line-height: 1; }
-.stat-label { font-size: 10px; color: #5c6370; margin-top: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
+.stat-num  { font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1; }
+.stat-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
 
-/* ── Login card ───────────────────────────────────────────────── */
+/* ── Login card ──────────────────────────────────────────────── */
 .login-card {
-    max-width: 400px;
+    max-width: 420px;
     margin: 40px auto 0 auto;
-    background: #fff;
-    border: 1px solid #888;
-    border-radius: 4px;
-    padding: 28px 24px;
-    box-shadow: none;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 32px 28px;
+    box-shadow: var(--shadow-lg);
 }
 .login-title {
-    font-size: 18px;
-    font-weight: 700;
-    color: #111;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--text-primary);
     text-align: center;
     margin-bottom: 4px;
 }
 .login-sub {
     font-size: 12px;
-    color: #5c6370;
+    color: var(--text-muted);
     text-align: center;
     margin-bottom: 20px;
 }
 
 /* ── Subtle layout tightening ────────────────────────────────── */
-[data-testid="stHorizontalBlock"] { gap: 0.2rem !important; }
+[data-testid="stHorizontalBlock"] { gap: 0.3rem !important; }
 
 /* ── Toasts, alerts, and popups ──────────────────────────────── */
 [data-testid="stToast"],
 div[data-testid="stToast"] > div {
-    background: #fff !important;
-    color: #111 !important;
-    border: 1px solid #888 !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
-    border-radius: 3px !important;
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-md) !important;
+    border-radius: var(--radius-sm) !important;
 }
 [data-testid="stToast"] p,
-[data-testid="stToast"] span {
-    color: #111 !important;
-}
+[data-testid="stToast"] span { color: var(--text-primary) !important; }
 div[data-testid="stAlert"],
 div[role="alert"],
 div[data-baseweb="notification"] {
-    background: #fff !important;
-    color: #111 !important;
-    border-color: #888 !important;
-    border-radius: 3px !important;
+    background: var(--bg-card) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border) !important;
+    border-radius: var(--radius-sm) !important;
 }
-div[data-baseweb="notification"] div {
-    color: #111 !important;
-}
-/* st.warning */
+div[data-baseweb="notification"] div { color: var(--text-primary) !important; }
 div[data-testid="stAlert"][data-type="warning"],
 div.stAlert[kind="warning"] {
-    background: #fffbeb !important;
-    border-left-color: #f59e0b !important;
-    color: #92400e !important;
+    background: var(--amber-bg) !important;
+    border-left-color: var(--amber) !important;
+    color: var(--amber) !important;
 }
-/* st.error */
 div[data-testid="stAlert"][data-type="error"],
 div.stAlert[kind="error"] {
-    background: #fef2f2 !important;
-    border-left-color: #ef4444 !important;
-    color: #991b1b !important;
+    background: var(--red-bg) !important;
+    border-left-color: var(--red) !important;
+    color: var(--red) !important;
 }
-/* st.success */
 div[data-testid="stAlert"][data-type="success"],
 div.stAlert[kind="success"] {
-    background: #ecfdf5 !important;
-    border-left-color: #10b981 !important;
-    color: #065f46 !important;
+    background: var(--green-bg) !important;
+    border-left-color: var(--green) !important;
+    color: var(--green) !important;
 }
-/* st.info */
 div[data-testid="stAlert"][data-type="info"],
 div.stAlert[kind="info"] {
-    background: #eff6ff !important;
-    border-left-color: #3b82f6 !important;
-    color: #1e40af !important;
+    background: var(--accent-glow) !important;
+    border-left-color: var(--accent) !important;
+    color: var(--accent) !important;
 }
-/* Ensure text inside all alert types is readable */
 div[data-testid="stAlert"] p,
 div[data-testid="stAlert"] span,
 div[data-testid="stAlert"] div,
 div[role="alert"] p,
-div[role="alert"] span {
-    color: inherit !important;
-}
-/* Popover, dropdown menus, tooltips */
+div[role="alert"] span { color: inherit !important; }
 div[data-baseweb="popover"],
 div[data-baseweb="tooltip"],
 ul[data-testid="stSelectboxVirtualDropdown"] {
-    background: #fff !important;
-    border: 1px solid #888 !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08) !important;
-    border-radius: 3px !important;
+    background: var(--bg-primary) !important;
+    border: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-md) !important;
+    border-radius: var(--radius-sm) !important;
 }
 div[data-baseweb="popover"] li,
 ul[data-testid="stSelectboxVirtualDropdown"] li {
-    color: #111827 !important;
-    background: #ffffff !important;
+    color: var(--text-primary) !important;
+    background: var(--bg-primary) !important;
 }
 div[data-baseweb="popover"] li:hover,
 ul[data-testid="stSelectboxVirtualDropdown"] li:hover {
-    background: #f3f4f6 !important;
+    background: var(--bg-card-hover) !important;
 }
-/* Expander headers */
-div[data-testid="stExpander"] summary {
-    color: #111827 !important;
-}
-/* Caption text */
-div[data-testid="stCaptionContainer"] p {
-    color: #6b7280 !important;
-}
+div[data-testid="stExpander"] summary { color: var(--text-primary) !important; }
+div[data-testid="stCaptionContainer"] p { color: var(--text-muted) !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -3076,6 +3051,165 @@ def show_dashboard():
 
     # Clear scan-all trigger after all files processed
     st.session_state.pop("scan_all_trigger", None)
+
+
+def _render_condition(cond, fkey, PARTY_OPTIONS, COND_STATUSES):
+    """Module-level wrapper — delegates to the nested show_dashboard version via session state trick.
+    Re-implemented here so show_loan_detail can call it directly."""
+    import os as _os
+    cnum       = cond["num"]
+    party_key  = f"party_{fkey}_{cnum}"
+    notes_key  = f"notes_{fkey}_{cnum}"
+    status_key = f"cstatus_{fkey}_{cnum}"
+    fetch_key  = f"cfetch_{fkey}_{cnum}"
+    guide_key  = f"cguide_{fkey}_{cnum}"
+
+    raw_default = cond.get("party", "Borrower")
+    if raw_default not in PARTY_OPTIONS:
+        raw_default = "Borrower"
+    if party_key not in st.session_state:
+        st.session_state[party_key] = [raw_default]
+    saved_parties = st.session_state.get(party_key, [raw_default])
+    if not isinstance(saved_parties, list):
+        saved_parties = [raw_default]
+    saved_parties = [p for p in saved_parties if p in PARTY_OPTIONS] or [raw_default]
+
+    if status_key not in st.session_state:
+        st.session_state[status_key] = "Needed"
+    cur_status = st.session_state.get(status_key, "Needed")
+    if cur_status not in COND_STATUSES:
+        cur_status = "Needed"
+    status_info = COND_STATUSES[cur_status]
+    saved_notes = st.session_state.get(notes_key, "")
+
+    short_desc = cond["desc"][:72] + ("…" if len(cond["desc"]) > 72 else "")
+    exp_label  = f"{status_info['emoji']} #{cnum}  {short_desc}"
+
+    col_chk, col_exp = st.columns([1, 11])
+    with col_chk:
+        checked = st.checkbox("", key=f"chk_{fkey}_{cnum}", label_visibility="collapsed")
+    with col_exp:
+        with st.expander(exp_label, expanded=False):
+            st.markdown("**Status:**")
+            sb = st.columns(len(COND_STATUSES))
+            for i, (sname, sinfo) in enumerate(COND_STATUSES.items()):
+                with sb[i]:
+                    active = "✓ " if cur_status == sname else ""
+                    if st.button(f"{sinfo['emoji']} {active}{sinfo['label']}",
+                                 key=f"sbtn_{fkey}_{cnum}_{sname}", use_container_width=True):
+                        st.session_state[status_key] = sname
+                        st.rerun()
+
+            st.markdown('<div style="height:4px"></div>', unsafe_allow_html=True)
+
+            new_parties = st.multiselect(
+                "Responsible parties", PARTY_OPTIONS,
+                default=saved_parties, key=party_key, placeholder="Add parties...",
+            )
+            if new_parties:
+                st.markdown(" ".join(_party_badge(p) for p in new_parties), unsafe_allow_html=True)
+
+            st.text_input("Update / notes", key=notes_key, placeholder="Add update or note...")
+            if saved_notes:
+                st.caption(saved_notes)
+
+            st.markdown("---")
+
+            _bs_keywords = {"bank statement", "bank stmt", "checking account", "savings account",
+                            "deposit", "bank", "statement", "60 days", "2 months", "3 months"}
+            _is_bs_cond = any(kw in cond["desc"].lower() for kw in _bs_keywords)
+
+            if _is_bs_cond:
+                fa, fb, fc = st.columns([1, 1, 1])
+            else:
+                fa, fb = st.columns([1, 1])
+                fc = None
+
+            with fa:
+                fetch_btn = st.button("Fetch from Folder", key=f"fetchbtn_{fkey}_{cnum}", use_container_width=True)
+            with fb:
+                guide_btn = st.button("Check Guidelines", key=f"guidebtn_{fkey}_{cnum}", use_container_width=True)
+            if fc:
+                with fc:
+                    bs_fetch_btn = st.button("Find & Analyze Bank Stmt", key=f"bsfetchbtn_{fkey}_{cnum}",
+                                             use_container_width=True)
+            else:
+                bs_fetch_btn = False
+
+            if fetch_btn:
+                st.session_state[f"show_cfetch_{fkey}_{cnum}"] = True
+            if bs_fetch_btn:
+                st.session_state[f"show_bsfetch_{fkey}_{cnum}"] = True
+
+            if st.session_state.get(f"show_cfetch_{fkey}_{cnum}"):
+                folder_path = st.text_input("Folder path:", value=st.session_state.get("last_fetch_folder", ""),
+                                            key=f"cfolder_{fkey}_{cnum}", placeholder=r"C:\Users\...\BorrowerName")
+                sc1, sc2 = st.columns([1, 3])
+                with sc1:
+                    do_search = st.button("Search", key=f"csearch_{fkey}_{cnum}", use_container_width=True)
+                with sc2:
+                    if st.button("Cancel", key=f"ccancel_{fkey}_{cnum}"):
+                        st.session_state[f"show_cfetch_{fkey}_{cnum}"] = False
+                        st.rerun()
+                if do_search and folder_path:
+                    st.session_state["last_fetch_folder"] = folder_path
+                    if not _os.path.isdir(folder_path):
+                        st.error(f"Folder not found: {folder_path}")
+                    else:
+                        from folder_search import scan_folder
+                        prog = st.progress(0, text="Scanning...")
+                        res = scan_folder(folder_path, [cond], threshold=60,
+                                          progress_callback=lambda p, m: prog.progress(min(p, 100), text=m))
+                        st.session_state[fetch_key] = res
+                        st.session_state[f"show_cfetch_{fkey}_{cnum}"] = False
+
+            if st.session_state.get(fetch_key):
+                fr = st.session_state[fetch_key]
+                matches = fr.get(cond["num"], {}).get("matches", [])
+                if matches:
+                    for m in matches:
+                        score = m["score"]
+                        pages_str = f" | Pages: {', '.join(str(p) for p in m['matched_pages'])}" if m["matched_pages"] else ""
+                        st.markdown(f"● **{m['file_name']}** — {m['match_type']} ({score}%){pages_str}")
+                        if m.get("snippet"):
+                            st.text(m["snippet"][:180])
+                else:
+                    st.info("No matching files found for this condition.")
+                if st.button("Clear", key=f"clrfetch_{fkey}_{cnum}"):
+                    st.session_state[fetch_key] = None
+                    st.rerun()
+
+            if guide_btn:
+                from guidelines import check_conditions_against_guidelines
+                available_g = True
+                try:
+                    from guidelines import get_available_guidelines
+                    available_g = bool(get_available_guidelines())
+                except Exception:
+                    pass
+                if not available_g:
+                    st.error("No guideline PDFs found.")
+                else:
+                    gprog = st.progress(0, text="Searching guidelines...")
+                    gres = check_conditions_against_guidelines(
+                        [cond], progress_callback=lambda p, m: gprog.progress(min(p, 100), text=m))
+                    st.session_state[guide_key] = gres
+
+            if st.session_state.get(guide_key):
+                gr = st.session_state[guide_key]
+                refs = gr.get(cond["num"], {}).get("guidelines", [])
+                if refs:
+                    for ref in refs:
+                        sec = f" | {ref['section']}" if ref.get("section") else ""
+                        st.markdown(f"● **{ref['source']}** — Page {ref['page']}{sec} ({ref['score']}%)")
+                        st.container(border=True).markdown(ref["excerpt"][:400])
+                else:
+                    st.info("No guideline references found.")
+                if st.button("Clear", key=f"clrguide_{fkey}_{cnum}"):
+                    st.session_state[guide_key] = None
+                    st.rerun()
+
+    return checked, cur_status, saved_parties
 
 
 def _party_badge(party: str) -> str:
@@ -5496,43 +5630,138 @@ def show_loan_detail():
             unsafe_allow_html=True,
         )
 
-    # ── Open Conditions ──────────────────────────────────────────────────
+    # ── Open Conditions (interactive — checkbox, status, parties, email) ────
     _conditions = loan.get("conditions", [])
     st.markdown(
         '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Open Conditions</span>',
         unsafe_allow_html=True,
     )
+
+    PARTY_OPTIONS_LD = [
+        "Borrower", "Co-Borrower", "Title", "Realtor", "Seller",
+        "Underwriter", "Jr Underwriter", "Loan Officer", "Closer",
+        "Insurance", "Appraiser", "Manager",
+    ]
+    COND_STATUSES_LD = {
+        "Needed":         {"label": "Needed",         "emoji": "●"},
+        "Requested":      {"label": "Requested",      "emoji": "●"},
+        "Important":      {"label": "Important",      "emoji": "●"},
+        "Ready to Clear": {"label": "Ready to Clear", "emoji": "●"},
+        "Cleared":        {"label": "Cleared",        "emoji": "✓"},
+    }
+
+    _ld_fkey = f"ld_{lid}"
+
     if _conditions:
-        _cond_status_colors = {
-            "Needed": "#f1c40f", "Requested": "#e67e22", "Important": "#e74c3c",
-            "Ready to Clear": "#27ae60", "Cleared": "#5dade2",
+        _ld_checked = []
+        for _c in _conditions:
+            _c["desc"] = _c.get("desc", _c.get("description", "—"))
+            if "num" not in _c:
+                _c["num"] = str(_conditions.index(_c) + 1)
+            if "party" not in _c:
+                _c["party"] = "Borrower"
+            _chk, _cstat, _cparties = _render_condition(_c, _ld_fkey, PARTY_OPTIONS_LD, COND_STATUSES_LD)
+            if _chk:
+                _ld_checked.append({**_c, "party": _cparties[0] if _cparties else _c["party"], "all_parties": _cparties})
+
+        # ── Email Draft — below conditions, auto-populate from stored contacts ──
+        st.markdown(
+            '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+            'letter-spacing:0.5px;margin:10px 0 4px 0;display:inline-block;">Draft Email</span>',
+            unsafe_allow_html=True,
+        )
+
+        # Build party list from stored contacts first, then fallback to PARTY_OPTIONS
+        _stored_contacts = loan.get("contacts", {})
+        _contact_party_map = {}  # display label -> contact info dict
+        _party_display_labels = {
+            "borrower": "Borrower", "co_borrower": "Co-Borrower", "buyer": "Borrower",
+            "seller": "Seller", "listing_agent": "Listing Agent", "selling_agent": "Selling Agent",
+            "title": "Title", "employer": "Employer",
         }
-        _cond_status_emoji = {
-            "Needed": "●", "Requested": "●", "Important": "●",
-            "Ready to Clear": "●", "Cleared": "●",
-        }
-        from crm import PARTY_COLORS as _PC
-        _cond_rows_html = ""
-        for _ci, _c in enumerate(_conditions):
-            _c_desc = _c.get("desc", _c.get("description", "—"))
-            _c_party = _c.get("party", "—")
-            _c_status = _c.get("status", "Needed")
-            _c_color = _cond_status_colors.get(_c_status, "#f1c40f")
-            _c_emoji = _cond_status_emoji.get(_c_status, "●")
-            _p_color = _PC.get(_c_party, "#6c757d")
-            _cond_rows_html += (
-                f'<div style="display:flex;align-items:center;gap:8px;padding:6px 0;'
-                f'border-bottom:1px solid #888;">'
-                f'<span style="min-width:18px;font-size:13px;">{_c_emoji}</span>'
-                f'<span style="flex:1;color:#111111;font-size:13px;">{_c_desc}</span>'
-                f'<span style="background:{_p_color};color:#fff;font-size:10px;font-weight:600;'
-                f'padding:2px 8px;border-radius:10px;white-space:nowrap;">{_c_party}</span>'
-                f'<span style="color:{_c_color};font-size:11px;font-weight:600;min-width:60px;'
-                f'text-align:right;">{_c_status}</span>'
-                f'</div>'
+        for _ck, _cv in _stored_contacts.items():
+            if not _cv or not isinstance(_cv, dict):
+                continue
+            _clabel = _party_display_labels.get(_ck, _ck.replace("_", " ").title())
+            _cname = _cv.get("name") or _cv.get("company") or ""
+            _cemail = _cv.get("email", "")
+            _display = f"{_clabel}{f' — {_cname}' if _cname else ''}{f' ({_cemail})' if _cemail else ''}"
+            _contact_party_map[_display] = _cv
+
+        _party_choices = list(_contact_party_map.keys()) if _contact_party_map else PARTY_OPTIONS_LD
+
+        # Pre-select parties from checked conditions
+        _checked_parties = []
+        for _cc in _ld_checked:
+            for _cp in _cc.get("all_parties", [_cc["party"]]):
+                if _cp not in _checked_parties:
+                    _checked_parties.append(_cp)
+
+        _em_c1, _em_c2, _em_c3 = st.columns([2, 2, 1])
+        with _em_c1:
+            _ld_recipient = st.selectbox(
+                "Send to", _party_choices,
+                key=f"ld_recip_{lid}", label_visibility="visible"
             )
-        st.markdown(_cond_rows_html, unsafe_allow_html=True)
+        with _em_c2:
+            _ld_lang = st.selectbox(
+                "Language", ["English", "Spanish"],
+                key=f"ld_lang_{lid}", label_visibility="visible"
+            )
+        with _em_c3:
+            if _ld_checked:
+                st.markdown(
+                    f'<div style="padding-top:26px;font-size:11px;color:#2563eb;font-weight:600;">'
+                    f'✓ {len(_ld_checked)} checked</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    '<div style="padding-top:26px;font-size:10px;color:#5c6370;">check above</div>',
+                    unsafe_allow_html=True,
+                )
+
+        _ld_d1, _ld_d2 = st.columns([1, 1])
+        with _ld_d1:
+            _ld_draft_btn = st.button("Draft Email", key=f"ld_draft_{lid}",
+                                      type="primary", use_container_width=True)
+        with _ld_d2:
+            _ld_ai_btn = st.button("Draft with AI", key=f"ld_ai_draft_{lid}",
+                                   use_container_width=True)
+
+        if _ld_draft_btn:
+            from ai_engine import draft_email as _de
+            # Get recipient name/email from stored contact if available
+            _recip_contact = _contact_party_map.get(_ld_recipient, {})
+            _recip_label = _recip_contact.get("name") or _ld_recipient.split("—")[0].strip()
+            if _ld_checked:
+                _cond_lines = [f"- Condition #{c['num']}: {c['desc']}" for c in _ld_checked]
+            else:
+                _cond_lines = [f"- Condition #{c['num']}: {c['desc']}" for c in _conditions[:10]]
+            _email_out = _de("\n".join(_cond_lines), _recip_label, _ld_lang)
+            # Auto-fill To: if we have a stored email
+            _recip_email = _recip_contact.get("email", "")
+            if _recip_email:
+                st.markdown(
+                    f'<div style="font-size:11px;color:#5c6370;margin-bottom:4px;">To: <b>{_recip_email}</b></div>',
+                    unsafe_allow_html=True,
+                )
+            st.container(border=True).markdown(_email_out)
+
+        if _ld_ai_btn:
+            import ai_router as _ld_ar
+            _ld_backend = _ld_ar.get_preferred_backend()
+            if _ld_backend == "script":
+                st.warning("AI backend not configured. Go to AI Settings.")
+            else:
+                _conds_for_ai = _ld_checked if _ld_checked else _conditions[:10]
+                with st.spinner("Drafting with AI…"):
+                    _ld_ai_text, _ld_ai_log = _ld_ar.draft_email_enhanced(
+                        _conds_for_ai, _ld_recipient.split("—")[0].strip(), _ld_lang
+                    )
+                if _ld_ai_text:
+                    st.container(border=True).markdown(_ld_ai_text)
     else:
         st.markdown(
             '<span style="color:#5c6370;font-size:12px;">No conditions attached to this loan yet. '
