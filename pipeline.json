@@ -19,7 +19,7 @@
     "id": 5,
     "loan_num": "5000006689012",
     "borrower": "Patel Family Trust",
-    "status": "Requested",
+    "status": "Overdue",
     "due_date": "2026-04-01",
     "closing_date": "2026-04-01",
     "lock_expiry": "",
@@ -170,7 +170,7 @@
     "id": 10,
     "loan_num": "1222116779",
     "borrower": "will be",
-    "status": "Overdue",
+    "status": "Cleared",
     "due_date": "2026-03-26",
     "closing_date": "2026-03-26",
     "lock_expiry": "2026-03-26",
@@ -179,7 +179,7 @@
     "created_by": "Sandbox User",
     "assigned_to": "",
     "created": "2026-03-26",
-    "updated": "2026-03-26",
+    "updated": "2026-04-05",
     "notes": "",
     "conditions": [
       {

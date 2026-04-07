@@ -68,7 +68,9 @@ Processor-Assistant/
 |                          Reads PDFs, extracts conditions, drafts emails, runs the
 |                          bank statement 50-rule analysis, detects risk flags,
 |                          extracts contacts, parses 1003 applications, parses
-|                          purchase contracts.
+|                          purchase contracts. Includes bank statement field
+|                          extraction for PNC, Chase, Bank of America, Wells Fargo,
+|                          and generic statement formats.
 |
 |-- ai_router.py           Single entry point for all AI-enhanced features.
 |                          Routes requests to Cloud AI, Ollama, or the offline
@@ -171,7 +173,7 @@ Processor-Assistant/
 ---
 
 ### 1. Document Scanner
-The main workhorse. Upload any mortgage PDF, and the app processes it based on document type.
+The main workhorse — this is the default landing page. Upload any mortgage PDF, and the app processes it based on document type.
 
 #### Quick Verify (top of scanner — use this first)
 Drop any PDF — no configuration needed. Instant checks:
@@ -195,8 +197,14 @@ Drop any PDF — no configuration needed. Instant checks:
 #### Full Document Scan (below Quick Verify)
 
 1. Upload a PDF (or multiple)
-2. Pick the document type
+2. Doc type is **auto-detected** and pre-selected in the dropdown — override if needed
 3. Click Scan Document
+
+**Bulk Upload mode:** Upload multiple PDFs at once. Doc type is always auto-detected per file. A **Scan All** button processes every uploaded file in one click.
+
+**Duplicate detection:** If two uploaded PDFs are identical (same file uploaded twice), a warning banner appears before scanning.
+
+**Page grouping / PDF merge:** If multiple uploaded PDFs are the same doc type (e.g., two bank statement pages), the app offers to merge them into a single PDF before scanning.
 
 Routes to different outputs by document type:
 
@@ -212,12 +220,23 @@ Routes to different outputs by document type:
 
 **Condition Export** — Download conditions as CSV or generate a printable HTML snapshot report.
 
-**Bank Statement** — 50-rule analysis. No conditions, no email draft. Checks:
+**Bank Statement** — 50-rule analysis + Account Summary card. Checks:
 - Green: item confirmed in the statement
 - Red: problem found (NSF, overdraft, returned item, gambling, crypto, foreign currency, charge-off)
 - Yellow: required item not found (account number, statement period, holder name)
 - Blue: optional item found that may need a letter (large deposit, tax refund, pension)
 - Purple: cannot determine from text — verify manually
+
+**Bank Statement Account Summary card** — Automatically extracted from real statement PDFs:
+- Account holder name(s)
+- Account number (masked)
+- Financial institution
+- Statement period (start date → end date)
+- Beginning balance
+- Ending balance
+- Total deposits / total withdrawals
+
+Works with PNC, Chase, Bank of America, Wells Fargo, and generic statement formats. Handles comma-formatted dollar amounts and multi-column table layouts (PNC format).
 
 **1003 Application** — Two-column structured field extraction (borrower info, loan terms, property). Missing fields shown in red. Push to Pipeline in one click.
 
@@ -228,7 +247,7 @@ Routes to different outputs by document type:
 ---
 
 ### 2. My Pipeline
-Loan tracking dashboard. Works like an offline LOS pipeline.
+Loan tracking dashboard. Compact, scrollable pipeline — fits on screen without endless scrolling.
 
 **Status colors:**
 - Red (Pending) — waiting on borrower or docs
@@ -237,16 +256,31 @@ Loan tracking dashboard. Works like an offline LOS pipeline.
 - Gray (Overdue) — past due date, auto-flagged on page load
 - Closed — funded and done
 
-**Each loan card shows:**
-- Loan number, borrower name, status badge
-- Created by / assigned to
-- Closing date and lock expiry
-- Color-coded badges on a separate row: lock expiry warnings (red/orange/green), missing docs
+**Each loan card shows (Excel-thin rows):**
+- Loan number, borrower name, status badge — all on a single compact line
+- Closing date and lock expiry on the same line
+- Color-coded inline badges: lock expiry warnings (red/orange/green)
+- 2px progress bar showing percent to closing
+- Action buttons: Open Detail, Change Status, Quick Note
+
+**Pipeline area is scrollable** — fills ~75% of viewport height. Loans stay visible without needing to scroll the whole page.
 
 **Per-loan detail view:**
 - Status change, folder open, notes, assignment
 - Share with teammates, send updates
-- Full condition tracking with party assignments
+- **Interactive conditions** — each condition has:
+  - Checkbox to mark complete
+  - Status buttons (Important / Needed / Requested / Ready to Clear / Cleared)
+  - Party multiselect (Borrower, Title, Appraiser, etc.)
+  - Notes field
+  - Fetch from Folder — search borrower's folder for matching files
+  - Check Guidelines — search Fannie/Freddie for relevant sections
+  - Find & Analyze Bank Stmt — auto-appears on bank-related conditions
+- **Email Draft section** — below conditions:
+  - Pick a party from dropdown (auto-populated from stored contacts on this loan)
+  - Contact name + email auto-displays when a known party is selected
+  - "To: email@address.com" pre-filled if email is stored
+  - Draft Email or Draft with AI buttons
 - Contact management (borrower, title, agents)
 - Activity log with timestamped history
 - Lock expiry and closing date countdown
@@ -365,11 +399,18 @@ Anyone on the team can create a loan. You choose exactly who to share each one w
 ## COMMON TASKS
 
 ### "I just got an approval letter"
-1. Document Scanner — upload — select Approval Letter — Scan
+1. Document Scanner — upload — auto-detects as Approval Letter — Scan
 2. Review conditions (sorted by priority)
 3. Check borrower conditions — pick language — Draft Email — copy to Outlook
 4. Check title conditions — send to Title — Draft Email — copy to Outlook
 5. Add to Pipeline with a due date
+
+### "I need to scan multiple docs at once"
+1. Document Scanner — Bulk Upload tab — drop all files
+2. Each file is auto-detected (no dropdown needed)
+3. Duplicate files flagged before scanning
+4. Same-type PDFs offered for merge into one
+5. Click Scan All to process everything in one go
 
 ### "A borrower emailed me something — what is it?"
 1. Email Watch picks it up automatically (if running)
@@ -378,14 +419,14 @@ Anyone on the team can create a loan. You choose exactly who to share each one w
 3. Save to folder or Dismiss
 
 ### "The approval asks for bank statements — do I already have them?"
-1. Open the condition — expand it
-2. Click Find & Analyze Bank Stmt
-3. Paste folder path (auto-fills) — Search
-4. Click Analyze on any result for full 50-rule analysis
+1. Open the condition in loan detail — it has a Find & Analyze Bank Stmt button
+2. Paste folder path (auto-fills) — Search
+3. Click Analyze on any result for full 50-rule analysis
 
 ### "I need to scan a bank statement"
-1. Document Scanner — upload — select Bank Statement — Scan
-2. 50 rules checked: Pass / Flag / Missing / Info / Manual
+1. Document Scanner — upload — auto-detects as Bank Statement — Scan
+2. Account Summary card: name, account number, institution, period, beginning/ending balance
+3. 50 rules checked: Pass / Flag / Missing / Info / Manual
 
 ### "I got a 1003 and need borrower info"
 1. Document Scanner — upload — select 1003 Application — Scan
@@ -398,11 +439,16 @@ Anyone on the team can create a loan. You choose exactly who to share each one w
 3. Draft Title Email generates a ready-to-send email
 
 ### "What does Fannie Mae say about this condition?"
-1. Open the condition — expand — Check Guidelines
+1. Open the condition in loan detail or scanner — Check Guidelines
 2. Exact Fannie/Freddie sections with page numbers
 
 ### "I need to email conditions in Spanish"
 1. Scan the approval letter — check conditions — Language: Spanish — Draft Email
+
+### "I want to email a party on a loan"
+1. My Pipeline — open loan detail — scroll to Email Draft section
+2. Pick the party (Borrower, Title, etc.) — stored contacts auto-fill name + email
+3. Draft Email or Draft with AI
 
 ### "I want to share this loan"
 1. My Pipeline — find the loan — Share — pick teammates — Share Now
@@ -424,6 +470,7 @@ Anyone on the team can create a loan. You choose exactly who to share each one w
 | **App won't start — streamlit not found** | Run `pip install streamlit` then try again. Or use `python -m streamlit run app.py` |
 | **"No specific conditions found"** | PDF is a scanned image. Open in Adobe Acrobat — Tools — Recognize Text, then re-upload. |
 | **Bank statement shows conditions instead of analysis** | Make sure you selected Bank Statement as the document type before scanning |
+| **Bank statement Account Summary shows blanks** | PDF may be image-only with no text layer. Try OCR first. Scanned statements won't extract. |
 | **Quick Verify shows "unknown" for doc type** | PDF may be image-only with no text layer. Try OCR first. |
 | **Email Watch says "Login failed"** | Use an App Password, not your real password. Follow setup steps in Email Watch page. |
 | **Email Watch says "Connection refused"** | Enable IMAP access in your email provider settings. |
@@ -435,6 +482,7 @@ Anyone on the team can create a loan. You choose exactly who to share each one w
 | **pipeline.json got wiped** | Run `git checkout pipeline.json` to restore last committed version. |
 | **Ollama not connecting** | Make sure Ollama is running locally (`ollama serve`). Check Settings page for connection status. |
 | **Cloud AI not working** | Verify your API key in Settings. Check internet connection. The app falls back to offline mode automatically. |
+| **Duplicate file warning on upload** | Two identical files were uploaded. Remove the duplicate before scanning. |
 
 ---
 
@@ -471,14 +519,20 @@ git push
 |---|---|
 | Scan any mortgage PDF | 100% offline |
 | Quick Doc Verify (type, pages, dates, borrower match) | 100% offline |
+| Auto-detect doc type on upload | 100% offline |
+| Duplicate file detection on bulk upload | 100% offline |
+| PDF merge for same-type multi-page docs | 100% offline |
 | Bank statement 50-rule analysis | 100% offline |
+| Bank statement Account Summary extraction | 100% offline |
 | Fraud check (W-2, pay stub, bank statement) | 100% offline |
 | Draft email — English + Spanish, all 6 recipient types | 100% offline |
 | Condition export (CSV + HTML snapshot) | 100% offline |
 | Fetch from folder / Find bank statements | 100% offline |
 | Check Fannie/Freddie Guidelines | 100% offline (after PDFs placed on Desktop) |
 | Document Reader | 100% offline |
-| My Pipeline (with lock expiry, conditions, activity log) | 100% offline |
+| My Pipeline (compact, scrollable, Excel-thin rows) | 100% offline |
+| Interactive conditions in loan detail | 100% offline |
+| Email Draft in loan detail (auto-fill from stored contacts) | 100% offline |
 | 1003 field extraction | 100% offline |
 | Purchase Contract extraction + title email | 100% offline |
 | Team sharing (loan handoff between teammates) | 100% offline (needs same network or shared drive) |
