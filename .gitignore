@@ -4,3 +4,4 @@ __pycache__/
 .streamlit/
 guidelines_index/
 processor.db
+.session_cache.json

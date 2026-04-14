@@ -15,666 +15,145 @@ st.set_page_config(
 )
 
 # --- Custom CSS ---
-st.markdown("""
+st.markdown(r"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
-
-/* ═══════════════════════════════════════════════════════════════
-   BRIGHT CLEAN THEME — Mortgage Pipeline Manager
-   ═══════════════════════════════════════════════════════════════ */
-
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 :root {
-    --bg-primary:    #ffffff;
-    --bg-secondary:  #f1f5f9;
-    --bg-card:       #f9fbfd;
-    --bg-card-hover: #eef3fb;
-    --bg-input:      #ffffff;
-    --accent:        #2563eb;
-    --accent-light:  #3b82f6;
-    --accent-glow:   rgba(37,99,235,0.10);
-    --accent-grad:   linear-gradient(135deg, #2563eb, #3b82f6);
-    --red:           #dc2626;
-    --red-bg:        rgba(220,38,38,0.06);
-    --red-border:    rgba(220,38,38,0.2);
-    --green:         #16a34a;
-    --green-bg:      rgba(22,163,74,0.08);
-    --green-border:  rgba(22,163,74,0.25);
-    --amber:         #ea580c;
-    --amber-bg:      rgba(234,88,12,0.06);
-    --amber-border:  rgba(234,88,12,0.25);
-    --purple:        #9333ea;
-    --purple-bg:     rgba(147,51,234,0.06);
-    --purple-border: rgba(147,51,234,0.2);
-    --text-primary:  #0f172a;
-    --text-secondary:#475569;
-    --text-muted:    #94a3b8;
-    --border:        #e2e8f0;
-    --border-light:  #cbd5e1;
-    --shadow-sm:     0 1px 4px rgba(0,0,0,0.04);
-    --shadow-md:     0 4px 16px rgba(37,99,235,0.08);
-    --shadow-lg:     0 8px 32px rgba(0,0,0,0.08);
-    --shadow-accent: 0 4px 20px rgba(37,99,235,0.12);
-    --radius-sm:     6px;
-    --radius-md:     10px;
-    --radius-lg:     14px;
-    --radius-xl:     20px;
+    --bg-page: #000000; --bg-white: #111111; --bg-subtle: #1a1a1a;
+    --accent: #39FF14; --accent-dark: #32d410; --accent-light: rgba(57, 255, 20, 0.1);
+    --green: #39FF14; --green-bg: rgba(57, 255, 20, 0.1); --green-border: rgba(57, 255, 20, 0.3);
+    --red: #ef4444; --red-bg: rgba(239, 68, 68, 0.1); --red-border: rgba(239, 68, 68, 0.3);
+    --amber: #f59e0b; --amber-bg: rgba(245, 158, 11, 0.1); --amber-border: rgba(245, 158, 11, 0.3);
+    --purple: #a78bfa; --purple-bg: rgba(167, 139, 250, 0.1); --purple-border: rgba(167, 139, 250, 0.3);
+    --pink: #f472b6; --pink-bg: rgba(244, 114, 182, 0.1); --pink-border: rgba(244, 114, 182, 0.3);
+    --gold: #fbbf24; --gold-bg: rgba(251, 191, 36, 0.1);
+    --slate-900: #ffffff; --slate-700: #e5e7eb; --slate-600: #9ca3af;
+    --slate-500: #6b7280; --slate-400: #6b7280; --slate-300: #374151;
+    --slate-200: rgba(255, 255, 255, 0.05); --slate-100: rgba(255, 255, 255, 0.03);
+    --radius-sm: 6px; --radius-md: 12px;
+    --shadow-card: 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-hover: 0 4px 12px rgba(0,0,0,0.4);
+    --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
+    --neon-glow: 0 0 20px rgba(57, 255, 20, 0.15), 0 0 60px rgba(57, 255, 20, 0.05);
+    --neon-glow-lg: 0 0 30px rgba(57, 255, 20, 0.25), 0 0 80px rgba(57, 255, 20, 0.1);
 }
-
-/* ── Global reset & base ─────────────────────────────────────── */
-html, body, [class*="css"] {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
+.stApp { background: var(--bg-page) !important; }
+.stApp::before {
+    content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background-image: radial-gradient(circle, rgba(57, 255, 20, 0.03) 1px, transparent 1px);
+    background-size: 32px 32px; pointer-events: none; z-index: 0;
 }
-.stApp {
-    background: var(--bg-primary) !important;
-}
-
-/* ── Hide Streamlit chrome ───────────────────────────────────── */
+[data-testid="stAppViewContainer"] > div:first-child { background: transparent !important; }
 #MainMenu, footer, header { visibility: hidden; height: 0; }
 .stDeployButton { display: none; }
-
-/* ── Sidebar ─────────────────────────────────────────────────── */
-[data-testid="stSidebar"] {
-    background: var(--bg-secondary) !important;
-    border-right: 1px solid var(--border) !important;
-}
-[data-testid="stSidebar"] > div:first-child {
-    padding: 1.25rem 0.75rem;
-}
-[data-testid="stSidebar"] button[kind="secondary"],
-[data-testid="stSidebar"] button {
-    background: transparent !important;
-    border: 1px solid transparent !important;
-    color: var(--text-secondary) !important;
-    border-radius: var(--radius-sm) !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    text-align: left !important;
-    justify-content: flex-start !important;
-    padding: 8px 12px !important;
-    margin-bottom: 2px !important;
-    transition: all 0.2s ease !important;
-    width: 100% !important;
-    box-shadow: none !important;
-}
-[data-testid="stSidebar"] button[kind="secondary"]:hover,
-[data-testid="stSidebar"] button:hover {
-    background: var(--bg-card) !important;
-    border-color: var(--border) !important;
-    color: var(--text-primary) !important;
-    box-shadow: none !important;
-    transform: none !important;
-}
-[data-testid="stSidebar"] button p,
-[data-testid="stSidebar"] button span,
-[data-testid="stSidebar"] button div {
-    text-align: left !important;
-    justify-content: flex-start !important;
-}
-
-/* Global: force ALL buttons left-aligned */
-button {
-    text-align: left !important;
-    justify-content: flex-start !important;
-}
+[data-testid="stSidebar"] { background: var(--bg-white) !important; border-right: 1px solid var(--slate-200) !important; }
+[data-testid="stSidebar"] > div:first-child { padding: 1.5rem 1rem; }
+[data-testid="stSidebar"] button { background: transparent !important; border: none !important; color: var(--slate-600) !important; border-radius: var(--radius-sm) !important; font-size: 13px !important; font-weight: 500 !important; text-align: left !important; padding: 8px 12px !important; margin-bottom: 2px !important; width: 100% !important; box-shadow: none !important; }
+[data-testid="stSidebar"] button:hover { background: var(--slate-100) !important; color: var(--accent) !important; }
+button { text-align: left !important; justify-content: flex-start !important; }
 button * { text-align: left !important; }
 button p { text-align: left !important; width: 100% !important; }
 button > div { justify-content: flex-start !important; text-align: left !important; }
-button > div > p { text-align: left !important; }
-
-/* Sidebar toggle */
-[data-testid="stSidebar"] [data-testid="stToggle"] label {
-    font-size: 13px !important;
-    color: var(--text-secondary) !important;
-    font-weight: 500 !important;
-}
-
-/* ── Main content area ───────────────────────────────────────── */
-.block-container {
-    padding: 1.25rem 2rem 2.5rem 2rem !important;
-    max-width: 1200px !important;
-}
-
-/* Page headings */
-h1 { font-size: 22px !important; font-weight: 800 !important; color: var(--text-primary) !important; letter-spacing: -0.4px; margin-bottom: 0.25rem !important; }
-h2 { font-size: 17px !important; font-weight: 700 !important; color: var(--text-primary) !important; }
-h3 { font-size: 14px !important; font-weight: 600 !important; color: var(--text-primary) !important; }
-p, li { color: var(--text-secondary) !important; font-size: 13px !important; font-weight: 400 !important; }
-label { color: var(--text-primary) !important; font-size: 13px !important; font-weight: 500 !important; }
-
-/* Markdown text */
-[data-testid="stMarkdownContainer"] p,
-[data-testid="stMarkdownContainer"] li,
-[data-testid="stMarkdownContainer"] span {
-    color: var(--text-secondary) !important;
-    font-size: 13px !important;
-}
-[data-testid="stMarkdownContainer"] strong {
-    color: var(--text-primary) !important;
-    font-weight: 600 !important;
-}
-
-/* ── Buttons ─────────────────────────────────────────────────── */
-button[kind="primary"] {
-    background: var(--accent-grad) !important;
-    color: #fff !important;
-    border: none !important;
-    border-radius: var(--radius-md) !important;
-    font-weight: 600 !important;
-    font-size: 13px !important;
-    padding: 0 20px !important;
-    height: 36px !important;
-    box-shadow: var(--shadow-accent) !important;
-    transition: all 0.2s ease !important;
-}
-button[kind="primary"]:hover {
-    box-shadow: 0 6px 28px rgba(37,99,235,0.22) !important;
-    transform: translateY(-1px) !important;
-}
-button[kind="secondary"] {
-    background: var(--bg-card) !important;
-    color: var(--text-secondary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-sm) !important;
-    font-weight: 500 !important;
-    font-size: 12px !important;
-    height: 34px !important;
-    transition: all 0.2s ease !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-button[kind="secondary"]:hover {
-    border-color: var(--accent-light) !important;
-    color: var(--accent) !important;
-    background: var(--bg-card-hover) !important;
-    box-shadow: var(--shadow-md) !important;
-    transform: none !important;
-}
-
-/* ── Inputs & selects ────────────────────────────────────────── */
-[data-testid="stTextInput"] input,
-[data-testid="stTextArea"] textarea,
-[data-testid="stSelectbox"] > div > div,
-[data-testid="stNumberInput"] input {
-    background: var(--bg-input) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-sm) !important;
-    color: var(--text-primary) !important;
-    font-size: 13px !important;
-    font-family: 'Inter', sans-serif !important;
-    box-shadow: none !important;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
-}
-[data-testid="stTextInput"] input:focus,
-[data-testid="stTextArea"] textarea:focus {
-    border-color: var(--accent) !important;
-    box-shadow: 0 0 0 3px var(--accent-glow) !important;
-}
-
-/* ── File uploader ───────────────────────────────────────────── */
-[data-testid="stFileUploader"] {
-    background: var(--bg-card) !important;
-    border: 1px dashed var(--border-light) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 16px !important;
-    transition: border-color 0.2s ease !important;
-}
-[data-testid="stFileUploader"]:hover {
-    border-color: var(--accent) !important;
-    background: var(--bg-card-hover) !important;
-}
-[data-testid="stFileUploader"] label { color: var(--text-secondary) !important; }
-[data-testid="stFileUploaderFile"] {
-    background: var(--bg-primary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-sm) !important;
-    color: var(--text-secondary) !important;
-}
-[data-testid="stFileUploaderFile"] span,
-[data-testid="stFileUploaderFile"] small,
-[data-testid="stFileUploaderFile"] p {
-    color: var(--text-secondary) !important;
-    font-weight: 500 !important;
-}
-[data-testid="stFileUploaderFileName"] {
-    color: var(--text-primary) !important;
-    font-weight: 600 !important;
-}
-[data-testid="stFileUploaderFileData"] { color: var(--text-muted) !important; }
-
-/* ── Form submit buttons ─────────────────────────────────────── */
-[data-testid="stForm"] [data-testid="stBaseButton-secondaryFormSubmit"],
-[data-testid="stForm"] button[kind="primaryFormSubmit"],
-[data-testid="stForm"] button[kind="secondaryFormSubmit"] {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border) !important;
-    color: var(--text-secondary) !important;
-    font-weight: 500 !important;
-    border-radius: var(--radius-sm) !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-[data-testid="stForm"] button[kind="primaryFormSubmit"]:hover,
-[data-testid="stForm"] button[kind="secondaryFormSubmit"]:hover {
-    background: var(--bg-card-hover) !important;
-    border-color: var(--accent-light) !important;
-    color: var(--accent) !important;
-}
-
-/* ── Expanders ───────────────────────────────────────────────── */
-[data-testid="stExpander"] {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-md) !important;
-    margin-bottom: 6px !important;
-    box-shadow: var(--shadow-sm) !important;
-    transition: box-shadow 0.2s ease !important;
-}
-[data-testid="stExpander"]:hover {
-    box-shadow: var(--shadow-md) !important;
-}
-[data-testid="stExpander"] summary {
-    font-weight: 600 !important;
-    color: var(--text-primary) !important;
-    font-size: 13px !important;
-    padding: 10px 14px !important;
-    min-height: 0 !important;
-    line-height: 1.4 !important;
-}
-[data-testid="stExpander"] summary:hover {
-    color: var(--accent) !important;
-    background: var(--bg-card-hover) !important;
-    border-radius: var(--radius-md) var(--radius-md) 0 0 !important;
-}
-[data-testid="stExpander"] > div[data-testid="stExpanderDetails"] {
-    padding: 8px 14px 14px 14px !important;
-}
-
-/* ── Info / warning / error boxes ────────────────────────────── */
-[data-testid="stAlert"] {
-    border-radius: var(--radius-sm) !important;
-    border-width: 1px !important;
-    font-size: 13px !important;
-}
-
-/* ── Dividers ────────────────────────────────────────────────── */
-hr { border-color: var(--border) !important; margin: 12px 0 !important; }
-
-/* ── Tabs ────────────────────────────────────────────────────── */
-[data-testid="stTabs"] [role="tab"] {
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    color: var(--text-muted) !important;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0 !important;
-    padding: 8px 16px !important;
-    transition: all 0.2s ease !important;
-}
-[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
-    color: var(--accent) !important;
-    border-bottom: 2px solid var(--accent) !important;
-    background: transparent !important;
-    font-weight: 600 !important;
-}
-
-/* ── Checkbox ────────────────────────────────────────────────── */
-[data-testid="stCheckbox"] label {
-    font-size: 13px !important;
-    color: var(--text-secondary) !important;
-}
-
-/* ── Caption / small text ────────────────────────────────────── */
-[data-testid="stCaptionContainer"] p,
-.stCaption { color: var(--text-muted) !important; font-size: 11px !important; font-weight: 500 !important; }
-
-/* ── Progress bar ────────────────────────────────────────────── */
-[data-testid="stProgress"] > div > div {
-    background: var(--accent-grad) !important;
-    border-radius: 4px !important;
-}
-[data-testid="stProgress"] {
-    background: var(--bg-secondary) !important;
-    border-radius: 4px !important;
-}
-
-/* ── Containers (bordered) ───────────────────────────────────── */
-[data-testid="stVerticalBlockBorderWrapper"] {
-    background: var(--bg-card) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-md) !important;
-    padding: 16px !important;
-    box-shadow: var(--shadow-sm) !important;
-}
-
-/* ── Selectbox dropdown ──────────────────────────────────────── */
-[data-testid="stSelectbox"] svg { color: var(--text-secondary) !important; }
-[data-baseweb="popover"] ul,
-[data-baseweb="menu"] {
-    background: var(--bg-primary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-sm) !important;
-    box-shadow: var(--shadow-md) !important;
-}
-[data-baseweb="popover"] li,
-[data-baseweb="menu"] li {
-    background: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-}
-[data-baseweb="popover"] li:hover,
-[data-baseweb="menu"] li:hover {
-    background: var(--bg-card-hover) !important;
-    color: var(--accent) !important;
-}
-[data-baseweb="select"] > div {
-    background: var(--bg-input) !important;
-    border-color: var(--border) !important;
-    color: var(--text-primary) !important;
-}
-
-/* ── Toggle ──────────────────────────────────────────────────── */
-[data-testid="stToggle"] > label > div[data-checked="true"] {
-    background: var(--accent) !important;
-}
-
-/* ── Condition status buttons ────────────────────────────────── */
-div[data-testid="stHorizontalBlock"] button[kind="secondary"] {
-    font-size: 12px !important;
-    font-weight: 600 !important;
-    padding: 3px 8px !important;
-    height: 30px !important;
-    border-radius: var(--radius-sm) !important;
-}
-
-/* ── Pipeline action row buttons ─────────────────────────────── */
-[data-testid="stHorizontalBlock"] button[kind="secondaryFormSubmit"],
-[data-testid="stHorizontalBlock"] button[kind="primaryFormSubmit"],
-[data-testid="stHorizontalBlock"] button[kind="secondary"] {
-    height: 32px !important;
-    font-size: 11px !important;
-    padding: 0 10px !important;
-    min-height: 0 !important;
-    line-height: 1 !important;
-}
-[data-testid="stHorizontalBlock"] select {
-    height: 32px !important;
-    font-size: 11px !important;
-    padding: 2px 6px !important;
-}
-[data-testid="stHorizontalBlock"] > div > div {
-    margin-bottom: 2px !important;
-}
-
-/* ── Tighten vertical gaps ───────────────────────────────────── */
-[data-testid="stVerticalBlock"] { gap: 6px !important; }
-[data-testid="stForm"] [data-testid="stVerticalBlock"],
-[data-testid="stTabs"] [data-testid="stVerticalBlock"] { gap: 10px !important; }
-
-/* ── Multiselect ─────────────────────────────────────────────── */
-[data-testid="stMultiSelect"] > div {
-    background: var(--bg-input) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-sm) !important;
-}
-[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
-    background: var(--bg-secondary) !important;
-    color: var(--text-secondary) !important;
-    border: 1px solid var(--border) !important;
-    border-radius: var(--radius-sm) !important;
-    font-size: 12px !important;
-    font-weight: 500 !important;
-}
-[data-testid="stMultiSelect"] input {
-    color: var(--text-primary) !important;
-    background: transparent !important;
-    border: none !important;
-}
-
-/* ── Markdown tables ─────────────────────────────────────────── */
-[data-testid="stMarkdownContainer"] table {
-    width: 100% !important;
-    border-collapse: collapse !important;
-    background: var(--bg-card) !important;
-    border-radius: var(--radius-sm) !important;
-    overflow: hidden !important;
-    font-size: 13px !important;
-    box-shadow: var(--shadow-sm) !important;
-    border: 1px solid var(--border) !important;
-}
-[data-testid="stMarkdownContainer"] thead tr { background: var(--bg-secondary) !important; }
-[data-testid="stMarkdownContainer"] th {
-    color: var(--text-secondary) !important;
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    padding: 8px 12px !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    border-bottom: 2px solid var(--border) !important;
-}
-[data-testid="stMarkdownContainer"] td {
-    color: var(--text-primary) !important;
-    font-size: 13px !important;
-    font-weight: 400 !important;
-    padding: 6px 12px !important;
-    border-bottom: 1px solid var(--border) !important;
-}
-[data-testid="stMarkdownContainer"] tr:hover td {
-    background: var(--bg-card-hover) !important;
-    color: var(--text-primary) !important;
-}
-
-/* ── Progress nav bar ────────────────────────────────────────── */
-.progress-nav {
-    display: flex;
-    gap: 3px;
-    background: var(--bg-secondary);
-    border-radius: var(--radius-md);
-    padding: 4px;
-    margin-bottom: 14px;
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-sm);
-    position: sticky;
-    top: 0;
-    z-index: 999;
-    flex-wrap: wrap;
-}
-.pn-step {
-    flex: 1;
-    min-width: 70px;
-    text-align: center;
-    padding: 6px 6px;
-    border-radius: var(--radius-sm);
-    font-size: 10px;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.2s ease;
-    line-height: 1.3;
-    color: var(--text-muted);
-}
-.pn-step.done    { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-.pn-step.active  { background: var(--accent-glow); color: var(--accent); border: 1px solid rgba(37,99,235,0.2); }
-.pn-step.pending { background: transparent; color: var(--text-muted); }
-.pn-step:hover   { background: var(--bg-card-hover); color: var(--accent); }
-.pn-num { display: block; font-size: 12px; font-weight: 600; margin-bottom: 1px; }
-.section-anchor  { display: block; position: relative; top: -100px; visibility: hidden; }
-
-/* ── Party / condition badges ────────────────────────────────── */
-.badge {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    font-size: 11px;
-    font-weight: 500;
-    margin: 1px 2px;
-    letter-spacing: 0.2px;
-}
-.badge-borrower    { background: rgba(37,99,235,0.08); color: #2563eb; border: 1px solid rgba(37,99,235,0.2); }
-.badge-title       { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
-.badge-underwriter { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
-.badge-insurance   { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-.badge-closer      { background: rgba(202,138,4,0.08); color: #ca8a04; border: 1px solid rgba(202,138,4,0.2); }
-.badge-jr          { background: rgba(219,39,119,0.08); color: #db2777; border: 1px solid rgba(219,39,119,0.2); }
-.badge-manager     { background: rgba(37,99,235,0.08); color: #2563eb; border: 1px solid rgba(37,99,235,0.2); }
-.badge-appraiser   { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-.badge-default     { background: var(--bg-secondary); color: var(--text-secondary); border: 1px solid var(--border); }
-
-/* ── Pipeline status chips ───────────────────────────────────── */
-.status-chip {
-    display: inline-block;
-    padding: 2px 8px;
-    border-radius: var(--radius-sm);
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.2px;
-}
-.status-pending   { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
-.status-requested { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
-.status-cleared   { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
-.status-overdue   { background: var(--bg-secondary); color: var(--text-muted); border: 1px solid var(--border); }
-.status-closed    { background: var(--bg-secondary); color: var(--text-muted); border: 1px solid var(--border); }
-
-/* ── Scrollable pipeline container ───────────────────────────── */
-.pipeline-scroll {
-    max-height: 75vh;
-    overflow-y: auto;
-    overflow-x: hidden;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 2px 4px;
-    background: var(--bg-primary);
-    margin-bottom: 8px;
-}
-.pipeline-scroll::-webkit-scrollbar { width: 6px; }
-.pipeline-scroll::-webkit-scrollbar-track { background: var(--bg-secondary); border-radius: 3px; }
-.pipeline-scroll::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 3px; }
-.pipeline-scroll::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-
-/* ── Loan pipeline cards ─────────────────────────────────────── */
-.loan-card {
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    padding: 4px 10px;
-    margin: 0 0 2px 0;
-    transition: all 0.2s ease;
-    line-height: 1.2;
-    box-shadow: var(--shadow-sm);
-}
-.loan-card:hover {
-    border-color: var(--accent-light);
-    background: var(--bg-card-hover);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
-}
-.loan-num   { font-size: 12px; font-weight: 700; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
-.loan-name  { font-size: 12px; color: var(--text-primary); font-weight: 600; }
-.loan-due   { font-size: 10px; color: var(--text-muted); font-weight: 400; }
-.loan-missing { font-size: 10px; color: var(--red); font-weight: 500; }
-
-/* ── Stat cards ──────────────────────────────────────────────── */
-.stat-card {
-    text-align: left;
-    padding: 8px 12px;
-    border-radius: var(--radius-md);
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    box-shadow: var(--shadow-sm);
-}
-.stat-num  { font-size: 18px; font-weight: 700; color: var(--text-primary); line-height: 1; }
-.stat-label { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.3px; }
-
-/* ── Login card ──────────────────────────────────────────────── */
-.login-card {
-    max-width: 420px;
-    margin: 40px auto 0 auto;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
-    padding: 32px 28px;
-    box-shadow: var(--shadow-lg);
-}
-.login-title {
-    font-size: 20px;
-    font-weight: 800;
-    color: var(--text-primary);
-    text-align: center;
-    margin-bottom: 4px;
-}
-.login-sub {
-    font-size: 12px;
-    color: var(--text-muted);
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-/* ── Subtle layout tightening ────────────────────────────────── */
+.block-container { padding: 1.5rem 2rem 3rem 2rem !important; max-width: 1200px !important; }
+h1 { font-size: 24px !important; font-weight: 800 !important; color: var(--slate-900) !important; }
+h2 { font-size: 18px !important; font-weight: 700 !important; color: var(--slate-900) !important; }
+h3 { font-size: 15px !important; font-weight: 600 !important; color: var(--slate-700) !important; }
+p, li { color: var(--slate-600) !important; font-size: 13px !important; }
+label { color: var(--slate-700) !important; font-size: 13px !important; font-weight: 500 !important; }
+[data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span { color: var(--slate-600) !important; font-size: 13px !important; }
+[data-testid="stMarkdownContainer"] strong { color: var(--slate-900) !important; font-weight: 600 !important; }
+button[kind="primary"] { background: var(--accent) !important; color: #000000 !important; border: none !important; border-radius: var(--radius-sm) !important; font-weight: 700 !important; font-size: 13px !important; height: 36px !important; box-shadow: 0 0 20px rgba(57, 255, 20, 0.25) !important; transition: all 0.25s ease !important; }
+button[kind="primary"]:hover { background: #fff !important; box-shadow: 0 0 25px rgba(57, 255, 20, 0.4) !important; transform: translateY(-2px) !important; }
+button[kind="primary"] p { color: #000000 !important; font-weight: 700 !important; }
+button[kind="secondary"] { background: var(--bg-white) !important; color: var(--slate-600) !important; border: 1px solid var(--slate-300) !important; border-radius: var(--radius-sm) !important; font-weight: 500 !important; font-size: 12px !important; height: 34px !important; box-shadow: var(--shadow-card) !important; }
+button[kind="secondary"]:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: var(--accent-light) !important; box-shadow: var(--neon-glow) !important; }
+button[kind="secondary"] p { color: var(--slate-600) !important; }
+button[kind="secondary"]:hover p { color: var(--accent) !important; }
+[data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea, [data-testid="stSelectbox"] > div > div, [data-testid="stNumberInput"] input { background: var(--bg-subtle) !important; border: 1px solid var(--slate-300) !important; border-radius: var(--radius-sm) !important; color: var(--slate-900) !important; font-size: 13px !important; }
+[data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.1) !important; }
+[data-testid="stFileUploader"] { background: var(--bg-white) !important; border: 1px dashed var(--slate-300) !important; border-radius: var(--radius-md) !important; }
+[data-testid="stFileUploaderFile"] { background: var(--bg-subtle) !important; border: 1px solid var(--slate-200) !important; }
+[data-testid="stFileUploaderFile"] span, [data-testid="stFileUploaderFile"] p { color: var(--slate-700) !important; }
+[data-testid="stFileUploaderFileName"] { color: var(--slate-900) !important; font-weight: 600 !important; }
+[data-testid="stExpander"] { background: var(--bg-white) !important; border: 1px solid var(--slate-200) !important; border-radius: var(--radius-md) !important; margin-bottom: 6px !important; box-shadow: var(--shadow-card) !important; transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important; }
+[data-testid="stExpander"]:hover { border-color: var(--accent) !important; box-shadow: var(--neon-glow) !important; transform: translateY(-2px) !important; }
+[data-testid="stExpander"] summary { font-weight: 600 !important; color: var(--slate-900) !important; font-size: 13px !important; padding: 10px 14px !important; }
+[data-testid="stExpander"] summary:hover { color: var(--accent) !important; background: var(--accent-light) !important; }
+[data-testid="stAlert"][data-type="warning"], .stAlert[kind="warning"] { background: var(--amber-bg) !important; color: var(--amber) !important; border: 1px solid var(--amber-border) !important; }
+[data-testid="stAlert"][data-type="error"], .stAlert[kind="error"] { background: var(--red-bg) !important; color: var(--red) !important; border: 1px solid var(--red-border) !important; }
+[data-testid="stAlert"][data-type="success"], .stAlert[kind="success"] { background: var(--green-bg) !important; color: var(--green) !important; border: 1px solid var(--green-border) !important; }
+[data-testid="stAlert"][data-type="info"], .stAlert[kind="info"] { background: var(--accent-light) !important; color: var(--accent) !important; border: 1px solid var(--green-border) !important; }
+hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
+[data-testid="stTabs"] [role="tab"] { font-size: 13px !important; font-weight: 500 !important; color: var(--slate-500) !important; }
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] { color: var(--accent) !important; border-bottom: 2px solid var(--accent) !important; font-weight: 700 !important; }
+[data-testid="stProgress"] > div > div { background: var(--accent) !important; }
+[data-testid="stProgress"] { background: var(--slate-300) !important; }
+[data-testid="stVerticalBlockBorderWrapper"] { background: var(--bg-white) !important; border: 1px solid var(--slate-200) !important; border-radius: var(--radius-md) !important; box-shadow: var(--shadow-card) !important; transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important; }
+[data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: var(--accent) !important; box-shadow: var(--neon-glow) !important; transform: translateY(-4px) !important; }
+[data-baseweb="popover"] ul, [data-baseweb="menu"] { background: var(--bg-white) !important; border: 1px solid var(--slate-300) !important; box-shadow: var(--shadow-hover) !important; }
+[data-baseweb="popover"] li, [data-baseweb="menu"] li { background: var(--bg-white) !important; color: var(--slate-900) !important; }
+[data-baseweb="popover"] li:hover, [data-baseweb="menu"] li:hover { background: var(--accent-light) !important; color: var(--accent) !important; }
+[data-baseweb="select"] > div { background: var(--bg-subtle) !important; border-color: var(--slate-300) !important; color: var(--slate-900) !important; }
+[data-testid="stToggle"] > label > div[data-checked="true"] { background: var(--accent) !important; }
 [data-testid="stHorizontalBlock"] { gap: 0.3rem !important; }
-
-/* ── Toasts, alerts, and popups ──────────────────────────────── */
-[data-testid="stToast"],
-div[data-testid="stToast"] > div {
-    background: var(--bg-primary) !important;
-    color: var(--text-primary) !important;
-    border: 1px solid var(--border) !important;
-    box-shadow: var(--shadow-md) !important;
-    border-radius: var(--radius-sm) !important;
-}
-[data-testid="stToast"] p,
-[data-testid="stToast"] span { color: var(--text-primary) !important; }
-div[data-testid="stAlert"],
-div[role="alert"],
-div[data-baseweb="notification"] {
-    background: var(--bg-card) !important;
-    color: var(--text-primary) !important;
-    border-color: var(--border) !important;
-    border-radius: var(--radius-sm) !important;
-}
-div[data-baseweb="notification"] div { color: var(--text-primary) !important; }
-div[data-testid="stAlert"][data-type="warning"],
-div.stAlert[kind="warning"] {
-    background: var(--amber-bg) !important;
-    border-left-color: var(--amber) !important;
-    color: var(--amber) !important;
-}
-div[data-testid="stAlert"][data-type="error"],
-div.stAlert[kind="error"] {
-    background: var(--red-bg) !important;
-    border-left-color: var(--red) !important;
-    color: var(--red) !important;
-}
-div[data-testid="stAlert"][data-type="success"],
-div.stAlert[kind="success"] {
-    background: var(--green-bg) !important;
-    border-left-color: var(--green) !important;
-    color: var(--green) !important;
-}
-div[data-testid="stAlert"][data-type="info"],
-div.stAlert[kind="info"] {
-    background: var(--accent-glow) !important;
-    border-left-color: var(--accent) !important;
-    color: var(--accent) !important;
-}
-div[data-testid="stAlert"] p,
-div[data-testid="stAlert"] span,
-div[data-testid="stAlert"] div,
-div[role="alert"] p,
-div[role="alert"] span { color: inherit !important; }
-div[data-baseweb="popover"],
-div[data-baseweb="tooltip"],
-ul[data-testid="stSelectboxVirtualDropdown"] {
-    background: var(--bg-primary) !important;
-    border: 1px solid var(--border) !important;
-    box-shadow: var(--shadow-md) !important;
-    border-radius: var(--radius-sm) !important;
-}
-div[data-baseweb="popover"] li,
-ul[data-testid="stSelectboxVirtualDropdown"] li {
-    color: var(--text-primary) !important;
-    background: var(--bg-primary) !important;
-}
-div[data-baseweb="popover"] li:hover,
-ul[data-testid="stSelectboxVirtualDropdown"] li:hover {
-    background: var(--bg-card-hover) !important;
-}
-div[data-testid="stExpander"] summary { color: var(--text-primary) !important; }
-div[data-testid="stCaptionContainer"] p { color: var(--text-muted) !important; }
+[data-testid="stHorizontalBlock"] > div > div { margin-bottom: 2px !important; }
+[data-testid="stVerticalBlock"] { gap: 6px !important; }
+[data-testid="stMultiSelect"] > div { background: var(--bg-subtle) !important; border: 1px solid var(--slate-300) !important; }
+[data-testid="stMultiSelect"] span[data-baseweb="tag"] { background: var(--accent-light) !important; color: var(--accent) !important; border: 1px solid var(--green-border) !important; }
+[data-testid="stMarkdownContainer"] table { width: 100% !important; border-collapse: collapse !important; background: var(--bg-white) !important; border: 1px solid var(--slate-200) !important; box-shadow: var(--shadow-card) !important; }
+[data-testid="stMarkdownContainer"] thead tr { background: var(--bg-subtle) !important; }
+[data-testid="stMarkdownContainer"] th { color: var(--slate-700) !important; font-size: 11px !important; font-weight: 600 !important; padding: 8px 12px !important; text-transform: uppercase !important; border-bottom: 2px solid var(--slate-300) !important; }
+[data-testid="stMarkdownContainer"] td { color: var(--slate-900) !important; font-size: 13px !important; padding: 6px 12px !important; border-bottom: 1px solid var(--slate-200) !important; }
+[data-testid="stMarkdownContainer"] tr:hover td { background: var(--accent-light) !important; }
+.progress-nav { display: flex; gap: 3px; background: var(--bg-subtle); border-radius: var(--radius-md); padding: 4px; margin-bottom: 14px; border: 1px solid var(--slate-200); box-shadow: var(--shadow-card); }
+.pn-step { flex: 1; min-width: 70px; text-align: center; padding: 6px; border-radius: var(--radius-sm); font-size: 10px; font-weight: 500; text-decoration: none; color: var(--slate-500); }
+.pn-step.done { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); font-weight: 600 !important; }
+.pn-step.active { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent); font-weight: 600 !important; box-shadow: 0 0 10px rgba(57, 255, 20, 0.15); }
+.pn-step.pending { background: transparent; color: var(--slate-500); }
+.pn-num { display: block; font-size: 12px; font-weight: 600; margin-bottom: 1px; }
+.badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+.badge-borrower { background: var(--accent-light); color: var(--accent); border: 1px solid var(--green-border); }
+.badge-title { background: var(--purple-bg); color: var(--purple); border: 1px solid var(--purple-border); }
+.badge-underwriter { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+.badge-insurance { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.badge-closer { background: var(--gold-bg); color: var(--gold); border: 1px solid rgba(251, 191, 36, 0.3); }
+.badge-jr { background: var(--pink-bg); color: var(--pink); border: 1px solid var(--pink-border); }
+.badge-manager { background: var(--accent-light); color: var(--accent); border: 1px solid var(--green-border); }
+.badge-appraiser { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.badge-default { background: var(--slate-100); color: var(--slate-600); border: 1px solid var(--slate-200); }
+.status-chip { display: inline-block; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
+.status-pending { background: var(--red-bg); color: var(--red); border: 1px solid var(--red-border); }
+.status-requested { background: var(--amber-bg); color: var(--amber); border: 1px solid var(--amber-border); }
+.status-cleared { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); }
+.status-overdue { background: var(--slate-100); color: var(--slate-600); border: 1px solid var(--slate-300); }
+.status-closed { background: var(--slate-100); color: var(--slate-500); border: 1px solid var(--slate-200); }
+.loan-card { background: var(--bg-white); border: 1px solid var(--slate-200); border-radius: var(--radius-md); padding: 6px 12px; margin: 0 0 4px 0; box-shadow: var(--shadow-card); line-height: 1.3; transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important; }
+.loan-card:hover { border-color: var(--accent) !important; background: var(--accent-light) !important; box-shadow: var(--neon-glow) !important; transform: translateY(-2px) !important; }
+.loan-num { font-size: 13px; font-weight: 700; color: var(--accent); font-family: 'JetBrains Mono', monospace; }
+.loan-name { font-size: 13px; color: var(--slate-900); font-weight: 600; }
+.loan-due { font-size: 11px; color: var(--slate-500); }
+.loan-missing { font-size: 11px; color: var(--red); font-weight: 500; }
+.stat-card { text-align: left; padding: 10px 14px; border-radius: var(--radius-md); background: var(--bg-white); border: 1px solid var(--slate-200); box-shadow: var(--shadow-card); transition: transform 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease !important; }
+.stat-card:hover { border-color: var(--accent) !important; box-shadow: var(--neon-glow) !important; transform: translateY(-2px) !important; }
+.stat-num { font-size: 20px; font-weight: 700; color: var(--accent); }
+.stat-label { font-size: 10px; color: var(--slate-500); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
+.login-card { max-width: 360px; margin: 0 auto; background: var(--bg-white); border: 1px solid var(--slate-200); border-radius: 16px; padding: 36px 32px 28px; box-shadow: 0 0 30px rgba(57, 255, 20, 0.1), 0 4px 24px rgba(0,0,0,0.4); }
+.login-title { font-size: 22px; font-weight: 800; color: var(--slate-900); text-align: center; letter-spacing: -0.4px; }
+.login-sub { font-size: 12px; color: var(--slate-500); text-align: center; margin-bottom: 20px; }
+.login-page-wrap { max-width: 360px; margin: 0 auto; padding: 0 0 40px 0; }
+.login-sandbox-btn button { background: var(--accent) !important; color: #000 !important; border: none !important; font-weight: 700 !important; font-size: 13px !important; border-radius: 12px !important; height: 44px !important; min-height: 44px !important; box-shadow: 0 0 20px rgba(57, 255, 20, 0.25) !important; transition: all 0.25s ease !important; }
+.login-sandbox-btn button:hover { box-shadow: 0 0 30px rgba(57, 255, 20, 0.4) !important; transform: translateY(-2px) !important; }
+.login-sandbox-btn button p { color: #000 !important; font-weight: 700 !important; }
+.login-divider { display:flex;align-items:center;gap:10px;margin:18px 0 14px; }
+.login-divider span { font-size:11px;color:var(--slate-500);white-space:nowrap; }
+.login-divider hr { flex:1;border:none;border-top:1px solid var(--slate-200); }
+[data-testid="stToast"], div[data-testid="stToast"] > div { background: var(--bg-white) !important; color: var(--slate-900) !important; border: 1px solid var(--slate-300) !important; }
+div[data-baseweb="popover"], ul[data-testid="stSelectboxVirtualDropdown"] { background: var(--bg-white) !important; border: 1px solid var(--slate-300) !important; }
+div[data-baseweb="popover"] li, ul[data-testid="stSelectboxVirtualDropdown"] li { color: var(--slate-900) !important; }
+div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown"] li:hover { background: var(--accent-light) !important; }
+[data-testid="stCaptionContainer"] p { color: var(--slate-500) !important; }
+.glow-text { text-shadow: 0 0 40px rgba(57, 255, 20, 0.3); }
 </style>
 """, unsafe_allow_html=True)
 
@@ -695,9 +174,43 @@ DEFAULTS = {
     "reader_page": 1,
     "pipeline_add_open": False,
 }
+
+# ── Persist auth across browser refreshes ──────────────────────────────────
+import json as _json_auth
+_SESSION_FILE = os.path.join(os.path.dirname(__file__), ".session_cache.json")
+_AUTH_KEYS = ["authenticated", "user_id", "user_email", "user_name", "user_role", "sandbox_mode", "page"]
+
+def _save_session():
+    try:
+        _data = {k: st.session_state.get(k) for k in _AUTH_KEYS}
+        with open(_SESSION_FILE, "w") as _f:
+            _json_auth.dump(_data, _f)
+    except Exception:
+        pass
+
+def _clear_session():
+    try:
+        if os.path.exists(_SESSION_FILE):
+            os.remove(_SESSION_FILE)
+    except Exception:
+        pass
+
+# Initialize defaults first
 for key, val in DEFAULTS.items():
     if key not in st.session_state:
         st.session_state[key] = val
+
+# Restore from session file if not yet authenticated
+if not st.session_state.get("authenticated"):
+    try:
+        if os.path.exists(_SESSION_FILE):
+            with open(_SESSION_FILE) as _f:
+                _cached = _json_auth.load(_f)
+            if _cached.get("authenticated") and _cached.get("user_id"):
+                for _k, _v in _cached.items():
+                    st.session_state[_k] = _v
+    except Exception:
+        pass
 
 
 # --- All workflow steps ---
@@ -728,25 +241,82 @@ def render_progress_bar(completed_steps):
     st.markdown(html, unsafe_allow_html=True)
 
 
+def _render_condition(_c, _fkey, _party_options, _cond_statuses):
+    """Render a single condition row with checkbox, status, and party selector.
+    Returns (checked_bool, status_str, parties_list)."""
+    _cnum = _c.get("num", "?")
+    _cdesc = _c.get("desc", "—")
+    _cparty = _c.get("party", "Borrower")
+    _cstatus = _c.get("status", "Needed")
+
+    _uid = f"{_fkey}_{_cnum}"
+
+    # Three-column layout for each condition
+    _cc1, _cc2, _cc3 = st.columns([1, 1.5, 2])
+    with _cc1:
+        _chk = st.checkbox(f"#{_cnum}", value=False, key=f"{_uid}_chk")
+    with _cc2:
+        _status_labels = list(_cond_statuses.keys())
+        _status_idx = _status_labels.index(_cstatus) if _cstatus in _status_labels else 0
+        _cstat = st.selectbox(
+            "Status",
+            _status_labels,
+            index=_status_idx,
+            key=f"{_uid}_stat",
+            label_visibility="collapsed",
+        )
+    with _cc3:
+        _cparties = st.multiselect(
+            "Parties",
+            _party_options,
+            default=[_cparty] if _cparty in _party_options else [],
+            key=f"{_uid}_party",
+            label_visibility="collapsed",
+        )
+
+    # Show condition description
+    st.markdown(
+        f'<div style="font-size:12px;color:#ffffff;margin:-8px 0 8px 0;">'
+        f'<b style="color:#39FF14;">#{_cnum}</b> {_cdesc}'
+        f'<span style="color:#9ca3af;margin-left:8px;font-size:11px;">'
+        f'{_cstat}</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    return (_chk, _cstat, _cparties)
+
+
 def show_login_page():
     """Login / Signup page."""
-    st.markdown("""
-    <div style="text-align:center; padding: 48px 0 8px 0;">
-      <div style="font-size:36px; margin-bottom:6px;">—</div>
-      <div style="font-size:28px; font-weight:800; color:#222222; letter-spacing:-0.5px;">
-        Pipeline Manager
-      </div>
-      <div style="font-size:13px; color:#484f58; margin-top:4px;">
-        Offline Mortgage Processing &nbsp;·&nbsp; No cloud &nbsp;·&nbsp; No API keys
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+    # Push content down and center it with a narrow column
+    st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
+    _, center, _ = st.columns([1, 1.4, 1])
 
-    st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+    with center:
+        st.markdown('<div class="login-page-wrap">', unsafe_allow_html=True)
 
-    _, sb_col, _ = st.columns([1, 1, 1])
-    with sb_col:
-        if st.button("* Try Sandbox — No Account Needed", type="primary", use_container_width=True):
+        # ── Branding ────────────────────────────────────────────────
+        st.markdown("""
+        <div style="text-align:center;margin-bottom:24px;">
+          <div style="display:inline-flex;align-items:center;justify-content:center;
+               width:48px;height:48px;background:linear-gradient(135deg,#39FF14,#32E012);
+               border-radius:12px;margin-bottom:12px;">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
+            </svg>
+          </div>
+          <div style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">
+            Pipeline Manager
+          </div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:5px;letter-spacing:0.3px;">
+            OFFLINE MORTGAGE PROCESSING
+          </div>
+        </div>
+        """, unsafe_allow_html=True)
+
+        # ── Sandbox button ───────────────────────────────────────────
+        st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
+        if st.button("Try Sandbox  —  No Account Needed", type="primary", use_container_width=True):
             st.session_state.authenticated = True
             st.session_state.user_id = "sandbox"
             st.session_state.user_email = "sandbox@demo"
@@ -754,63 +324,84 @@ def show_login_page():
             st.session_state.user_role = "Processor"
             st.session_state.sandbox_mode = True
             st.session_state.page = "dashboard"
+            _save_session()
             st.rerun()
-        st.caption("Free & unlimited — results not saved between sessions")
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div style="text-align:center;font-size:10px;color:#9ca3af;margin-top:4px;margin-bottom:4px;">'
+            'Full access · Nothing saved between sessions</div>',
+            unsafe_allow_html=True
+        )
 
-    st.markdown("<div style='height:24px'></div>", unsafe_allow_html=True)
-    st.markdown("---")
+        # ── Divider ──────────────────────────────────────────────────
+        st.markdown("""
+        <div class="login-divider">
+          <hr/><span>or sign in with your account</span><hr/>
+        </div>
+        """, unsafe_allow_html=True)
 
-    tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
+        # ── Tabs: Login / Sign Up ─────────────────────────────────────
+        tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
 
-    with tab_login:
-        with st.form("login_form"):
-            email = st.text_input("Email")
-            password = st.text_input("Password", type="password")
-            submitted = st.form_submit_button("Login", use_container_width=True)
-            if submitted and email and password:
-                from db import login
-                result = login(email, password)
-                if result.get("success"):
-                    st.session_state.authenticated = True
-                    st.session_state.user_id = result["user_id"]
-                    st.session_state.user_email = result["email"]
-                    st.session_state.user_name = result.get("display_name") or result["email"].split("@")[0]
-                    st.session_state.user_role = result.get("role", "Processor")
-                    st.session_state.sandbox_mode = False
-                    st.session_state.page = "dashboard"
-                    st.rerun()
-                else:
-                    st.error(result.get("error", "Login failed"))
-
-    with tab_signup:
-        with st.form("signup_form"):
-            from db import ROLE_OPTIONS
-            display_name = st.text_input("Your Name", placeholder="e.g. Maria Garcia", key="signup_name")
-            role = st.selectbox("Your Role", ROLE_OPTIONS, key="signup_role")
-            email = st.text_input("Email", key="signup_email")
-            password = st.text_input("Password", type="password", key="signup_pass")
-            confirm = st.text_input("Confirm Password", type="password", key="signup_confirm")
-            tos = st.checkbox(
-                "I acknowledge that documents are processed in memory only and never stored. "
-                "I have authorization to process any documents I upload."
-            )
-            submitted = st.form_submit_button("Create Account", use_container_width=True)
-            if submitted:
-                if not tos:
-                    st.error("Please check the acknowledgment above")
-                elif password != confirm:
-                    st.error("Passwords do not match")
-                elif len(password) < 6:
-                    st.error("Password must be at least 6 characters")
-                elif not display_name.strip():
-                    st.error("Please enter your name")
-                elif email and password:
-                    from db import signup
-                    result = signup(email, password, display_name=display_name, role=role)
+        with tab_login:
+            with st.form("login_form"):
+                email = st.text_input("Email", placeholder="you@example.com")
+                password = st.text_input("Password", type="password", placeholder="••••••••")
+                submitted = st.form_submit_button("Sign In", use_container_width=True, type="primary")
+                if submitted and email and password:
+                    from db import login
+                    result = login(email, password)
                     if result.get("success"):
-                        st.success(f"Account created for {display_name}! You can now log in.")
+                        st.session_state.authenticated = True
+                        st.session_state.user_id = result["user_id"]
+                        st.session_state.user_email = result["email"]
+                        st.session_state.user_name = result.get("display_name") or result["email"].split("@")[0]
+                        st.session_state.user_role = result.get("role", "Processor")
+                        st.session_state.sandbox_mode = False
+                        st.session_state.page = "dashboard"
+                        _save_session()
+                        st.rerun()
                     else:
-                        st.error(result.get("error", "Signup failed"))
+                        st.error(result.get("error", "Login failed"))
+
+        with tab_signup:
+            with st.form("signup_form"):
+                from db import ROLE_OPTIONS
+                display_name = st.text_input("Full Name", placeholder="e.g. Maria Garcia", key="signup_name")
+                role = st.selectbox("Role", ROLE_OPTIONS, key="signup_role")
+                email = st.text_input("Email", placeholder="you@example.com", key="signup_email")
+                password = st.text_input("Password", type="password", placeholder="Min 6 characters", key="signup_pass")
+                confirm = st.text_input("Confirm Password", type="password", placeholder="Repeat password", key="signup_confirm")
+                tos = st.checkbox(
+                    "Documents are processed in memory only and never stored. "
+                    "I have authorization to process any documents I upload."
+                )
+                submitted = st.form_submit_button("Create Account", use_container_width=True, type="primary")
+                if submitted:
+                    if not tos:
+                        st.error("Please check the acknowledgment above")
+                    elif password != confirm:
+                        st.error("Passwords do not match")
+                    elif len(password) < 6:
+                        st.error("Password must be at least 6 characters")
+                    elif not display_name.strip():
+                        st.error("Please enter your name")
+                    elif email and password:
+                        from db import signup
+                        result = signup(email, password, display_name=display_name, role=role)
+                        if result.get("success"):
+                            st.success(f"Account created for {display_name}! You can now log in.")
+                        else:
+                            st.error(result.get("error", "Signup failed"))
+
+        # ── Footer ───────────────────────────────────────────────────
+        st.markdown("""
+        <div style="text-align:center;margin-top:20px;font-size:10px;color:#d1d5db;">
+          100% offline &nbsp;·&nbsp; No cloud &nbsp;·&nbsp; No API keys required
+        </div>
+        """, unsafe_allow_html=True)
+
+        st.markdown('</div>', unsafe_allow_html=True)
 
 
 
@@ -822,82 +413,65 @@ def show_sidebar():
         user_role = st.session_state.get("user_role", "")
         is_sandbox = st.session_state.get("sandbox_mode", False)
 
-        st.markdown("""
-        <div style="padding: 4px 0 16px 0;">
-          <div style="font-size:20px; font-weight:800; color:#222222; letter-spacing:-0.3px;">
-            Pipeline Manager
-          </div>
-          <div style="font-size:11px; color:#5c6370; margin-top:4px;">Offline · Local · No cloud</div>
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown(
+            '<div style="padding:4px 0 12px 0;">'
+            '<div style="font-size:18px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;">'
+            'Pipeline Manager</div>'
+            '<div style="font-size:10px;color:var(--slate-400);margin-top:2px;">Offline · Local</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
 
         # ── Who's logged in ──────────────────────────────────────────────────
         if is_sandbox:
             st.markdown(
-                '<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-                'padding:8px 12px;margin-bottom:12px;">'
-                '<span style="font-size:12px;color:#5c6370;">* Sandbox Mode</span></div>',
+                '<div style="font-size:11px;color:var(--slate-500);margin-bottom:10px;">'
+                '* Sandbox Mode</div>',
                 unsafe_allow_html=True,
             )
         elif user_name:
-            role_color = {"Loan Officer": "#e67e22", "Manager": "#2980b9",
-                          "Jr Underwriter": "#c0392b"}.get(user_role, "#2563eb")
+            role_color = {"Loan Officer": "var(--amber)", "Manager": "var(--accent)",
+                          "Jr Underwriter": "var(--red)"}.get(user_role, "var(--accent)")
             st.markdown(
-                f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-                f'padding:8px 12px;margin-bottom:12px;">'
-                f'<div style="font-size:13px;font-weight:700;color:#111111;">{user_name}</div>'
-                f'<div style="font-size:11px;color:{role_color};font-weight:600;">{user_role}</div>'
-                f'</div>',
+                f'<div style="font-size:12px;font-weight:700;color:var(--slate-900);'
+                f'margin-bottom:2px;">{user_name}</div>'
+                f'<div style="font-size:10px;color:{role_color};font-weight:600;'
+                f'margin-bottom:10px;">{user_role}</div>',
                 unsafe_allow_html=True,
             )
 
-        st.markdown("---")
-
-        if st.button("Document Scanner", use_container_width=True):
-            st.session_state.page = "dashboard"
-            st.rerun()
-        if st.button("Files️ My Pipeline", use_container_width=True):
-            st.session_state.page = "pipeline"
-            st.rerun()
-        if st.button("Document Reader", use_container_width=True):
-            st.session_state.page = "reader"
-            st.rerun()
-        if st.button("My Team", use_container_width=True):
-            st.session_state.page = "team"
-            st.rerun()
-        if st.button("Email Email Watch", use_container_width=True):
-            st.session_state.page = "email_watch"
-            st.rerun()
-        if st.button("AI Settings", use_container_width=True):
-            st.session_state.page = "ollama"
-            st.rerun()
-        if st.button("$ Usage & Billing", use_container_width=True):
-            st.session_state.page = "billing"
-            st.rerun()
-        if not is_sandbox:
-            if st.button("My History", use_container_width=True):
-                st.session_state.page = "history"
+        def _nav(label, page):
+            if st.button(label, use_container_width=True):
+                st.session_state.page = page
+                _save_session()
                 st.rerun()
+
+        _nav("Scanner", "dashboard")
+        _nav("Pipeline", "pipeline")
+        _nav("Reader", "reader")
+        _nav("Team", "team")
+        _nav("Email Watch", "email_watch")
+        _nav("AI", "ollama")
+        _nav("Billing", "billing")
+        if not is_sandbox:
+            _nav("History", "history")
 
         st.markdown("---")
 
         # ── Email Watch status indicator ──────────────────────────────────────
         import email_watch as _ew
         _ew_status = _ew.get_status()
-        _ew_running = _ew_status["running"]
         _ew_pending = _ew_status["pending_count"]
-        _ew_last    = _ew_status["last_time"] or "—"
-        if _ew_running:
-            _dot = "●"
-            _label = f"Watching · {_ew_last}"
+        _ew_last = _ew_status["last_time"] or "—"
+        if _ew_status["running"]:
+            _ew_lbl = f"Watching · {_ew_pending} pending"
         else:
-            _dot = "●"
-            _label = "Inbox watch off"
-        _badge = f' <span style="background:#2563eb;color:#fff;font-size:10px;border-radius:8px;padding:1px 6px;">{_ew_pending}</span>' if _ew_pending else ""
+            _ew_lbl = f"Off · {_ew_last}"
         st.markdown(
-            f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-            f'padding:7px 10px;margin-bottom:4px;cursor:default;">'
-            f'<span style="font-size:12px;color:#333333;">{_dot} {_label}{_badge}</span></div>',
+            f'<div style="background:var(--bg-white);border:1px solid var(--slate-200);'
+            f'border-radius:var(--radius-sm);padding:5px 10px;margin-bottom:4px;font-size:12px;'
+            f'color:var(--slate-600);">'
+            f'{"●" if _ew_status["running"] else "○"} Email Watch · {_ew_pending} pending</div>',
             unsafe_allow_html=True,
         )
 
@@ -906,2335 +480,602 @@ def show_sidebar():
         _ar_status = _ar.get_status()
         _pref = _ar_status["preferred"]
         if _pref == "cloud" and _ar_status["cloud_enabled"]:
-            _ai_dot   = "Cloud️"
-            _ai_label = f"Cloud AI · {_ar_status['cloud_provider'].title()}"
+            _ai_lbl = f"Cloud · {_ar_status['cloud_provider'].title()}"
         elif _pref == "ollama" and _ar_status["ollama_enabled"]:
-            _ai_dot   = "●"
-            _ai_label = f"Ollama · {_ar_status['ollama_model']}"
+            _ai_lbl = f"Ollama · {_ar_status['ollama_model']}"
         elif _ar_status["cloud_enabled"]:
-            _ai_dot   = "Cloud️"
-            _ai_label = f"Cloud AI (fallback) · {_ar_status['cloud_provider'].title()}"
+            _ai_lbl = f"Cloud (fallback)"
         elif _ar_status["ollama_enabled"]:
-            _ai_dot   = "●"
-            _ai_label = f"Ollama (fallback) · {_ar_status['ollama_model']}"
+            _ai_lbl = f"Ollama (fallback)"
         else:
-            _ai_dot, _ai_label = "●", "AI — script only"
+            _ai_lbl = "Script only"
         st.markdown(
-            f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-            f'padding:7px 10px;margin-bottom:8px;cursor:default;">'
-            f'<span style="font-size:12px;color:#333333;">{_ai_dot} {_ai_label}</span></div>',
+            f'<div style="background:var(--bg-white);border:1px solid var(--slate-200);'
+            f'border-radius:var(--radius-sm);padding:5px 10px;margin-bottom:8px;font-size:12px;'
+            f'color:var(--slate-600);">'
+            f'AI · {_ai_lbl}</div>',
             unsafe_allow_html=True,
         )
 
-        st.markdown("---")
         if st.button("Logout", use_container_width=True):
+            _clear_session()
             for key in DEFAULTS:
                 st.session_state[key] = DEFAULTS[key]
             st.rerun()
 
 
 def show_dashboard():
-    """Main document scanning page."""
-    st.markdown("## Document Scanner")
+    """Compact document scanning page — always auto-detect, additive scanning."""
+    st.markdown("## Scanner")
 
-    # === QUICK DOC VERIFY — drop any PDF, get instant check ===
-    import email_watch as _ew_mod
-    _ew_pending = _ew_mod.get_status()["pending_count"]
-    _qv_label   = f"Import Quick Verify  ({_ew_pending} from inbox waiting)" if _ew_pending else "Import Quick Verify — drop any PDF for instant check"
-
-    with st.expander(_qv_label, expanded=bool(_ew_pending)):
-        st.markdown(
-            "Drop any PDF here — no doc type selection needed. "
-            "The app figures out what it is, checks the dates, counts pages, "
-            "and tries to match it to a loan in your pipeline. "
-            "**Nothing is saved until you say so.**"
-        )
-
-        qv_file = st.file_uploader(
-            "Drop a PDF to verify",
-            type=["pdf"],
-            key="qv_uploader",
-            help="Works for any doc: bank statement, pay stub, W-2, appraisal, etc.",
-        )
-        if qv_file:
-            qv_bytes = qv_file.read()
-            from doc_verify import verify as _dv
-            with st.spinner("Checking..."):
-                result = _dv(qv_bytes, qv_file.name)
-
-            verdict = result["verdict"]
-            if verdict == "pass":
-                vcard_bg, vcard_bdr, vcard_icon = "#152a1e", "#27ae60", "✓"
-                vcard_title = "Looks good — ready for review"
-            elif verdict == "review":
-                vcard_bg, vcard_bdr, vcard_icon = "#2d2808", "#f1c40f", "△"
-                vcard_title = "Probably fine — double-check flagged items"
-            else:
-                vcard_bg, vcard_bdr, vcard_icon = "#3d1515", "#e74c3c", "Search"
-                vcard_title = "Needs attention before saving"
-
-            st.markdown(
-                f'<div style="background:{vcard_bg};border-left:4px solid {vcard_bdr};'
-                f'border-radius:8px;padding:12px 16px;margin:12px 0;">'
-                f'<div style="font-size:15px;font-weight:700;color:#111111;">'
-                f'{vcard_icon} {result["doc_type"]} · {vcard_title}</div>'
-                f'<div style="font-size:12px;color:#5c6370;margin-top:4px;">{qv_file.name}</div>'
-                f'</div>',
-                unsafe_allow_html=True,
-            )
-
-            vc1, vc2 = st.columns(2)
-            with vc1:
-                st.markdown("**✓ Passed**")
-                for ok in result["ok_list"]:
-                    st.markdown(
-                        f'<div style="display:flex;gap:8px;margin-bottom:3px;">'
-                        f'<span style="color:#27ae60;">✓</span>'
-                        f'<span style="color:#333333;font-size:13px;">{ok}</span></div>',
-                        unsafe_allow_html=True,
-                    )
-            with vc2:
-                st.markdown("**⚠️ Flagged**")
-                if result["flags"]:
-                    for fl in result["flags"]:
-                        st.markdown(
-                            f'<div style="display:flex;gap:8px;margin-bottom:3px;">'
-                            f'<span style="color:#e74c3c;">⚑</span>'
-                            f'<span style="color:#f5b7b1;font-size:13px;">{fl}</span></div>',
-                            unsafe_allow_html=True,
-                        )
-                else:
-                    st.markdown(
-                        '<span style="color:#5c6370;font-size:13px;">No flags — all clear</span>',
-                        unsafe_allow_html=True,
-                    )
-
-            # ── Action row ───────────────────────────────────────────────────
-            st.markdown("---")
-            folder = result.get("suggested_folder", "")
-            borrower = result.get("borrower", "")
-            loan_num = result.get("loan_num", "")
-
-            if borrower:
-                st.markdown(
-                    f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-                    f'padding:10px 14px;margin-bottom:10px;">'
-                    f'<span style="font-size:13px;color:#333333;">Pipeline match: </span>'
-                    f'<span style="font-size:14px;font-weight:700;color:#111111;">{borrower}</span>'
-                    f'<span style="font-size:12px;color:#2563eb;margin-left:8px;">Loan {loan_num}</span>'
-                    f'<span style="font-size:12px;color:#5c6370;margin-left:8px;">'
-                    f'{result["confidence"]}% confidence</span></div>',
-                    unsafe_allow_html=True,
-                )
-
-            act1, act2, act3, act4 = st.columns(4)
-            with act1:
-                if folder and os.path.isdir(folder):
-                    if st.button("Save to folder", key="qv_save", type="primary", use_container_width=True):
-                        import shutil
-                        dest = os.path.join(folder, qv_file.name)
-                        with open(dest, "wb") as _f:
-                            _f.write(qv_bytes)
-                        st.success(f"Saved to {dest} — marked Pending Review in pipeline.")
-                else:
-                    save_path = st.text_input("Save to folder:", placeholder=r"C:\Loans\Smith", key="qv_savepath")
-                    if save_path and st.button("Save here", key="qv_save_manual", use_container_width=True):
-                        os.makedirs(save_path, exist_ok=True)
-                        dest = os.path.join(save_path, qv_file.name)
-                        with open(dest, "wb") as _f:
-                            _f.write(qv_bytes)
-                        st.success(f"Saved to {dest}")
-            with act2:
-                if st.button("Scan this doc", key="qv_scan", use_container_width=True):
-                    st.session_state["qv_promote"] = qv_bytes
-                    st.session_state["qv_promote_name"] = qv_file.name
-                    st.rerun()
-            with act3:
-                if st.button("Open in Reader", key="qv_reader", use_container_width=True):
-                    st.session_state.reader_open_file = None
-                    st.session_state.page = "reader"
-                    st.rerun()
-            with act4:
-                pass   # space
-
-        # ── Email Watch inbox inside Verify tab ──────────────────────────────
-        ew_matches = _ew_mod.get_matches()
-        if ew_matches:
-            st.markdown("---")
-            st.markdown(f"### Email Inbox — {len(ew_matches)} attachment(s) waiting")
-            for ei, em in enumerate(ew_matches):
-                v_icon = {"pass": "✓", "review": "△", "check": "?"}.get(em.get("verdict", "check"), "·")
-                with st.expander(
-                    f"{v_icon} {em['filename']} · {em.get('received','')} · "
-                    f"From: {em['sender'][:40]}",
-                    expanded=False,
-                ):
-                    ec1, ec2 = st.columns([3, 1])
-                    with ec1:
-                        for ok in em.get("ok_list", []):
-                            st.markdown(
-                                f'<div style="color:#a9dfbf;font-size:12px;">✓ {ok}</div>',
-                                unsafe_allow_html=True,
-                            )
-                        for fl in em.get("flags", []):
-                            st.markdown(
-                                f'<div style="color:#f5b7b1;font-size:12px;">⚑ {fl}</div>',
-                                unsafe_allow_html=True,
-                            )
-                    with ec2:
-                        efolder = em.get("suggested_folder", "")
-                        if efolder and os.path.isdir(efolder):
-                            if st.button("Save", key=f"ew_qv_save_{ei}", use_container_width=True, type="primary"):
-                                import shutil
-                                shutil.copy2(em["file_path"], os.path.join(efolder, em["filename"]))
-                                _ew_mod.dismiss(ei)
-                                st.success("Saved.")
-                                st.rerun()
-                        if st.button("Dismiss", key=f"ew_qv_dis_{ei}", use_container_width=True):
-                            _ew_mod.dismiss(ei)
-                            st.rerun()
-
-    # === STEP 1: UPLOAD ===
-    st.markdown('<span class="section-anchor" id="upload"></span>', unsafe_allow_html=True)
-
-    uploaded_files = st.file_uploader(
-        "Upload mortgage documents (PDF)",
-        type=["pdf"],
-        accept_multiple_files=True,
-        help="Drag and drop PDFs here. Files are processed in memory and never stored.",
-    )
-
-    if not uploaded_files:
-        # Show progress bar with nothing done
-        render_progress_bar(set())
-        st.markdown("---")
-        st.markdown("### How it works")
-        st.markdown(
-            "1. **Upload** a mortgage PDF\n"
-            "2. **Select** the document type\n"
-            "3. **Scan** - Pattern engine extracts everything in one shot\n"
-            "4. **Review** conditions, contacts, research, emails, stacking order\n"
-            "5. **Submit** to lender when ready"
-        )
-        return
-
-    # ── Mode toggle: Manual Label vs Bulk Auto-Detect ─────────────────────
-    _mode_c1, _mode_c2 = st.columns([1, 3])
-    with _mode_c1:
-        _bulk_mode = st.toggle("Bulk Auto-Detect", key="bulk_mode_toggle",
-                               help="Auto-detect document types for all uploaded files")
-    with _mode_c2:
-        if _bulk_mode:
-            st.caption("Auto-detect reads the first 2 pages of each PDF to classify the document type. "
-                       "You can override any detection before scanning.")
-        else:
-            st.caption("Manual mode — select the document type for each file individually.")
-
-    # ══════════════════════════════════════════════════════════════════════
-    # BULK AUTO-DETECT MODE
-    # ══════════════════════════════════════════════════════════════════════
-    if _bulk_mode:
-        from ai_engine import detect_doc_type as _detect, process_document as _bulk_proc
-
-        _BULK_DOC_TYPES = [
-            "Approval Letter", "Closing Disclosure (CD)", "Loan Estimate (LE)",
-            "1003 Application", "Purchase Contract", "Credit Report",
-            "Bank Statement", "Change of Circumstance (COC)", "Broker Package (BP)",
-            "Pay Stub", "W-2", "Tax Return", "Appraisal",
-            "Title Commitment", "Hazard Insurance", "Unknown",
-        ]
-
-        # Auto-detect on first load or when files change
-        _detect_key = "bulk_detect_results"
-        _file_sig = "|".join(f.name for f in uploaded_files)
-        if (st.session_state.get("bulk_file_sig") != _file_sig
-                or _detect_key not in st.session_state):
-            with st.spinner(f"Auto-detecting {len(uploaded_files)} document(s)..."):
-                _detections = []
-                for _bf in uploaded_files:
-                    _bf_bytes = _bf.read()
-                    _bf.seek(0)
-                    _det = _detect(_bf_bytes)
-                    _detections.append({
-                        "name": _bf.name,
-                        "detected_type": _det["doc_type"],
-                        "confidence": _det["confidence"],
-                        "score": _det.get("score", 0),
-                        "signals": _det.get("signals", []),
-                    })
-                st.session_state[_detect_key] = _detections
-                st.session_state["bulk_file_sig"] = _file_sig
-
-        _detections = st.session_state[_detect_key]
-
-        # ── Classification summary ─────────────────────────────────────
-        _conf_colors = {"High": "#27ae60", "Medium": "#f1c40f", "Low": "#e67e22", "None": "#e74c3c"}
-        _conf_icons = {"High": "✓", "Medium": "●", "Low": "●", "None": "?"}
-
-        st.markdown(
-            '<div style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
-            'letter-spacing:0.5px;margin:12px 0 8px 0;">Document Classification</div>',
-            unsafe_allow_html=True,
-        )
-
-        # Header row
-        st.markdown(
-            '<div style="display:grid;grid-template-columns:3fr 2fr 1fr 2fr;gap:8px;'
-            'padding:6px 12px;font-size:11px;font-weight:700;color:#5c6370;'
-            'text-transform:uppercase;border-bottom:1px solid #888;">'
-            '<span>File</span><span>Detected Type</span>'
-            '<span>Confidence</span><span>Override</span></div>',
-            unsafe_allow_html=True,
-        )
-
-        # Per-file row with override dropdown
-        _overrides = {}
-        for _di, _det in enumerate(_detections):
-            _det_conf = _det["confidence"]
-            _det_color = _conf_colors.get(_det_conf, "#8b949e")
-            _det_icon = _conf_icons.get(_det_conf, "●")
-            _signals_str = ", ".join(_det["signals"][:2]) if _det["signals"] else "no strong signals"
-
-            _rc1, _rc2, _rc3, _rc4 = st.columns([3, 2, 1, 2])
-            with _rc1:
-                st.markdown(
-                    f'<div style="font-size:12px;font-weight:600;color:#111111;padding-top:8px;">'
-                    f'{_det["name"]}</div>'
-                    f'<div style="font-size:10px;color:#5c6370;font-style:italic;">{_signals_str}</div>',
-                    unsafe_allow_html=True,
-                )
-            with _rc2:
-                st.markdown(
-                    f'<div style="font-size:13px;font-weight:600;color:#111111;padding-top:8px;">'
-                    f'{_det["detected_type"]}</div>',
-                    unsafe_allow_html=True,
-                )
-            with _rc3:
-                st.markdown(
-                    f'<div style="padding-top:8px;">'
-                    f'<span style="color:{_det_color};font-weight:700;font-size:12px;">'
-                    f'{_det_icon} {_det_conf}</span></div>',
-                    unsafe_allow_html=True,
-                )
-            with _rc4:
-                # Default to detected type; let user override
-                _det_idx = 0
-                if _det["detected_type"] in _BULK_DOC_TYPES:
-                    _det_idx = _BULK_DOC_TYPES.index(_det["detected_type"])
-                _override = st.selectbox(
-                    "Type", _BULK_DOC_TYPES, index=_det_idx,
-                    key=f"bulk_override_{_di}",
-                    label_visibility="collapsed",
-                )
-                _overrides[_di] = _override
-
-        st.markdown("---")
-
-        # ── Scan All button ────────────────────────────────────────────
-        _scan_c1, _scan_c2 = st.columns([1, 1])
-        with _scan_c1:
-            _scan_all = st.button("Scan All Documents", key="bulk_scan_all",
-                                  type="primary", use_container_width=True)
-        with _scan_c2:
-            _scan_to_loan = st.checkbox(
-                "Auto-merge results into a loan",
-                key="bulk_auto_merge",
-                help="If checked, conditions and contacts from all scanned docs "
-                     "will be merged into a selected loan.",
-            )
-
-        if _scan_to_loan:
-            from crm import get_all_loans as _bulk_get_loans
-            _bulk_loans = _bulk_get_loans()
-            _loan_opts = ["(New Loan)"] + [
-                f'{l.get("loan_num","—")} — {l.get("borrower","—")}'
-                for l in _bulk_loans
-            ]
-            _target_loan = st.selectbox("Target loan:", _loan_opts,
-                                        key="bulk_target_loan")
-
-        _bulk_results_key = "bulk_scan_results"
-
-        if _scan_all:
-            _all_results = []
-            _total = len(uploaded_files)
-            _progress = st.progress(0, text="Starting bulk scan...")
-
-            for _bi, _bf in enumerate(uploaded_files):
-                _bf_type = _overrides.get(_bi, _detections[_bi]["detected_type"])
-                if _bf_type == "Unknown":
-                    _all_results.append({
-                        "name": _bf.name,
-                        "doc_type": "Unknown",
-                        "success": False,
-                        "error": "Document type unknown — skipped. Override the type to scan.",
-                    })
-                    continue
-
-                _progress.progress(
-                    int((_bi / _total) * 100),
-                    text=f"Scanning {_bf.name} as {_bf_type}..."
-                )
-                _bf_bytes = _bf.read()
-                _bf.seek(0)
-                _bf_result = _bulk_proc(_bf_bytes, _bf_type)
-                _bf_result["name"] = _bf.name
-                _bf_result["doc_type"] = _bf_type
-                _all_results.append(_bf_result)
-
-            _progress.progress(100, text=f"Done — {_total} document(s) processed")
-            st.session_state[_bulk_results_key] = _all_results
-            st.rerun()
-
-        # ── Display bulk results ───────────────────────────────────────
-        _bulk_results = st.session_state.get(_bulk_results_key)
-        if _bulk_results:
-            st.markdown(
-                '<div style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
-                'letter-spacing:0.5px;margin:12px 0 8px 0;">Scan Results</div>',
-                unsafe_allow_html=True,
-            )
-
-            _success_count = sum(1 for r in _bulk_results if r.get("success"))
-            _fail_count = len(_bulk_results) - _success_count
-
-            # All conditions and contacts collected across all docs
-            _all_conds = []
-            _all_contacts = {}
-            _all_closing = ""
-
-            _rs1, _rs2, _rs3 = st.columns(3)
-            with _rs1:
-                st.markdown(
-                    f'<div class="stat-card"><div class="stat-num" style="color:#111111;">'
-                    f'{len(_bulk_results)}</div>'
-                    f'<div class="stat-label">Documents Scanned</div></div>',
-                    unsafe_allow_html=True,
-                )
-            with _rs2:
-                st.markdown(
-                    f'<div class="stat-card"><div class="stat-num" style="color:#27ae60;">'
-                    f'{_success_count}</div>'
-                    f'<div class="stat-label">✓ Successful</div></div>',
-                    unsafe_allow_html=True,
-                )
-            with _rs3:
-                st.markdown(
-                    f'<div class="stat-card"><div class="stat-num" style="color:#e74c3c;">'
-                    f'{_fail_count}</div>'
-                    f'<div class="stat-label">✗ Failed / Skipped</div></div>',
-                    unsafe_allow_html=True,
-                )
-
-            for _br in _bulk_results:
-                _br_name = _br.get("name", "?")
-                _br_dtype = _br.get("doc_type", "Unknown")
-                _br_ok = _br.get("success", False)
-
-                if not _br_ok:
-                    st.markdown(
-                        f'<div style="display:flex;gap:10px;align-items:center;'
-                        f'background:#3d1515;border-left:3px solid #e74c3c;'
-                        f'border-radius:6px;padding:8px 12px;margin-bottom:4px;">'
-                        f'<span style="color:#e74c3c;font-weight:700;">✗</span>'
-                        f'<span style="color:#111111;font-size:13px;font-weight:600;">'
-                        f'{_br_name}</span>'
-                        f'<span style="color:#e8b4b4;font-size:12px;">'
-                        f'{_br_dtype} — {_br.get("error","scan failed")}</span>'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
-                    continue
-
-                # Process results based on doc type
-                _br_summary_parts = []
-
-                # Conditions
-                _br_cond_text = _br.get("conditions", "")
-                _br_conds = []
-                if _br_cond_text:
-                    for _cl in _br_cond_text.split("\n"):
-                        _cl = _cl.strip()
-                        if (_cl.startswith("|") and not _cl.startswith("| #")
-                                and not _cl.startswith("|--") and not _cl.startswith("|-")):
-                            _cells = [c.strip() for c in _cl.split("|") if c.strip()]
-                            if len(_cells) >= 4:
-                                _br_conds.append({
-                                    "num": _cells[0], "desc": _cells[1],
-                                    "party": _cells[2], "status": _cells[3],
-                                })
-                    if _br_conds:
-                        _br_summary_parts.append(f"{len(_br_conds)} condition(s)")
-                        _all_conds.extend(_br_conds)
-
-                # Contacts (Purchase Contract / 1003)
-                _br_data = _br.get("extracted_data")
-                if _br_data and _br_dtype == "Purchase Contract":
-                    _pc_names = []
-                    for _k in ["buyer", "seller", "listing_agent", "selling_agent", "title"]:
-                        _v = _br_data.get(_k, {})
-                        _n = _v.get("name") or _v.get("company") or ""
-                        if _n:
-                            _pc_names.append(f"{_k}: {_n}")
-                        if any(str(vv).strip() for vv in _v.values()):
-                            _all_contacts[_k] = _v
-                    _txn = _br_data.get("transaction", {})
-                    if _txn.get("closing_date"):
-                        _all_closing = _txn["closing_date"]
-                    if _pc_names:
-                        _br_summary_parts.append(", ".join(_pc_names[:3]))
-
-                if _br_data and _br_dtype == "1003 Application":
-                    _app_b = _br_data.get("borrower", {})
-                    _app_cb = _br_data.get("co_borrower", {})
-                    _app_emp = _br_data.get("employment", {})
-                    for _k, _v in [("borrower", _app_b), ("co_borrower", _app_cb), ("employer", _app_emp)]:
-                        if any(str(vv).strip() for vv in _v.values()):
-                            _all_contacts[_k] = _v
-                    if _app_b.get("name"):
-                        _br_summary_parts.append(f"borrower: {_app_b['name']}")
-
-                # Bank rules
-                if _br.get("bank_rules"):
-                    _br_summary_parts.append("bank analysis complete")
-
-                _br_chars = _br.get("text_length", 0)
-                _summary_str = " · ".join(_br_summary_parts) if _br_summary_parts else f"{_br_chars:,} chars extracted"
-
-                with st.expander(f"✓ {_br_name} — {_br_dtype}", expanded=False):
-                    st.markdown(
-                        f'<div style="font-size:12px;color:#5c6370;margin-bottom:8px;">'
-                        f'{_summary_str} · {_br_chars:,} chars</div>',
-                        unsafe_allow_html=True,
-                    )
-                    # Show conditions if any
-                    if _br_conds:
-                        for _bc in _br_conds:
-                            st.markdown(
-                                f'<span style="color:#f1c40f;font-size:12px;">●</span> '
-                                f'<span style="color:#111111;font-size:12px;">#{_bc["num"]} {_bc["desc"][:80]}</span> '
-                                f'<span style="color:#5c6370;font-size:11px;">— {_bc["party"]}</span>',
-                                unsafe_allow_html=True,
-                            )
-                    # Show bank rules if any
-                    if _br.get("bank_rules"):
-                        _br_raw = _br["bank_rules"].strip().split("\n")
-                        for _rx in _br_raw:
-                            _ptx = _rx.split("|")
-                            _tgx = _ptx[0] if _ptx else ""
-                            if _tgx == "SUMMARY":
-                                st.markdown(
-                                    f'<div style="font-size:12px;color:#333333;padding:4px 0;">'
-                                    f'✓ {_ptx[1]} Passed · {_ptx[2]} Flagged · '
-                                    f'⚠️ {_ptx[3]} Missing · ℹ️ {_ptx[4]} Info</div>',
-                                    unsafe_allow_html=True,
-                                )
-                            elif _tgx == "FLAG":
-                                st.markdown(
-                                    f'<div style="background:#3d1515;border-left:2px solid #e74c3c;'
-                                    f'border-radius:4px;padding:4px 8px;margin-bottom:2px;'
-                                    f'font-size:11px;color:#111111;">'
-                                    f'{_ptx[2] if len(_ptx)>2 else ""} — '
-                                    f'{_ptx[3] if len(_ptx)>3 else ""}</div>',
-                                    unsafe_allow_html=True,
-                                )
-                    # Show contacts preview if any
-                    if _br_data:
-                        st.markdown(
-                            f'<div style="font-size:11px;color:#5c6370;margin-top:4px;">'
-                            f'Extracted data: {", ".join(k for k,v in _br_data.items() if v)}</div>',
-                            unsafe_allow_html=True,
-                        )
-
-            # ── Merge into loan ────────────────────────────────────────
-            if _all_conds or _all_contacts:
-                st.markdown("---")
-                st.markdown(
-                    f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-                    f'padding:10px;margin:8px 0;font-size:12px;color:#5c6370;">'
-                    f'<b style="color:#2563eb;">Bulk scan totals:</b> '
-                    f'{len(_all_conds)} condition(s) · '
-                    f'{len(_all_contacts)} contact group(s)'
-                    + (f' · closing date: {_all_closing}' if _all_closing else "")
-                    + f'</div>',
-                    unsafe_allow_html=True,
-                )
-
-                _merge_target = st.session_state.get("bulk_target_loan", "(New Loan)")
-                if st.button("✓ Merge all into loan", key="bulk_merge_btn",
-                             type="primary", use_container_width=True):
-                    from crm import get_all_loans as _bm_loans, add_loan as _bm_add, update_loan as _bm_update
-                    from crm import get_loan as _bm_get, log_activity as _bm_log
-
-                    if _merge_target == "(New Loan)":
-                        # Create a new loan from the bulk data
-                        _borrow_name = (_all_contacts.get("buyer", {}).get("name")
-                                        or _all_contacts.get("borrower", {}).get("name")
-                                        or "Bulk Upload")
-                        _bm_add(
-                            loan_num=f"BULK-{_borrow_name[:8]}",
-                            borrower=_borrow_name,
-                            status="Pending",
-                            due_date=_all_closing or "",
-                            missing_docs="",
-                            folder_path="",
-                            closing_date=_all_closing or "",
-                            conditions=_all_conds,
-                            contacts=_all_contacts,
-                        )
-                        st.toast(f"New loan created for {_borrow_name}", icon="✓")
-                    else:
-                        # Merge into existing loan
-                        _loans_list = _bm_loans()
-                        _target_idx = [
-                            f'{l.get("loan_num","—")} — {l.get("borrower","—")}'
-                            for l in _loans_list
-                        ].index(_merge_target) if _merge_target in [
-                            f'{l.get("loan_num","—")} — {l.get("borrower","—")}'
-                            for l in _loans_list
-                        ] else -1
-                        if _target_idx >= 0:
-                            _target_id = _loans_list[_target_idx].get("id")
-                            _target_loan_data = _bm_get(_target_id)
-                            if _target_loan_data:
-                                # Merge conditions (deduplicate)
-                                _existing_conds = list(_target_loan_data.get("conditions", []))
-                                _existing_descs = {c.get("desc", "").lower().strip() for c in _existing_conds}
-                                _added = 0
-                                for _nc in _all_conds:
-                                    if _nc["desc"].lower().strip() not in _existing_descs:
-                                        _nc_copy = dict(_nc)
-                                        _nc_copy["num"] = str(len(_existing_conds) + 1)
-                                        _existing_conds.append(_nc_copy)
-                                        _added += 1
-                                # Merge contacts
-                                _existing_contacts = dict(_target_loan_data.get("contacts", {}))
-                                for _ck, _cv in _all_contacts.items():
-                                    if any(str(v).strip() for v in _cv.values()):
-                                        _existing_contacts[_ck] = _cv
-                                _upd = {"conditions": _existing_conds, "contacts": _existing_contacts}
-                                if _all_closing and not _target_loan_data.get("closing_date"):
-                                    _upd["closing_date"] = _all_closing
-                                    _upd["due_date"] = _all_closing
-                                _bm_update(_target_id, **_upd)
-                                _bm_log(_target_id, "upload",
-                                    f"Bulk scan — {_added} condition(s), "
-                                    f"{len(_all_contacts)} contact group(s) merged",
-                                    user=st.session_state.get("user_name", ""))
-                                st.toast(f"Merged into {_merge_target}", icon="✓")
-
-                    st.session_state.pop(_bulk_results_key, None)
-                    st.rerun()
-
-            if st.button("Remove️ Clear bulk results", key="bulk_clear_results"):
-                st.session_state.pop(_bulk_results_key, None)
-                st.rerun()
-
-        return  # End of bulk mode — don't fall through to manual mode
-
-    # ══════════════════════════════════════════════════════════════════════
-    # MANUAL LABEL MODE (existing behavior)
-    # ══════════════════════════════════════════════════════════════════════
-    _MANUAL_DOC_TYPES = [
+    _BULK_DOC_TYPES = [
         "Approval Letter", "Closing Disclosure (CD)", "Loan Estimate (LE)",
         "1003 Application", "Purchase Contract", "Credit Report",
         "Bank Statement", "Change of Circumstance (COC)", "Broker Package (BP)",
+        "Pay Stub", "W-2", "Tax Return", "Appraisal",
+        "Title Commitment", "Hazard Insurance", "Unknown",
     ]
 
-    # ── Scan All button ───────────────────────────────────────────────────
-    _sa1, _sa2 = st.columns([1, 4])
-    with _sa1:
-        _scan_all = st.button("Scan All", key="scan_all_btn", type="primary", use_container_width=True)
-    if _scan_all:
-        st.session_state["scan_all_trigger"] = True
-
-    # ── Duplicate detection across all uploaded files ─────────────────────
-    import hashlib as _hashlib
-    _file_hashes = {}
-    _dupes = set()
-    for _fi, _uf in enumerate(uploaded_files):
-        _fbytes = _uf.read(); _uf.seek(0)
-        _fhash = _hashlib.md5(_fbytes).hexdigest()
-        if _fhash in _file_hashes:
-            _dupes.add(_fi)
-            _dupes.add(_file_hashes[_fhash])
-        else:
-            _file_hashes[_fhash] = _fi
-    if _dupes:
-        st.warning(f"Duplicate files detected: {', '.join(uploaded_files[i].name for i in sorted(_dupes))} — review before scanning.")
-
-    # ── Page-grouping prompt: multiple PDFs that likely belong together ────
-    if len(uploaded_files) > 1:
-        from ai_engine import detect_doc_type as _pg_det
-        _pg_groups = {}  # doc_type -> list of file indices
-        for _pgi, _pgf in enumerate(uploaded_files):
-            if _pgi in _dupes:
-                continue
-            _pgk = f"autodet_{_pgf.name}_{_pgi}"
-            if _pgk in st.session_state:
-                _pgt = st.session_state[_pgk]
-            else:
-                _pgb = _pgf.read(); _pgf.seek(0)
-                _pgt = _pg_det(_pgb).get("doc_type", "Unknown")
-                st.session_state[_pgk] = _pgt
-            _pg_groups.setdefault(_pgt, []).append(_pgi)
-
-        _mergeable = {t: idxs for t, idxs in _pg_groups.items() if len(idxs) > 1}
-        if _mergeable:
-            for _mtype, _midxs in _mergeable.items():
-                _mnames = [uploaded_files[i].name for i in _midxs]
-                _merge_key = f"merge_prompt_{_mtype}"
-                st.info(
-                    f"**{len(_midxs)} {_mtype} files detected** — these may be pages of the same document: "
-                    f"{', '.join(_mnames)}"
-                )
-                _mc1, _mc2 = st.columns([1, 3])
-                with _mc1:
-                    if st.button(f"Merge into one PDF", key=f"merge_btn_{_mtype}", type="primary"):
-                        import io
-                        try:
-                            import pypdf as _pypdf
-                        except ImportError:
-                            import PyPDF2 as _pypdf
-                        _merger = _pypdf.PdfWriter()
-                        for _mi in _midxs:
-                            _mf = uploaded_files[_mi]
-                            _mb = _mf.read(); _mf.seek(0)
-                            _merger.append(io.BytesIO(_mb))
-                        _merged_buf = io.BytesIO()
-                        _merger.write(_merged_buf)
-                        _merged_buf.seek(0)
-                        _merged_name = f"merged_{_mtype.replace(' ','_').replace('(','').replace(')','')}.pdf"
-                        st.download_button(
-                            f"Download merged PDF",
-                            data=_merged_buf,
-                            file_name=_merged_name,
-                            mime="application/pdf",
-                            key=f"dl_merged_{_mtype}",
-                        )
-                        st.success(f"Merged {len(_midxs)} files into {_merged_name}")
-
-    for file_idx, uploaded_file in enumerate(uploaded_files):
-        fkey = f"{uploaded_file.name}_{file_idx}"
-        _is_dupe = file_idx in _dupes
-
-        # Auto-detect doc type for this file
-        _det_key = f"autodet_{fkey}"
-        if _det_key not in st.session_state:
-            from ai_engine import detect_doc_type as _det_fn
-            _fb = uploaded_file.read(); uploaded_file.seek(0)
-            _det_result = _det_fn(_fb)
-            st.session_state[_det_key] = _det_result.get("doc_type", "Approval Letter")
-        _auto_type = st.session_state[_det_key]
-        _auto_idx = _MANUAL_DOC_TYPES.index(_auto_type) if _auto_type in _MANUAL_DOC_TYPES else 0
-
-        # Compact pill row: filename | type dropdown | scan button
-        _pill_bg = "#fff3e0" if _is_dupe else "#fff"
-        _pill_border = "#ffcc80" if _is_dupe else "#888"
-        st.markdown(
-            f'<div style="background:{_pill_bg};border:1px solid {_pill_border};border-radius:3px;'
-            f'padding:0 6px;margin-bottom:2px;display:flex;align-items:center;gap:4px;height:26px;">'
-            f'<span style="font-size:10px;color:{"#bf360c" if _is_dupe else "#374151"};'
-            f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px;flex-shrink:0;">'
-            f'{"[DUPE] " if _is_dupe else ""}{uploaded_file.name}</span>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
-        col1, col2 = st.columns([2, 1])
-        with col1:
-            doc_type = st.selectbox(
-                "Type", _MANUAL_DOC_TYPES, index=_auto_idx,
-                key=f"doctype_{fkey}", label_visibility="collapsed",
-            )
-        with col2:
-            scan_btn = st.button("Scan", key=f"scan_{fkey}", use_container_width=True)
-
-            _trigger = scan_btn or st.session_state.get("scan_all_trigger", False)
-            if _trigger:
-                progress = st.progress(0, text=f"Scanning {uploaded_file.name}...")
-                from ai_engine import process_document
-
-                pdf_bytes = uploaded_file.read()
-
-                user_history = []
-                if st.session_state.user_id and st.session_state.user_id != "sandbox":
-                    from db import get_history
-                    user_history = get_history(st.session_state.user_id, 5)
-
-                progress.progress(10, text="Extracting conditions...")
-
-                result = process_document(pdf_bytes, doc_type, user_history)
-                del pdf_bytes
-
-                progress.progress(100, text="Done!")
-
-                if result["success"]:
-                    st.session_state.scan_results = result
-                    if not st.session_state.sandbox_mode and st.session_state.user_id != "sandbox":
-                        from db import save_result, log_pattern
-                        import billing as _bill
-                        save_result(
-                            st.session_state.user_id, doc_type,
-                            result["conditions"], result.get("risks", ""),
-                            result.get("bank_rules", ""),
-                        )
-                        _bill.log_scan(st.session_state.user_id, doc_type)
-                        log_pattern(doc_type, {"text_length": result["text_length"]})
-                else:
-                    st.error(f"{uploaded_file.name}: {result.get('error', 'Processing failed')}")
-
-        # === DISPLAY RESULTS ===
-            if st.session_state.scan_results and st.session_state.scan_results.get("doc_type") == doc_type:
-                result = st.session_state.scan_results
-
-                # === BANK STATEMENT — special display ===
-                if doc_type == "Bank Statement":
-                    bank_rules = result.get("bank_rules", "")
-                    if not bank_rules:
-                        st.warning("Bank statement analysis returned no results. The PDF may be a scanned image with no readable text.")
-                        continue
-
-                    st.markdown("## Bank Statement Analysis")
-                    st.caption("Offline pattern scan — manual review always recommended.")
-
-                    # ── Account Summary Card ───────────────────────────────
-                    _bf = result.get("bank_fields", {})
-                    if _bf:
-                        _names = ", ".join(_bf.get("holder_names") or []) or "—"
-                        _acct  = _bf.get("account_number") or "—"
-                        _inst  = _bf.get("institution") or "—"
-                        _month = _bf.get("statement_month") or ""
-                        _period = ""
-                        if _bf.get("period_start") and _bf.get("period_end"):
-                            _period = f'{_bf["period_start"]} – {_bf["period_end"]}'
-                        elif _month:
-                            _period = _month
-                        _beg  = f'${_bf["beginning_balance"]}' if _bf.get("beginning_balance") else "—"
-                        _end  = f'${_bf["ending_balance"]}' if _bf.get("ending_balance") else "—"
-                        _low  = f'${_bf["lowest_balance"]}' if _bf.get("lowest_balance") else "—"
-                        _dep  = f'${_bf["deposits_total"]}' if _bf.get("deposits_total") else "—"
-                        _wd   = f'${_bf["withdrawals_total"]}' if _bf.get("withdrawals_total") else "—"
-
-                        st.markdown(
-                            f'<div style="background:#fff;border:1px solid #888;border-radius:3px;'
-                            f'padding:12px 16px;margin-bottom:14px;">'
-                            f'<div style="font-size:12px;font-weight:700;color:#2563eb;'
-                            f'text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">'
-                            f'Account Summary</div>'
-                            f'<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">'
-                            # row 1
-                            f'<div><div style="font-size:11px;color:#5c6370;">Account Holder(s)</div>'
-                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_names}</div></div>'
-                            f'<div><div style="font-size:11px;color:#5c6370;">Account Number</div>'
-                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_acct}</div></div>'
-                            f'<div><div style="font-size:11px;color:#5c6370;">Institution</div>'
-                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_inst}</div></div>'
-                            # row 2
-                            f'<div><div style="font-size:11px;color:#5c6370;">Statement Period</div>'
-                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_period or "—"}</div></div>'
-                            f'<div><div style="font-size:11px;color:#5c6370;">Beginning Balance</div>'
-                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_beg}</div></div>'
-                            f'<div><div style="font-size:11px;color:#5c6370;">Ending Balance</div>'
-                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_end}</div></div>'
-                            # row 3
-                            f'<div><div style="font-size:11px;color:#5c6370;">Lowest Balance</div>'
-                            f'<div style="font-size:13px;font-weight:600;color:#111;">{_low}</div></div>'
-                            f'<div><div style="font-size:11px;color:#5c6370;">Total Deposits</div>'
-                            f'<div style="font-size:13px;font-weight:600;color:#27ae60;">{_dep}</div></div>'
-                            f'<div><div style="font-size:11px;color:#5c6370;">Total Withdrawals</div>'
-                            f'<div style="font-size:13px;font-weight:600;color:#c0392b;">{_wd}</div></div>'
-                            f'</div></div>',
-                            unsafe_allow_html=True,
-                        )
-
-                    # ── Approval Cross-Reference ───────────────────────────
-                    from ai_engine import cross_reference_approval as _xref
-                    _xref_key = f"xref_notes_{fkey}"
-                    _xref_notes = st.text_area(
-                        "Approval Condition Notes (paste to cross-reference against statement)",
-                        key=_xref_key,
-                        height=90,
-                        placeholder="e.g. Source $4,500 deposit 01/15 from ABC Company. Verify $1,200 payment to Chase Auto.",
-                        label_visibility="visible",
-                    )
-                    if _xref_notes.strip() and result.get("bank_raw_text"):
-                        _xref_results = _xref(result["bank_raw_text"], _xref_notes)
-                        if _xref_results:
-                            st.markdown(
-                                '<div style="font-size:12px;font-weight:700;color:#2563eb;'
-                                'text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 6px 0;">'
-                                'Cross-Reference Results</div>',
-                                unsafe_allow_html=True,
-                            )
-                            for _xr in _xref_results:
-                                _xr_bg  = "#152a1e" if _xr["found"] else "#3d1515"
-                                _xr_col = "#27ae60" if _xr["found"] else "#e74c3c"
-                                _xr_lbl = "✓ Found" if _xr["found"] else "✗ Not Found"
-                                _xr_icon = "amount" if _xr["type"] == "amount" else "name"
-                                st.markdown(
-                                    f'<div style="display:flex;gap:10px;align-items:center;'
-                                    f'background:{_xr_bg};border-left:3px solid {_xr_col};'
-                                    f'border-radius:3px;padding:6px 12px;margin-bottom:3px;">'
-                                    f'<span style="color:{_xr_col};font-weight:700;font-size:12px;min-width:72px;">{_xr_lbl}</span>'
-                                    f'<span style="color:#5c6370;font-size:11px;min-width:44px;">[{_xr_icon}]</span>'
-                                    f'<span style="color:#111;font-size:13px;font-weight:600;">{_xr["query"]}</span>'
-                                    f'</div>',
-                                    unsafe_allow_html=True,
-                                )
-                    st.markdown("---")
-
-                    # Parse structured output
-                    raw_lines = bank_rules.strip().split("\n")
-                    ok_c = flag_c = miss_c = info_c = 0
-                    current_section = ""
-
-                    for raw in raw_lines:
-                        parts = raw.split("|")
-                        tag = parts[0] if parts else ""
-
-                        if tag == "SUMMARY":
-                            ok_c, flag_c, miss_c, info_c = (
-                                int(parts[1]), int(parts[2]),
-                                int(parts[3]), int(parts[4]),
-                            )
-                            sc1, sc2, sc3, sc4 = st.columns(4)
-                            with sc1:
-                                st.markdown(
-                                    f'<div class="stat-card"><div class="stat-num" style="color:#27ae60;">{ok_c}</div>'
-                                    f'<div class="stat-label">✓ Passed</div></div>',
-                                    unsafe_allow_html=True,
-                                )
-                            with sc2:
-                                st.markdown(
-                                    f'<div class="stat-card"><div class="stat-num" style="color:#e74c3c;">{flag_c}</div>'
-                                    f'<div class="stat-label">Flagged</div></div>',
-                                    unsafe_allow_html=True,
-                                )
-                            with sc3:
-                                st.markdown(
-                                    f'<div class="stat-card"><div class="stat-num" style="color:#f1c40f;">{miss_c}</div>'
-                                    f'<div class="stat-label">⚠️ Missing</div></div>',
-                                    unsafe_allow_html=True,
-                                )
-                            with sc4:
-                                st.markdown(
-                                    f'<div class="stat-card"><div class="stat-num" style="color:#5dade2;">{info_c}</div>'
-                                    f'<div class="stat-label">ℹ️ Note</div></div>',
-                                    unsafe_allow_html=True,
-                                )
-                            st.markdown("---")
-
-                        elif tag == "SECTION":
-                            current_section = parts[1] if len(parts) > 1 else ""
-                            st.markdown(
-                                f'<div style="font-size:13px;font-weight:700;color:#2563eb;'
-                                f'margin:14px 0 6px 0;text-transform:uppercase;letter-spacing:0.5px;">'
-                                f'{current_section}</div>',
-                                unsafe_allow_html=True,
-                            )
-
-                        elif tag == "OK":
-                            num, label, msg = parts[1], parts[2], parts[3] if len(parts) > 3 else ""
-                            st.markdown(
-                                f'<div style="display:flex;gap:10px;align-items:flex-start;'
-                                f'background:#152a1e;border-left:3px solid #27ae60;'
-                                f'border-radius:6px;padding:7px 12px;margin-bottom:3px;">'
-                                f'<span style="color:#27ae60;font-weight:700;font-size:12px;min-width:20px;">✓</span>'
-                                f'<div><span style="color:#333333;font-size:13px;font-weight:600;">{label}</span>'
-                                f'<br><span style="color:#5c6370;font-size:12px;">{msg}</span></div></div>',
-                                unsafe_allow_html=True,
-                            )
-
-                        elif tag == "FLAG":
-                            num, label, msg = parts[1], parts[2], parts[3] if len(parts) > 3 else ""
-                            st.markdown(
-                                f'<div style="display:flex;gap:10px;align-items:flex-start;'
-                                f'background:#3d1515;border-left:3px solid #e74c3c;'
-                                f'border-radius:6px;padding:7px 12px;margin-bottom:3px;">'
-                                f'<span style="color:#e74c3c;font-weight:700;font-size:12px;min-width:20px;">Flag</span>'
-                                f'<div><span style="color:#111111;font-size:13px;font-weight:700;">{label}</span>'
-                                f'<br><span style="color:#e8b4b4;font-size:12px;">{msg}</span></div></div>',
-                                unsafe_allow_html=True,
-                            )
-
-                        elif tag == "MISSING":
-                            num, label, msg = parts[1], parts[2], parts[3] if len(parts) > 3 else ""
-                            st.markdown(
-                                f'<div style="display:flex;gap:10px;align-items:flex-start;'
-                                f'background:#3d3015;border-left:3px solid #f1c40f;'
-                                f'border-radius:6px;padding:7px 12px;margin-bottom:3px;">'
-                                f'<span style="color:#f1c40f;font-weight:700;font-size:12px;min-width:20px;">⚠</span>'
-                                f'<div><span style="color:#111111;font-size:13px;font-weight:600;">{label}</span>'
-                                f'<br><span style="color:#e8d8a0;font-size:12px;">{msg}</span></div></div>',
-                                unsafe_allow_html=True,
-                            )
-
-                        elif tag == "INFO":
-                            num, label, msg = parts[1], parts[2], parts[3] if len(parts) > 3 else ""
-                            st.markdown(
-                                f'<div style="display:flex;gap:10px;align-items:flex-start;'
-                                f'background:#1a2a3d;border-left:3px solid #5dade2;'
-                                f'border-radius:6px;padding:7px 12px;margin-bottom:3px;">'
-                                f'<span style="color:#5dade2;font-weight:700;font-size:12px;min-width:20px;">ℹ</span>'
-                                f'<div><span style="color:#111111;font-size:13px;font-weight:600;">{label}</span>'
-                                f'<br><span style="color:#a8c8e8;font-size:12px;">{msg}</span></div></div>',
-                                unsafe_allow_html=True,
-                            )
-
-                        elif tag == "MANUAL":
-                            num, label = parts[1], parts[2] if len(parts) > 2 else ""
-                            st.markdown(
-                                f'<div style="display:flex;gap:10px;align-items:center;'
-                                f'background:#252040;border-left:3px solid #888;'
-                                f'border-radius:6px;padding:6px 12px;margin-bottom:3px;">'
-                                f'<span style="color:#d1d5db;font-size:12px;min-width:20px;">View</span>'
-                                f'<span style="color:#5c6370;font-size:13px;">{label}</span>'
-                                f'</div>',
-                                unsafe_allow_html=True,
-                            )
-
-                    # ── Fetch & Analyze from Folder ──────────────────────────
-                    st.markdown("---")
-                    st.markdown("### Fetch & Analyze Bank Statements from Folder")
-                    st.caption(
-                        "Search a borrower's folder for bank statement PDFs and run "
-                        "the full analysis on any file — right here."
-                    )
-
-                    # Pre-fill folder: last used → pipeline match → blank
-                    from crm import get_all_loans as _get_pipe_loans
-                    _default_bs_folder = st.session_state.get("last_fetch_folder", "")
-                    if not _default_bs_folder:
-                        for _pl in _get_pipe_loans():
-                            _fp = _pl.get("folder_path", "")
-                            if _fp and os.path.isdir(_fp):
-                                _default_bs_folder = _fp
-                                break
-
-                    bsf1, bsf2, bsf3 = st.columns([4, 2, 1])
-                    with bsf1:
-                        bs_folder = st.text_input(
-                            "Borrower folder:",
-                            value=_default_bs_folder,
-                            placeholder=r"C:\Loans\SmithJohn",
-                            key=f"bs_folder_{fkey}",
-                            label_visibility="collapsed",
-                        )
-                    with bsf2:
-                        bs_scope = st.selectbox(
-                            "Scope",
-                            ["Bank statements only", "All PDFs in folder"],
-                            key=f"bs_scope_{fkey}",
-                            label_visibility="collapsed",
-                        )
-                    with bsf3:
-                        bs_search = st.button(
-                            "Search", key=f"bs_search_{fkey}",
-                            use_container_width=True, type="primary",
-                        )
-
-                    if bs_search and bs_folder:
-                        st.session_state["last_fetch_folder"] = bs_folder
-                        from folder_search import find_bank_statements
-                        scope_val = "bank_only" if "only" in bs_scope else "all_pdfs"
-                        with st.spinner("Scanning folder..."):
-                            bs_hits = find_bank_statements(bs_folder, scope=scope_val)
-
-                        if not bs_hits:
-                            st.info(
-                                "No bank statement PDFs found. Try switching to "
-                                "**All PDFs in folder** or check the folder path."
-                            )
-                        else:
-                            st.session_state[f"bs_hits_{fkey}"] = bs_hits
-
-                    bs_hits = st.session_state.get(f"bs_hits_{fkey}", [])
-                    if bs_hits:
-                        st.markdown(
-                            f"<div style='font-size:13px;color:#5c6370;margin-bottom:8px;'>"
-                            f"Found {len(bs_hits)} file(s) — click Analyze to run the 50-rule scan</div>",
-                            unsafe_allow_html=True,
-                        )
-                        for hi, hit in enumerate(bs_hits):
-                            conf_color = "#27ae60" if hit["score"] >= 70 else (
-                                "#f1c40f" if hit["score"] >= 40 else "#e74c3c"
-                            )
-                            conf_label = "High" if hit["score"] >= 70 else (
-                                "Medium" if hit["score"] >= 40 else "Low"
-                            )
-                            hc1, hc2, hc3 = st.columns([4, 2, 1])
-                            with hc1:
-                                st.markdown(
-                                    f'<div style="font-weight:600;color:#111111;font-size:13px;">'
-                                    f'{hit["file_name"]}</div>'
-                                    f'<div style="font-size:11px;color:#5c6370;">'
-                                    f'{hit["snippet"][:120]}...</div>',
-                                    unsafe_allow_html=True,
-                                )
-                            with hc2:
-                                st.markdown(
-                                    f'<div style="font-size:12px;color:{conf_color};font-weight:700;">'
-                                    f'{conf_label} confidence ({hit["score"]}%)</div>'
-                                    f'<div style="font-size:11px;color:#5c6370;">{hit["reason"]}</div>',
-                                    unsafe_allow_html=True,
-                                )
-                            with hc3:
-                                if st.button("Analyze", key=f"bs_analyze_{fkey}_{hi}",
-                                             use_container_width=True):
-                                    st.session_state[f"bs_analyzing_{fkey}"] = hit["file_path"]
-
-                            # If this file is selected for analysis, run it
-                            if st.session_state.get(f"bs_analyzing_{fkey}") == hit["file_path"]:
-                                with st.spinner(f"Running bank analysis on {hit['file_name']}..."):
-                                    from pypdf import PdfReader as _PR
-                                    from ai_engine import check_bank_rules as _cbr
-                                    try:
-                                        _rdr = _PR(hit["file_path"])
-                                        _txt = "\n".join(
-                                            (p.extract_text() or "") for p in _rdr.pages
-                                        )
-                                        _bank_out = _cbr(_txt)
-                                    except Exception as _e:
-                                        _bank_out = ""
-                                        st.error(f"Could not read file: {_e}")
-
-                                if _bank_out:
-                                    st.markdown(
-                                        f"<div style='font-size:13px;font-weight:700;"
-                                        f"color:#2563eb;margin:10px 0 6px 0;'>"
-                                        f"Analysis: {hit['file_name']}</div>",
-                                        unsafe_allow_html=True,
-                                    )
-                                    _raw2 = _bank_out.strip().split("\n")
-                                    for _raw in _raw2:
-                                        _pts = _raw.split("|")
-                                        _tag = _pts[0] if _pts else ""
-                                        if _tag == "SUMMARY":
-                                            _ok2, _fl2, _ms2, _in2 = (
-                                                int(_pts[1]), int(_pts[2]),
-                                                int(_pts[3]), int(_pts[4]),
-                                            )
-                                            _s1, _s2, _s3, _s4 = st.columns(4)
-                                            for _col, _val, _clr, _lbl in [
-                                                (_s1, _ok2, "#27ae60", "✓ Passed"),
-                                                (_s2, _fl2, "#e74c3c", "Flagged"),
-                                                (_s3, _ms2, "#f1c40f", "⚠️ Missing"),
-                                                (_s4, _in2, "#5dade2", "ℹ️ Note"),
-                                            ]:
-                                                with _col:
-                                                    st.markdown(
-                                                        f'<div class="stat-card">'
-                                                        f'<div class="stat-num" style="color:{_clr};">{_val}</div>'
-                                                        f'<div class="stat-label">{_lbl}</div></div>',
-                                                        unsafe_allow_html=True,
-                                                    )
-                                        elif _tag == "SECTION":
-                                            st.markdown(
-                                                f'<div style="font-size:12px;font-weight:700;color:#2563eb;'
-                                                f'margin:10px 0 4px 0;text-transform:uppercase;">'
-                                                f'{_pts[1] if len(_pts)>1 else ""}</div>',
-                                                unsafe_allow_html=True,
-                                            )
-                                        elif _tag in ("OK", "FLAG", "MISSING", "INFO", "MANUAL"):
-                                            _lbl2 = _pts[2] if len(_pts) > 2 else ""
-                                            _msg2 = _pts[3] if len(_pts) > 3 else ""
-                                            _styles = {
-                                                "OK":     ("#152a1e", "#27ae60", "✓"),
-                                                "FLAG":   ("#3d1515", "#e74c3c", "Flag"),
-                                                "MISSING":("#3d3015", "#f1c40f", "⚠"),
-                                                "INFO":   ("#1a2a3d", "#5dade2", "ℹ"),
-                                                "MANUAL": ("#252040", "#d1d5db", "View"),
-                                            }
-                                            _bg, _bdr, _ico = _styles.get(
-                                                _tag, ("#252040", "#d1d5db", "·")
-                                            )
-                                            st.markdown(
-                                                f'<div style="display:flex;gap:8px;'
-                                                f'background:{_bg};border-left:3px solid {_bdr};'
-                                                f'border-radius:5px;padding:5px 10px;margin-bottom:2px;">'
-                                                f'<span style="color:{_bdr};min-width:18px;">{_ico}</span>'
-                                                f'<div><span style="color:#111111;font-size:12px;'
-                                                f'font-weight:600;">{_lbl2}</span>'
-                                                + (f'<br><span style="color:#5c6370;font-size:11px;">{_msg2}</span>' if _msg2 else "")
-                                                + f'</div></div>',
-                                                unsafe_allow_html=True,
-                                            )
-
-                    # ── Fraud Check (bank statements) ───────────────────────
-                    st.markdown("---")
-                    fc_key = f"fraud_on_{fkey}"
-                    fc_col1, fc_col2 = st.columns([1, 4])
-                    with fc_col1:
-                        fraud_on = st.toggle("Fraud Check", key=fc_key, value=False)
-                    with fc_col2:
-                        if fraud_on:
-                            st.caption("Scanning for fraud indicators — SSN mismatches, "
-                                       "zero withholding, balance jumps, uniform pay, date gaps.")
-
-                    if fraud_on:
-                        from fraud_check import check as _fc
-                        _pdf_bytes_fc = uploaded_file.getvalue()
-                        _fc_result = _fc(_pdf_bytes_fc, doc_type)
-                        _fc_risk   = _fc_result["risk_level"]
-                        _fc_flags  = _fc_result["flags"]
-                        _fc_bg = {"high": "#3d1515", "medium": "#2d2808", "low": "#152a1e"}[_fc_risk]
-                        _fc_bdr = {"high": "#e74c3c", "medium": "#f1c40f", "low": "#27ae60"}[_fc_risk]
-                        st.markdown(
-                            f'<div style="background:{_fc_bg};border-left:4px solid {_fc_bdr};'
-                            f'border-radius:8px;padding:10px 16px;margin:8px 0;">'
-                            f'<div style="font-size:14px;font-weight:700;color:#111111;">'
-                            f'{_fc_result["summary"]}</div></div>',
-                            unsafe_allow_html=True,
-                        )
-                        if _fc_flags:
-                            for _ffl in _fc_flags:
-                                _ffl_clr = {"high": "#f5b7b1", "medium": "#fdebd0"}.get(
-                                    _ffl["severity"], "#333333"
-                                )
-                                st.markdown(
-                                    f'<div style="display:flex;gap:8px;margin-bottom:4px;">'
-                                    f'<span style="color:#e74c3c;font-size:14px;">⚑</span>'
-                                    f'<div><span style="color:#111111;font-size:13px;font-weight:600;">'
-                                    f'{_ffl["rule"]}</span><br>'
-                                    f'<span style="color:{_ffl_clr};font-size:12px;">'
-                                    f'{_ffl["detail"]}</span></div></div>',
-                                    unsafe_allow_html=True,
-                                )
-
-                    # skip the rest of the condition-rendering code for this file
-                    continue
-
-                # === 1003 APPLICATION — structured data display ===
-                if doc_type == "1003 Application":
-                    data = result.get("extracted_data", {})
-                    if not data:
-                        st.warning("Could not extract structured data. The PDF may be a scanned image.")
-                        continue
-
-                    b = data.get("borrower", {})
-                    cb = data.get("co_borrower", {})
-                    emp = data.get("employment", {})
-                    loan = data.get("loan", {})
-                    missing = data.get("missing_required", [])
-
-                    st.markdown("## 1003 Application — Extracted Fields")
-                    if missing:
-                        st.markdown(
-                            f'<div style="background:#3d1515;border-left:3px solid #e74c3c;border-radius:6px;'
-                            f'padding:8px 14px;margin-bottom:12px;font-size:13px;color:#f5b7b1;">'
-                            f'⚠️ <b>Missing required fields:</b> {", ".join(missing)}</div>',
-                            unsafe_allow_html=True,
-                        )
-                    else:
-                        st.markdown(
-                            '<div style="background:#152a1e;border-left:3px solid #27ae60;border-radius:6px;'
-                            'padding:8px 14px;margin-bottom:12px;font-size:13px;color:#a9dfbf;">'
-                            '✓ All required fields found.</div>',
-                            unsafe_allow_html=True,
-                        )
-
-                    _nf = '<i style="color:#d1d5db;">not found</i>'
-
-                    def _field(label, value, editable_key=None):
-                        dot = '<span style="color:#27ae60;font-weight:700;">●</span>' if value else \
-                              '<span style="color:#e74c3c;font-weight:700;">●</span>'
-                        disp = value if value else _nf
-                        st.markdown(
-                            f'<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:2px;">'
-                            f'{dot}<span style="color:#5c6370;font-size:12px;min-width:140px;">{label}</span>'
-                            f'<span style="color:#111111;font-size:13px;font-weight:600;">{disp}</span></div>',
-                            unsafe_allow_html=True,
-                        )
-
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        st.markdown("**Borrower**")
-                        _field("Name", b.get("name"))
-                        _field("SSN", b.get("ssn"))
-                        _field("Date of Birth", b.get("dob"))
-                        _field("Phone", b.get("phone"))
-                        _field("Email", b.get("email"))
-                        _field("Present Address", b.get("present_address"))
-                        _field("Previous Address", b.get("previous_address"))
-                        st.markdown("---")
-                        st.markdown("**— Employment**")
-                        _field("Employer", emp.get("employer"))
-                        _field("Position / Title", emp.get("position"))
-                        _field("Employer Phone", emp.get("employer_phone"))
-                        _field("Years on Job", emp.get("years_on_job"))
-                        _field("Years in Field", emp.get("years_in_field"))
-                        _field("Base Monthly Income", emp.get("base_monthly_income"))
-
-                    with col_b:
-                        st.markdown("**Co-Borrower**")
-                        _field("Name", cb.get("name"))
-                        _field("SSN", cb.get("ssn"))
-                        _field("Employer", cb.get("employer"))
-                        st.markdown("---")
-                        st.markdown("**Home Loan / Property**")
-                        _field("Loan Amount", loan.get("amount"))
-                        _field("Loan Purpose", loan.get("purpose"))
-                        _field("Term", loan.get("term"))
-                        _field("Interest Rate", loan.get("interest_rate"))
-                        _field("Property Address", loan.get("property_address"))
-                        _field("Property Value", loan.get("property_value"))
-                        _field("Property Use", loan.get("property_use"))
-
-                    st.markdown("---")
-                    pp_col1, pp_col2 = st.columns([2, 1])
-                    with pp_col1:
-                        st.caption("Push to Pipeline to create a tracked loan from this 1003.")
-                    with pp_col2:
-                        if st.button("+Push to Pipeline", key=f"push1003_{fkey}", use_container_width=True, type="primary"):
-                            from crm import add_loan
-                            _1003_contacts = {
-                                "borrower": {"name": b.get("name",""), "phone": b.get("phone",""), "email": b.get("email",""), "address": b.get("present_address","")},
-                                "co_borrower": {"name": cb.get("name",""), "phone": cb.get("phone",""), "email": cb.get("email","")},
-                                "employer": {"name": emp.get("employer",""), "phone": emp.get("employer_phone",""), "position": emp.get("position","")},
-                            }
-                            add_loan(
-                                loan_num=f"1003-{b.get('name', 'Unknown')[:8]}",
-                                borrower=b.get("name", "Unknown"),
-                                status="Pending",
-                                due_date="",
-                                missing_docs=", ".join(missing) if missing else "",
-                                folder_path="",
-                                contacts=_1003_contacts,
-                            )
-                            st.success(f"✓ Added {b.get('name', 'borrower')} to pipeline.")
-                    continue
-
-                # === PURCHASE CONTRACT — structured data display ===
-                if doc_type == "Purchase Contract":
-                    data = result.get("extracted_data", {})
-                    if not data:
-                        st.warning("Could not extract structured data. The PDF may be a scanned image.")
-                        continue
-
-                    buyer = data.get("buyer", {})
-                    seller = data.get("seller", {})
-                    prop = data.get("property", {})
-                    txn = data.get("transaction", {})
-                    la = data.get("listing_agent", {})
-                    sa = data.get("selling_agent", {})
-                    title = data.get("title", {})
-                    cont = data.get("contingencies", {})
-                    addendums = data.get("addendums", [])
-                    missing = data.get("missing_required", [])
-
-                    st.markdown("## Purchase Contract — Extracted Fields")
-                    if missing:
-                        st.markdown(
-                            f'<div style="background:#3d1515;border-left:3px solid #e74c3c;border-radius:6px;'
-                            f'padding:8px 14px;margin-bottom:12px;font-size:13px;color:#f5b7b1;">'
-                            f'⚠️ <b>Missing required fields:</b> {", ".join(missing)}</div>',
-                            unsafe_allow_html=True,
-                        )
-                    else:
-                        st.markdown(
-                            '<div style="background:#152a1e;border-left:3px solid #27ae60;border-radius:6px;'
-                            'padding:8px 14px;margin-bottom:12px;font-size:13px;color:#a9dfbf;">'
-                            '✓ All required fields found.</div>',
-                            unsafe_allow_html=True,
-                        )
-
-                    _nf2 = '<i style="color:#d1d5db;">not found</i>'
-
-                    def _cfield(label, value):
-                        dot = '<span style="color:#27ae60;font-weight:700;">●</span>' if value else \
-                              '<span style="color:#e74c3c;font-weight:700;">●</span>'
-                        disp = value if value else _nf2
-                        st.markdown(
-                            f'<div style="display:flex;gap:8px;align-items:baseline;margin-bottom:2px;">'
-                            f'{dot}<span style="color:#5c6370;font-size:12px;min-width:140px;">{label}</span>'
-                            f'<span style="color:#111111;font-size:13px;font-weight:600;">{disp}</span></div>',
-                            unsafe_allow_html=True,
-                        )
-
-                    pc1, pc2, pc3 = st.columns(3)
-                    with pc1:
-                        st.markdown("**— Parties**")
-                        _cfield("Buyer", buyer.get("name"))
-                        _cfield("Buyer Phone", buyer.get("phone"))
-                        _cfield("Buyer Email", buyer.get("email"))
-                        _cfield("Seller", seller.get("name"))
-                        _cfield("Seller Phone", seller.get("phone"))
-                        st.markdown("---")
-                        st.markdown("**Home Property**")
-                        _cfield("Address", prop.get("address"))
-
-                    with pc2:
-                        st.markdown("**Transaction**")
-                        _cfield("Purchase Price", txn.get("purchase_price"))
-                        _cfield("Closing Date", txn.get("closing_date"))
-                        _cfield("Earnest Money", txn.get("earnest_money"))
-                        _cfield("Down Payment", txn.get("down_payment"))
-                        _cfield("Seller Concessions", txn.get("seller_concessions"))
-                        st.markdown("---")
-                        st.markdown("**Title Company**")
-                        _cfield("Company", title.get("company"))
-                        _cfield("Contact", title.get("contact"))
-                        _cfield("Phone", title.get("phone"))
-
-                    with pc3:
-                        st.markdown("**Listing Agent**")
-                        _cfield("Name", la.get("name"))
-                        _cfield("Brokerage", la.get("brokerage"))
-                        _cfield("Phone", la.get("phone"))
-                        _cfield("Email", la.get("email"))
-                        st.markdown("---")
-                        st.markdown("**— Selling / Buyer's Agent**")
-                        _cfield("Name", sa.get("name"))
-                        _cfield("Brokerage", sa.get("brokerage"))
-                        _cfield("Phone", sa.get("phone"))
-                        _cfield("Email", sa.get("email"))
-
-                    st.markdown("---")
-                    st.markdown("**Contingencies**")
-                    conc1, conc2, conc3 = st.columns(3)
-                    with conc1:
-                        _cfield("Inspection", cont.get("inspection"))
-                    with conc2:
-                        _cfield("Appraisal", cont.get("appraisal"))
-                    with conc3:
-                        _cfield("Financing", cont.get("financing"))
-
-                    if addendums:
-                        st.markdown("**Attach Addendums / Riders**")
-                        for add in addendums:
-                            st.markdown(
-                                f'<div style="color:#333333;font-size:12px;margin-left:12px;">• {add}</div>',
-                                unsafe_allow_html=True,
-                            )
-
-                    # ── AI re-extraction for unusual / unfamiliar contract forms ──
-                    _missing_key_fields = not buyer.get("name") or not txn.get("purchase_price") or not prop.get("address")
-                    _ai_key = f"pc_ai_data_{fkey}"
-                    _raw_text = result.get("raw_text", "")
-
-                    if _raw_text:
-                        import ai_router as _air
-                        _ai_status = _air.get_status()
-                        _ai_available = _ai_status["cloud_enabled"] or _ai_status["ollama_enabled"]
-
-                        if _ai_available:
-                            _ai_hint = " (recommended — some fields appear missing)" if _missing_key_fields else ""
-                            with st.expander(f"AI Extract — handles any state form{_ai_hint}", expanded=_missing_key_fields):
-                                st.caption(
-                                    "Regex extraction works well for standard contracts but may miss fields on "
-                                    "unusual forms (MN STAR, WI WB, TX TREC, CA CAR, custom builder contracts). "
-                                    "AI extraction reads the whole document and finds fields regardless of layout."
-                                )
-                                if st.button("Run AI Extraction", key=f"pc_ai_btn_{fkey}", type="primary"):
-                                    with st.spinner("AI reading contract..."):
-                                        _ai_data, _ai_log = _air.extract_purchase_contract_ai(_raw_text)
-                                    if _ai_data:
-                                        # Merge: AI fills blanks, doesn't overwrite confirmed regex values
-                                        def _merge(regex_d, ai_d):
-                                            if not isinstance(regex_d, dict) or not isinstance(ai_d, dict):
-                                                return regex_d or ai_d
-                                            out = dict(regex_d)
-                                            for k, v in ai_d.items():
-                                                if k not in out or not out[k]:
-                                                    out[k] = v
-                                            return out
-
-                                        merged = {
-                                            "buyer":         _merge(data.get("buyer", {}), _ai_data.get("buyer", {})),
-                                            "seller":        _merge(data.get("seller", {}), _ai_data.get("seller", {})),
-                                            "property":      _merge(data.get("property", {}), _ai_data.get("property", {})),
-                                            "transaction":   _merge(data.get("transaction", {}), _ai_data.get("transaction", {})),
-                                            "listing_agent": _merge(data.get("listing_agent", {}), _ai_data.get("listing_agent", {})),
-                                            "selling_agent": _merge(data.get("selling_agent", {}), _ai_data.get("selling_agent", {})),
-                                            "title":         _merge(data.get("title", {}), _ai_data.get("title", {})),
-                                            "contingencies": _merge(data.get("contingencies", {}), _ai_data.get("contingencies", {})),
-                                            "addendums":     data.get("addendums") or _ai_data.get("addendums", []),
-                                            "missing_required": [],
-                                        }
-                                        st.session_state[_ai_key] = merged
-                                        st.session_state.scan_results["extracted_data"] = merged
-                                        st.success(f"✓ AI extraction complete. ({_ai_log})")
-                                        st.rerun()
-                                    else:
-                                        st.warning(f"AI returned no data. ({_ai_log})")
-
-                        elif _missing_key_fields:
-                            st.info("Enable Cloud AI or Ollama in **AI Settings** to extract fields from unusual contract forms automatically.")
-
-                    # ── Manual correction expander ──────────────────────────────
-                    with st.expander("✏️ Correct fields manually", expanded=False):
-                        st.caption("Edit any fields the scanner got wrong, then push to pipeline.")
-                        _ec1, _ec2 = st.columns(2)
-                        with _ec1:
-                            _e_buyer  = st.text_input("Buyer Name",     value=buyer.get("name", ""),           key=f"e_buyer_{fkey}")
-                            _e_seller = st.text_input("Seller Name",    value=seller.get("name", ""),          key=f"e_seller_{fkey}")
-                            _e_addr   = st.text_input("Property Address", value=prop.get("address", ""),       key=f"e_addr_{fkey}")
-                        with _ec2:
-                            _e_price  = st.text_input("Purchase Price", value=txn.get("purchase_price", ""),   key=f"e_price_{fkey}")
-                            _e_close  = st.text_input("Closing Date",   value=txn.get("closing_date", ""),     key=f"e_close_{fkey}")
-                            _e_earn   = st.text_input("Earnest Money",  value=txn.get("earnest_money", ""),    key=f"e_earn_{fkey}")
-                        if st.button("Apply Corrections", key=f"apply_corrections_{fkey}"):
-                            _corrected = dict(data)
-                            _corrected["buyer"]       = dict(buyer,   name=_e_buyer)
-                            _corrected["seller"]      = dict(seller,  name=_e_seller)
-                            _corrected["property"]    = dict(prop,    address=_e_addr)
-                            _corrected["transaction"] = dict(txn,
-                                purchase_price=_e_price,
-                                closing_date=_e_close,
-                                earnest_money=_e_earn,
-                            )
-                            st.session_state.scan_results["extracted_data"] = _corrected
-                            st.success("✓ Corrections saved. Scroll up to see updated fields.")
-                            st.rerun()
-
-                    st.markdown("---")
-                    act_c1, act_c2, act_c3 = st.columns(3)
-                    with act_c1:
-                        if st.button("+Push to Pipeline", key=f"pushpc_{fkey}", use_container_width=True, type="primary"):
-                            from crm import add_loan
-                            _pc_contacts = {
-                                "buyer": {"name": buyer.get("name",""), "phone": buyer.get("phone",""), "email": buyer.get("email","")},
-                                "seller": {"name": seller.get("name",""), "phone": seller.get("phone","")},
-                                "listing_agent": {"name": la.get("name",""), "brokerage": la.get("brokerage",""), "phone": la.get("phone",""), "email": la.get("email","")},
-                                "selling_agent": {"name": sa.get("name",""), "brokerage": sa.get("brokerage",""), "phone": sa.get("phone",""), "email": sa.get("email","")},
-                                "title": {"company": title.get("company",""), "contact": title.get("contact",""), "phone": title.get("phone","")},
-                            }
-                            _pc_conditions = []
-                            add_loan(
-                                loan_num=f"PC-{buyer.get('name', 'Unknown')[:8]}",
-                                borrower=buyer.get("name", "Unknown"),
-                                status="Pending",
-                                due_date=txn.get("closing_date", ""),
-                                missing_docs=", ".join(missing) if missing else "",
-                                folder_path="",
-                                closing_date=txn.get("closing_date", ""),
-                                conditions=_pc_conditions,
-                                contacts=_pc_contacts,
-                            )
-                            st.success(f"✓ Added {buyer.get('name', 'buyer')} to pipeline.")
-                    with act_c2:
-                        if title.get("company") and st.button("Email️ Draft Title Email", key=f"titlemailpc_{fkey}", use_container_width=True):
-                            title_body = (
-                                f"Dear {title.get('contact') or title.get('company')} Team,\n\n"
-                                f"Please be advised that we are working on the following transaction "
-                                f"and require your assistance:\n\n"
-                                f"  Property: {prop.get('address', 'See contract')}\n"
-                                f"  Buyer: {buyer.get('name', '')}\n"
-                                f"  Seller: {seller.get('name', '')}\n"
-                                f"  Purchase Price: ${txn.get('purchase_price', '')}\n"
-                                f"  Closing Date: {txn.get('closing_date', '')}\n\n"
-                                f"Please provide your title commitment, CPL, wiring instructions, "
-                                f"and preliminary CD at your earliest convenience.\n\n"
-                                f"Thank you,\n[Your Name]"
-                            )
-                            st.text_area("Title Company Email — copy to Outlook:", title_body, height=260, key=f"titleemailout_{fkey}")
-                    continue
-
-                # === CONDITIONS (the main output — non-bank-statement docs) ===
-                conditions_text = result["conditions"]
-                condition_rows = []
-                for line in conditions_text.split("\n"):
-                    line = line.strip()
-                    if line.startswith("|") and not line.startswith("| #") and not line.startswith("|--") and not line.startswith("|-"):
-                        cells = [c.strip() for c in line.split("|") if c.strip()]
-                        if len(cells) >= 4:
-                            condition_rows.append({
-                                "num": cells[0], "desc": cells[1],
-                                "party": cells[2], "status": cells[3],
-                            })
-
-                PARTY_OPTIONS = [
-                    "Borrower", "Title", "Underwriter", "Jr Underwriter",
-                    "Closer", "Insurance", "Appraiser", "Manager", "Processor",
-                ]
-
-                # Condition status definitions
-                COND_STATUSES = {
-                    "Needed":          {"emoji": "●", "color": "#f1c40f", "label": "Needed"},
-                    "Requested":       {"emoji": "●", "color": "#e67e22", "label": "Requested"},
-                    "Important":       {"emoji": "●", "color": "#e74c3c", "label": "Important"},
-                    "Ready to Clear":  {"emoji": "●", "color": "#27ae60", "label": "Ready to Clear"},
-                    "Cleared":         {"emoji": "●", "color": "#5dade2", "label": "Cleared"},
-                }
-
-                def _render_condition(cond, fkey, PARTY_OPTIONS, COND_STATUSES):
-                    """Compact condition row — expand for status, parties, notes, fetch, guidelines."""
-                    import os as _os
-                    cnum       = cond["num"]
-                    party_key  = f"party_{fkey}_{cnum}"
-                    notes_key  = f"notes_{fkey}_{cnum}"
-                    status_key = f"cstatus_{fkey}_{cnum}"
-                    fetch_key  = f"cfetch_{fkey}_{cnum}"
-                    guide_key  = f"cguide_{fkey}_{cnum}"
-
-                    # Init party
-                    raw_default = cond["party"] if cond["party"] in PARTY_OPTIONS else "Borrower"
-                    if party_key not in st.session_state:
-                        st.session_state[party_key] = [raw_default]
-                    saved_parties = st.session_state.get(party_key, [raw_default])
-                    if not isinstance(saved_parties, list):
-                        saved_parties = [raw_default]
-                    saved_parties = [p for p in saved_parties if p in PARTY_OPTIONS] or [raw_default]
-
-                    # Init status
-                    if status_key not in st.session_state:
-                        st.session_state[status_key] = "Needed"
-                    cur_status = st.session_state.get(status_key, "Needed")
-                    if cur_status not in COND_STATUSES:
-                        cur_status = "Needed"
-                    status_info = COND_STATUSES[cur_status]
-                    saved_notes = st.session_state.get(notes_key, "")
-
-                    short_desc = cond["desc"][:72] + ("…" if len(cond["desc"]) > 72 else "")
-                    exp_label  = f"{status_info['emoji']} #{cnum}  {short_desc}"
-
-                    col_chk, col_exp = st.columns([1, 11])
-                    with col_chk:
-                        checked = st.checkbox("", key=f"chk_{fkey}_{cnum}",
-                                              label_visibility="collapsed")
-                    with col_exp:
-                        with st.expander(exp_label, expanded=False):
-                            # ── Status buttons ───────────────────────────
-                            st.markdown("**Status:**")
-                            sb = st.columns(len(COND_STATUSES))
-                            for i, (sname, sinfo) in enumerate(COND_STATUSES.items()):
-                                with sb[i]:
-                                    active = "✓ " if cur_status == sname else ""
-                                    if st.button(
-                                        f"{sinfo['emoji']} {active}{sinfo['label']}",
-                                        key=f"sbtn_{fkey}_{cnum}_{sname}",
-                                        use_container_width=True,
-                                    ):
-                                        st.session_state[status_key] = sname
-                                        st.rerun()
-
-                            st.markdown('<div style="height:4px"></div>', unsafe_allow_html=True)
-
-                            # ── Party multiselect ────────────────────────
-                            new_parties = st.multiselect(
-                                "Responsible parties", PARTY_OPTIONS,
-                                default=saved_parties, key=party_key,
-                                placeholder="Add parties...",
-                            )
-                            if new_parties:
-                                st.markdown(
-                                    " ".join(_party_badge(p) for p in new_parties),
-                                    unsafe_allow_html=True,
-                                )
-
-                            # ── Notes ────────────────────────────────────
-                            st.text_input("Update / notes", key=notes_key,
-                                          placeholder="Add update or note...")
-                            if saved_notes:
-                                st.caption(f"{saved_notes}")
-
-                            st.markdown("---")
-
-                            # ── Detect if condition is bank-statement-related ──
-                            _bs_keywords = {
-                                "bank statement", "bank stmt", "checking account",
-                                "savings account", "deposit", "bank", "statement",
-                                "60 days", "2 months", "3 months",
-                            }
-                            _desc_lower = cond["desc"].lower()
-                            _is_bs_cond = any(kw in _desc_lower for kw in _bs_keywords)
-
-                            # ── Fetch from Folder ────────────────────────
-                            if _is_bs_cond:
-                                fa, fb, fc = st.columns([1, 1, 1])
-                            else:
-                                fa, fb = st.columns([1, 1])
-                                fc = None
-
-                            with fa:
-                                fetch_btn = st.button("Fetch from Folder",
-                                    key=f"fetchbtn_{fkey}_{cnum}", use_container_width=True)
-                            with fb:
-                                guide_btn = st.button("Check Guidelines",
-                                    key=f"guidebtn_{fkey}_{cnum}", use_container_width=True)
-                            if fc:
-                                with fc:
-                                    bs_fetch_btn = st.button(
-                                        "Bank Find & Analyze Bank Stmt",
-                                        key=f"bsfetchbtn_{fkey}_{cnum}",
-                                        use_container_width=True,
-                                        help="Search borrower folder for bank statement PDFs and run the 50-rule analysis.",
-                                    )
-                            else:
-                                bs_fetch_btn = False
-
-                            if fetch_btn:
-                                st.session_state[f"show_cfetch_{fkey}_{cnum}"] = True
-                            if bs_fetch_btn:
-                                st.session_state[f"show_bsfetch_{fkey}_{cnum}"] = True
-
-                            # ── Standard fetch flow ────────────────────
-                            if st.session_state.get(f"show_cfetch_{fkey}_{cnum}"):
-                                folder_path = st.text_input(
-                                    "Folder path:",
-                                    value=st.session_state.get("last_fetch_folder", ""),
-                                    key=f"cfolder_{fkey}_{cnum}",
-                                    placeholder=r"C:\Users\...\BorrowerName",
-                                )
-                                sc1, sc2 = st.columns([1, 3])
-                                with sc1:
-                                    do_search = st.button("Search",
-                                        key=f"csearch_{fkey}_{cnum}", use_container_width=True)
-                                with sc2:
-                                    if st.button("Cancel", key=f"ccancel_{fkey}_{cnum}"):
-                                        st.session_state[f"show_cfetch_{fkey}_{cnum}"] = False
-                                        st.rerun()
-                                if do_search and folder_path:
-                                    st.session_state["last_fetch_folder"] = folder_path
-                                    if not _os.path.isdir(folder_path):
-                                        st.error(f"Folder not found: {folder_path}")
-                                    else:
-                                        from folder_search import scan_folder
-                                        prog = st.progress(0, text="Scanning...")
-                                        res = scan_folder(folder_path, [cond], threshold=60,
-                                            progress_callback=lambda p, m: prog.progress(min(p,100), text=m))
-                                        st.session_state[fetch_key] = res
-                                        st.session_state[f"show_cfetch_{fkey}_{cnum}"] = False
-
-                            # ── Bank statement fetch + analyze flow ─────
-                            if st.session_state.get(f"show_bsfetch_{fkey}_{cnum}"):
-                                from crm import get_all_loans as _pipe_loans
-                                _def_bs = st.session_state.get("last_fetch_folder", "")
-                                if not _def_bs:
-                                    for _pl2 in _pipe_loans():
-                                        _fp2 = _pl2.get("folder_path", "")
-                                        if _fp2 and _os.path.isdir(_fp2):
-                                            _def_bs = _fp2
-                                            break
-
-                                bsf_path = st.text_input(
-                                    "Borrower folder:",
-                                    value=_def_bs,
-                                    key=f"bsfolder_{fkey}_{cnum}",
-                                    placeholder=r"C:\Loans\SmithJohn",
-                                )
-                                bsc1, bsc2, bsc3 = st.columns([2, 2, 1])
-                                with bsc1:
-                                    bss_scope = st.selectbox(
-                                        "Scope",
-                                        ["Bank statements only", "All PDFs"],
-                                        key=f"bsscope_{fkey}_{cnum}",
-                                        label_visibility="collapsed",
-                                    )
-                                with bsc2:
-                                    pass
-                                with bsc3:
-                                    bss_go = st.button(
-                                        "Search", key=f"bsgo_{fkey}_{cnum}",
-                                        use_container_width=True,
-                                    )
-                                if bss_go and bsf_path:
-                                    st.session_state["last_fetch_folder"] = bsf_path
-                                    from folder_search import find_bank_statements
-                                    _bss = "bank_only" if "only" in bss_scope else "all_pdfs"
-                                    with st.spinner("Searching for bank statements..."):
-                                        _bs_results = find_bank_statements(bsf_path, scope=_bss)
-                                    st.session_state[f"bshits_{fkey}_{cnum}"] = _bs_results
-
-                                _bs_hits2 = st.session_state.get(f"bshits_{fkey}_{cnum}", [])
-                                if _bs_hits2:
-                                    for _bhi, _bht in enumerate(_bs_hits2):
-                                        _conf_c = "#27ae60" if _bht["score"] >= 70 else (
-                                            "#f1c40f" if _bht["score"] >= 40 else "#e74c3c"
-                                        )
-                                        _bhc1, _bhc2, _bhc3, _bhc4 = st.columns([3, 2, 1, 1])
-                                        with _bhc1:
-                                            st.markdown(
-                                                f'<div style="font-weight:600;color:#111111;font-size:12px;">'
-                                                f'{_bht["file_name"]}</div>'
-                                                f'<div style="font-size:11px;color:#5c6370;">'
-                                                f'{_bht["snippet"][:100]}</div>',
-                                                unsafe_allow_html=True,
-                                            )
-                                        with _bhc2:
-                                            st.markdown(
-                                                f'<div style="font-size:11px;color:{_conf_c};">'
-                                                f'{_bht["score"]}% match · {_bht["reason"][:40]}</div>',
-                                                unsafe_allow_html=True,
-                                            )
-                                        with _bhc3:
-                                            if st.button("Analyze", key=f"bsana_{fkey}_{cnum}_{_bhi}",
-                                                         use_container_width=True):
-                                                st.session_state[f"bsana_file_{fkey}_{cnum}"] = _bht["file_path"]
-                                        with _bhc4:
-                                            if st.button("Read", key=f"bsread_{fkey}_{cnum}_{_bhi}",
-                                                         use_container_width=True):
-                                                st.session_state["reader_open_file"] = {
-                                                    "name": _bht["file_name"],
-                                                    "path": _bht["file_path"],
-                                                    "ext": ".pdf",
-                                                }
-                                                st.session_state["page"] = "reader"
-                                                st.rerun()
-
-                                        # Inline analysis
-                                        if st.session_state.get(f"bsana_file_{fkey}_{cnum}") == _bht["file_path"]:
-                                            with st.spinner(f"Analyzing {_bht['file_name']}..."):
-                                                from pypdf import PdfReader as _PRx
-                                                from ai_engine import check_bank_rules as _cbrx
-                                                try:
-                                                    _rdrx = _PRx(_bht["file_path"])
-                                                    _txtx = "\n".join(
-                                                        (p.extract_text() or "") for p in _rdrx.pages
-                                                    )
-                                                    _bkout = _cbrx(_txtx)
-                                                except Exception as _ex:
-                                                    _bkout = ""
-                                                    st.error(str(_ex))
-
-                                            if _bkout:
-                                                _rawx = _bkout.strip().split("\n")
-                                                for _rx in _rawx:
-                                                    _ptx = _rx.split("|")
-                                                    _tgx = _ptx[0] if _ptx else ""
-                                                    if _tgx == "SUMMARY":
-                                                        _ox, _fx, _mx, _ix = int(_ptx[1]), int(_ptx[2]), int(_ptx[3]), int(_ptx[4])
-                                                        st.markdown(
-                                                            f'<div style="font-size:12px;color:#333333;padding:4px 0;">'
-                                                            f'✓ {_ox} Passed &nbsp; {_fx} Flagged &nbsp; '
-                                                            f'⚠️ {_mx} Missing &nbsp; ℹ️ {_ix} Info</div>',
-                                                            unsafe_allow_html=True,
-                                                        )
-                                                    elif _tgx == "FLAG":
-                                                        st.markdown(
-                                                            f'<div style="background:#3d1515;border-left:2px solid #e74c3c;'
-                                                            f'border-radius:4px;padding:4px 8px;margin-bottom:2px;font-size:11px;color:#111111;">'
-                                                            f'{_ptx[2] if len(_ptx)>2 else ""} — {_ptx[3] if len(_ptx)>3 else ""}</div>',
-                                                            unsafe_allow_html=True,
-                                                        )
-                                                    elif _tgx == "MISSING":
-                                                        st.markdown(
-                                                            f'<div style="background:#3d3015;border-left:2px solid #f1c40f;'
-                                                            f'border-radius:4px;padding:4px 8px;margin-bottom:2px;font-size:11px;color:#111111;">'
-                                                            f'⚠ {_ptx[2] if len(_ptx)>2 else ""} — {_ptx[3] if len(_ptx)>3 else ""}</div>',
-                                                            unsafe_allow_html=True,
-                                                        )
-
-                            # Fetch results for this condition
-                            if st.session_state.get(fetch_key):
-                                fr = st.session_state[fetch_key]
-                                matches = fr.get(cond["num"], {}).get("matches", [])
-                                if matches:
-                                    for m in matches:
-                                        score = m["score"]
-                                        dot = "●" if score >= 80 else ("●" if score >= 65 else "●")
-                                        pages_str = f" | Pages: {', '.join(str(p) for p in m['matched_pages'])}" if m["matched_pages"] else ""
-                                        st.markdown(f"{dot} **{m['file_name']}** — {m['match_type']} ({score}%){pages_str}")
-                                        st.caption(f"Folder {m['file_path']}")
-                                        if m.get("snippet"):
-                                            st.text(m["snippet"][:180])
-                                else:
-                                    st.info("No matching files found for this condition.")
-                                if st.button("Clear", key=f"clrfetch_{fkey}_{cnum}"):
-                                    st.session_state[fetch_key] = None
-                                    st.rerun()
-
-                            # ── Check Guidelines ─────────────────────────
-                            if guide_btn:
-                                from guidelines import check_conditions_against_guidelines, get_available_guidelines
-                                available = get_available_guidelines()
-                                if not available:
-                                    st.error("No guideline PDFs found on Desktop.")
-                                else:
-                                    gprog = st.progress(0, text="Searching guidelines...")
-                                    gres = check_conditions_against_guidelines(
-                                        [cond],
-                                        progress_callback=lambda p, m: gprog.progress(min(p,100), text=m),
-                                    )
-                                    st.session_state[guide_key] = gres
-
-                            if st.session_state.get(guide_key):
-                                gr = st.session_state[guide_key]
-                                refs = gr.get(cond["num"], {}).get("guidelines", [])
-                                if refs:
-                                    for ref in refs:
-                                        score = ref["score"]
-                                        dot = "●" if score >= 80 else ("●" if score >= 65 else "●")
-                                        sec = f" | {ref['section']}" if ref.get("section") else ""
-                                        st.markdown(f"{dot} **{ref['source']}** — Page {ref['page']}{sec} ({score}%)")
-                                        st.container(border=True).markdown(ref["excerpt"][:400])
-                                else:
-                                    st.info("No guideline references found.")
-                                if st.button("Clear", key=f"clrguide_{fkey}_{cnum}"):
-                                    st.session_state[guide_key] = None
-                                    st.rerun()
-
-                    return checked, cur_status, saved_parties
-
-                # ── Draft Email — always visible, above conditions ─────────
-                st.markdown("### Email️ Draft Email")
-                # Read which conditions are checked from session state (persists across reruns)
-                pre_selected = []
-                for cond in condition_rows:
-                    if st.session_state.get(f"chk_{fkey}_{cond['num']}", False):
-                        pk = f"party_{fkey}_{cond['num']}"
-                        sp = st.session_state.get(pk, [cond["party"]])
-                        if not isinstance(sp, list):
-                            sp = [cond["party"]]
-                        sp = [p for p in sp if p in PARTY_OPTIONS] or ["Borrower"]
-                        pre_selected.append({**cond, "party": sp[0], "all_parties": sp})
-
-                em_c1, em_c2, em_c3 = st.columns([2, 2, 3])
-                with em_c1:
-                    email_lang = st.selectbox("Language", ["English", "Spanish"],
-                                              key=f"lang_{fkey}")
-                with em_c2:
-                    flat_parties = []
-                    for c in pre_selected:
-                        for p in c.get("all_parties", [c["party"]]):
-                            if p not in flat_parties:
-                                flat_parties.append(p)
-                    if not flat_parties:
-                        flat_parties = PARTY_OPTIONS
-                    recipient = st.selectbox("Send to", flat_parties, key=f"recip_{fkey}")
-                with em_c3:
-                    if pre_selected:
-                        st.markdown(
-                            f'<div style="padding-top:8px; font-size:13px; color:#333333;">'
-                            f'✓ {len(pre_selected)} condition(s) checked</div>',
-                            unsafe_allow_html=True,
-                        )
-                    else:
-                        st.caption("Check conditions below to include them")
-
-                _draft_col1, _draft_col2 = st.columns([1, 1])
-                with _draft_col1:
-                    draft_clicked = st.button("Email️ Draft Email", key=f"draft_{fkey}",
-                                              type="primary", use_container_width=True)
-                with _draft_col2:
-                    ai_draft_clicked = st.button("Draft with AI", key=f"odraft_{fkey}",
-                                                 use_container_width=True)
-
-                if draft_clicked:
-                    from ai_engine import draft_email
-                    if pre_selected:
-                        cond_lines = [f"- Condition #{c['num']}: {c['desc']}" for c in pre_selected]
-                    else:
-                        cond_lines = ["(No conditions selected — add details manually)"]
-                    email_text = draft_email("\n".join(cond_lines), recipient, email_lang)
-                    st.container(border=True).markdown(email_text)
-                    st.caption("Copy and paste into your email client. Review before sending.")
-
-                if ai_draft_clicked:
-                    import ai_router as _ar
-                    backend = _ar.get_preferred_backend()
-                    if backend == "script":
-                        st.warning("AI is set to Script Only. Go to AI Settings to enable Cloud AI or Ollama.")
-                    else:
-                        conds_for_ai = pre_selected if pre_selected else []
-                        _backend_label = "Cloud AI" if backend == "cloud" else "Ollama"
-                        with st.spinner(f"Drafting with {_backend_label}…"):
-                            _ai_text, _ai_log = _ar.draft_email_enhanced(
-                                conds_for_ai, recipient, email_lang
-                            )
-                        if _ai_text:
-                            st.container(border=True).markdown(_ai_text)
-                            st.caption(f"AI draft · {_ai_log.split('|')[-1].strip() if '|' in _ai_log else ''}")
-                        else:
-                            st.info("AI didn't return a draft — check AI Settings to verify your backend is configured.")
-
-                st.markdown("---")
-
-                # ── Quick Copy + Export row ──────────────────────────────────
-                _qc_label = "Quick Copy & Export"
-                with st.expander(_qc_label, expanded=False):
-                    # Build loan context from pipeline match
-                    _loan_info = {}
+    # Session state for accumulated scan batches
+    if "scan_batches" not in st.session_state:
+        st.session_state.scan_batches = []
+
+    # ── File uploader (additive) ─────────────────────────────────────
+    new_files = st.file_uploader(
+        "Upload PDFs",
+        type=["pdf"], accept_multiple_files=True,
+        key="dash_uploader",
+    )
+
+    if new_files:
+        import hashlib as _hashlib
+        import re as _re
+        import io as _io
+        import pypdf as _pypdf
+        from ai_engine import detect_doc_type as _detect, process_document as _proc
+
+        # ── Helper: extract grouping fingerprint from PDF bytes ──────
+        def _extract_fingerprint(pdf_bytes):
+            """Pull account numbers, names, dates, page sequence from PDF text."""
+            fp = {"account": None, "names": [], "period": None, "page_num": None, "page_total": None}
+            try:
+                _r = _pypdf.PdfReader(_io.BytesIO(pdf_bytes))
+                # Read first 3 pages max for speed
+                _text = ""
+                for _pg in _r.pages[:3]:
                     try:
-                        from crm import get_all_loans as _gcl
-                        for _pl in _gcl():
-                            _pf = _pl.get("folder_path", "")
-                            _pn = _pl.get("loan_num", "")
-                            if (_pf and result.get("text_length", 0) > 0) or True:
-                                # Best match: look at borrower from structured result
-                                _struct = result.get("extracted_data", {})
-                                _bname = (_struct.get("borrower", {}).get("name", "") or
-                                          _struct.get("buyer", {}).get("name", ""))
-                                if _bname and _bname.lower() in _pl.get("borrower", "").lower():
-                                    _loan_info = _pl
-                                    break
+                        _text += (_pg.extract_text() or "") + "\n"
                     except Exception:
                         pass
 
-                    # Quick-copy code blocks for key fields
-                    _struct = result.get("extracted_data", {})
-                    if _struct:
-                        _b = _struct.get("borrower", _struct.get("buyer", {}))
-                        _copy_fields = [
-                            ("Borrower Name",    _b.get("name", "")),
-                            ("SSN",              _b.get("ssn", "")),
-                            ("Property Address", (_struct.get("loan", _struct.get("property", {}))
-                                                 .get("property_address",
-                                                      _struct.get("property", {}).get("address", "")))),
-                            ("Loan Amount",      _struct.get("loan", _struct.get("transaction", {}))
-                                                 .get("amount",
-                                                      _struct.get("transaction", {}).get("purchase_price", ""))),
-                            ("Closing Date",     _struct.get("transaction", {}).get("closing_date", "")),
-                        ]
-                        _has_fields = any(v for _, v in _copy_fields)
-                        if _has_fields:
-                            st.markdown("**Copy key fields** (click the copy icon)")
-                            _cf_cols = st.columns(min(len([f for f in _copy_fields if f[1]]), 3))
-                            _ci = 0
-                            for _lbl, _val in _copy_fields:
-                                if _val:
-                                    with _cf_cols[_ci % len(_cf_cols)]:
-                                        st.caption(_lbl)
-                                        st.code(_val, language=None)
-                                    _ci += 1
-                        st.markdown("---")
+                # Account number — digits/dashes, often masked with X or *
+                _acct = _re.search(r'(?:account\s*(?:number|#|no\.?)[:\s]*)([\dX*\-]{6,20})', _text, _re.I)
+                if not _acct:
+                    _acct = _re.search(r'(?:Primary account number[:\s]*)([\d\-]{6,20})', _text, _re.I)
+                if not _acct:
+                    # Last 4 shown as "...1234" or "ending in 1234"
+                    _acct = _re.search(r'ending\s+in\s+(\d{4})', _text, _re.I)
+                if _acct:
+                    fp["account"] = _re.sub(r'[\s]', '', _acct.group(1)).upper()
 
-                    # Download buttons
-                    _dl1, _dl2 = st.columns(2)
-                    with _dl1:
-                        _csv_bytes = None
-                        try:
-                            import export as _exp
-                            _csv_bytes = _exp.conditions_to_csv(condition_rows, _loan_info)
-                        except Exception:
-                            pass
-                        if _csv_bytes:
-                            _csv_fname = f"conditions_{fkey}.csv"
-                            st.download_button(
-                                "⬇️ Download CSV",
-                                data=_csv_bytes,
-                                file_name=_csv_fname,
-                                mime="text/csv",
-                                use_container_width=True,
-                                key=f"dl_csv_{fkey}",
-                            )
-                    with _dl2:
-                        _html_bytes = None
-                        try:
-                            import export as _exp
-                            _proc = st.session_state.get("user_name", "")
-                            _snap_html = _exp.snapshot_html(
-                                condition_rows, _loan_info, doc_type, _proc
-                            )
-                            _html_bytes = _snap_html.encode("utf-8")
-                        except Exception:
-                            pass
-                        if _html_bytes:
-                            _html_fname = f"snapshot_{fkey}.html"
-                            st.download_button(
-                                "Condition Snapshot (print-to-PDF)",
-                                data=_html_bytes,
-                                file_name=_html_fname,
-                                mime="text/html",
-                                use_container_width=True,
-                                key=f"dl_snap_{fkey}",
-                                help="Download → open in browser → Ctrl+P → Save as PDF",
-                            )
+                # Names — ALL CAPS lines in first 40 lines (borrower name style)
+                _lines = _text.split("\n")
+                _skip = {"STATEMENT", "BANK", "ACCOUNT", "BALANCE", "SUMMARY", "PAGE",
+                         "DATE", "PERIOD", "DEPOSITS", "WITHDRAWALS", "BEGINNING", "ENDING",
+                         "DESCRIPTION", "AMOUNT", "TRANSACTION", "ACTIVITY", "CHECKING",
+                         "SAVINGS", "TOTAL", "AVAILABLE", "INTEREST", "SERVICE", "FEE",
+                         "ONLINE", "MEMBER", "FEDERAL", "CREDIT", "UNION", "FINANCIAL"}
+                for _ln in _lines[:50]:
+                    _ln = _ln.strip()
+                    if (len(_ln) >= 4 and _ln.isupper()
+                            and _re.match(r'^[A-Z][A-Z\s\-\.]+$', _ln)
+                            and not any(w in _ln.split() for w in _skip)
+                            and len(_ln.split()) <= 5):
+                        fp["names"].append(_ln)
 
-                st.markdown("### Conditions")
+                # Statement period
+                _period = _re.search(
+                    r'(?:for\s+the\s+period|statement\s+period|period)[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})\s*(?:to|through|[-–])\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
+                    _text, _re.I
+                )
+                if _period:
+                    fp["period"] = (_period.group(1), _period.group(2))
 
-                # ── Split into active and cleared ──────────────────────────
-                STATUS_PRIORITY = {
-                    "Important":      0,
-                    "Needed":         1,
-                    "Requested":      2,
-                    "Ready to Clear": 3,
-                }
-                active_conds  = []
-                cleared_conds = []
-                for cond in condition_rows:
-                    sk = f"cstatus_{fkey}_{cond['num']}"
-                    if st.session_state.get(sk, "Needed") == "Cleared":
-                        cleared_conds.append(cond)
-                    else:
-                        active_conds.append(cond)
+                # Page X of Y
+                _pg_match = _re.search(r'page\s+(\d+)\s+of\s+(\d+)', _text, _re.I)
+                if _pg_match:
+                    fp["page_num"] = int(_pg_match.group(1))
+                    fp["page_total"] = int(_pg_match.group(2))
 
-                # Sort active: 1st by status priority, 2nd by primary party name
-                def _sort_key(cond):
-                    sk = f"cstatus_{fkey}_{cond['num']}"
-                    status = st.session_state.get(sk, "Needed")
-                    pk = f"party_{fkey}_{cond['num']}"
-                    parties = st.session_state.get(pk, [cond.get("party", "Borrower")])
-                    primary_party = parties[0] if isinstance(parties, list) and parties else cond.get("party", "Borrower")
-                    return (STATUS_PRIORITY.get(status, 99), primary_party)
+            except Exception:
+                pass
+            return fp
 
-                active_conds.sort(key=_sort_key)
+        # ── Duplicate detection (MD5) ────────────────────────────────
+        _file_hashes = {}
+        _dupes = set()
+        _file_bytes_cache = {}
+        for _fi, _uf in enumerate(new_files):
+            _fbytes = _uf.read()
+            _uf.seek(0)
+            _file_bytes_cache[_fi] = _fbytes
+            _fhash = _hashlib.md5(_fbytes).hexdigest()
+            if _fhash in _file_hashes:
+                _dupes.add(_fi)
+                _dupes.add(_file_hashes[_fhash])
+            else:
+                _file_hashes[_fhash] = _fi
 
-                # Count per status for header summary
-                status_counts = {}
-                for cond in condition_rows:
-                    sk  = f"cstatus_{fkey}_{cond['num']}"
-                    s   = st.session_state.get(sk, "Needed")
-                    status_counts[s] = status_counts.get(s, 0) + 1
-                summary_parts = [
-                    f"{COND_STATUSES[s]['emoji']} {status_counts[s]} {s}"
-                    for s in ["Important", "Needed", "Requested", "Ready to Clear", "Cleared"]
-                    if s in status_counts
-                ]
-                st.caption("  ·  ".join(summary_parts) if summary_parts else f"{len(condition_rows)} conditions")
+        if _dupes:
+            # Group dupe indices by hash to show which files are actually identical
+            _hash_to_indices = {}
+            for _fi, _fbytes in _file_bytes_cache.items():
+                _fh = _hashlib.md5(_fbytes).hexdigest()
+                _hash_to_indices.setdefault(_fh, []).append(_fi)
+            for _fh, _fidxs in _hash_to_indices.items():
+                if len(_fidxs) > 1:
+                    _dupe_fnames = [new_files[i].name for i in _fidxs]
+                    st.warning(f"Identical file uploaded {len(_fidxs)}x: {', '.join(_dupe_fnames)} — only the first will be scanned.")
 
-                # ── Render active conditions ───────────────────────────────
-                selected_conds = []
-                for cond in active_conds:
-                    checked, cur_status, saved_parties = _render_condition(
-                        cond, fkey, PARTY_OPTIONS, COND_STATUSES
-                    )
-                    if checked:
-                        selected_conds.append({
-                            **cond,
-                            "party":       saved_parties[0] if saved_parties else "Borrower",
-                            "all_parties": saved_parties,
-                            "cond_status": cur_status,
-                        })
+        # ── Auto-detect + fingerprint every file ────────────────────
+        _detections = []
+        _fingerprints = []
+        for _fi, _bf in enumerate(new_files):
+            _fbytes = _file_bytes_cache[_fi]
+            _det = _detect(_fbytes)
+            _detections.append({
+                "name": _bf.name,
+                "detected_type": _det["doc_type"],
+                "confidence": _det["confidence"],
+            })
+            _fingerprints.append(_extract_fingerprint(_fbytes))
 
-                # ── Cleared section at the bottom ──────────────────────────
-                if cleared_conds:
-                    st.markdown("---")
-                    with st.expander(f"● Cleared ({len(cleared_conds)})", expanded=False):
-                        for cond in cleared_conds:
-                            checked, cur_status, saved_parties = _render_condition(
-                                cond, fkey, PARTY_OPTIONS, COND_STATUSES
-                            )
-                            if checked:
-                                selected_conds.append({
-                                    **cond,
-                                    "party":       saved_parties[0] if saved_parties else "Borrower",
-                                    "all_parties": saved_parties,
-                                    "cond_status": cur_status,
-                                })
+        # ── Page grouping: find files that belong together ───────────
+        # STRICT RULE: only suggest merge when files are clearly pages of the
+        # SAME statement — same period dates OR consecutive page X-of-Y numbering.
+        # Different period dates = different months = NEVER merge, always separate.
+        _groups = []  # list of sets of indices
+        _assigned = set()
 
-                # (Fetch and Guidelines are now inside each condition expander above)
+        def _same_period(a, b):
+            """Both have a period and they match exactly."""
+            return (a["period"] and b["period"] and a["period"] == b["period"])
 
-                # ── Fraud Check — available for W-2, pay stub, 1003 scans ───
-                st.markdown("---")
-                _fc2_key = f"fraud_on_cond_{fkey}"
-                _fc2c1, _fc2c2 = st.columns([1, 4])
-                with _fc2c1:
-                    _fraud_on2 = st.toggle("Fraud Check", key=_fc2_key, value=False)
-                with _fc2c2:
-                    if _fraud_on2:
-                        st.caption("Scanning for SSN mismatches, zero withholding, uniform pay, "
-                                   "date gaps, round-dollar income.")
-                if _fraud_on2:
-                    from fraud_check import check as _fc2
-                    _fc2_bytes  = uploaded_file.getvalue()
-                    _fc2_result = _fc2(_fc2_bytes, doc_type)
-                    _fc2_risk   = _fc2_result["risk_level"]
-                    _fc2_bdr    = {"high": "#e74c3c", "medium": "#f1c40f", "low": "#27ae60"}[_fc2_risk]
-                    _fc2_bg     = {"high": "#3d1515", "medium": "#2d2808", "low": "#152a1e"}[_fc2_risk]
-                    st.markdown(
-                        f'<div style="background:{_fc2_bg};border-left:4px solid {_fc2_bdr};'
-                        f'border-radius:8px;padding:10px 16px;margin:8px 0;">'
-                        f'<div style="font-size:14px;font-weight:700;color:#111111;">'
-                        f'{_fc2_result["summary"]}</div></div>',
-                        unsafe_allow_html=True,
-                    )
-                    for _ffl2 in _fc2_result.get("flags", []):
-                        _ffl2_clr = {"high": "#f5b7b1", "medium": "#fdebd0"}.get(
-                            _ffl2["severity"], "#333333"
-                        )
-                        st.markdown(
-                            f'<div style="display:flex;gap:8px;margin-bottom:4px;">'
-                            f'<span style="color:#e74c3c;font-size:14px;">⚑</span>'
-                            f'<div><span style="color:#111111;font-size:13px;font-weight:600;">'
-                            f'{_ffl2["rule"]}</span><br>'
-                            f'<span style="color:{_ffl2_clr};font-size:12px;">'
-                            f'{_ffl2["detail"]}</span></div></div>',
-                            unsafe_allow_html=True,
-                        )
+        def _consecutive_pages(a, b):
+            """Both report page X of Y with the same Y, and page numbers are sequential."""
+            if (a["page_num"] and b["page_num"]
+                    and a["page_total"] and b["page_total"]
+                    and a["page_total"] == b["page_total"]):
+                diff = abs(a["page_num"] - b["page_num"])
+                return diff >= 1  # any page of the same doc
+            return False
 
-                st.markdown("---")
-                st.caption(
-                    f"Processed {result['text_length']:,} characters | "
-                    f"{'Sandbox' if st.session_state.sandbox_mode else 'Live'} mode"
+        def _different_periods(a, b):
+            """Both have periods but they differ — definitely different months."""
+            return (a["period"] and b["period"] and a["period"] != b["period"])
+
+        def _fingerprints_match(i, j):
+            a, b = _fingerprints[i], _fingerprints[j]
+
+            # Never merge files from different statement periods
+            if _different_periods(a, b):
+                return False
+
+            # Must share account number to even consider merging
+            same_acct = (a["account"] and b["account"] and a["account"] == b["account"])
+            # Or same doc type + shared borrower name (fallback if no acct extracted)
+            same_type = _detections[i]["detected_type"] == _detections[j]["detected_type"]
+            shared_name = bool(set(a["names"]) & set(b["names"]))
+
+            if not (same_acct or (same_type and shared_name)):
+                return False
+
+            # Now require evidence they're pages of the same statement:
+            # either page X of Y sequence, or matching period dates
+            return _consecutive_pages(a, b) or _same_period(a, b)
+
+        for _i in range(len(new_files)):
+            if _i in _assigned:
+                continue
+            _grp = {_i}
+            for _j in range(_i + 1, len(new_files)):
+                if _j in _assigned:
+                    continue
+                if _fingerprints_match(_i, _j):
+                    _grp.add(_j)
+            if len(_grp) > 1:
+                _groups.append(_grp)
+                _assigned.update(_grp)
+
+
+        # ── Pull approval conditions from already-scanned docs ──────
+        # Look for any Approval Letter, DU Findings, or LP in prior batches
+        _approval_bank_conds = []  # list of condition desc strings mentioning bank stmts
+        _approval_source = None
+        _approval_types = {"Approval Letter", "Broker Package (BP)"}
+        for _pb in st.session_state.get("scan_batches", []):
+            if _pb.get("type") in _approval_types:
+                for _c in (_pb.get("result") or {}).get("conditions", []):
+                    _desc = (_c.get("desc") or "").lower()
+                    if any(kw in _desc for kw in ["bank statement", "bank stmt", "checking", "savings",
+                                                   "asset", "deposit", "60 day", "2 month", "statement"]):
+                        _approval_bank_conds.append(_c.get("desc", ""))
+                if _approval_bank_conds:
+                    _approval_source = _pb["file"]
+                    break
+
+        # ── Missing pages analysis per statement ─────────────────────
+        # For each uploaded bank statement, check if page sequence has gaps
+        _missing_page_notices = []
+        _bank_indices = [i for i, d in enumerate(_detections) if d["detected_type"] == "Bank Statement" and i not in _dupes]
+        for _bi in _bank_indices:
+            _fp = _fingerprints[_bi]
+            if _fp["page_total"] and _fp["page_num"]:
+                # We have one page of a multi-page statement — check if others are present
+                _total = _fp["page_total"]
+                _present_pages = set()
+                for _oi in _bank_indices:
+                    _ofp = _fingerprints[_oi]
+                    if (_ofp["account"] == _fp["account"] or
+                            (set(_ofp["names"]) & set(_fp["names"]))):
+                        if _ofp["page_num"]:
+                            _present_pages.add(_ofp["page_num"])
+                _missing = [p for p in range(1, _total + 1) if p not in _present_pages]
+                if _missing:
+                    _acct_label = f"acct #{_fp['account']}" if _fp["account"] else (
+                        _fp["names"][0] if _fp["names"] else new_files[_bi].name)
+                    _missing_page_notices.append((_acct_label, _missing, _total))
+
+        # Deduplicate missing-page notices (same account shows up per-file)
+        _seen_acct_notices = set()
+        _deduped_missing = []
+        for (_lbl, _miss, _tot) in _missing_page_notices:
+            if _lbl not in _seen_acct_notices:
+                _seen_acct_notices.add(_lbl)
+                _deduped_missing.append((_lbl, _miss, _tot))
+
+        # ── Show missing page warnings ────────────────────────────────
+        if _deduped_missing:
+            st.markdown("---")
+            for (_lbl, _miss, _tot) in _deduped_missing:
+                _miss_str = ", ".join(str(p) for p in _miss)
+                st.markdown(
+                    f'<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:4px;'
+                    f'padding:7px 12px;margin-bottom:6px;font-size:12px;color:#ef4444;">'
+                    f'<b>Missing pages ({_lbl}):</b> '
+                    f'Page(s) {_miss_str} of {_tot} not uploaded. Upload all pages before scanning.'
+                    f'</div>',
+                    unsafe_allow_html=True
                 )
 
-    # Clear scan-all trigger after all files processed
-    st.session_state.pop("scan_all_trigger", None)
-
-
-def _render_condition(cond, fkey, PARTY_OPTIONS, COND_STATUSES):
-    """Module-level wrapper — delegates to the nested show_dashboard version via session state trick.
-    Re-implemented here so show_loan_detail can call it directly."""
-    import os as _os
-    cnum       = cond["num"]
-    party_key  = f"party_{fkey}_{cnum}"
-    notes_key  = f"notes_{fkey}_{cnum}"
-    status_key = f"cstatus_{fkey}_{cnum}"
-    fetch_key  = f"cfetch_{fkey}_{cnum}"
-    guide_key  = f"cguide_{fkey}_{cnum}"
-
-    raw_default = cond.get("party", "Borrower")
-    if raw_default not in PARTY_OPTIONS:
-        raw_default = "Borrower"
-    if party_key not in st.session_state:
-        st.session_state[party_key] = [raw_default]
-    saved_parties = st.session_state.get(party_key, [raw_default])
-    if not isinstance(saved_parties, list):
-        saved_parties = [raw_default]
-    saved_parties = [p for p in saved_parties if p in PARTY_OPTIONS] or [raw_default]
-
-    if status_key not in st.session_state:
-        st.session_state[status_key] = "Needed"
-    cur_status = st.session_state.get(status_key, "Needed")
-    if cur_status not in COND_STATUSES:
-        cur_status = "Needed"
-    status_info = COND_STATUSES[cur_status]
-    saved_notes = st.session_state.get(notes_key, "")
-
-    short_desc = cond["desc"][:72] + ("…" if len(cond["desc"]) > 72 else "")
-    exp_label  = f"{status_info['emoji']} #{cnum}  {short_desc}"
-
-    col_chk, col_exp = st.columns([1, 11])
-    with col_chk:
-        checked = st.checkbox("", key=f"chk_{fkey}_{cnum}", label_visibility="collapsed")
-    with col_exp:
-        with st.expander(exp_label, expanded=False):
-            st.markdown("**Status:**")
-            sb = st.columns(len(COND_STATUSES))
-            for i, (sname, sinfo) in enumerate(COND_STATUSES.items()):
-                with sb[i]:
-                    active = "✓ " if cur_status == sname else ""
-                    if st.button(f"{sinfo['emoji']} {active}{sinfo['label']}",
-                                 key=f"sbtn_{fkey}_{cnum}_{sname}", use_container_width=True):
-                        st.session_state[status_key] = sname
-                        st.rerun()
-
-            st.markdown('<div style="height:4px"></div>', unsafe_allow_html=True)
-
-            new_parties = st.multiselect(
-                "Responsible parties", PARTY_OPTIONS,
-                default=saved_parties, key=party_key, placeholder="Add parties...",
+        # ── Show approval cross-reference ─────────────────────────────
+        if _approval_bank_conds and _bank_indices:
+            st.markdown("---")
+            st.markdown(
+                f'<div style="background:rgba(57,255,20,0.1);border:1px solid rgba(57,255,20,0.3);border-radius:4px;'
+                f'padding:8px 12px;margin-bottom:4px;font-size:12px;color:#39FF14;">'
+                f'<b>Approval cross-reference</b> — from <i>{_approval_source}</i>:'
+                f'</div>',
+                unsafe_allow_html=True
             )
-            if new_parties:
-                st.markdown(" ".join(_party_badge(p) for p in new_parties), unsafe_allow_html=True)
+            # For each uploaded bank statement, check if it satisfies each condition
+            for _ac in _approval_bank_conds:
+                _ac_lower = _ac.lower()
+                # Try to detect how many months required
+                _months_req = 1
+                for _m in _re.findall(r'(\d+)\s*month', _ac_lower):
+                    _months_req = max(_months_req, int(_m))
+                # Count distinct periods in uploaded bank statements
+                _uploaded_periods = set()
+                for _bi in _bank_indices:
+                    _fp = _fingerprints[_bi]
+                    if _fp["period"]:
+                        _uploaded_periods.add(_fp["period"])
+                    elif _fp["account"]:
+                        # no period detected — count as 1 unknown
+                        _uploaded_periods.add(("unknown", _fp["account"]))
+                _months_have = len(_uploaded_periods)
+                _ok = _months_have >= _months_req
+                _icon = "✓" if _ok else "✗"
+                _color = "#39FF14" if _ok else "#ef4444"
+                _bg = "rgba(57,255,20,0.1)" if _ok else "rgba(239,68,68,0.1)"
+                _border = "rgba(57,255,20,0.3)" if _ok else "rgba(239,68,68,0.3)"
+                _note = f"{_months_have} of {_months_req} month(s) uploaded" if not _ok else f"{_months_have} month(s) — OK"
+                st.markdown(
+                    f'<div style="background:{_bg};border:1px solid {_border};border-radius:3px;'
+                    f'padding:5px 10px;margin-bottom:4px;font-size:11px;color:{_color};">'
+                    f'<b>{_icon}</b> {_ac[:120]} <span style="opacity:0.7;">— {_note}</span>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
 
-            st.text_input("Update / notes", key=notes_key, placeholder="Add update or note...")
-            if saved_notes:
-                st.caption(saved_notes)
+        # ── Show grouping suggestions ────────────────────────────────
+        # Per-file checkboxes so user picks exactly which files to merge
+        _merge_selections = {}  # group_id -> set of indices to include in merge
+        if _groups:
+            st.markdown("---")
+            st.markdown("**Page grouping detected** — select pages to merge:")
+            for _gi, _grp in enumerate(_groups):
+                _grp_type = _detections[sorted(_grp)[0]]["detected_type"]
+                _rep_fp = _fingerprints[sorted(_grp)[0]]
 
+                _match_reasons = []
+                if _rep_fp["account"]:
+                    _match_reasons.append(f"acct #{_rep_fp['account']}")
+                if _rep_fp["period"]:
+                    _match_reasons.append(f"{_rep_fp['period'][0]}–{_rep_fp['period'][1]}")
+                elif _rep_fp["names"]:
+                    _match_reasons.append(_rep_fp["names"][0])
+                _reason_str = " · ".join(_match_reasons) if _match_reasons else _grp_type
+
+                st.markdown(
+                    f'<div style="font-size:12px;font-weight:700;color:#39FF14;margin-bottom:4px;">'
+                    f'Group {_gi+1} — {_grp_type} <span style="font-weight:400;color:#9ca3af;">({_reason_str})</span>'
+                    f'</div>',
+                    unsafe_allow_html=True
+                )
+                _selected = set()
+                for _idx in sorted(_grp, key=lambda i: _fingerprints[i]["page_num"] or 999):
+                    _fp = _fingerprints[_idx]
+                    _pg_label = f"pg {_fp['page_num']} of {_fp['page_total']}" if _fp["page_num"] else ""
+                    _period_label = f"{_fp['period'][0]}–{_fp['period'][1]}" if _fp["period"] else ""
+                    _label_parts = [new_files[_idx].name]
+                    if _pg_label: _label_parts.append(_pg_label)
+                    if _period_label: _label_parts.append(_period_label)
+                    _cb_label = "  ·  ".join(_label_parts)
+                    _checked = st.checkbox(_cb_label, value=True, key=f"dash_merge_{_gi}_{_idx}")
+                    if _checked:
+                        _selected.add(_idx)
+                _merge_selections[_gi] = _selected
+
+                if len(_selected) >= 2:
+                    st.caption(f"Will merge {len(_selected)} file(s) into one PDF before scanning.")
+                elif len(_selected) == 1:
+                    st.caption("Only 1 file selected — will scan individually.")
+                else:
+                    st.caption("No files selected — group will be skipped.")
             st.markdown("---")
 
-            _bs_keywords = {"bank statement", "bank stmt", "checking account", "savings account",
-                            "deposit", "bank", "statement", "60 days", "2 months", "3 months"}
-            _is_bs_cond = any(kw in cond["desc"].lower() for kw in _bs_keywords)
+        # ── File list with type dropdowns ────────────────────────────
+        _overrides = {}
+        for _di, _det in enumerate(_detections):
+            if _di in _dupes:
+                continue  # skip dupes in the list
+            _didx = _BULK_DOC_TYPES.index(_det["detected_type"]) if _det["detected_type"] in _BULK_DOC_TYPES else 0
+            _c1, _c2, _c3 = st.columns([4, 3, 1])
+            with _c1:
+                st.markdown(f'<div style="font-size:12px;color:var(--slate-900);padding-top:8px;">{_det["name"]}</div>', unsafe_allow_html=True)
+            with _c2:
+                _ov = st.selectbox("Type", _BULK_DOC_TYPES, index=_didx, key=f"dash_type_{_di}", label_visibility="collapsed")
+                _overrides[_di] = _ov
+            with _c3:
+                st.markdown(f'<div style="font-size:11px;color:var(--slate-500);padding-top:8px;">{_det["confidence"]}</div>', unsafe_allow_html=True)
 
-            if _is_bs_cond:
-                fa, fb, fc = st.columns([1, 1, 1])
+        # ── Scan button ────────────────────────────────────────────
+        if st.button("Scan", key="dash_scan", type="primary"):
+            # Build the actual list of (bytes, name, type) to scan,
+            # merging groups where the user said yes
+            _scan_queue = []  # list of (pdf_bytes, display_name, doc_type)
+
+            _merged_indices = set()
+            for _gi, _grp in enumerate(_groups):
+                _selected = _merge_selections.get(_gi, set())
+                if len(_selected) >= 2:
+                    # Merge selected files in page order
+                    _sorted_grp = sorted(
+                        _selected,
+                        key=lambda i: _fingerprints[i]["page_num"] or 999
+                    )
+                    _writer = _pypdf.PdfWriter()
+                    for _idx in _sorted_grp:
+                        try:
+                            _r = _pypdf.PdfReader(_io.BytesIO(_file_bytes_cache[_idx]))
+                            for _pg in _r.pages:
+                                _writer.add_page(_pg)
+                        except Exception:
+                            pass
+                    _merged_buf = _io.BytesIO()
+                    _writer.write(_merged_buf)
+                    _merged_bytes = _merged_buf.getvalue()
+                    _merged_name = " + ".join(new_files[i].name for i in _sorted_grp)
+                    _grp_type = _overrides.get(_sorted_grp[0], _detections[_sorted_grp[0]]["detected_type"])
+                    _scan_queue.append((_merged_bytes, _merged_name, _grp_type))
+                    _merged_indices.update(_selected)  # only mark selected as merged, not whole group
+
+            # Add remaining non-merged non-dupe files
+            for _bi, _bf in enumerate(new_files):
+                if _bi in _merged_indices or _bi in _dupes:
+                    continue
+                _bf_type = _overrides.get(_bi, _detections[_bi]["detected_type"])
+                _scan_queue.append((_file_bytes_cache[_bi], _bf.name, _bf_type))
+
+            # Run scans
+            from doc_verify import _match_borrower as _mb
+            for (_sq_bytes, _sq_name, _sq_type) in _scan_queue:
+                if _sq_type == "Unknown":
+                    st.warning(f"{_sq_name}: Unknown type — override the dropdown to scan")
+                    continue
+                _result = _proc(_sq_bytes, _sq_type)
+                if _result.get("success"):
+                    # Auto-match to a pipeline loan
+                    _raw_text = _result.get("raw_text", "") or _result.get("bank_raw_text", "") or ""
+                    _borrower_hint = ""
+                    _contacts = _result.get("contacts", {})
+                    if isinstance(_contacts, dict):
+                        for _cv in _contacts.values():
+                            if isinstance(_cv, dict) and _cv.get("name"):
+                                _borrower_hint = _cv["name"]; break
+                    _loan_match = _mb(_raw_text, _sq_name, _borrower_hint)
+
+                    _batch = st.session_state.scan_batches
+                    _batch.append({
+                        "file": _sq_name,
+                        "type": _sq_type,
+                        "result": _result,
+                        "loan_match": _loan_match,
+                    })
+                    st.session_state.scan_batches = _batch
+                    st.success(f"{_sq_name}: {_sq_type} ✓")
+                else:
+                    st.error(f"{_sq_name}: {_result.get('error', 'Failed')}")
+
+    # ── Show completed scan results ───────────────────────────────────
+    if st.session_state.scan_batches:
+        from crm import get_all_loans as _gl, add_loan as _al, update_loan as _ul, log_activity as _la
+        st.markdown("---")
+        _rb1, _rb2, _rb3 = st.columns([2, 1, 1])
+        with _rb1:
+            st.markdown(f'<div style="font-size:13px;font-weight:700;padding-top:6px;">{len(st.session_state.scan_batches)} document(s) scanned</div>', unsafe_allow_html=True)
+        with _rb2:
+            if st.button("+ Upload More", key="dash_scan_more2", use_container_width=True):
+                for _k in list(st.session_state.keys()):
+                    if _k.startswith("dash_"):
+                        del st.session_state[_k]
+                st.rerun()
+        with _rb3:
+            if st.button("Clear All", key="dash_clear_all2", use_container_width=True):
+                st.session_state.scan_batches = []
+                for _k in list(st.session_state.keys()):
+                    if _k.startswith("dash_"):
+                        del st.session_state[_k]
+                st.rerun()
+        for _bidx, _batch in enumerate(st.session_state.scan_batches):
+            _r = _batch["result"]
+            _cond_count = len(_r.get("conditions", [])) if isinstance(_r.get("conditions"), list) else 0
+            _cont_count = len(_r.get("contacts", {})) if isinstance(_r.get("contacts"), dict) else 0
+            _lm = _batch.get("loan_match") or {}
+            _lm_suggestion = _lm.get("suggestion", "no_match")
+            _lm_borrower = _lm.get("borrower", "")
+            _lm_loan_num = _lm.get("loan_num", "")
+            _lm_loan_id = _lm.get("loan_id")
+            _lm_conf = _lm.get("confidence", 0)
+
+            # Match badge for expander title
+            if _lm_suggestion == "match":
+                _match_badge = f" · Loan {_lm_loan_num} ({_lm_borrower})"
+            elif _lm_suggestion == "possible":
+                _match_badge = f" · Possible: {_lm_borrower}"
             else:
-                fa, fb = st.columns([1, 1])
-                fc = None
+                _match_badge = " · No loan match"
 
-            with fa:
-                fetch_btn = st.button("Fetch from Folder", key=f"fetchbtn_{fkey}_{cnum}", use_container_width=True)
-            with fb:
-                guide_btn = st.button("Check Guidelines", key=f"guidebtn_{fkey}_{cnum}", use_container_width=True)
-            if fc:
-                with fc:
-                    bs_fetch_btn = st.button("Find & Analyze Bank Stmt", key=f"bsfetchbtn_{fkey}_{cnum}",
-                                             use_container_width=True)
-            else:
-                bs_fetch_btn = False
-
-            if fetch_btn:
-                st.session_state[f"show_cfetch_{fkey}_{cnum}"] = True
-            if bs_fetch_btn:
-                st.session_state[f"show_bsfetch_{fkey}_{cnum}"] = True
-
-            if st.session_state.get(f"show_cfetch_{fkey}_{cnum}"):
-                folder_path = st.text_input("Folder path:", value=st.session_state.get("last_fetch_folder", ""),
-                                            key=f"cfolder_{fkey}_{cnum}", placeholder=r"C:\Users\...\BorrowerName")
-                sc1, sc2 = st.columns([1, 3])
-                with sc1:
-                    do_search = st.button("Search", key=f"csearch_{fkey}_{cnum}", use_container_width=True)
-                with sc2:
-                    if st.button("Cancel", key=f"ccancel_{fkey}_{cnum}"):
-                        st.session_state[f"show_cfetch_{fkey}_{cnum}"] = False
+            _exp = st.expander(
+                f"✓ {_batch['file']} — {_batch['type']} ({_cond_count} cond){_match_badge}",
+                expanded=False
+            )
+            with _exp:
+                # ── Loan match action row ──────────────────────────────
+                if _lm_suggestion == "match":
+                    st.markdown(
+                        f'<div style="background:rgba(57,255,20,0.1);border:1px solid rgba(57,255,20,0.3);border-radius:4px;'
+                        f'padding:6px 10px;margin-bottom:8px;font-size:12px;color:#39FF14;">'
+                        f'<b>Matched:</b> Loan {_lm_loan_num} — {_lm_borrower} '
+                        f'<span style="opacity:0.6;">({_lm_conf}% confidence)</span>'
+                        f'</div>', unsafe_allow_html=True
+                    )
+                    _ma1, _ma2, _ma3 = st.columns([1, 1, 2])
+                    with _ma1:
+                        if st.button("Open Loan", key=f"ds_open_{_bidx}"):
+                            st.session_state["loan_detail_id"] = _lm_loan_id
+                            st.session_state.page = "pipeline"
+                            st.rerun()
+                    with _ma2:
+                        if st.button("Merge into Loan", key=f"ds_merge_{_bidx}"):
+                            _existing_loan = next((l for l in _gl() if l.get("id") == _lm_loan_id), None)
+                            if _existing_loan:
+                                _existing_conds = _existing_loan.get("conditions", [])
+                                _existing_contacts = _existing_loan.get("contacts", {})
+                                _new_conds = _r.get("conditions", [])
+                                _new_contacts = _r.get("contacts", {}) or {}
+                                _added = 0
+                                for _nc in _new_conds:
+                                    if not any(_nc.get("desc") == _ec.get("desc") for _ec in _existing_conds):
+                                        _existing_conds.append(_nc); _added += 1
+                                _existing_contacts.update(_new_contacts)
+                                _ul(_lm_loan_id, conditions=_existing_conds, contacts=_existing_contacts)
+                                _la(_lm_loan_id, "upload", f"{_batch['type']} scanned — {_added} condition(s) merged",
+                                    user=st.session_state.get("user_name", ""))
+                                st.toast(f"{_added} condition(s) merged into Loan {_lm_loan_num}", icon="✓")
+                elif _lm_suggestion == "possible":
+                    st.markdown(
+                        f'<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:4px;'
+                        f'padding:6px 10px;margin-bottom:8px;font-size:12px;color:#fbbf24;">'
+                        f'<b>Possible match:</b> {_lm_borrower} (Loan {_lm_loan_num}) — '
+                        f'<span style="opacity:0.7;">{_lm_conf}% confidence, verify before merging</span>'
+                        f'</div>', unsafe_allow_html=True
+                    )
+                    _pa1, _pa2 = st.columns([1, 1])
+                    with _pa1:
+                        if st.button("Open & Verify", key=f"ds_popen_{_bidx}"):
+                            st.session_state["loan_detail_id"] = _lm_loan_id
+                            st.session_state.page = "pipeline"
+                            st.rerun()
+                    with _pa2:
+                        if st.button("Start New Loan Instead", key=f"ds_pnew_{_bidx}"):
+                            st.session_state[f"ds_start_new_{_bidx}"] = True
+                            st.rerun()
+                else:
+                    # No match — offer to start a new loan pre-filled from scan
+                    _extracted_borrower = ""
+                    _contacts = _r.get("contacts", {})
+                    if isinstance(_contacts, dict):
+                        for _cv in _contacts.values():
+                            if isinstance(_cv, dict) and _cv.get("name"):
+                                _extracted_borrower = _cv["name"]; break
+                    st.markdown(
+                        f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:4px;'
+                        f'padding:6px 10px;margin-bottom:8px;font-size:12px;color:#9ca3af;">'
+                        f'<b>No pipeline match found.</b>'
+                        + (f' Borrower extracted: <b>{_extracted_borrower}</b>' if _extracted_borrower else '')
+                        + f'</div>', unsafe_allow_html=True
+                    )
+                    if st.button("+ Start New Loan from this Doc", key=f"ds_new_{_bidx}"):
+                        st.session_state[f"ds_start_new_{_bidx}"] = True
                         st.rerun()
-                if do_search and folder_path:
-                    st.session_state["last_fetch_folder"] = folder_path
-                    if not _os.path.isdir(folder_path):
-                        st.error(f"Folder not found: {folder_path}")
-                    else:
-                        from folder_search import scan_folder
-                        prog = st.progress(0, text="Scanning...")
-                        res = scan_folder(folder_path, [cond], threshold=60,
-                                          progress_callback=lambda p, m: prog.progress(min(p, 100), text=m))
-                        st.session_state[fetch_key] = res
-                        st.session_state[f"show_cfetch_{fkey}_{cnum}"] = False
 
-            if st.session_state.get(fetch_key):
-                fr = st.session_state[fetch_key]
-                matches = fr.get(cond["num"], {}).get("matches", [])
-                if matches:
-                    for m in matches:
-                        score = m["score"]
-                        pages_str = f" | Pages: {', '.join(str(p) for p in m['matched_pages'])}" if m["matched_pages"] else ""
-                        st.markdown(f"● **{m['file_name']}** — {m['match_type']} ({score}%){pages_str}")
-                        if m.get("snippet"):
-                            st.text(m["snippet"][:180])
-                else:
-                    st.info("No matching files found for this condition.")
-                if st.button("Clear", key=f"clrfetch_{fkey}_{cnum}"):
-                    st.session_state[fetch_key] = None
-                    st.rerun()
+                # ── New loan form (shown when triggered) ──────────────
+                if st.session_state.get(f"ds_start_new_{_bidx}"):
+                    with st.form(key=f"ds_newloan_form_{_bidx}"):
+                        st.markdown("**Start New Loan**")
+                        # Pre-fill from contacts/1003 data in result
+                        _pf_borrower = ""
+                        _pf_loan_num = _r.get("loan_num", "") or ""
+                        _pf_contacts = _r.get("contacts", {}) or {}
+                        for _cv in _pf_contacts.values():
+                            if isinstance(_cv, dict) and _cv.get("name"):
+                                _pf_borrower = _cv["name"]; break
+                        _nl_borrower = st.text_input("Borrower Name", value=_pf_borrower, key=f"ds_nl_b_{_bidx}")
+                        _nl_loannum = st.text_input("Loan Number", value=_pf_loan_num, key=f"ds_nl_n_{_bidx}")
+                        _nl_closing = st.text_input("Closing Date (MM/DD/YYYY)", key=f"ds_nl_c_{_bidx}")
+                        _nl_submit = st.form_submit_button("Create Loan", type="primary")
+                        if _nl_submit and _nl_borrower:
+                            _new_lid = _al(
+                                borrower=_nl_borrower,
+                                loan_num=_nl_loannum or "TBD",
+                                closing_date=_nl_closing or "",
+                                conditions=_r.get("conditions", []),
+                                contacts=_pf_contacts,
+                                created_by=st.session_state.get("user_name", ""),
+                            )
+                            _la(_new_lid, "created", f"Loan created from scanned {_batch['type']}",
+                                user=st.session_state.get("user_name", ""))
+                            st.toast(f"Loan created for {_nl_borrower}", icon="✓")
+                            st.session_state.pop(f"ds_start_new_{_bidx}", None)
+                            st.rerun()
 
-            if guide_btn:
-                from guidelines import check_conditions_against_guidelines
-                available_g = True
-                try:
-                    from guidelines import get_available_guidelines
-                    available_g = bool(get_available_guidelines())
-                except Exception:
-                    pass
-                if not available_g:
-                    st.error("No guideline PDFs found.")
-                else:
-                    gprog = st.progress(0, text="Searching guidelines...")
-                    gres = check_conditions_against_guidelines(
-                        [cond], progress_callback=lambda p, m: gprog.progress(min(p, 100), text=m))
-                    st.session_state[guide_key] = gres
+                # ── Conditions / contacts summary ──────────────────────
+                if _cond_count:
+                    st.markdown("**Conditions**")
+                    for _c in _r.get("conditions", [])[:10]:
+                        st.markdown(f"- {_c.get('desc', '')[:80]}")
+                if _cont_count:
+                    st.markdown("**Contacts**")
+                    for _k, _v in _r.get("contacts", {}).items():
+                        _name = _v.get("name", "")
+                        if _name:
+                            st.markdown(f"- {_k}: {_name}")
+                if _cond_count > 10:
+                    st.caption(f"...and {_cond_count - 10} more conditions")
 
-            if st.session_state.get(guide_key):
-                gr = st.session_state[guide_key]
-                refs = gr.get(cond["num"], {}).get("guidelines", [])
-                if refs:
-                    for ref in refs:
-                        sec = f" | {ref['section']}" if ref.get("section") else ""
-                        st.markdown(f"● **{ref['source']}** — Page {ref['page']}{sec} ({ref['score']}%)")
-                        st.container(border=True).markdown(ref["excerpt"][:400])
-                else:
-                    st.info("No guideline references found.")
-                if st.button("Clear", key=f"clrguide_{fkey}_{cnum}"):
-                    st.session_state[guide_key] = None
-                    st.rerun()
-
-    return checked, cur_status, saved_parties
-
-
-def _party_badge(party: str) -> str:
-    """Return an HTML badge span for a condition party."""
-    key = party.lower().replace(" ", "").replace("jr", "jr")
-    mapping = {
-        "borrower": "borrower",
-        "title": "title",
-        "underwriter": "underwriter",
-        "insurance": "insurance",
-        "closer": "closer",
-        "jrunderwriter": "jr",
-        "manager": "manager",
-        "appraiser": "appraiser",
-    }
-    css = mapping.get(key, "default")
-    return f'<span class="badge badge-{css}">{party}</span>'
-
-
-def _status_chip(status: str) -> str:
-    """Return an HTML status chip for pipeline rows."""
-    css = status.lower()
-    from crm import STATUS_EMOJI
-    emoji = STATUS_EMOJI.get(status, "")
-    return f'<span class="status-chip status-{css}">{emoji} {status}</span>'
 
 
 def show_pipeline():
@@ -3252,132 +1093,11 @@ def show_pipeline():
 
     st.markdown(
         '<div style="margin-bottom:2px;">'
-        '<span style="font-size:16px;font-weight:700;color:#111;">My Pipeline</span>'
-        '&nbsp;&nbsp;<span style="font-size:11px;color:#5c6370;">Track loans by status</span>'
+        '<span style="font-size:16px;font-weight:700;color:#ffffff;">My Pipeline</span>'
+        '&nbsp;&nbsp;<span style="font-size:11px;color:#9ca3af;">Track loans by status</span>'
         '</div>',
         unsafe_allow_html=True,
     )
-
-    # ── Closing Countdown & Lock Expiry Alert Bar ───────────────────────────
-    try:
-        from datetime import date as _cd_date, datetime as _cd_dt
-        _cd_loans = get_all_loans()
-        _cd_today = _cd_date.today()
-        _urgents = []
-        for _cdl in _cd_loans:
-            if _cdl.get("status") in ("Cleared", "Closed"):
-                continue
-            _due = _cdl.get("closing_date") or _cdl.get("due_date", "")
-            _lck = _cdl.get("lock_expiry", "")
-            _cmt = _cdl.get("commitment_date", "")
-            _bor = _cdl.get("borrower", "")
-            _num = _cdl.get("loan_num", "")
-            _lid = _cdl.get("id")
-            if _due:
-                try:
-                    _due_d = _cd_dt.strptime(_due, "%Y-%m-%d").date()
-                    _days  = (_due_d - _cd_today).days
-                    if _days <= 10:
-                        _urgents.append((_days, _num, _bor, "closing", _due, _lck, _cmt, _lid))
-                except Exception:
-                    pass
-            if _lck:
-                try:
-                    _lck_d = _cd_dt.strptime(_lck, "%Y-%m-%d").date()
-                    _ldays = (_lck_d - _cd_today).days
-                    if _ldays <= 14:
-                        _urgents.append((_ldays, _num, _bor, "lock", _due, _lck, _cmt, _lid))
-                except Exception:
-                    pass
-            if _cmt:
-                try:
-                    _cmt_d = _cd_dt.strptime(_cmt, "%Y-%m-%d").date()
-                    _cdays = (_cmt_d - _cd_today).days
-                    if _cdays <= 14:
-                        _urgents.append((_cdays, _num, _bor, "commitment", _due, _lck, _cmt, _lid))
-                except Exception:
-                    pass
-        if _urgents:
-            _urgents.sort(key=lambda x: x[0])
-            # Deduplicate by loan ID — keep the most urgent entry per loan
-            _seen_ids = set()
-            _deduped = []
-            for item in _urgents:
-                _item_lid = item[7]
-                if _item_lid not in _seen_ids:
-                    _seen_ids.add(_item_lid)
-                    _deduped.append(item)
-            st.markdown(
-                '<div style="margin-bottom:4px;">'
-                '<span style="font-size:10px;color:#2563eb;font-weight:700;letter-spacing:0.5px;'
-                'text-transform:uppercase;">Upcoming Deadlines</span></div>',
-                unsafe_allow_html=True,
-            )
-            def _cal_svg(color):
-                return (
-                    f'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" '
-                    f'xmlns="http://www.w3.org/2000/svg" style="vertical-align:middle;margin-right:4px;">'
-                    f'<rect x="1" y="3" width="14" height="12" rx="1.5" stroke="{color}" stroke-width="1.5" fill="none"/>'
-                    f'<line x1="1" y1="7" x2="15" y2="7" stroke="{color}" stroke-width="1.5"/>'
-                    f'<line x1="5" y1="1" x2="5" y2="5" stroke="{color}" stroke-width="1.5" stroke-linecap="round"/>'
-                    f'<line x1="11" y1="1" x2="11" y2="5" stroke="{color}" stroke-width="1.5" stroke-linecap="round"/>'
-                    f'<rect x="4" y="9" width="2.5" height="2.5" rx="0.5" fill="{color}"/>'
-                    f'<rect x="6.75" y="9" width="2.5" height="2.5" rx="0.5" fill="{color}"/>'
-                    f'</svg>'
-                )
-
-            for _days, _num, _bor, _kind, _closing, _lock, _commit, _ulid in _deduped[:6]:
-                if _days < 0:
-                    _label = f"EXPIRED {abs(_days)}d ago"
-                    _color = "#c62828"
-                    _bg    = "#ffebee"
-                    _bdr   = "#ef9a9a"
-                elif _days == 0:
-                    _label = "DUE TODAY"
-                    _color = "#c62828"
-                    _bg    = "#ffebee"
-                    _bdr   = "#ef9a9a"
-                elif _days <= 3:
-                    _label = f"{_days}d left"
-                    _color = "#b71c1c"
-                    _bg    = "#ffebee"
-                    _bdr   = "#ef9a9a"
-                elif _days <= 7:
-                    _label = f"{_days}d left"
-                    _color = "#e65100"
-                    _bg    = "#fff3e0"
-                    _bdr   = "#ffcc80"
-                else:
-                    _label = f"{_days}d left"
-                    _color = "#2e7d32"
-                    _bg    = "#e8f5e9"
-                    _bdr   = "#c8e6c9"
-                _close_display = _closing if _closing else "—"
-                _lock_display  = _lock if _lock else "—"
-                _row_col, _btn_col = st.columns([5, 1])
-                with _row_col:
-                    st.markdown(
-                        f'<div style="background:{_bg};border:1px solid {_bdr};border-left:3px solid {_color};'
-                        f'border-radius:3px;padding:5px 10px;margin-bottom:2px;display:flex;align-items:center;'
-                        f'gap:6px;min-width:0;overflow:hidden;">'
-                        f'<div style="flex-shrink:0;">{_cal_svg(_color)}</div>'
-                        f'<div style="min-width:0;flex:1;">'
-                        f'<div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
-                        f'<span style="color:{_color};font-size:11px;font-weight:700;">{_label}</span>'
-                        f'&nbsp;&nbsp;<span style="color:#374151;font-size:12px;font-weight:600;">#{_num} {_bor}</span>'
-                        f'</div>'
-                        f'<div style="color:#5c6370;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'
-                        f'Close: {_close_display} &nbsp;·&nbsp; Lock: {_lock_display}</div>'
-                        f'</div></div>',
-                        unsafe_allow_html=True,
-                    )
-                with _btn_col:
-                    if st.button("Open", key=f"urgent_{_kind}_{_ulid}", use_container_width=True):
-                        st.session_state.detail_loan_id = _ulid
-                        st.session_state.page = "loan_detail"
-                        st.rerun()
-    except Exception:
-        pass
 
     from db import get_all_users
     all_users = get_all_users()
@@ -3422,7 +1142,7 @@ def show_pipeline():
     if st.session_state.get("pipeline_add_open"):
         with st.container(border=True):
             st.markdown(
-                '<span style="font-size:14px;font-weight:700;color:#111111;">Add New Loan</span>',
+                '<span style="font-size:14px;font-weight:700;color:#ffffff;">Add New Loan</span>',
                 unsafe_allow_html=True,
             )
 
@@ -3714,12 +1434,12 @@ def show_pipeline():
                     _ok = sum(1 for s in _sc if s["status"] == "ok")
                     _skip = sum(1 for s in _sc if s["status"] != "ok")
                     st.markdown(
-                        f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-                        f'padding:10px;margin:6px 0;font-size:12px;color:#5c6370;">'
-                        f'<b style="color:#2563eb;">Scanned {len(_sc)} file(s):</b> '
+                        f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
+                        f'padding:10px;margin:6px 0;font-size:12px;color:#9ca3af;">'
+                        f'<b style="color:#39FF14;">Scanned {len(_sc)} file(s):</b> '
                         f'{_ok} processed, {_skip} skipped<br>'
                         + "".join(
-                            f'<span style="color:{"#27ae60" if s["status"]=="ok" else "#e74c3c"};">'
+                            f'<span style="color:{"#39FF14" if s["status"]=="ok" else "#ef4444"};">'
                             f'{"✓" if s["status"]=="ok" else "✗"}</span> '
                             f'{s["name"]} → {s["type"]}&nbsp;&nbsp;'
                             for s in _sc
@@ -3743,8 +1463,8 @@ def show_pipeline():
                         _parts.append(f'<b>{len(_bulk_data["contacts"])}</b> contact group(s)')
                     if _parts:
                         st.markdown(
-                            f'<div style="background:#152a1e;border:1px solid #1a4a2a;border-radius:8px;'
-                            f'padding:10px;margin:4px 0;font-size:12px;color:#a8d8a8;">'
+                            f'<div style="background:#0a1a0a;border:1px solid rgba(57,255,20,0.2);border-radius:8px;'
+                            f'padding:10px;margin:4px 0;font-size:12px;color:#39FF14;">'
                             f'✓ Auto-filled: {" &nbsp;·&nbsp; ".join(_parts)}'
                             f'</div>',
                             unsafe_allow_html=True,
@@ -3761,8 +1481,8 @@ def show_pipeline():
                         _not_found.append("Lock expiry")
                     if _not_found:
                         st.markdown(
-                            f'<div style="background:#3d2808;border:1px solid #5a4400;border-radius:8px;'
-                            f'padding:8px 12px;margin:4px 0;font-size:12px;color:#f1c40f;">'
+                            f'<div style="background:#1a1500;border:1px solid rgba(251,191,36,0.2);border-radius:8px;'
+                            f'padding:8px 12px;margin:4px 0;font-size:12px;color:#fbbf24;">'
                             f'⚠️ Not found in documents: <b>{", ".join(_not_found)}</b> '
                             f'— fill these in manually below.</div>',
                             unsafe_allow_html=True,
@@ -3804,7 +1524,7 @@ def show_pipeline():
 
             st.markdown("---")
             st.markdown(
-                '<span style="font-size:12px;font-weight:700;color:#5c6370;text-transform:uppercase;'
+                '<span style="font-size:12px;font-weight:700;color:#9ca3af;text-transform:uppercase;'
                 'letter-spacing:0.5px;">Loan Details</span>',
                 unsafe_allow_html=True,
             )
@@ -3836,10 +1556,10 @@ def show_pipeline():
             _bf_contacts = _bf.get("contacts", {})
             if _bf_conds or _bf_contacts:
                 st.markdown(
-                    f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-                    f'padding:8px 12px;margin:4px 0;font-size:12px;color:#5c6370;">'
-                    f'From bulk scan: <b style="color:#2563eb;">{len(_bf_conds)}</b> condition(s) '
-                    f'and <b style="color:#2563eb;">{len(_bf_contacts)}</b> contact group(s) '
+                    f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
+                    f'padding:8px 12px;margin:4px 0;font-size:12px;color:#9ca3af;">'
+                    f'From bulk scan: <b style="color:#39FF14;">{len(_bf_conds)}</b> condition(s) '
+                    f'and <b style="color:#39FF14;">{len(_bf_contacts)}</b> contact group(s) '
                     f'will be attached to this loan on save.</div>',
                     unsafe_allow_html=True,
                 )
@@ -3900,9 +1620,9 @@ def show_pipeline():
                 share_id = item.get("share_id", "?")
                 with ib1:
                     st.markdown(
-                        f"<div style='font-weight:700;color:#111111;'>"
+                        f"<div style='font-weight:700;color:#ffffff;'>"
                         f"#{item.get('loan_num','—')} &nbsp; {item.get('borrower','—')}</div>"
-                        f"<div style='font-size:12px;color:#5c6370;'>"
+                        f"<div style='font-size:12px;color:#9ca3af;'>"
                         f"From: {item.get('last_updated_by','?')} &nbsp;·&nbsp; "
                         f"Updated: {item.get('last_updated','')[:10]}</div>",
                         unsafe_allow_html=True,
@@ -3910,7 +1630,7 @@ def show_pipeline():
                 with ib2:
                     shared_with_list = ", ".join(item.get("shared_with", []))
                     st.markdown(
-                        f"<div style='font-size:12px;color:#333333;'>"
+                        f"<div style='font-size:12px;color:#d1d5db;'>"
                         f"Status: <b>{item.get('status','—')}</b><br>"
                         f"Shared with: {shared_with_list or 'you'}</div>",
                         unsafe_allow_html=True,
@@ -3948,7 +1668,7 @@ def show_pipeline():
                     if st.button("Dismiss", key=f"inbox_dismiss_{share_id}", use_container_width=True):
                         dismiss_from_inbox(item["_file"])
                         st.rerun()
-                st.markdown('<div style="height:2px;border-bottom:1px solid #888;"></div>',
+                st.markdown('<div style="height:2px;border-bottom:1px solid rgba(255,255,255,0.1);"></div>',
                             unsafe_allow_html=True)
 
     # ── Load and filter loans ────────────────────────────────────────────────
@@ -4001,16 +1721,16 @@ def show_pipeline():
     all_loans = get_all_loans()
     counts = {s: sum(1 for l in all_loans if l["status"] == s) for s in STATUS_OPTIONS}
     _chip_tints = {
-        "Pending":   ("#c62828", "#ffebee", "#ef9a9a"),
-        "Requested": ("#e65100", "#fff3e0", "#ffcc80"),
-        "Cleared":   ("#2e7d32", "#e8f5e9", "#c8e6c9"),
-        "Overdue":   ("#333",    "#f5f5f5", "#ddd"),
-        "Closed":    ("#333",    "#f5f5f5", "#ddd"),
+        "Pending":   ("#ef4444", "rgba(239,68,68,0.1)", "rgba(239,68,68,0.3)"),
+        "Requested": ("#f59e0b", "rgba(245,158,11,0.1)", "rgba(245,158,11,0.3)"),
+        "Cleared":   ("#39FF14", "rgba(57,255,20,0.1)", "rgba(57,255,20,0.3)"),
+        "Overdue":   ("#9ca3af", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.1)"),
+        "Closed":    ("#9ca3af", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.1)"),
     }
     _stat_chips = " ".join(
-        f'<span style="background:{_chip_tints.get(s, ("#333","#f5f5f5","#ddd"))[1]};'
-        f'border:1px solid {_chip_tints.get(s, ("#333","#f5f5f5","#ddd"))[2]};border-radius:3px;'
-        f'padding:2px 8px;font-size:12px;font-weight:600;color:{_chip_tints.get(s, ("#333","#f5f5f5","#ddd"))[0]};'
+        f'<span style="background:{_chip_tints.get(s, ("#9ca3af","rgba(255,255,255,0.03)","rgba(255,255,255,0.1)"))[1]};'
+        f'border:1px solid {_chip_tints.get(s, ("#9ca3af","rgba(255,255,255,0.03)","rgba(255,255,255,0.1)"))[2]};border-radius:3px;'
+        f'padding:2px 8px;font-size:12px;font-weight:600;color:{_chip_tints.get(s, ("#9ca3af","rgba(255,255,255,0.03)","rgba(255,255,255,0.1)"))[0]};'
         f'display:inline-block;margin-bottom:2px;">'
         f'{counts[s]} <span style="font-size:10px;'
         f'font-weight:500;text-transform:uppercase;letter-spacing:0.3px;">{s}</span></span>'
@@ -4028,26 +1748,26 @@ def show_pipeline():
         _in_prog = counts.get("Requested", 0)
         _pipeline_pct = int((_closed / _total_loans) * 100)
         _pipeline_bar_html = (
-            f'<div style="background:#fff;border:1px solid #888;border-radius:3px;'
+            f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:3px;'
             f'padding:6px 10px;margin-bottom:8px;">'
             f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
-            f'<span style="font-size:11px;font-weight:600;color:#374151;">Pipeline Progress</span>'
-            f'<span style="font-size:11px;color:#5c6370;">'
+            f'<span style="font-size:11px;font-weight:600;color:#ffffff;">Pipeline Progress</span>'
+            f'<span style="font-size:11px;color:#9ca3af;">'
             f'{_closed} cleared / closed &nbsp;·&nbsp; {_in_prog} in progress &nbsp;·&nbsp; {_total_loans} total</span>'
             f'</div>'
-            f'<div style="background:#d5d7da;border-radius:2px;height:8px;overflow:hidden;position:relative;">'
+            f'<div style="background:rgba(255,255,255,0.1);border-radius:2px;height:8px;overflow:hidden;position:relative;">'
             # cleared/closed portion (green)
-            f'<div style="background:#2e7d32;width:{_pipeline_pct}%;height:100%;'
+            f'<div style="background:#39FF14;width:{_pipeline_pct}%;height:100%;'
             f'border-radius:2px 0 0 2px;position:absolute;left:0;"></div>'
             # in-progress portion (orange) stacked after green
-            f'<div style="background:#e65100;'
+            f'<div style="background:#f59e0b;'
             f'width:{int((_in_prog/_total_loans)*100)}%;height:100%;'
             f'position:absolute;left:{_pipeline_pct}%;"></div>'
             f'</div>'
             f'<div style="display:flex;gap:12px;margin-top:4px;">'
-            f'<span style="font-size:10px;color:#2e7d32;font-weight:600;">&#9632; Cleared/Closed {_pipeline_pct}%</span>'
-            f'<span style="font-size:10px;color:#e65100;font-weight:600;">&#9632; In Progress {int((_in_prog/_total_loans)*100)}%</span>'
-            f'<span style="font-size:10px;color:#c62828;font-weight:600;">&#9632; Pending/Overdue {100 - _pipeline_pct - int((_in_prog/_total_loans)*100)}%</span>'
+            f'<span style="font-size:10px;color:#39FF14;font-weight:600;">&#9632; Cleared/Closed {_pipeline_pct}%</span>'
+            f'<span style="font-size:10px;color:#f59e0b;font-weight:600;">&#9632; In Progress {int((_in_prog/_total_loans)*100)}%</span>'
+            f'<span style="font-size:10px;color:#ef4444;font-weight:600;">&#9632; Pending/Overdue {100 - _pipeline_pct - int((_in_prog/_total_loans)*100)}%</span>'
             f'</div>'
             f'</div>'
         )
@@ -4063,13 +1783,13 @@ def show_pipeline():
 
         # Color left-border by status
         border_colors = {
-            "Pending":   "#c0392b",
-            "Requested": "#e67e22",
-            "Cleared":   "#27ae60",
-            "Overdue":   "#7f8c8d",
-            "Closed":    "#2c3e50",
+            "Pending":   "#ef4444",
+            "Requested": "#f59e0b",
+            "Cleared":   "#39FF14",
+            "Overdue":   "#9ca3af",
+            "Closed":    "#6b7280",
         }
-        border_color = border_colors.get(status, "#444")
+        border_color = border_colors.get(status, "rgba(255,255,255,0.2)")
 
         created_by = loan.get("created_by", "")
         assigned_to = loan.get("assigned_to", "")
@@ -4080,7 +1800,7 @@ def show_pipeline():
                 parts.append(f"+{created_by}")
             if assigned_to:
                 parts.append(f"{assigned_to}")
-            team_line = f'<div style="font-size:9px;color:#5c6370;margin-top:0px;">{" · ".join(parts)}</div>'
+            team_line = f'<div style="font-size:9px;color:#9ca3af;margin-top:0px;">{" · ".join(parts)}</div>'
 
         # Lock expiry badge
         _lock_exp = loan.get("lock_expiry", "")
@@ -4091,13 +1811,13 @@ def show_pipeline():
                 _lock_d = _dt_datetime.strptime(_lock_exp, "%Y-%m-%d").date()
                 _lock_days = (_lock_d - _dt_date.today()).days
                 if _lock_days < 0:
-                    _lock_clr, _lock_lbl = "#e74c3c", f"LOCK EXPIRED ({abs(_lock_days)}d ago)"
+                    _lock_clr, _lock_lbl = "#ef4444", f"LOCK EXPIRED ({abs(_lock_days)}d ago)"
                 elif _lock_days <= 7:
-                    _lock_clr, _lock_lbl = "#e74c3c", f"Lock expires in {_lock_days}d"
+                    _lock_clr, _lock_lbl = "#ef4444", f"Lock expires in {_lock_days}d"
                 elif _lock_days <= 14:
-                    _lock_clr, _lock_lbl = "#f39c12", f"Lock {_lock_days}d"
+                    _lock_clr, _lock_lbl = "#f59e0b", f"Lock {_lock_days}d"
                 else:
-                    _lock_clr, _lock_lbl = "#27ae60", f"Lock {_lock_exp}"
+                    _lock_clr, _lock_lbl = "#39FF14", f"Lock {_lock_exp}"
                 _lock_badge = (
                     f'<span style="background:{_lock_clr};color:#fff;'
                     f'padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">{_lock_lbl}</span>'
@@ -4138,19 +1858,19 @@ def show_pipeline():
 
         # Progress bar color
         if _pct >= 75:
-            _bar_color = "#2e7d32"
+            _bar_color = "#39FF14"
         elif _pct >= 40:
-            _bar_color = "#e65100"
+            _bar_color = "#f59e0b"
         else:
-            _bar_color = "#c62828"
+            _bar_color = "#ef4444"
 
         _progress_html = (
             f'<div style="margin-top:2px;">'
             f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1px;">'
-            f'<span style="font-size:9px;color:#5c6370;font-weight:500;">{_pct_label}</span>'
+            f'<span style="font-size:9px;color:#9ca3af;font-weight:500;">{_pct_label}</span>'
             f'<span style="font-size:10px;color:{_bar_color};font-weight:700;">{_pct}%</span>'
             f'</div>'
-            f'<div style="background:#d5d7da;border-radius:2px;height:4px;overflow:hidden;">'
+            f'<div style="background:rgba(255,255,255,0.1);border-radius:2px;height:4px;overflow:hidden;">'
             f'<div style="background:{_bar_color};width:{_pct}%;height:100%;border-radius:2px;'
             f'transition:width 0.3s;"></div>'
             f'</div>'
@@ -4169,8 +1889,8 @@ def show_pipeline():
             _status_items.append(_lock_badge)
         if _missing_txt and _missing_txt != "None":
             _status_items.append(
-                f'<span style="background:#fff3e0;color:#bf360c;padding:1px 6px;'
-                f'border-radius:3px;font-size:10px;font-weight:500;border:1px solid #ffcc80;">'
+                f'<span style="background:rgba(245,158,11,0.1);color:#f59e0b;padding:1px 6px;'
+                f'border-radius:3px;font-size:10px;font-weight:500;border:1px solid rgba(245,158,11,0.3);">'
                 f'Missing: {_missing_txt}</span>'
             )
         _badges_row = ""
@@ -4186,18 +1906,18 @@ def show_pipeline():
             _inline_badges += f"&nbsp;{_lock_badge}"
         if _missing_txt and _missing_txt != "None":
             _inline_badges += (
-                f'&nbsp;<span style="background:#fff3e0;color:#bf360c;padding:1px 5px;'
-                f'border-radius:3px;font-size:9px;font-weight:500;border:1px solid #ffcc80;">'
+                f'&nbsp;<span style="background:rgba(245,158,11,0.1);color:#f59e0b;padding:1px 5px;'
+                f'border-radius:3px;font-size:9px;font-weight:500;border:1px solid rgba(245,158,11,0.3);">'
                 f'Missing</span>'
             )
         st.markdown(
-            f'<div style="background:#fff;border:1px solid #888;border-left:3px solid {border_color};'
+            f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-left:3px solid {border_color};'
             f'padding:0 8px 1px 8px;margin-top:-3px;margin-bottom:4px;'
             f'display:flex;align-items:center;gap:8px;min-width:0;">'
-            f'<span style="font-size:9px;color:#5c6370;white-space:nowrap;flex-shrink:0;">'
+            f'<span style="font-size:9px;color:#9ca3af;white-space:nowrap;flex-shrink:0;">'
             f'Close: {_closing_dt} · Lock: {_lock_dt if _lock_dt else "—"}</span>'
             f'{_inline_badges}'
-            f'<div style="flex:1;background:#d5d7da;border-radius:1px;height:2px;overflow:hidden;min-width:30px;">'
+            f'<div style="flex:1;background:rgba(255,255,255,0.1);border-radius:1px;height:2px;overflow:hidden;min-width:30px;">'
             f'<div style="background:{_bar_color};width:{_pct}%;height:100%;"></div>'
             f'</div>'
             f'<span style="font-size:9px;color:{_bar_color};font-weight:700;white-space:nowrap;flex-shrink:0;">{_pct}%</span>'
@@ -4282,7 +2002,7 @@ def show_pipeline():
                     f'<a href="?cancel_del={lid}" style="display:block;text-align:center;'
                     f'background:#f0f0f0;color:#555;font-weight:600;font-size:10px;'
                     f'padding:6px 4px;border-radius:4px;text-decoration:none;'
-                    f'border:1px solid #888;">Cancel</a>'
+                    f'border:1px solid rgba(255,255,255,0.05);">Cancel</a>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
@@ -4315,7 +2035,7 @@ def show_pipeline():
                 if is_shared_loan:
                     # Send update back to owner + shared_with
                     st.markdown(
-                        "<div style='font-size:13px;color:#333333;margin-bottom:6px;'>"
+                        "<div style='font-size:13px;color:#d1d5db;margin-bottom:6px;'>"
                         f"Send updated status for <b>#{loan.get('loan_num')}</b> back to "
                         f"<b>{loan.get('share_owner','owner')}</b> and shared teammates."
                         "</div>",
@@ -4348,7 +2068,7 @@ def show_pipeline():
                 else:
                     # Share a new loan with selected teammates
                     st.markdown(
-                        "<div style='font-size:13px;color:#333333;margin-bottom:6px;'>"
+                        "<div style='font-size:13px;color:#d1d5db;margin-bottom:6px;'>"
                         f"Share <b>#{loan.get('loan_num')} — {loan.get('borrower')}</b> with:</div>",
                         unsafe_allow_html=True,
                     )
@@ -4375,7 +2095,7 @@ def show_pipeline():
                             else:
                                 st.warning("Pick at least one person to share with.")
 
-        st.markdown('<div style="height:2px;border-bottom:1px solid #888;margin:2px 0;"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:2px;border-bottom:1px solid rgba(255,255,255,0.05);margin:2px 0;"></div>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
@@ -4419,18 +2139,18 @@ def show_pipeline():
                 if _exp:
                     _exp_days = (_tr_dt.strptime(_exp, "%Y-%m-%d").date() - _tr_date.today()).days
                     if _exp_days <= 3:
-                        _exp_tag = f'<span style="color:#e74c3c;font-size:10px;font-weight:600;">deletes in {max(0,_exp_days)}d</span>'
+                        _exp_tag = f'<span style="color:#ef4444;font-size:10px;font-weight:600;">deletes in {max(0,_exp_days)}d</span>'
                     else:
-                        _exp_tag = f'<span style="color:#5c6370;font-size:10px;">deletes in {_exp_days}d</span>'
+                        _exp_tag = f'<span style="color:#9ca3af;font-size:10px;">deletes in {_exp_days}d</span>'
                 else:
-                    _exp_tag = '<span style="color:#5c6370;font-size:10px;">kept forever</span>'
+                    _exp_tag = '<span style="color:#9ca3af;font-size:10px;">kept forever</span>'
 
                 tc1, tc2, tc3 = st.columns([4, 1, 1])
                 with tc1:
                     st.markdown(
-                        f'<span style="font-weight:700;color:#2563eb;">#{tl.get("loan_num", "—")}</span>'
+                        f'<span style="font-weight:700;color:#39FF14;">#{tl.get("loan_num", "—")}</span>'
                         f' &nbsp;{tl.get("borrower", "—")}'
-                        f' &nbsp;<span style="color:#5c6370;font-size:10px;">removed {tl.get("deleted_on", "?")}</span>'
+                        f' &nbsp;<span style="color:#9ca3af;font-size:10px;">removed {tl.get("deleted_on", "?")}</span>'
                         f' &nbsp;{_exp_tag}',
                         unsafe_allow_html=True,
                     )
@@ -4675,9 +2395,9 @@ def show_team_page():
                 st.error(f"Can't reach folder: {msg}")
 
     st.markdown(
-        f"<div style='font-size:12px;color:#5c6370;margin-top:4px;'>"
+        f"<div style='font-size:12px;color:#9ca3af;margin-top:4px;'>"
         f"Share this path with teammates so they can drop files for you: "
-        f"<code style='color:#2563eb;'>{config.get('my_inbox','(not set)')}</code>"
+        f"<code style='color:#39FF14;'>{config.get('my_inbox','(not set)')}</code>"
         f"</div>",
         unsafe_allow_html=True,
     )
@@ -4722,7 +2442,7 @@ def show_team_page():
 
     # ── Current Team List ───────────────────────────────────────────────────
     members = get_members()
-    st.markdown(f"### My Team &nbsp; <span style='font-size:13px;color:#5c6370;'>({len(members)} people)</span>",
+    st.markdown(f"### My Team &nbsp; <span style='font-size:13px;color:#9ca3af;'>({len(members)} people)</span>",
                 unsafe_allow_html=True)
 
     if not members:
@@ -4734,12 +2454,12 @@ def show_team_page():
             mc1, mc2, mc3, mc4 = st.columns([2, 2, 4, 1])
             with mc1:
                 st.markdown(
-                    f"<div style='font-weight:700;color:#111111;font-size:14px;'>{m['name']}</div>",
+                    f"<div style='font-weight:700;color:#ffffff;font-size:14px;'>{m['name']}</div>",
                     unsafe_allow_html=True,
                 )
             with mc2:
                 st.markdown(
-                    f"<div style='color:#2563eb;font-size:13px;'>{m.get('role','')}</div>",
+                    f"<div style='color:#39FF14;font-size:13px;'>{m.get('role','')}</div>",
                     unsafe_allow_html=True,
                 )
             with mc3:
@@ -4747,15 +2467,15 @@ def show_team_page():
                 reachable = os.path.isdir(inbox_path) if inbox_path else False
                 dot = "●" if reachable else "●"
                 st.markdown(
-                    f"<div style='font-size:12px;color:#5c6370;'>{dot} "
-                    f"<code style='color:#333333;'>{inbox_path or '(no path)'}</code></div>",
+                    f"<div style='font-size:12px;color:#9ca3af;'>{dot} "
+                    f"<code style='color:#d1d5db;'>{inbox_path or '(no path)'}</code></div>",
                     unsafe_allow_html=True,
                 )
             with mc4:
                 if st.button("Remove", key=f"rm_{m['name']}", use_container_width=True):
                     remove_member(m["name"])
                     st.rerun()
-            st.markdown('<div style="height:4px;border-bottom:1px solid #888;margin-bottom:4px;"></div>',
+            st.markdown('<div style="height:4px;border-bottom:1px solid rgba(255,255,255,0.05);margin-bottom:4px;"></div>',
                         unsafe_allow_html=True)
 
 
@@ -4802,7 +2522,7 @@ def show_email_watch_page():
     # ── Status card ──────────────────────────────────────────────────────────
     if status["running"]:
         st.markdown(
-            f'<div style="background:#152a1e;border-left:4px solid #27ae60;border-radius:8px;'
+            f'<div style="background:rgba(57,255,20,0.05);border-left:4px solid #39FF14;border-radius:8px;'
             f'padding:10px 16px;margin-bottom:16px;">'
             f'<span style="font-size:14px;font-weight:700;color:#a9dfbf;">● Watching inbox</span>'
             f'<span style="font-size:12px;color:#7dcea0;margin-left:12px;">'
@@ -4811,9 +2531,9 @@ def show_email_watch_page():
         )
     else:
         st.markdown(
-            f'<div style="background:#ffffff;border-left:4px solid #888;border-radius:8px;'
+            f'<div style="background:rgba(255,255,255,0.1);border-left:4px solid rgba(255,255,255,0.05);border-radius:8px;'
             f'padding:10px 16px;margin-bottom:16px;">'
-            f'<span style="font-size:14px;font-weight:700;color:#5c6370;">● Inbox watch is off</span>'
+            f'<span style="font-size:14px;font-weight:700;color:#9ca3af;">● Inbox watch is off</span>'
             + (f'<span style="font-size:12px;color:#d1d5db;margin-left:12px;">'
                f'Last check: {status["last_time"]} · {status["last_status"]}</span>'
                if status["last_time"] else "")
@@ -4852,21 +2572,21 @@ def show_email_watch_page():
             lnum  = m.get("loan_num", "")
 
             if sugg == "match":
-                conf_color = "#27ae60"
+                conf_color = "#39FF14"
                 conf_label = f"✓ Matched — {bname} · Loan {lnum} ({conf}% confidence)"
             elif sugg == "possible":
-                conf_color = "#f1c40f"
+                conf_color = "#fbbf24"
                 conf_label = f"⚠️ Possible match — {bname} · Loan {lnum} ({conf}%)"
             else:
-                conf_color = "#e74c3c"
+                conf_color = "#ef4444"
                 conf_label = "? No pipeline match found"
 
             with st.expander(f"{m['filename']}  ·  {m.get('received', '')}  ·  {conf_label}", expanded=True):
                 mc1, mc2 = st.columns([3, 1])
                 with mc1:
                     st.markdown(
-                        f'<div style="font-size:12px;color:#5c6370;">From: {m["sender"]}</div>'
-                        f'<div style="font-size:12px;color:#5c6370;">Subject: {m["subject"]}</div>'
+                        f'<div style="font-size:12px;color:#9ca3af;">From: {m["sender"]}</div>'
+                        f'<div style="font-size:12px;color:#9ca3af;">Subject: {m["subject"]}</div>'
                         f'<div style="font-size:13px;font-weight:700;color:{conf_color};margin-top:6px;">'
                         f'{conf_label}</div>',
                         unsafe_allow_html=True,
@@ -4874,7 +2594,7 @@ def show_email_watch_page():
                     folder = m.get("suggested_folder", "")
                     if folder:
                         st.markdown(
-                            f'<div style="font-size:12px;color:#2563eb;margin-top:4px;">'
+                            f'<div style="font-size:12px;color:#39FF14;margin-top:4px;">'
                             f'Folder Suggested folder: {folder}</div>',
                             unsafe_allow_html=True,
                         )
@@ -4917,7 +2637,7 @@ def show_email_watch_page():
     with st.expander(_iq_label, expanded=bool(_inbox_files)):
         if not _inbox_files:
             st.markdown(
-                '<span style="color:#5c6370;font-size:13px;">No files in the incoming folder. '
+                '<span style="color:#9ca3af;font-size:13px;">No files in the incoming folder. '
                 'Files appear here when Email Watch downloads attachments.</span>',
                 unsafe_allow_html=True,
             )
@@ -4941,8 +2661,8 @@ def show_email_watch_page():
                            "verdict": "check", "borrower": None, "loan_num": "",
                            "suggested_folder": "", "confidence": 0}
 
-                _v_color = {"pass": "#27ae60", "review": "#f1c40f", "check": "#e74c3c"}.get(
-                    _qv.get("verdict", "check"), "#e74c3c"
+                _v_color = {"pass": "#39FF14", "review": "#fbbf24", "check": "#ef4444"}.get(
+                    _qv.get("verdict", "check"), "#ef4444"
                 )
                 _v_icon  = {"pass": "✓", "review": "△", "check": "?"}.get(
                     _qv.get("verdict", "check"), "Search"
@@ -4953,12 +2673,12 @@ def show_email_watch_page():
 
                 with st.container():
                     st.markdown(
-                        f'<div style="background:#ffffff;border-left:3px solid {_v_color};'
+                        f'<div style="background:rgba(255,255,255,0.1);border-left:3px solid {_v_color};'
                         f'border-radius:6px;padding:8px 12px;margin-bottom:6px;">'
-                        f'<span style="font-weight:700;color:#111111;font-size:13px;">'
+                        f'<span style="font-weight:700;color:#ffffff;font-size:13px;">'
                         f'{_v_icon} {_qfname}</span>'
-                        f'<span style="font-size:12px;color:#5c6370;">{_match_label}</span><br>'
-                        f'<span style="font-size:11px;color:#2563eb;">{_qv.get("doc_type","Document")} · '
+                        f'<span style="font-size:12px;color:#9ca3af;">{_match_label}</span><br>'
+                        f'<span style="font-size:11px;color:#39FF14;">{_qv.get("doc_type","Document")} · '
                         f'{_qv.get("page_count",0)} pages · '
                         f'{_qv.get("days_old","?")}d old</span></div>',
                         unsafe_allow_html=True,
@@ -4966,10 +2686,10 @@ def show_email_watch_page():
                     _qa, _qb, _qc, _qd = st.columns([3, 1, 1, 1])
                     with _qa:
                         for _ok in _qv.get("ok_list", []):
-                            st.markdown(f'<span style="color:#27ae60;font-size:11px;">✓ {_ok}</span><br>',
+                            st.markdown(f'<span style="color:#39FF14;font-size:11px;">✓ {_ok}</span><br>',
                                         unsafe_allow_html=True)
                         for _fl in _qv.get("flags", []):
-                            st.markdown(f'<span style="color:#e74c3c;font-size:11px;">⚑ {_fl}</span><br>',
+                            st.markdown(f'<span style="color:#ef4444;font-size:11px;">⚑ {_fl}</span><br>',
                                         unsafe_allow_html=True)
                     _dest_folder = _qv.get("suggested_folder", "")
                     with _qb:
@@ -5008,7 +2728,7 @@ def show_email_watch_page():
     # ── Credentials setup ─────────────────────────────────────────────────────
     with st.expander("⚙️ Email Credentials" + (" (configured)" if cfg else " (not set up)"), expanded=not cfg):
         st.markdown(
-            '<div style="background:#3d3015;border-left:3px solid #f1c40f;border-radius:6px;'
+            '<div style="background:rgba(251,191,36,0.05);border-left:3px solid #fbbf24;border-radius:6px;'
             'padding:8px 14px;margin-bottom:12px;font-size:12px;color:#f9e79f;">'
             '⚠️ <b>Gmail users:</b> You must use an App Password, not your real password.<br>'
             'Go to: <b>myaccount.google.com → Security → 2-Step Verification → App Passwords</b><br>'
@@ -5339,12 +3059,12 @@ def show_billing_page():
 
     # ── Usage bar ─────────────────────────────────────────────────────────────
     pct = usage["pct_used"]
-    bar_color = "#27ae60" if pct < 80 else ("#f39c12" if pct < 100 else "#e74c3c")
+    bar_color = "#39FF14" if pct < 80 else ("#f59e0b" if pct < 100 else "#ef4444")
     st.markdown(
-        f'<div style="background:#ffffff;border-radius:8px;padding:12px 16px;margin:8px 0 16px;">'
-        f'<div style="font-size:13px;color:#333333;margin-bottom:6px;">'
+        f'<div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px 16px;margin:8px 0 16px;">'
+        f'<div style="font-size:13px;color:#d1d5db;margin-bottom:6px;">'
         f'Quota: {usage["scans"]} / {usage["included"]} scans used ({pct}%)</div>'
-        f'<div style="background:#2d2060;border-radius:4px;height:10px;">'
+        f'<div style="background:rgba(255,255,255,0.03);border-radius:4px;height:10px;">'
         f'<div style="background:{bar_color};width:{min(pct,100)}%;height:10px;border-radius:4px;'
         f'transition:width 0.4s;"></div></div></div>',
         unsafe_allow_html=True,
@@ -5358,10 +3078,10 @@ def show_billing_page():
             pct_dt = round(count / max(usage["scans"], 1) * 100)
             st.markdown(
                 f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">'
-                f'<span style="font-size:13px;color:#333333;width:220px;">{dtype or "Unknown"}</span>'
-                f'<div style="flex:1;background:#2d2060;border-radius:4px;height:8px;">'
-                f'<div style="background:#2563eb;width:{pct_dt}%;height:8px;border-radius:4px;"></div></div>'
-                f'<span style="font-size:13px;color:#333333;width:40px;text-align:right;">{count}</span>'
+                f'<span style="font-size:13px;color:#d1d5db;width:220px;">{dtype or "Unknown"}</span>'
+                f'<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:4px;height:8px;">'
+                f'<div style="background:#39FF14;width:{pct_dt}%;height:8px;border-radius:4px;"></div></div>'
+                f'<span style="font-size:13px;color:#d1d5db;width:40px;text-align:right;">{count}</span>'
                 f'</div>',
                 unsafe_allow_html=True,
             )
@@ -5378,7 +3098,7 @@ def show_billing_page():
     notes = _bl.get_notes(uid)
     if notes:
         for n in notes:
-            st.markdown(f'<div style="font-size:13px;color:#5c6370;">· {n}</div>',
+            st.markdown(f'<div style="font-size:13px;color:#9ca3af;">· {n}</div>',
                         unsafe_allow_html=True)
 
     # ── Monthly history ───────────────────────────────────────────────────────
@@ -5472,22 +3192,22 @@ def show_loan_detail():
         if loan.get("closing_date"): _ld_pct = min(_ld_pct + 10, 100)
         if loan.get("lock_expiry"):  _ld_pct = min(_ld_pct + 10, 100)
         _ld_label = f"{status} — no conditions tracked yet"
-    _ld_bar_color = "#2e7d32" if _ld_pct >= 75 else ("#e65100" if _ld_pct >= 40 else "#c62828")
+    _ld_bar_color = "#39FF14" if _ld_pct >= 75 else ("#f59e0b" if _ld_pct >= 40 else "#ef4444")
 
     st.markdown(
-        f'<div style="background:#fff;border:1px solid #888;border-left:3px solid {border_color};'
+        f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-left:3px solid {border_color};'
         f'border-radius:3px;padding:12px 14px;margin:4px 0;">'
         f'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">'
-        f'<span style="font-size:16px;font-weight:700;color:#1565c0;">#{loan.get("loan_num","—")}</span>'
-        f'<span style="font-size:15px;font-weight:600;color:#111;">{loan.get("borrower","—")}</span>'
+        f'<span style="font-size:16px;font-weight:700;color:#39FF14;">#{loan.get("loan_num","—")}</span>'
+        f'<span style="font-size:15px;font-weight:600;color:#ffffff;">{loan.get("borrower","—")}</span>'
         f'<span class="status-chip status-{status.lower()}" style="font-size:13px;">'
         f'<span style="color:{border_color};font-size:10px;">●</span> {status}</span>'
         f'</div>'
         f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'
-        f'<span style="font-size:11px;color:#5c6370;">{_ld_label}</span>'
+        f'<span style="font-size:11px;color:#9ca3af;">{_ld_label}</span>'
         f'<span style="font-size:12px;font-weight:700;color:{_ld_bar_color};">{_ld_pct}% to close</span>'
         f'</div>'
-        f'<div style="background:#d5d7da;border-radius:2px;height:8px;overflow:hidden;">'
+        f'<div style="background:rgba(255,255,255,0.1);border-radius:2px;height:8px;overflow:hidden;">'
         f'<div style="background:{_ld_bar_color};width:{_ld_pct}%;height:100%;border-radius:2px;"></div>'
         f'</div>'
         f'</div>',
@@ -5496,7 +3216,7 @@ def show_loan_detail():
 
     # ── Key Dates ─────────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
         'letter-spacing:0.5px;">Key Dates</span>',
         unsafe_allow_html=True,
     )
@@ -5514,59 +3234,59 @@ def show_loan_detail():
             d = _ld_dt.strptime(d_str, "%Y-%m-%d").date()
             diff = (d - _today).days
             if diff < 0:
-                return f'<span style="color:#e74c3c;font-weight:700;"> ({abs(diff)}d ago)</span>'
+                return f'<span style="color:#ef4444;font-weight:700;"> ({abs(diff)}d ago)</span>'
             elif diff == 0:
-                return '<span style="color:#e74c3c;font-weight:700;"> (TODAY)</span>'
+                return '<span style="color:#ef4444;font-weight:700;"> (TODAY)</span>'
             elif diff <= 7:
-                return f'<span style="color:#f39c12;font-weight:700;"> ({diff}d left)</span>'
+                return f'<span style="color:#f59e0b;font-weight:700;"> ({diff}d left)</span>'
             else:
-                return f'<span style="color:#5c6370;"> ({diff}d)</span>'
+                return f'<span style="color:#9ca3af;"> ({diff}d)</span>'
         except Exception:
             return ""
 
     d1, d2, d3, d4, d5 = st.columns(5)
     with d1:
         st.markdown(
-            f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;padding:10px;">'
-            f'<div style="font-size:10px;color:#2563eb;font-weight:700;text-transform:uppercase;">Closing Date</div>'
-            f'<div style="font-size:16px;font-weight:700;color:#111111;margin-top:4px;">'
+            f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;">'
+            f'<div style="font-size:10px;color:#39FF14;font-weight:700;text-transform:uppercase;">Closing Date</div>'
+            f'<div style="font-size:16px;font-weight:700;color:#ffffff;margin-top:4px;">'
             f'{_closing or "Not set"}{_days_away(_closing)}</div></div>',
             unsafe_allow_html=True,
         )
     with d2:
         st.markdown(
             f'<div style="background:#2d2200;border:1px solid #5a4400;border-radius:8px;padding:10px;">'
-            f'<div style="font-size:10px;color:#f1c40f;font-weight:700;text-transform:uppercase;">Lock Expiration</div>'
-            f'<div style="font-size:16px;font-weight:700;color:#111111;margin-top:4px;">'
+            f'<div style="font-size:10px;color:#fbbf24;font-weight:700;text-transform:uppercase;">Lock Expiration</div>'
+            f'<div style="font-size:16px;font-weight:700;color:#ffffff;margin-top:4px;">'
             f'{_lock or "Not set"}{_days_away(_lock)}</div></div>',
             unsafe_allow_html=True,
         )
     with d3:
         st.markdown(
             f'<div style="background:#1a2d1a;border:1px solid #2d5a2d;border-radius:8px;padding:10px;">'
-            f'<div style="font-size:10px;color:#7ee787;font-weight:700;text-transform:uppercase;">Commitment Exp.</div>'
-            f'<div style="font-size:16px;font-weight:700;color:#111111;margin-top:4px;">'
+            f'<div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;">Commitment Exp.</div>'
+            f'<div style="font-size:16px;font-weight:700;color:#ffffff;margin-top:4px;">'
             f'{_commitment or "Not set"}{_days_away(_commitment)}</div></div>',
             unsafe_allow_html=True,
         )
     with d4:
         st.markdown(
-            f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;padding:10px;">'
-            f'<div style="font-size:10px;color:#5c6370;font-weight:700;text-transform:uppercase;">Created</div>'
-            f'<div style="font-size:14px;color:#111111;margin-top:4px;">{_created or "—"}</div></div>',
+            f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;">'
+            f'<div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;">Created</div>'
+            f'<div style="font-size:14px;color:#ffffff;margin-top:4px;">{_created or "—"}</div></div>',
             unsafe_allow_html=True,
         )
     with d5:
         st.markdown(
-            f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;padding:10px;">'
-            f'<div style="font-size:10px;color:#5c6370;font-weight:700;text-transform:uppercase;">Last Updated</div>'
-            f'<div style="font-size:14px;color:#111111;margin-top:4px;">{_updated or "—"}</div></div>',
+            f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;">'
+            f'<div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;">Last Updated</div>'
+            f'<div style="font-size:14px;color:#ffffff;margin-top:4px;">{_updated or "—"}</div></div>',
             unsafe_allow_html=True,
         )
 
     # ── Loan Details ──────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Loan Details</span>',
         unsafe_allow_html=True,
     )
@@ -5580,9 +3300,9 @@ def show_loan_detail():
             ("Assigned To", loan.get("assigned_to") or "Unassigned"),
         ]
         _rows_html = "".join(
-            f'<tr><td style="padding:4px 12px 4px 0;color:#5c6370;font-size:12px;font-weight:600;'
+            f'<tr><td style="padding:4px 12px 4px 0;color:#9ca3af;font-size:12px;font-weight:600;'
             f'white-space:nowrap;vertical-align:top;">{k}</td>'
-            f'<td style="padding:4px 0;color:#111111;font-size:13px;">{v}</td></tr>'
+            f'<td style="padding:4px 0;color:#ffffff;font-size:13px;">{v}</td></tr>'
             for k, v in _fields_left
         )
         st.markdown(
@@ -5598,9 +3318,9 @@ def show_loan_detail():
             ("Folder", loan.get("folder_path") or "Not set"),
         ]
         _rows_html2 = "".join(
-            f'<tr><td style="padding:4px 12px 4px 0;color:#5c6370;font-size:12px;font-weight:600;'
+            f'<tr><td style="padding:4px 12px 4px 0;color:#9ca3af;font-size:12px;font-weight:600;'
             f'white-space:nowrap;vertical-align:top;">{k}</td>'
-            f'<td style="padding:4px 0;color:#111111;font-size:13px;">{v}</td></tr>'
+            f'<td style="padding:4px 0;color:#ffffff;font-size:13px;">{v}</td></tr>'
             for k, v in _fields_right
         )
         st.markdown(
@@ -5611,7 +3331,7 @@ def show_loan_detail():
     # ── Missing Docs ──────────────────────────────────────────────────────
     _missing = loan.get("missing_docs", "")
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Missing Documents</span>',
         unsafe_allow_html=True,
     )
@@ -5619,21 +3339,21 @@ def show_loan_detail():
         _docs = [d.strip() for d in _missing.split(",") if d.strip()]
         _doc_html = "".join(
             f'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">'
-            f'<span style="color:#e74c3c;">●</span>'
+            f'<span style="color:#ef4444;">●</span>'
             f'<span style="color:#ffb86c;font-size:13px;">{d}</span></div>'
             for d in _docs
         )
         st.markdown(_doc_html, unsafe_allow_html=True)
     else:
         st.markdown(
-            '<span style="color:#27ae60;font-size:13px;">All documents received</span>',
+            '<span style="color:#39FF14;font-size:13px;">All documents received</span>',
             unsafe_allow_html=True,
         )
 
     # ── Open Conditions (interactive — checkbox, status, parties, email) ────
     _conditions = loan.get("conditions", [])
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Open Conditions</span>',
         unsafe_allow_html=True,
     )
@@ -5667,7 +3387,7 @@ def show_loan_detail():
 
         # ── Email Draft — below conditions, auto-populate from stored contacts ──
         st.markdown(
-            '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+            '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
             'letter-spacing:0.5px;margin:10px 0 4px 0;display:inline-block;">Draft Email</span>',
             unsafe_allow_html=True,
         )
@@ -5712,13 +3432,13 @@ def show_loan_detail():
         with _em_c3:
             if _ld_checked:
                 st.markdown(
-                    f'<div style="padding-top:26px;font-size:11px;color:#2563eb;font-weight:600;">'
+                    f'<div style="padding-top:26px;font-size:11px;color:#39FF14;font-weight:600;">'
                     f'✓ {len(_ld_checked)} checked</div>',
                     unsafe_allow_html=True,
                 )
             else:
                 st.markdown(
-                    '<div style="padding-top:26px;font-size:10px;color:#5c6370;">check above</div>',
+                    '<div style="padding-top:26px;font-size:10px;color:#9ca3af;">check above</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -5744,7 +3464,7 @@ def show_loan_detail():
             _recip_email = _recip_contact.get("email", "")
             if _recip_email:
                 st.markdown(
-                    f'<div style="font-size:11px;color:#5c6370;margin-bottom:4px;">To: <b>{_recip_email}</b></div>',
+                    f'<div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">To: <b>{_recip_email}</b></div>',
                     unsafe_allow_html=True,
                 )
             st.container(border=True).markdown(_email_out)
@@ -5764,7 +3484,7 @@ def show_loan_detail():
                     st.container(border=True).markdown(_ld_ai_text)
     else:
         st.markdown(
-            '<span style="color:#5c6370;font-size:12px;">No conditions attached to this loan yet. '
+            '<span style="color:#9ca3af;font-size:12px;">No conditions attached to this loan yet. '
             'Upload and scan a document to extract conditions.</span>',
             unsafe_allow_html=True,
         )
@@ -5772,7 +3492,7 @@ def show_loan_detail():
     # ── Parties & Contacts ───────────────────────────────────────────────
     _contacts = loan.get("contacts", {})
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Parties &amp; Contacts</span>',
         unsafe_allow_html=True,
     )
@@ -5808,26 +3528,26 @@ def show_loan_detail():
                 _detail_parts.append(f'— {_cpos}')
             if _caddr:
                 _detail_parts.append(f'{_caddr}')
-            _detail_str = " &nbsp;·&nbsp; ".join(_detail_parts) if _detail_parts else '<span style="color:#6c757d;">No details</span>'
+            _detail_str = " &nbsp;·&nbsp; ".join(_detail_parts) if _detail_parts else '<span style="color:#9ca3af;">No details</span>'
             _contact_html += (
-                f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;padding:10px;">'
-                f'<div style="font-size:10px;color:#2563eb;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
-                f'<div style="color:#111111;font-size:13px;font-weight:600;">{_cname or "—"}</div>'
-                f'<div style="color:#5c6370;font-size:11px;margin-top:3px;">{_detail_str}</div>'
+                f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;">'
+                f'<div style="font-size:10px;color:#39FF14;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
+                f'<div style="color:#ffffff;font-size:13px;font-weight:600;">{_cname or "—"}</div>'
+                f'<div style="color:#9ca3af;font-size:11px;margin-top:3px;">{_detail_str}</div>'
                 f'</div>'
             )
         _contact_html += '</div>'
         st.markdown(_contact_html, unsafe_allow_html=True)
     else:
         st.markdown(
-            '<span style="color:#5c6370;font-size:12px;">No contact information attached. '
+            '<span style="color:#9ca3af;font-size:12px;">No contact information attached. '
             'Upload a Purchase Contract or 1003 to populate parties.</span>',
             unsafe_allow_html=True,
         )
 
     # ── Scan & Attach Document ───────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Scan &amp; Attach Document</span>',
         unsafe_allow_html=True,
     )
@@ -5880,9 +3600,9 @@ def show_loan_detail():
                 _pc_txn = _pcd.get("transaction", {})
 
                 st.markdown(
-                    '<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-                    'padding:10px;margin:8px 0;font-size:12px;color:#5c6370;">'
-                    '<b style="color:#2563eb;">Purchase Contract found:</b><br>'
+                    '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
+                    'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
+                    '<b style="color:#39FF14;">Purchase Contract found:</b><br>'
                     f'Buyer: {_pc_buyer.get("name","—")} · Seller: {_pc_seller.get("name","—")}<br>'
                     f'Price: ${_pc_txn.get("purchase_price","—")} · Close: {_pc_txn.get("closing_date","—")}'
                     '</div>',
@@ -5921,9 +3641,9 @@ def show_loan_detail():
                 _app_emp = _app.get("employment", {})
 
                 st.markdown(
-                    '<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-                    'padding:10px;margin:8px 0;font-size:12px;color:#5c6370;">'
-                    '<b style="color:#2563eb;">1003 Application found:</b><br>'
+                    '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
+                    'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
+                    '<b style="color:#39FF14;">1003 Application found:</b><br>'
                     f'Borrower: {_app_b.get("name","—")} · Phone: {_app_b.get("phone","—")}<br>'
                     f'Employer: {_app_emp.get("employer","—")}'
                     '</div>',
@@ -5963,18 +3683,18 @@ def show_loan_detail():
 
                 if _new_conds:
                     st.markdown(
-                        f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-                        f'padding:10px;margin:8px 0;font-size:12px;color:#5c6370;">'
-                        f'<b style="color:#2563eb;">{_sr_dtype} scanned:</b> '
+                        f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
+                        f'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
+                        f'<b style="color:#39FF14;">{_sr_dtype} scanned:</b> '
                         f'{len(_new_conds)} condition(s) found</div>',
                         unsafe_allow_html=True,
                     )
                     # Preview the conditions
                     for _nc in _new_conds:
                         st.markdown(
-                            f'<span style="color:#f1c40f;font-size:12px;">●</span> '
-                            f'<span style="color:#111111;font-size:12px;">{_nc["desc"]}</span> '
-                            f'<span style="color:#5c6370;font-size:11px;">— {_nc["party"]}</span>',
+                            f'<span style="color:#fbbf24;font-size:12px;">●</span> '
+                            f'<span style="color:#ffffff;font-size:12px;">{_nc["desc"]}</span> '
+                            f'<span style="color:#9ca3af;font-size:11px;">— {_nc["party"]}</span>',
                             unsafe_allow_html=True,
                         )
 
@@ -5999,9 +3719,9 @@ def show_loan_detail():
             # ── Bank Statement → show rules ──
             elif _sr.get("bank_rules"):
                 st.markdown(
-                    f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
-                    f'padding:10px;margin:8px 0;font-size:12px;color:#5c6370;">'
-                    f'<b style="color:#2563eb;">Bank Statement Analysis:</b></div>',
+                    f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
+                    f'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
+                    f'<b style="color:#39FF14;">Bank Statement Analysis:</b></div>',
                     unsafe_allow_html=True,
                 )
                 st.markdown(_sr["bank_rules"])
@@ -6009,7 +3729,7 @@ def show_loan_detail():
 
     # ── Approval Fetch ────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Approval Fetch</span>',
         unsafe_allow_html=True,
     )
@@ -6118,16 +3838,16 @@ def show_loan_detail():
             _af_borrower = _af_data["borrower"]
 
             st.markdown(
-                f'<div style="background:#ffffff;border:1px solid #888;border-radius:8px;'
+                f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
                 f'padding:10px;margin:8px 0;">'
                 f'<div style="display:flex;justify-content:space-between;align-items:center;">'
                 f'<div>'
-                f'<span style="color:#2563eb;font-weight:700;font-size:13px;">Approval Letter Scanned</span><br>'
-                f'<span style="color:#5c6370;font-size:12px;">Borrower: <b style="color:#111111;">'
+                f'<span style="color:#39FF14;font-weight:700;font-size:13px;">Approval Letter Scanned</span><br>'
+                f'<span style="color:#9ca3af;font-size:12px;">Borrower: <b style="color:#ffffff;">'
                 f'{_af_borrower or "Unknown"}</b> · '
                 f'{_af_data["cond_count"]} condition(s) extracted · '
                 f'{_af_data["text_length"]:,} chars'
-                f'{" · Commitment: <b style=color:#7ee787;>" + _af_data.get("commitment_date","") + "</b>" if _af_data.get("commitment_date") else ""}'
+                f'{" · Commitment: <b style=color:#9ca3af;>" + _af_data.get("commitment_date","") + "</b>" if _af_data.get("commitment_date") else ""}'
                 f'</span>'
                 f'</div>'
                 f'</div></div>',
@@ -6191,21 +3911,21 @@ def show_loan_detail():
                     _s1, _s2, _s3 = st.columns(3)
                     with _s1:
                         st.markdown(
-                            f'<div class="stat-card"><div class="stat-num" style="color:#111111;">'
+                            f'<div class="stat-card"><div class="stat-num" style="color:#ffffff;">'
                             f'{len(_af_conds)}</div>'
                             f'<div class="stat-label">Total Conditions</div></div>',
                             unsafe_allow_html=True,
                         )
                     with _s2:
                         st.markdown(
-                            f'<div class="stat-card"><div class="stat-num" style="color:#27ae60;">'
+                            f'<div class="stat-card"><div class="stat-num" style="color:#39FF14;">'
                             f'{len(_af_found)}</div>'
                             f'<div class="stat-label">✓ Documents Found</div></div>',
                             unsafe_allow_html=True,
                         )
                     with _s3:
                         st.markdown(
-                            f'<div class="stat-card"><div class="stat-num" style="color:#e74c3c;">'
+                            f'<div class="stat-card"><div class="stat-num" style="color:#ef4444;">'
                             f'{len(_af_missing)}</div>'
                             f'<div class="stat-label">✗ Still Missing</div></div>',
                             unsafe_allow_html=True,
@@ -6214,29 +3934,29 @@ def show_loan_detail():
                     # Found conditions
                     if _af_found:
                         st.markdown(
-                            '<div style="font-size:13px;font-weight:700;color:#27ae60;'
+                            '<div style="font-size:13px;font-weight:700;color:#39FF14;'
                             'margin:12px 0 6px 0;">FOUND — Documents located in folder</div>',
                             unsafe_allow_html=True,
                         )
                         for _c, _matches in _af_found:
                             _best = _matches[0]
-                            _conf_color = "#27ae60" if _best["score"] >= 70 else (
-                                "#f1c40f" if _best["score"] >= 50 else "#e67e22"
+                            _conf_color = "#39FF14" if _best["score"] >= 70 else (
+                                "#fbbf24" if _best["score"] >= 50 else "#f59e0b"
                             )
                             st.markdown(
                                 f'<div style="display:flex;gap:10px;align-items:flex-start;'
-                                f'background:#152a1e;border-left:3px solid #27ae60;'
+                                f'background:rgba(57,255,20,0.05);border-left:3px solid #39FF14;'
                                 f'border-radius:6px;padding:8px 12px;margin-bottom:4px;">'
-                                f'<span style="color:#27ae60;font-weight:700;font-size:12px;min-width:20px;">✓</span>'
+                                f'<span style="color:#39FF14;font-weight:700;font-size:12px;min-width:20px;">✓</span>'
                                 f'<div style="flex:1;">'
-                                f'<span style="color:#111111;font-size:13px;font-weight:600;">'
+                                f'<span style="color:#ffffff;font-size:13px;font-weight:600;">'
                                 f'#{_c["num"]} {_c["desc"][:80]}</span><br>'
-                                f'<span style="color:#a8d8a8;font-size:11px;">{_best["file_name"]}'
+                                f'<span style="color:#9ca3af;font-size:11px;">{_best["file_name"]}'
                                 f' &nbsp;·&nbsp; <span style="color:{_conf_color};">{_best["score"]}% match</span>'
                                 f' &nbsp;·&nbsp; {_best["match_type"]}</span>'
-                                + (f'<br><span style="color:#5c6370;font-size:11px;font-style:italic;">'
+                                + (f'<br><span style="color:#9ca3af;font-size:11px;font-style:italic;">'
                                    f'{_best["snippet"][:120]}</span>' if _best.get("snippet") else "")
-                                + (f'<br><span style="color:#5c6370;font-size:10px;">'
+                                + (f'<br><span style="color:#9ca3af;font-size:10px;">'
                                    f'+{len(_matches)-1} more file(s)</span>' if len(_matches) > 1 else "")
                                 + f'</div>'
                                 f'<span style="background:{_conf_color};color:#fff;font-size:10px;'
@@ -6249,21 +3969,21 @@ def show_loan_detail():
                     # Missing conditions
                     if _af_missing:
                         st.markdown(
-                            '<div style="font-size:13px;font-weight:700;color:#e74c3c;'
+                            '<div style="font-size:13px;font-weight:700;color:#ef4444;'
                             'margin:12px 0 6px 0;">MISSING — No matching documents found</div>',
                             unsafe_allow_html=True,
                         )
                         for _c in _af_missing:
                             st.markdown(
                                 f'<div style="display:flex;gap:10px;align-items:flex-start;'
-                                f'background:#3d1515;border-left:3px solid #e74c3c;'
+                                f'background:rgba(239,68,68,0.05);border-left:3px solid #ef4444;'
                                 f'border-radius:6px;padding:8px 12px;margin-bottom:4px;">'
-                                f'<span style="color:#e74c3c;font-weight:700;font-size:12px;min-width:20px;">✗</span>'
+                                f'<span style="color:#ef4444;font-weight:700;font-size:12px;min-width:20px;">✗</span>'
                                 f'<div style="flex:1;">'
-                                f'<span style="color:#111111;font-size:13px;font-weight:600;">'
+                                f'<span style="color:#ffffff;font-size:13px;font-weight:600;">'
                                 f'#{_c["num"]} {_c["desc"][:80]}</span>'
                                 f'</div>'
-                                f'<span style="background:#6c757d;color:#fff;font-size:10px;'
+                                f'<span style="background:#9ca3af;color:#fff;font-size:10px;'
                                 f'font-weight:600;padding:2px 8px;border-radius:10px;white-space:nowrap;">'
                                 f'{_c["party"]}</span>'
                                 f'</div>',
@@ -6328,7 +4048,7 @@ def show_loan_detail():
 
     # ── Notes ─────────────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Notes</span>',
         unsafe_allow_html=True,
     )
@@ -6344,7 +4064,7 @@ def show_loan_detail():
 
     # ── Quick Actions ─────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Quick Actions</span>',
         unsafe_allow_html=True,
     )
@@ -6406,14 +4126,14 @@ def show_loan_detail():
 
     # ── Activity Log ──────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#2563eb;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:16px;display:inline-block;">Activity Log</span>',
         unsafe_allow_html=True,
     )
     activity = get_activity(lid)
     if not activity:
         st.markdown(
-            '<span style="color:#5c6370;font-size:12px;">No activity recorded yet. '
+            '<span style="color:#9ca3af;font-size:12px;">No activity recorded yet. '
             'Actions on this loan will appear here.</span>',
             unsafe_allow_html=True,
         )
@@ -6436,13 +4156,13 @@ def show_loan_detail():
             _detail = entry.get("detail", "")
             _user = entry.get("user", "")
             _icon = _act_icons.get(_action, "●")
-            _user_tag = f'<span style="color:#2563eb;font-weight:600;">{_user}</span> · ' if _user else ""
+            _user_tag = f'<span style="color:#39FF14;font-weight:600;">{_user}</span> · ' if _user else ""
             st.markdown(
-                f'<div style="display:flex;gap:10px;padding:4px 0;border-bottom:1px solid #888;">'
+                f'<div style="display:flex;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
                 f'<span style="font-size:14px;min-width:20px;">{_icon}</span>'
                 f'<div>'
-                f'<span style="color:#111111;font-size:12px;">{_detail}</span><br>'
-                f'<span style="color:#5c6370;font-size:10px;">{_user_tag}{_ts}</span>'
+                f'<span style="color:#ffffff;font-size:12px;">{_detail}</span><br>'
+                f'<span style="color:#9ca3af;font-size:10px;">{_user_tag}{_ts}</span>'
                 f'</div></div>',
                 unsafe_allow_html=True,
             )
