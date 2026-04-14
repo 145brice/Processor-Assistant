@@ -1,7 +1,7 @@
 .env
 __pycache__/
 *.pyc
-.streamlit/
+.streamlit/secrets.toml
 guidelines_index/
 processor.db
 .session_cache.json
