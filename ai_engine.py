@@ -1,5 +1,5 @@
 """
-Offline Processing Engine for Pipeline Manager
+Offline Processing Engine for Processor Assistant
 100% local - no API calls, no cloud, no AI.
 Uses regex + pattern matching to analyze mortgage documents.
 Spaced out processing to be easy on the CPU.

@@ -1,5 +1,5 @@
 """
-Guidelines Engine for Pipeline Manager
+Guidelines Engine for Processor Assistant
 Indexes and searches Fannie Mae / Freddie Mac selling guides locally.
 Builds a searchable index on first run, then searches from cache.
 100% offline.

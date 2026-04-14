@@ -1,5 +1,5 @@
 """
-Export Module — Pipeline Manager
+Export Module — Processor Assistant
 Generates downloadable outputs from scan results:
   - CSV  : conditions table with status and party
   - HTML : professional one-page condition snapshot report (print-to-PDF)
@@ -200,7 +200,7 @@ def snapshot_html(condition_rows: list[dict], loan_info: dict | None = None,
 <div class="page">
 
   <div class="header">
-    <div class="app-name">Pipeline Manager · Condition Snapshot</div>
+    <div class="app-name">Processor Assistant · Condition Snapshot</div>
     <div class="report-title">{_esc(borrower)}</div>
     <div class="report-date">Generated {today} by {_esc(proc_name)}</div>
   </div>
@@ -250,7 +250,7 @@ def snapshot_html(condition_rows: list[dict], loan_info: dict | None = None,
   {cleared_section}
 
   <div class="footer">
-    <span>Pipeline Manager — condition snapshot · {today}</span>
+    <span>Processor Assistant — condition snapshot · {today}</span>
     <span>Loan {_esc(loan_num)} · {_esc(borrower)}</span>
   </div>
 </div>

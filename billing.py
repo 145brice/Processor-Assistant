@@ -1,5 +1,5 @@
 """
-Billing & Usage Tracker — Pipeline Manager
+Billing & Usage Tracker — Processor Assistant
 Tracks monthly document scans per user and calculates costs.
 
 Pricing model:

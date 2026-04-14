@@ -1,5 +1,5 @@
 """
-Ollama Integration — Pipeline Manager
+Ollama Integration — Processor Assistant
 Optional local LLM enhancement. Connects to a locally running Ollama instance.
 All offline — no internet, no API keys, no cloud.
 

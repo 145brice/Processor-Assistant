@@ -1,5 +1,5 @@
 """
-Pipeline Manager - Mortgage Document Processing App
+Processor Assistant - Mortgage Document Processing App
 Main Streamlit application.
 """
 
@@ -8,7 +8,7 @@ import streamlit as st
 
 # --- Page Config ---
 st.set_page_config(
-    page_title="Pipeline Manager",
+    page_title="Processor Assistant",
     page_icon="—",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -306,7 +306,7 @@ def show_login_page():
             </svg>
           </div>
           <div style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">
-            Pipeline Manager
+            Processor Assistant
           </div>
           <div style="font-size:11px;color:#9ca3af;margin-top:5px;letter-spacing:0.3px;">
             OFFLINE MORTGAGE PROCESSING
@@ -416,7 +416,7 @@ def show_sidebar():
         st.markdown(
             '<div style="padding:4px 0 12px 0;">'
             '<div style="font-size:18px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;">'
-            'Pipeline Manager</div>'
+            'Processor Assistant</div>'
             '<div style="font-size:10px;color:var(--slate-400);margin-top:2px;">Offline · Local</div>'
             '</div>',
             unsafe_allow_html=True,

@@ -1,5 +1,5 @@
 """
-AI Router — Pipeline Manager
+AI Router — Processor Assistant
 Single entry point for all AI-enhanced features.
 
 Backend priority (set in ai_config.json):

@@ -1,5 +1,5 @@
 """
-CRM Pipeline — Pipeline Manager
+CRM Pipeline — Processor Assistant
 Manages the local loan pipeline stored in pipeline.json.
 100% offline. No cloud. Just a local JSON file.
 """

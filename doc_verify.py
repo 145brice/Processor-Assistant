@@ -1,5 +1,5 @@
 """
-Quick Doc Verify — Pipeline Manager
+Quick Doc Verify — Processor Assistant
 Checks any incoming PDF in seconds:
   - Figures out what type of document it is
   - Counts pages

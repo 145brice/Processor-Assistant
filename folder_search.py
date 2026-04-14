@@ -1,5 +1,5 @@
 """
-Folder Search Engine for Pipeline Manager
+Folder Search Engine for Processor Assistant
 Searches a local folder for documents matching mortgage conditions.
 100% offline - fuzzy matches filenames and PDF content.
 """

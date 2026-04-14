@@ -1,5 +1,5 @@
 """
-Local SQLite Database for Pipeline Manager
+Local SQLite Database for Processor Assistant
 Fully offline - no cloud, no Supabase.
 Stores user accounts and scan history locally.
 """

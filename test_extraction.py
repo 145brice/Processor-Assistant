@@ -1,5 +1,5 @@
 """
-Extraction Test Suite — Pipeline Manager
+Extraction Test Suite — Processor Assistant
 Runs all document extraction functions against realistic mock document text.
 No real PDFs needed — tests the regex/pattern logic directly.
 

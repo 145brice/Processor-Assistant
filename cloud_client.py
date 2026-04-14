@@ -1,5 +1,5 @@
 """
-Cloud AI Integration — Pipeline Manager
+Cloud AI Integration — Processor Assistant
 Optional cloud AI backend. Supports Anthropic Claude and OpenAI.
 Requires an internet connection and a valid API key.
 

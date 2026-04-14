@@ -1,5 +1,5 @@
 """
-Sharing Engine — Pipeline Manager
+Sharing Engine — Processor Assistant
 Private loan sharing between team members via personal inbox folders.
 
 How it works:

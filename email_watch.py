@@ -1,5 +1,5 @@
 """
-Email Inbox Watcher — Pipeline Manager
+Email Inbox Watcher — Processor Assistant
 Checks your inbox every N minutes for new PDF attachments,
 extracts borrower names from the text, and matches them to your pipeline.
 100% local — IMAP only, no cloud, no third-party servers.
