@@ -958,10 +958,16 @@ def show_dashboard():
             else:
                 _match_badge = " · No loan match"
 
-            _exp = st.expander(
-                f"✓ {_batch['file']} — {_batch['type']} ({_cond_count} cond){_match_badge}",
-                expanded=False
-            )
+            _del_col, _exp_col = st.columns([1, 11])
+            with _del_col:
+                if st.button("✕", key=f"ds_del_{_bidx}", help="Remove this scan result"):
+                    st.session_state.scan_batches.pop(_bidx)
+                    st.rerun()
+            with _exp_col:
+                _exp = st.expander(
+                    f"✓ {_batch['file']} — {_batch['type']} ({_cond_count} cond){_match_badge}",
+                    expanded=False
+                )
             with _exp:
                 # ── Loan match action row ──────────────────────────────
                 if _lm_suggestion == "match":
@@ -975,8 +981,8 @@ def show_dashboard():
                     _ma1, _ma2, _ma3 = st.columns([1, 1, 2])
                     with _ma1:
                         if st.button("Open Loan", key=f"ds_open_{_bidx}"):
-                            st.session_state["loan_detail_id"] = _lm_loan_id
-                            st.session_state.page = "pipeline"
+                            st.session_state.detail_loan_id = _lm_loan_id
+                            st.session_state.page = "loan_detail"
                             st.rerun()
                     with _ma2:
                         if st.button("Merge into Loan", key=f"ds_merge_{_bidx}"):
@@ -1006,8 +1012,8 @@ def show_dashboard():
                     _pa1, _pa2 = st.columns([1, 1])
                     with _pa1:
                         if st.button("Open & Verify", key=f"ds_popen_{_bidx}"):
-                            st.session_state["loan_detail_id"] = _lm_loan_id
-                            st.session_state.page = "pipeline"
+                            st.session_state.detail_loan_id = _lm_loan_id
+                            st.session_state.page = "loan_detail"
                             st.rerun()
                     with _pa2:
                         if st.button("Start New Loan Instead", key=f"ds_pnew_{_bidx}"):
