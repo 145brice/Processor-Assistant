@@ -1037,7 +1037,7 @@ def show_dashboard():
                                 _ul(_lm_loan_id, conditions=_existing_conds, contacts=_existing_contacts)
                                 _la(_lm_loan_id, "upload", f"{_batch['type']} scanned — {_added} condition(s) merged",
                                     user=st.session_state.get("user_name", ""))
-                                st.toast(f"{_added} condition(s) merged into Loan {_lm_loan_num}", icon="✓")
+                                st.toast(f"{_added} condition(s) merged into Loan {_lm_loan_num}", icon="✅")
                 elif _lm_suggestion == "possible":
                     st.markdown(
                         f'<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:4px;'
@@ -1101,7 +1101,7 @@ def show_dashboard():
                             )
                             _la(_new_lid, "created", f"Loan created from scanned {_batch['type']}",
                                 user=st.session_state.get("user_name", ""))
-                            st.toast(f"Loan created for {_nl_borrower}", icon="✓")
+                            st.toast(f"Loan created for {_nl_borrower}", icon="✅")
                             st.session_state.pop(f"ds_start_new_{_bidx}", None)
                             st.rerun()
 
@@ -2207,7 +2207,7 @@ def show_pipeline():
             _new_ret_days = RETENTION_OPTIONS[_new_ret]
             if _new_ret_days != _cur_retention:
                 set_retention_days(_new_ret_days)
-                st.toast(f"Retention set to {_new_ret}", icon="✓")
+                st.toast(f"Retention set to {_new_ret}", icon="✅")
                 st.rerun()
         with rt3:
             if trash_items and st.button("Remove️ Empty All", key="empty_trash", use_container_width=True):
@@ -3744,7 +3744,7 @@ def show_loan_detail():
                     update_loan(lid, **_upd)
                     log_activity(lid, "upload", f"Purchase Contract scanned — contacts merged", user=my_name)
                     st.session_state.pop(_scan_key, None)
-                    st.toast("Contacts merged into loan", icon="✓")
+                    st.toast("Contacts merged into loan", icon="✅")
                     st.rerun()
 
             # ── 1003 Application → merge contacts ──
@@ -3778,7 +3778,7 @@ def show_loan_detail():
                     update_loan(lid, contacts=_new_contacts)
                     log_activity(lid, "upload", f"1003 Application scanned — contacts merged", user=my_name)
                     st.session_state.pop(_scan_key, None)
-                    st.toast("Contacts merged into loan", icon="✓")
+                    st.toast("Contacts merged into loan", icon="✅")
                     st.rerun()
 
             # ── All other doc types → merge conditions ──
@@ -3825,7 +3825,7 @@ def show_loan_detail():
                         update_loan(lid, conditions=_existing)
                         log_activity(lid, "upload", f"{_sr_dtype} scanned — {_added} condition(s) added", user=my_name)
                         st.session_state.pop(_scan_key, None)
-                        st.toast(f"{_added} condition(s) merged", icon="✓")
+                        st.toast(f"{_added} condition(s) merged", icon="✅")
                         st.rerun()
                 else:
                     st.info("No conditions extracted from this document.")
@@ -4134,7 +4134,7 @@ def show_loan_detail():
                                 f"{len(_af_found)} found, {len(_af_missing)} missing",
                                 user=my_name)
                             st.session_state.pop(_af_key, None)
-                            st.toast(f"{_added} conditions merged into loan", icon="✓")
+                            st.toast(f"{_added} conditions merged into loan", icon="✅")
                             st.rerun()
                     with _mc2:
                         if st.button("Merge conditions only (skip folder results)",
@@ -4154,7 +4154,7 @@ def show_loan_detail():
                                 f"Approval letter scanned — {_added} condition(s) merged",
                                 user=my_name)
                             st.session_state.pop(_af_key, None)
-                            st.toast(f"{_added} conditions merged", icon="✓")
+                            st.toast(f"{_added} conditions merged", icon="✅")
                             st.rerun()
 
                 elif _af_scan_res and _af_scan_res.get("error"):
@@ -4173,7 +4173,7 @@ def show_loan_detail():
     if st.button("Save Notes", key="detail_save_notes"):
         update_loan(lid, notes=_new_notes)
         log_activity(lid, "note", f"Note updated: {_new_notes[:80]}", user=my_name)
-        st.toast("Notes saved", icon="✓")
+        st.toast("Notes saved", icon="✅")
         st.rerun()
 
     # ── Quick Actions ─────────────────────────────────────────────────────
