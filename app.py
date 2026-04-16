@@ -444,21 +444,37 @@ def show_sidebar():
                 unsafe_allow_html=True,
             )
 
-        def _nav(label, page):
-            if st.button(label, use_container_width=True):
-                st.session_state.page = page
+        _current_page = st.session_state.get("page", "dashboard")
+        _nav_items = [
+            ("Scanner",     "dashboard",  "⬡"),
+            ("Pipeline",    "pipeline",   "⬡"),
+            ("Reader",      "reader",     "⬡"),
+            ("Team",        "team",       "⬡"),
+            ("Email Watch", "email_watch","⬡"),
+            ("AI",          "ollama",     "⬡"),
+            ("Billing",     "billing",    "⬡"),
+        ]
+        if not is_sandbox:
+            _nav_items.append(("History", "history", "⬡"))
+
+        for _nav_label, _nav_page, _nav_icon in _nav_items:
+            _active = _current_page == _nav_page
+            _btn_style = (
+                "background:linear-gradient(135deg,rgba(57,255,20,0.12),rgba(57,255,20,0.06));border:1px solid rgba(57,255,20,0.35);color:#39FF14;"
+                if _active else
+                "background:linear-gradient(135deg,#252525,#1e1e1e);border:1px solid rgba(255,255,255,0.12);color:#c0c0c0;"
+            )
+            st.markdown(
+                f'<div style="{_btn_style}border-radius:6px;padding:8px 12px;margin-bottom:3px;'
+                f'font-size:13px;font-weight:{"700" if _active else "500"};cursor:pointer;'
+                f'transition:all 0.2s;">{_nav_label}</div>',
+                unsafe_allow_html=True,
+            )
+            if st.button(_nav_label, key=f"nav_{_nav_page}", use_container_width=True,
+                         label_visibility="collapsed"):
+                st.session_state.page = _nav_page
                 _save_session()
                 st.rerun()
-
-        _nav("Scanner", "dashboard")
-        _nav("Pipeline", "pipeline")
-        _nav("Reader", "reader")
-        _nav("Team", "team")
-        _nav("Email Watch", "email_watch")
-        _nav("AI", "ollama")
-        _nav("Billing", "billing")
-        if not is_sandbox:
-            _nav("History", "history")
 
         st.markdown("---")
 
@@ -472,9 +488,9 @@ def show_sidebar():
         else:
             _ew_lbl = f"Off · {_ew_last}"
         st.markdown(
-            f'<div style="background:var(--bg-white);border:1px solid var(--slate-200);'
+            f'<div style="background:#1e1e1e;border:1px solid rgba(255,255,255,0.1);'
             f'border-radius:var(--radius-sm);padding:5px 10px;margin-bottom:4px;font-size:12px;'
-            f'color:var(--slate-600);">'
+            f'color:#9ca3af;">'
             f'{"●" if _ew_status["running"] else "○"} Email Watch · {_ew_pending} pending</div>',
             unsafe_allow_html=True,
         )
@@ -494,9 +510,9 @@ def show_sidebar():
         else:
             _ai_lbl = "Script only"
         st.markdown(
-            f'<div style="background:var(--bg-white);border:1px solid var(--slate-200);'
+            f'<div style="background:#1e1e1e;border:1px solid rgba(255,255,255,0.1);'
             f'border-radius:var(--radius-sm);padding:5px 10px;margin-bottom:8px;font-size:12px;'
-            f'color:var(--slate-600);">'
+            f'color:#9ca3af;">'
             f'AI · {_ai_lbl}</div>',
             unsafe_allow_html=True,
         )
