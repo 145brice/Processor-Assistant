@@ -2186,6 +2186,9 @@ def extract_purchase_contract(text: str) -> dict:
     seller_phone = _find([
         r"(?:Seller'?s?\s*(?:Phone|Tel|Telephone))[:\s]+([\(\d][\d\s\(\)\-\.]{7,16}\d)",
     ])
+    seller_email = _find([
+        r"(?:Seller'?s?\s*E-?mail|Seller\s*Email)[:\s]+([\w\.\+\-]+@[\w\.\-]+\.\w{2,})",
+    ])
 
     # ── Property ─────────────────────────────────────────────────────────────
     property_address = _find_address([
@@ -2275,6 +2278,9 @@ def extract_purchase_contract(text: str) -> dict:
     ])
     title_phone = _find([
         r"(?:Title|Escrow)\s*(?:Company)?\s*(?:Phone|Tel)[:\s]+([\(\d][\d\s\(\)\-\.]{7,16}\d)",
+    ])
+    title_email = _find([
+        r"(?:Title|Escrow)\s*(?:Company)?\s*(?:E-?mail|Email)[:\s]+([\w\.\+\-]+@[\w\.\-]+\.\w{2,})",
     ])
 
     # ── Listing / Seller's agent ──────────────────────────────────────────────
@@ -2391,6 +2397,23 @@ def extract_purchase_contract(text: str) -> dict:
                 _candidate = re.split(r'dotloop\s+signature', _candidate, flags=re.IGNORECASE)[0].strip()
                 if _candidate:
                     selling_brokerage = _candidate
+
+    # ── Key Dates ─────────────────────────────────────────────────────────────
+    date_signed = _find([
+        r"(?:Date\s+(?:of\s+)?(?:Signing|Signed|Execution|Acceptance)|Accepted\s+(?:on|by)[:\s]+)([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?:Seller\s+(?:Accept|Sign)(?:ed|ance)[:\s]+)([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?:Date\s+of\s+(?:this\s+)?(?:Agreement|Contract|Offer))[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?:Executed|Signed|Dated)\s+(?:this\s+)?(?:\d+(?:st|nd|rd|th)?\s+day\s+of\s+)?([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?:Offer\s+(?:Date|Made|Submitted))[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+    ])
+
+    obligation_date = _find([
+        r"(?:Loan\s+(?:Approval|Obligation|Commitment)\s+(?:Date|Deadline|Period)|Finance\s+(?:Approval|Contingency)\s+(?:Date|Deadline))[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?:financing\s+(?:must\s+be\s+)?(?:approved|committed|secured)\s+(?:by|no\s+later\s+than))[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?:Buyer\s+(?:must|shall)\s+(?:obtain|secure|receive)\s+(?:loan|mortgage|financing)\s+(?:approval|commitment)\s+(?:by|no\s+later\s+than))[:\s]*([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?:Mortgage\s+Commitment\s+(?:Date|Deadline)|Commitment\s+(?:Date|Deadline))[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?:obligation\s+date|date\s+of\s+obligation)[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+    ])
 
     # ── Contingencies ─────────────────────────────────────────────────────────
     inspection_days = _find([
@@ -2655,14 +2678,16 @@ def extract_purchase_contract(text: str) -> dict:
 
     return {
         "buyer":   {"name": buyer_name,   "phone": buyer_phone,   "email": buyer_email},
-        "seller":  {"name": seller_name,  "phone": seller_phone},
+        "seller":  {"name": seller_name,  "phone": seller_phone,  "email": seller_email},
         "property":{"address": property_address},
         "transaction": {
-            "purchase_price":    purchase_price,
-            "closing_date":      closing_date,
-            "earnest_money":     earnest_money,
-            "down_payment":      down_payment,
-            "seller_concessions":seller_concessions,
+            "purchase_price":     purchase_price,
+            "closing_date":       closing_date,
+            "date_signed":        date_signed,
+            "obligation_date":    obligation_date,
+            "earnest_money":      earnest_money,
+            "down_payment":       down_payment,
+            "seller_concessions": seller_concessions,
         },
         "listing_agent": {
             "name":      listing_agent,
@@ -2680,6 +2705,7 @@ def extract_purchase_contract(text: str) -> dict:
             "company": title_company,
             "contact": title_contact,
             "phone":   title_phone,
+            "email":   title_email,
         },
         "contingencies": {
             "inspection": inspection_days,

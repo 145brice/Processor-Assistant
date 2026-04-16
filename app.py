@@ -1070,9 +1070,52 @@ def show_dashboard():
                 if _cont_count:
                     st.markdown("**Contacts**")
                     for _k, _v in _r.get("contacts", {}).items():
-                        _name = _v.get("name", "")
-                        if _name:
-                            st.markdown(f"- {_k}: {_name}")
+                        if not isinstance(_v, dict):
+                            continue
+                        _name = _v.get("name", "") or _v.get("company", "")
+                        _phone = _v.get("phone", "")
+                        _email = _v.get("email", "")
+                        _brok = _v.get("brokerage", "")
+                        _parts = [p for p in [_name, _brok, _phone, _email] if p]
+                        if _parts:
+                            st.markdown(f"- **{_k.replace('_',' ').title()}**: {' · '.join(_parts)}")
+
+                # ── Purchase Contract extended fields ──────────────────
+                if _batch.get("type") == "Purchase Contract":
+                    _txn = (_r.get("extracted_data") or {}).get("transaction", {})
+                    _la_info = (_r.get("extracted_data") or {}).get("listing_agent", {})
+                    _sa_info = (_r.get("extracted_data") or {}).get("selling_agent", {})
+                    _title_info = (_r.get("extracted_data") or {}).get("title", {})
+                    _rows = []
+                    if _txn.get("date_signed"):        _rows.append(("Date Signed", _txn["date_signed"]))
+                    if _txn.get("obligation_date"):    _rows.append(("Obligation/Approval Date", _txn["obligation_date"]))
+                    if _txn.get("closing_date"):       _rows.append(("Closing Date", _txn["closing_date"]))
+                    if _txn.get("seller_concessions"): _rows.append(("Seller Concessions", _txn["seller_concessions"]))
+                    if _txn.get("earnest_money"):      _rows.append(("Earnest Money", f"${_txn['earnest_money']}"))
+                    if _txn.get("down_payment"):       _rows.append(("Down Payment", f"${_txn['down_payment']}"))
+                    if _la_info.get("name"):
+                        _la_str = _la_info["name"]
+                        if _la_info.get("brokerage"): _la_str += f" · {_la_info['brokerage']}"
+                        if _la_info.get("phone"):     _la_str += f" · {_la_info['phone']}"
+                        if _la_info.get("email"):     _la_str += f" · {_la_info['email']}"
+                        _rows.append(("Listing Agent", _la_str))
+                    if _sa_info.get("name"):
+                        _sa_str = _sa_info["name"]
+                        if _sa_info.get("brokerage"): _sa_str += f" · {_sa_info['brokerage']}"
+                        if _sa_info.get("phone"):     _sa_str += f" · {_sa_info['phone']}"
+                        if _sa_info.get("email"):     _sa_str += f" · {_sa_info['email']}"
+                        _rows.append(("Selling Agent", _sa_str))
+                    if _title_info.get("company"):
+                        _tc_str = _title_info["company"]
+                        if _title_info.get("contact"): _tc_str += f" · {_title_info['contact']}"
+                        if _title_info.get("phone"):   _tc_str += f" · {_title_info['phone']}"
+                        if _title_info.get("email"):   _tc_str += f" · {_title_info['email']}"
+                        _rows.append(("Title Company", _tc_str))
+                    if _rows:
+                        st.markdown("**Purchase Contract Details**")
+                        for _lbl, _val in _rows:
+                            st.markdown(f"- **{_lbl}**: {_val}")
+
                 if _cond_count > 10:
                     st.caption(f"...and {_cond_count - 10} more conditions")
 
@@ -3599,12 +3642,40 @@ def show_loan_detail():
                 _pc_title = _pcd.get("title", {})
                 _pc_txn = _pcd.get("transaction", {})
 
+                _pc_rows = [
+                    f'Buyer: {_pc_buyer.get("name","—")}',
+                    f'Seller: {_pc_seller.get("name","—")}',
+                    f'Price: ${_pc_txn.get("purchase_price","—")}',
+                    f'Close: {_pc_txn.get("closing_date","—")}',
+                ]
+                if _pc_txn.get("date_signed"):
+                    _pc_rows.append(f'Date Signed: {_pc_txn["date_signed"]}')
+                if _pc_txn.get("obligation_date"):
+                    _pc_rows.append(f'Obligation Date: {_pc_txn["obligation_date"]}')
+                if _pc_txn.get("seller_concessions"):
+                    _pc_rows.append(f'Seller Concessions: {_pc_txn["seller_concessions"]}')
+                if _pc_la.get("name"):
+                    _la_str = f'Listing Agent: {_pc_la["name"]}'
+                    if _pc_la.get("brokerage"): _la_str += f' · {_pc_la["brokerage"]}'
+                    if _pc_la.get("phone"):     _la_str += f' · {_pc_la["phone"]}'
+                    if _pc_la.get("email"):     _la_str += f' · {_pc_la["email"]}'
+                    _pc_rows.append(_la_str)
+                if _pc_sa.get("name"):
+                    _sa_str = f'Selling Agent: {_pc_sa["name"]}'
+                    if _pc_sa.get("brokerage"): _sa_str += f' · {_pc_sa["brokerage"]}'
+                    if _pc_sa.get("phone"):     _sa_str += f' · {_pc_sa["phone"]}'
+                    if _pc_sa.get("email"):     _sa_str += f' · {_pc_sa["email"]}'
+                    _pc_rows.append(_sa_str)
+                if _pc_title.get("company"):
+                    _tc_str = f'Title: {_pc_title["company"]}'
+                    if _pc_title.get("contact"): _tc_str += f' · {_pc_title["contact"]}'
+                    if _pc_title.get("phone"):   _tc_str += f' · {_pc_title["phone"]}'
+                    _pc_rows.append(_tc_str)
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
                     'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
                     '<b style="color:#39FF14;">Purchase Contract found:</b><br>'
-                    f'Buyer: {_pc_buyer.get("name","—")} · Seller: {_pc_seller.get("name","—")}<br>'
-                    f'Price: ${_pc_txn.get("purchase_price","—")} · Close: {_pc_txn.get("closing_date","—")}'
+                    + '<br>'.join(_pc_rows) +
                     '</div>',
                     unsafe_allow_html=True,
                 )
