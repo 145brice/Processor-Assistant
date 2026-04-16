@@ -51,6 +51,7 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 [data-testid="stSidebar"] > div:first-child { padding: 1.5rem 1rem; }
 [data-testid="stSidebar"] button { background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; border-radius: var(--radius-sm) !important; font-size: 13px !important; font-weight: 500 !important; text-align: left !important; padding: 8px 12px !important; margin-bottom: 3px !important; width: 100% !important; box-shadow: none !important; transition: all 0.2s ease !important; }
 [data-testid="stSidebar"] button:hover { background: rgba(57,255,20,0.12) !important; border-color: rgba(57,255,20,0.35) !important; color: var(--accent) !important; }
+[data-testid="stSidebar"] button[kind="secondary"] { opacity: 0 !important; height: 0 !important; padding: 0 !important; margin: -4px 0 0 0 !important; min-height: 0 !important; border: none !important; overflow: hidden !important; }
 button { text-align: left !important; justify-content: flex-start !important; }
 button * { text-align: left !important; }
 button p { text-align: left !important; width: 100% !important; }
@@ -470,8 +471,7 @@ def show_sidebar():
                 f'transition:all 0.2s;">{_nav_label}</div>',
                 unsafe_allow_html=True,
             )
-            if st.button(_nav_label, key=f"nav_{_nav_page}", use_container_width=True,
-                         label_visibility="collapsed"):
+            if st.button(_nav_label, key=f"nav_{_nav_page}", use_container_width=True):
                 st.session_state.page = _nav_page
                 _save_session()
                 st.rerun()
