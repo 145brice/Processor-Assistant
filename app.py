@@ -928,7 +928,13 @@ def show_dashboard():
 
             # Run scans
             from doc_verify import _match_borrower as _mb
-            for (_sq_bytes, _sq_name, _sq_type) in _scan_queue:
+            _sq_total = len(_scan_queue)
+            _sq_progress = st.progress(0, text="Starting scan...")
+            for _sq_i, (_sq_bytes, _sq_name, _sq_type) in enumerate(_scan_queue):
+                _sq_progress.progress(
+                    int((_sq_i / _sq_total) * 100),
+                    text=f"Scanning {_sq_i + 1} of {_sq_total}: {_sq_name}..."
+                )
                 if _sq_type == "Unknown":
                     st.warning(f"{_sq_name}: Unknown type — override the dropdown to scan")
                     continue
@@ -955,6 +961,7 @@ def show_dashboard():
                     st.success(f"{_sq_name}: {_sq_type} ✓")
                 else:
                     st.error(f"{_sq_name}: {_result.get('error', 'Failed')}")
+            _sq_progress.progress(100, text=f"Done — {_sq_total} document(s) scanned")
 
     # ── Show completed scan results ───────────────────────────────────
     if st.session_state.scan_batches:
