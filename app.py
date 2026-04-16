@@ -951,12 +951,15 @@ def show_dashboard():
                     _loan_match = _mb(_raw_text, _sq_name, _borrower_hint)
 
                     _batch = st.session_state.scan_batches
+                    _new_bidx = len(_batch)
                     _batch.append({
                         "file": _sq_name,
                         "type": _sq_type,
                         "result": _result,
                         "loan_match": _loan_match,
                     })
+                    # Store PDF bytes keyed by batch index for later attachment
+                    st.session_state[f"_scan_bytes_{_new_bidx}"] = _sq_bytes
                     st.session_state.scan_batches = _batch
                     st.success(f"{_sq_name}: {_sq_type} ✓")
                 else:
@@ -1030,6 +1033,7 @@ def show_dashboard():
                             st.rerun()
                     with _ma2:
                         if st.button("Merge into Loan", key=f"ds_merge_{_bidx}"):
+                            from crm import attach_document as _attach_doc
                             _existing_loan = next((l for l in _gl() if l.get("id") == _lm_loan_id), None)
                             if _existing_loan:
                                 _existing_conds = _existing_loan.get("conditions", [])
@@ -1064,6 +1068,10 @@ def show_dashboard():
                                 else:
                                     _msg = f"{_batch['type']} scanned — {_added} condition(s) merged"
                                 _ul(_lm_loan_id, **_upd)
+                                # Attach the PDF file to the loan
+                                _pdf_bytes_for_attach = st.session_state.get(f"_scan_bytes_{_bidx}")
+                                if _pdf_bytes_for_attach:
+                                    _attach_doc(_lm_loan_id, _batch["file"], _batch["type"], _pdf_bytes_for_attach)
                                 _la(_lm_loan_id, "upload", _msg, user=st.session_state.get("user_name", ""))
                                 _toast_msg = f"Purchase Contract merged into Loan {_lm_loan_num}" if _batch["type"] == "Purchase Contract" else f"{_added} condition(s) merged into Loan {_lm_loan_num}"
                                 st.toast(_toast_msg, icon="✅")
@@ -2025,9 +2033,37 @@ def show_pipeline():
                 f'border-radius:3px;font-size:9px;font-weight:500;border:1px solid rgba(245,158,11,0.3);">'
                 f'Missing</span>'
             )
+        # Build contact summary from loan contacts
+        _contacts_data = loan.get("contacts", {})
+        _contact_chips = []
+        _contact_label_map = {
+            "buyer": "Buyer", "borrower": "Buyer", "co_borrower": "Co-Buyer",
+            "seller": "Seller", "listing_agent": "L.Agent", "selling_agent": "B.Agent",
+            "title": "Title",
+        }
+        for _ck in ["buyer", "borrower", "co_borrower", "seller", "listing_agent", "selling_agent", "title"]:
+            _cv = _contacts_data.get(_ck)
+            if not _cv or not isinstance(_cv, dict):
+                continue
+            _cname = _cv.get("name") or _cv.get("company") or _cv.get("contact") or ""
+            if not _cname:
+                continue
+            _clabel = _contact_label_map.get(_ck, _ck)
+            _contact_chips.append(
+                f'<span style="font-size:9px;color:#9ca3af;">'
+                f'<span style="color:#6b7280;font-weight:600;">{_clabel}:</span> {_cname}</span>'
+            )
+        _contacts_row = ""
+        if _contact_chips:
+            _contacts_row = (
+                f'<div style="padding:1px 8px 2px 8px;margin-top:-2px;display:flex;gap:10px;flex-wrap:wrap;">'
+                + " &nbsp;·&nbsp; ".join(_contact_chips) +
+                f'</div>'
+            )
+
         st.markdown(
             f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-left:3px solid {border_color};'
-            f'padding:0 8px 1px 8px;margin-top:-3px;margin-bottom:4px;'
+            f'padding:0 8px 1px 8px;margin-top:-3px;margin-bottom:{'0' if _contacts_row else '4'}px;'
             f'display:flex;align-items:center;gap:8px;min-width:0;">'
             f'<span style="font-size:9px;color:#9ca3af;white-space:nowrap;flex-shrink:0;">'
             f'Close: {_closing_dt} · Lock: {_lock_dt if _lock_dt else "—"}</span>'
@@ -2036,7 +2072,8 @@ def show_pipeline():
             f'<div style="background:{_bar_color};width:{_pct}%;height:100%;"></div>'
             f'</div>'
             f'<span style="font-size:9px;color:{_bar_color};font-weight:700;white-space:nowrap;flex-shrink:0;">{_pct}%</span>'
-            f'</div>',
+            f'</div>'
+            + (_contacts_row if _contacts_row else ""),
             unsafe_allow_html=True,
         )
 

@@ -12,6 +12,7 @@ _PIPELINE_FILE  = os.path.join(os.path.dirname(__file__), "pipeline.json")
 _TRASH_FILE     = os.path.join(os.path.dirname(__file__), "pipeline_trash.json")  # legacy
 _REMOVED_DIR    = os.path.join(os.path.dirname(__file__), "removed")
 _REMOVED_CFG    = os.path.join(os.path.dirname(__file__), "removed_config.json")
+_DOCS_DIR       = os.path.join(os.path.dirname(__file__), "loan_docs")
 
 RETENTION_OPTIONS = {
     "7 days":   7,
@@ -128,6 +129,48 @@ def update_loan(loan_id: int, **kwargs):
             loan["updated"] = datetime.now().isoformat()[:10]
             break
     _save(loans)
+
+
+def attach_document(loan_id: int, filename: str, doc_type: str, pdf_bytes: bytes) -> dict:
+    """Save a PDF to disk and record it in the loan's documents list. Returns the doc record."""
+    os.makedirs(_DOCS_DIR, exist_ok=True)
+    loan_dir = os.path.join(_DOCS_DIR, str(loan_id))
+    os.makedirs(loan_dir, exist_ok=True)
+    # Sanitize filename
+    safe_name = "".join(c for c in filename if c.isalnum() or c in "._- ").strip()
+    if not safe_name:
+        safe_name = f"{doc_type}.pdf"
+    filepath = os.path.join(loan_dir, safe_name)
+    with open(filepath, "wb") as f:
+        f.write(pdf_bytes)
+    doc_record = {
+        "filename": safe_name,
+        "doc_type": doc_type,
+        "path": filepath,
+        "attached": datetime.now().isoformat()[:16],
+        "size_kb": round(len(pdf_bytes) / 1024, 1),
+    }
+    loans = _load()
+    for loan in loans:
+        if loan.get("id") == loan_id:
+            docs = loan.get("documents", [])
+            # Replace if same filename already attached
+            docs = [d for d in docs if d.get("filename") != safe_name]
+            docs.append(doc_record)
+            loan["documents"] = docs
+            loan["updated"] = datetime.now().isoformat()[:10]
+            break
+    _save(loans)
+    return doc_record
+
+
+def get_documents(loan_id: int) -> list:
+    """Return the documents list for a loan."""
+    loans = _load()
+    for loan in loans:
+        if loan.get("id") == loan_id:
+            return loan.get("documents", [])
+    return []
 
 
 def delete_loan(loan_id: int):
