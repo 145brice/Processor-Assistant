@@ -836,15 +836,49 @@ def show_dashboard():
                     st.caption("No files selected — group will be skipped.")
             st.markdown("---")
 
-        # ── File list with type dropdowns ────────────────────────────
+        # ── File list with checkboxes, type dropdowns, delete ────────
+        # Visible (non-dupe) indices
+        _visible = [_di for _di, _det in enumerate(_detections) if _di not in _dupes]
+
+        # Check all / Uncheck all / Delete selected controls
+        _sel_c1, _sel_c2, _sel_c3 = st.columns([1, 1, 2])
+        with _sel_c1:
+            if st.button("✓ Check All", key="dash_check_all", use_container_width=True):
+                for _vi in _visible:
+                    st.session_state[f"dash_sel_{_vi}"] = True
+                st.rerun()
+        with _sel_c2:
+            if st.button("✗ Uncheck All", key="dash_uncheck_all", use_container_width=True):
+                for _vi in _visible:
+                    st.session_state[f"dash_sel_{_vi}"] = False
+                st.rerun()
+        with _sel_c3:
+            if st.button("🗑 Delete Selected", key="dash_del_selected", use_container_width=True):
+                _to_remove = [_vi for _vi in _visible if not st.session_state.get(f"dash_sel_{_vi}", True)]
+                # Remove from file_bytes_cache and detections by rebuilding sans removed
+                _keep = [i for i in range(len(new_files)) if i not in _to_remove]
+                # Clear session state for removed keys
+                for _vi in _to_remove:
+                    for _sfx in [f"dash_sel_{_vi}", f"dash_type_{_vi}", f"dash_merge_"]:
+                        st.session_state.pop(f"dash_sel_{_vi}", None)
+                        st.session_state.pop(f"dash_type_{_vi}", None)
+                # Rerun will re-detect from remaining uploaded files
+                st.rerun()
+
         _overrides = {}
         for _di, _det in enumerate(_detections):
             if _di in _dupes:
                 continue  # skip dupes in the list
             _didx = _BULK_DOC_TYPES.index(_det["detected_type"]) if _det["detected_type"] in _BULK_DOC_TYPES else 0
-            _c1, _c2, _c3 = st.columns([4, 3, 1])
+            _chk_col, _c1, _c2, _c3 = st.columns([0.5, 3.5, 3, 1])
+            with _chk_col:
+                _is_checked = st.checkbox(
+                    "", value=st.session_state.get(f"dash_sel_{_di}", True),
+                    key=f"dash_sel_{_di}", label_visibility="collapsed"
+                )
             with _c1:
-                st.markdown(f'<div style="font-size:12px;color:var(--slate-900);padding-top:8px;">{_det["name"]}</div>', unsafe_allow_html=True)
+                _color = "var(--slate-900)" if _is_checked else "var(--slate-500)"
+                st.markdown(f'<div style="font-size:12px;color:{_color};padding-top:8px;">{_det["name"]}</div>', unsafe_allow_html=True)
             with _c2:
                 _ov = st.selectbox("Type", _BULK_DOC_TYPES, index=_didx, key=f"dash_type_{_di}", label_visibility="collapsed")
                 _overrides[_di] = _ov
@@ -852,7 +886,8 @@ def show_dashboard():
                 st.markdown(f'<div style="font-size:11px;color:var(--slate-500);padding-top:8px;">{_det["confidence"]}</div>', unsafe_allow_html=True)
 
         # ── Scan button ────────────────────────────────────────────
-        if st.button("Scan", key="dash_scan", type="primary"):
+        _checked_visible = [_vi for _vi in _visible if st.session_state.get(f"dash_sel_{_vi}", True)]
+        if st.button(f"Scan ({len(_checked_visible)} selected)", key="dash_scan", type="primary", disabled=len(_checked_visible) == 0):
             # Build the actual list of (bytes, name, type) to scan,
             # merging groups where the user said yes
             _scan_queue = []  # list of (pdf_bytes, display_name, doc_type)
@@ -882,10 +917,12 @@ def show_dashboard():
                     _scan_queue.append((_merged_bytes, _merged_name, _grp_type))
                     _merged_indices.update(_selected)  # only mark selected as merged, not whole group
 
-            # Add remaining non-merged non-dupe files
+            # Add remaining non-merged non-dupe checked files
             for _bi, _bf in enumerate(new_files):
                 if _bi in _merged_indices or _bi in _dupes:
                     continue
+                if not st.session_state.get(f"dash_sel_{_bi}", True):
+                    continue  # skip unchecked files
                 _bf_type = _overrides.get(_bi, _detections[_bi]["detected_type"])
                 _scan_queue.append((_file_bytes_cache[_bi], _bf.name, _bf_type))
 
