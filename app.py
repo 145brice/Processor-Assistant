@@ -1036,15 +1036,37 @@ def show_dashboard():
                                 _existing_contacts = _existing_loan.get("contacts", {})
                                 _new_conds = _r.get("conditions", [])
                                 _new_contacts = _r.get("contacts", {}) or {}
+                                _upd = {}
                                 _added = 0
+                                # Merge conditions (approval letters, checklists, etc.)
                                 for _nc in _new_conds:
                                     if not any(_nc.get("desc") == _ec.get("desc") for _ec in _existing_conds):
                                         _existing_conds.append(_nc); _added += 1
-                                _existing_contacts.update(_new_contacts)
-                                _ul(_lm_loan_id, conditions=_existing_conds, contacts=_existing_contacts)
-                                _la(_lm_loan_id, "upload", f"{_batch['type']} scanned — {_added} condition(s) merged",
-                                    user=st.session_state.get("user_name", ""))
-                                st.toast(f"{_added} condition(s) merged into Loan {_lm_loan_num}", icon="✅")
+                                _upd["conditions"] = _existing_conds
+                                # Merge contacts
+                                _existing_contacts.update({k: v for k, v in _new_contacts.items() if v})
+                                _upd["contacts"] = _existing_contacts
+                                # Purchase contract extras — closing date, transaction data
+                                if _batch["type"] == "Purchase Contract":
+                                    _pcd = (_r.get("extracted_data") or {})
+                                    _txn = _pcd.get("transaction", {})
+                                    if _txn.get("closing_date") and not _existing_loan.get("closing_date"):
+                                        _upd["closing_date"] = _txn["closing_date"]
+                                        _upd["due_date"] = _txn["closing_date"]
+                                    # Also merge listing/selling agents into contacts
+                                    for _ak, _av in [("listing_agent", _pcd.get("listing_agent", {})),
+                                                     ("selling_agent", _pcd.get("selling_agent", {})),
+                                                     ("title", _pcd.get("title", {}))]:
+                                        if _av and any(v for v in _av.values()):
+                                            _existing_contacts[_ak] = _av
+                                    _upd["contacts"] = _existing_contacts
+                                    _msg = f"Purchase Contract merged — contacts & dates updated"
+                                else:
+                                    _msg = f"{_batch['type']} scanned — {_added} condition(s) merged"
+                                _ul(_lm_loan_id, **_upd)
+                                _la(_lm_loan_id, "upload", _msg, user=st.session_state.get("user_name", ""))
+                                _toast_msg = f"Purchase Contract merged into Loan {_lm_loan_num}" if _batch["type"] == "Purchase Contract" else f"{_added} condition(s) merged into Loan {_lm_loan_num}"
+                                st.toast(_toast_msg, icon="✅")
                 elif _lm_suggestion == "possible":
                     st.markdown(
                         f'<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:4px;'
