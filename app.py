@@ -19,7 +19,7 @@ st.markdown(r"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 :root {
-    --bg-page: #0a0a0a; --bg-white: #141414; --bg-subtle: #1e1e1e;
+    --bg-page: #111111; --bg-white: #1a1a1a; --bg-subtle: #242424;
     --accent: #39FF14; --accent-dark: #32d410; --accent-light: rgba(57, 255, 20, 0.1);
     --green: #39FF14; --green-bg: rgba(57, 255, 20, 0.1); --green-border: rgba(57, 255, 20, 0.3);
     --red: #ef4444; --red-bg: rgba(239, 68, 68, 0.1); --red-border: rgba(239, 68, 68, 0.3);
@@ -38,7 +38,7 @@ st.markdown(r"""
     --neon-glow-lg: 0 0 30px rgba(57, 255, 20, 0.25), 0 0 80px rgba(57, 255, 20, 0.1);
 }
 html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
-.stApp { background: linear-gradient(160deg, #0f0f0f 0%, #0a0a0a 60%, #0d0d0d 100%) !important; }
+.stApp { background: linear-gradient(160deg, #1a1a1a 0%, #111111 60%, #161616 100%) !important; }
 .stApp::before {
     content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
     background-image: radial-gradient(circle, rgba(57, 255, 20, 0.03) 1px, transparent 1px);
@@ -47,10 +47,10 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 [data-testid="stAppViewContainer"] > div:first-child { background: transparent !important; }
 #MainMenu, footer, header { visibility: hidden; height: 0; }
 .stDeployButton { display: none; }
-[data-testid="stSidebar"] { background: linear-gradient(180deg, #181818 0%, #111111 100%) !important; border-right: 1px solid rgba(255,255,255,0.07) !important; }
+[data-testid="stSidebar"] { background: linear-gradient(180deg, #222222 0%, #181818 100%) !important; border-right: 1px solid rgba(255,255,255,0.1) !important; }
 [data-testid="stSidebar"] > div:first-child { padding: 1.5rem 1rem; }
-[data-testid="stSidebar"] button { background: rgba(255,255,255,0.04) !important; border: 1px solid rgba(255,255,255,0.06) !important; color: #9ca3af !important; border-radius: var(--radius-sm) !important; font-size: 13px !important; font-weight: 500 !important; text-align: left !important; padding: 8px 12px !important; margin-bottom: 3px !important; width: 100% !important; box-shadow: none !important; transition: all 0.2s ease !important; }
-[data-testid="stSidebar"] button:hover { background: rgba(57,255,20,0.08) !important; border-color: rgba(57,255,20,0.25) !important; color: var(--accent) !important; }
+[data-testid="stSidebar"] button { background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; border-radius: var(--radius-sm) !important; font-size: 13px !important; font-weight: 500 !important; text-align: left !important; padding: 8px 12px !important; margin-bottom: 3px !important; width: 100% !important; box-shadow: none !important; transition: all 0.2s ease !important; }
+[data-testid="stSidebar"] button:hover { background: rgba(57,255,20,0.12) !important; border-color: rgba(57,255,20,0.35) !important; color: var(--accent) !important; }
 button { text-align: left !important; justify-content: flex-start !important; }
 button * { text-align: left !important; }
 button p { text-align: left !important; width: 100% !important; }
@@ -66,7 +66,7 @@ label { color: var(--slate-700) !important; font-size: 13px !important; font-wei
 button[kind="primary"] { background: var(--accent) !important; color: #000000 !important; border: none !important; border-radius: var(--radius-sm) !important; font-weight: 700 !important; font-size: 13px !important; height: 36px !important; box-shadow: 0 0 20px rgba(57, 255, 20, 0.25) !important; transition: all 0.25s ease !important; }
 button[kind="primary"]:hover { background: #fff !important; box-shadow: 0 0 25px rgba(57, 255, 20, 0.4) !important; transform: translateY(-2px) !important; }
 button[kind="primary"] p { color: #000000 !important; font-weight: 700 !important; }
-button[kind="secondary"] { background: linear-gradient(135deg, #1c1c1c 0%, #181818 100%) !important; color: #9ca3af !important; border: 1px solid rgba(255,255,255,0.1) !important; border-radius: var(--radius-sm) !important; font-weight: 500 !important; font-size: 12px !important; height: 34px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
+button[kind="secondary"] { background: linear-gradient(135deg, #2a2a2a 0%, #222222 100%) !important; color: #c0c0c0 !important; border: 1px solid rgba(255,255,255,0.15) !important; border-radius: var(--radius-sm) !important; font-weight: 500 !important; font-size: 12px !important; height: 34px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
 button[kind="secondary"]:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: var(--accent-light) !important; box-shadow: var(--neon-glow) !important; }
 button[kind="secondary"] p { color: var(--slate-600) !important; }
 button[kind="secondary"]:hover p { color: var(--accent) !important; }
