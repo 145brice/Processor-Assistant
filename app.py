@@ -2063,7 +2063,7 @@ def show_pipeline():
 
         st.markdown(
             f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-left:3px solid {border_color};'
-            f'padding:0 8px 1px 8px;margin-top:-3px;margin-bottom:{'0' if _contacts_row else '4'}px;'
+            f'padding:0 8px 1px 8px;margin-top:-3px;margin-bottom:{"0" if _contacts_row else "4"}px;'
             f'display:flex;align-items:center;gap:8px;min-width:0;">'
             f'<span style="font-size:9px;color:#9ca3af;white-space:nowrap;flex-shrink:0;">'
             f'Close: {_closing_dt} · Lock: {_lock_dt if _lock_dt else "—"}</span>'
