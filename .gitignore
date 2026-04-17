@@ -5,3 +5,9 @@ __pycache__/
 guidelines_index/
 processor.db
 .session_cache.json
+
+# Runtime data — contains borrower PII, never commit
+pipeline.json
+loan_docs/
+loan_activity/
+generated_docs/

@@ -1935,6 +1935,272 @@ def extract_1003(text: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# W-2 Parser
+# ---------------------------------------------------------------------------
+
+def extract_w2(text: str) -> dict:
+    """
+    Extract structured fields from a W-2 Wage and Tax Statement.
+
+    Real-world W-2 PDFs (Calyx, ADP, etc.) extract as template label text
+    followed by bare data values on their own lines — NOT as "Label: value"
+    pairs. This parser handles that positional format.
+
+    Example extracted text pattern:
+        b Employer identification number (EIN)
+        83-1394635
+        c Employer's name, address, and ZIP code
+        SECURED MORTGAGE PROCESSING, LLC
+        18798 E DRUIDS GLEN RD
+        XXX-XX-5779
+        1106 NEWCASTLE DR
+        1245.00
+        1245.00 77.19
+        1245.00 18.05
+        QUEEN CREEK AZ 85142
+        BRICE LEASURE
+        OLD HICKORY TN 37138
+        Form W-2 Wage and Tax Statement 2025
+    """
+    import re
+
+    def _money(val):
+        if not val:
+            return 0.0
+        try:
+            return float(re.sub(r'[^\d.]', '', str(val)))
+        except Exception:
+            return 0.0
+
+    # ── Split into one block per W-2 copy ─────────────────────────────────
+    # Each copy starts with "Form W-2 Wage and Tax Statement YYYY" or
+    # "a Employee's social security number" header.
+    # We split on the form year line which appears once per copy.
+    raw_blocks = re.split(
+        r'(?=(?:a\s+Employee.{0,30}social\s+security|Form\s+W-?2\s+Wage\s+and\s+Tax\s+Statement\s+\d{4}))',
+        text, flags=re.IGNORECASE
+    )
+    raw_blocks = [b.strip() for b in raw_blocks if len(b.strip()) > 80]
+    if not raw_blocks:
+        raw_blocks = [text]
+
+    def _parse_block(block):
+        """Parse one W-2 copy block into a record dict."""
+
+        # ── Tax year ──────────────────────────────────────────────────────
+        year = ""
+        m = re.search(r'(?:Wage\s+and\s+Tax\s+Statement|Form\s+W-?2)\s+(20\d{2})', block, re.IGNORECASE)
+        if m:
+            year = m.group(1)
+        if not year:
+            # Year embedded in OMB line or elsewhere
+            m = re.search(r'\b(20\d{2})\b', block)
+            if m:
+                year = m.group(1)
+
+        # ── SSN (masked or plain) — appears right after "social security number" label ──
+        employee_ssn = ""
+        m = re.search(r'(?:Employee.{0,30}social\s+security\s+number)\s*\n([^\n]{8,20})', block, re.IGNORECASE)
+        if m:
+            candidate = m.group(1).strip()
+            if re.search(r'[\dX\*]{3}[-\s][\dX\*]{2}[-\s][\dX\*\d]{4}', candidate):
+                employee_ssn = candidate
+        if not employee_ssn:
+            m = re.search(r'(XXX-XX-\d{4}|\d{3}-\d{2}-\d{4}|\*{3}-\*{2}-\d{4})', block)
+            if m:
+                employee_ssn = m.group(1)
+
+        # ── EIN — line after "Employer identification number (EIN)" ──────
+        employer_ein = ""
+        m = re.search(r'Employer\s+identification\s+number[^\n]*\n([^\n]{5,20})', block, re.IGNORECASE)
+        if m:
+            candidate = m.group(1).strip()
+            if re.match(r'[\d\-]{9,12}$', candidate):
+                employer_ein = candidate
+        if not employer_ein:
+            m = re.search(r'\b(\d{2}-\d{7})\b', block)
+            if m:
+                employer_ein = m.group(1)
+
+        # ── Employer name — first ALL-CAPS or Title-Case line after EIN ──
+        employer_name = ""
+        m = re.search(
+            r'Employer\s+identification\s+number[^\n]*\n[^\n]+\n'   # EIN label + EIN value
+            r'[^\n]*Employer.{0,30}name[^\n]*\n([^\n]{3,60})',       # name label + name value
+            block, re.IGNORECASE
+        )
+        if m:
+            employer_name = m.group(1).strip()
+        if not employer_name:
+            # Direct: line after EIN that looks like a company name (letters + spaces)
+            m = re.search(r'(\d{2}-\d{7})\s*\n([A-Z][A-Z ,\.\-\'&]+(?:LLC|INC|CORP|CO|LTD|LP)?)', block)
+            if m:
+                employer_name = m.group(2).strip()
+
+        # ── Employee name — appears after employee address block ──────────
+        # In these PDFs the data blob order is:
+        #   EIN, employer name, employer addr lines, SSN, employee addr, wages block,
+        #   employee city/state/zip, EMPLOYEE NAME, employee city/state/zip
+        employee_name = ""
+        # Strategy: find all-caps name lines (2+ words, each word 2+ letters)
+        name_candidates = re.findall(
+            r'^([A-Z][A-Z\-\']{1,}\s+[A-Z][A-Z\-\']{1,}(?:\s+[A-Z][A-Z\-\']{1,})?)$',
+            block, re.MULTILINE
+        )
+        _skip = {
+            'SECURED MORTGAGE PROCESSING', 'WAGE AND TAX STATEMENT',
+            'DEPARTMENT OF THE TREASURY', 'INTERNAL REVENUE SERVICE',
+            'COPY B', 'COPY C', 'NOTICE TO EMPLOYEE', 'VOID', 'CORRECTED',
+            'EMPLOYER NAME', 'EMPLOYEE NAME', 'NEW MARKET',
+        }
+        for nc in name_candidates:
+            parts = nc.split()
+            # Each part must be at least 2 chars and not all same letter
+            if all(len(p) >= 2 for p in parts) and nc.upper() not in _skip and not re.search(r'\d', nc):
+                # Skip if looks like an address or state abbreviation phrase
+                if not re.search(r'\b(TN|AL|TX|CA|FL|GA|NY|OH|PA|VA|NC|SC|AR|KY|MS|MO|OK|AZ|NV|CO|WA|OR|IL|IN|MI|WI|MN|IA|KS|NE|SD|ND|MT|ID|WY|UT|NM|AK|HI|ME|VT|NH|MA|RI|CT|NJ|DE|MD|DC)\b$', nc):
+                    employee_name = nc.strip()
+                    break
+
+        # ── Wages data block ──────────────────────────────────────────────────
+        box1 = box2 = box3 = box4 = box5 = box6 = ""
+
+        # Strategy 1: box labels like "1 Wages, tips" or "Box 1" followed by amount
+        def _box(n, src):
+            m = re.search(
+                r'(?:^|\n)\s*' + str(n) + r'\s+(?:Wages?|Federal|Social|Medicare|[A-Z][^\n]{0,40})\s*\n\s*([\d,]+\.\d{2})',
+                src, re.IGNORECASE | re.MULTILINE)
+            if m:
+                return m.group(1)
+            # Same-line: "1 Wages, tips... 123,456.78"
+            m = re.search(
+                r'(?:^|\n)\s*' + str(n) + r'[a-z]?\s+[A-Z][^\n]{0,60?}([\d,]+\.\d{2})',
+                src, re.IGNORECASE | re.MULTILINE)
+            if m:
+                return m.group(1)
+            return ""
+
+        box1 = _box(1, block)
+        box2 = _box(2, block)
+        box3 = _box(3, block)
+        box4 = _box(4, block)
+        box5 = _box(5, block)
+        box6 = _box(6, block)
+
+        # Strategy 2: if box labels didn't work, use positional money-line cluster
+        if not box1:
+            money_lines = re.findall(
+                r'^([\d,]+\.\d{2})(?:\s+([\d,]+\.\d{2}))?$',
+                block, re.MULTILINE
+            )
+            wage_cluster = []
+            for ml in money_lines:
+                v1 = _money(ml[0])
+                if v1 < 1:
+                    continue
+                wage_cluster.append(ml)
+                if len(wage_cluster) == 3:
+                    break
+
+            if len(wage_cluster) >= 1:
+                box1 = wage_cluster[0][0]
+                box2 = wage_cluster[0][1] if wage_cluster[0][1] else ""
+            if len(wage_cluster) >= 2:
+                # Only assign box3/5 if values differ from box1 (avoid duplicate reads)
+                if wage_cluster[1][0] != box1:
+                    box3 = wage_cluster[1][0]
+                box4 = wage_cluster[1][1] if wage_cluster[1][1] else ""
+            if len(wage_cluster) >= 3:
+                if wage_cluster[2][0] != box1 and wage_cluster[2][0] != box3:
+                    box5 = wage_cluster[2][0]
+                box6 = wage_cluster[2][1] if wage_cluster[2][1] else ""
+
+        # ── State ─────────────────────────────────────────────────────────
+        state = ""
+        m = re.search(r'\b([A-Z]{2})\s+\d{5}(?:-\d{4})?\b', block)
+        if m:
+            # Most likely the state in an address
+            state = m.group(1)
+
+        return {
+            "year": year,
+            "employer_name": employer_name,
+            "employer_ein": employer_ein,
+            "employee_name": employee_name,
+            "employee_ssn": employee_ssn,
+            "box1_wages": box1,
+            "box2_fed_tax": box2,
+            "box3_ss_wages": box3,
+            "box4_ss_tax": box4,
+            "box5_medicare_wages": box5,
+            "box6_medicare_tax": box6,
+            "box12": "",
+            "box14": "",
+            "state": state,
+            "state_wages": "",
+            "state_tax": "",
+        }
+
+    # Parse each block
+    all_records = [_parse_block(b) for b in raw_blocks]
+
+    # ── Deduplicate: same year + same box1 wages = same W-2 copy ──────────
+    seen = set()
+    w2_records = []
+    for r in all_records:
+        if not r["box1_wages"] and not r["employer_name"] and not r["employee_name"]:
+            continue
+        key = (r["year"], r["box1_wages"], (r["employer_ein"] or r["employer_name"])[:15])
+        if key not in seen:
+            seen.add(key)
+            w2_records.append(r)
+
+    # ── Income calculation ─────────────────────────────────────────────────
+    def _money(val):
+        if not val:
+            return 0.0
+        try:
+            return float(re.sub(r'[^\d.]', '', str(val)))
+        except Exception:
+            return 0.0
+
+    by_year = {}
+    for r in w2_records:
+        yr = r["year"] or "Unknown"
+        wages = _money(r["box1_wages"])
+        if wages > 0:
+            by_year[yr] = by_year.get(yr, 0.0) + wages
+
+    sorted_years = sorted(by_year.keys(), reverse=True)
+
+    income_calc = {}
+    if len(sorted_years) >= 2:
+        y1, y2 = sorted_years[0], sorted_years[1]
+        w1, w2_val = by_year[y1], by_year[y2]
+        avg = (w1 + w2_val) / 2
+        income_calc = {
+            "year1": y1, "year1_wages": w1,
+            "year2": y2, "year2_wages": w2_val,
+            "two_year_avg": avg,
+            "monthly_avg": avg / 12,
+            "method": "2-year average",
+        }
+    elif len(sorted_years) == 1:
+        yr = sorted_years[0]
+        wages = by_year[yr]
+        income_calc = {
+            "year1": yr, "year1_wages": wages,
+            "monthly_avg": wages / 12,
+            "method": "single year",
+        }
+
+    return {
+        "w2_records": w2_records,
+        "income_calc": income_calc,
+        "by_year": by_year,
+    }
+
+
 # Purchase Contract Parser
 # ---------------------------------------------------------------------------
 
@@ -2835,6 +3101,30 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
             (r'(?:internal\s*revenue\s*service|irs)', 15),
             (r'(?:tax\s*(?:return|year)\s*\d{4})', 20),
         ]),
+        # 1099
+        ("1099", [
+            (r'\b1099[-\s]?(?:NEC|MISC|INT|DIV|R|G|K|S|C|B|OID|PATR|Q|SA|LTC|A|H|LS|SB)\b', 60),
+            (r'\b1099\b', 40),
+            (r'(?:nonemployee\s*compensation|non-employee\s*compensation)', 40),
+            (r'(?:payer.{0,20}(?:name|tin|id))', 25),
+            (r'(?:recipient.{0,20}(?:name|tin|ssn))', 25),
+            (r'(?:miscellaneous\s*(?:income|information)|rents|royalties)', 20),
+            (r'(?:omb\s*no\.?\s*1545-00(?:96|98|99|15|16|17|19|20|21|22))', 25),
+        ]),
+        # Credit Report
+        ("Credit Report", [
+            (r'(?:residential\s*mortgage\s*credit\s*report|rmcr)', 60),
+            (r'(?:credit\s*report|consumer\s*credit\s*report|tri[\s-]?merge)', 50),
+            (r'(?:experian|equifax|transunion|trans\s*union)', 35),
+            (r'(?:fico\s*score|credit\s*score|vantage\s*score|beacon\s*score)', 35),
+            (r'(?:xactus|advantage\s*credit|factual\s*data|corelogic|credco|sarma|cbcinnovis)', 50),
+            (r'(?:derogatory|delinquency|charge[\s-]?off|collection)', 25),
+            (r'(?:revolving|installment|open\s*account)', 20),
+            (r'(?:inquiry|inquiries)', 20),
+            (r'(?:public\s*record)', 20),
+            (r'(?:payment\s*history|credit\s*limit|high\s*balance|past\s*due)', 15),
+            (r'(?:account\s*(?:type|status|number)|creditor\s*name)', 15),
+        ]),
         # Appraisal
         ("Appraisal", [
             (r'(?:appraisal\s*report|uniform\s*(?:residential|appraisal))', 40),
@@ -2848,12 +3138,68 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
             (r'(?:schedule\s*[ab]|exceptions?.*(?:title|lien))', 20),
             (r'(?:legal\s*description|vesting)', 15),
         ]),
-        # HOI / Hazard Insurance
+        # Approval Letter / AUS Findings (DU/LP)
+        ("Approval Letter", [
+            (r'(?:desktop\s*underwriter|du\s*findings?|du\s*approve[d]?)', 60),
+            (r'(?:loan\s*prospector|lpa\s*findings?|freddie\s*mac\s*findings?)', 60),
+            (r'(?:approve[d]?/eligible|approve[d]?/ineligible|refer\s*with\s*caution)', 50),
+            (r'(?:fannie\s*mae\s*(?:approval|approve|findings?)|fnma\s*findings?)', 50),
+            (r'(?:conditional\s*approval|commitment\s*letter|pre-?approval)', 40),
+            (r'(?:underwriting\s*findings?|aus\s*findings?)', 35),
+            (r'(?:maximum\s*loan\s*amount|qualifying\s*ratio|dti\s*ratio)', 20),
+        ]),
+        # Mortgage Statement
+        ("Mortgage Statement", [
+            (r'(?:mortgage\s*statement|loan\s*statement)', 50),
+            (r'(?:principal\s*balance|escrow\s*balance|amount\s*due)', 30),
+            (r'(?:payment\s*due\s*date|next\s*payment|current\s*payment)', 25),
+            (r'(?:servicer|loan\s*servic)', 20),
+        ]),
+        # VA / Military Docs
+        ("VA Certificate of Eligibility", [
+            (r'(?:certificate\s*of\s*eligibility)', 70),
+            (r'(?:entitlement\s*(?:code|amount|charged|remaining|available))', 50),
+            (r'(?:loan\s*guaranty\s*(?:amount|certificate|issued))', 45),
+            (r'(?:remaining\s*entitlement|basic\s*entitlement)', 40),
+            (r'(?:veterans?\s*administration|department\s*of\s*veterans?\s*affairs)', 20),
+            (r'(?:surviving\s*spouse)', 20),
+            (r'(?:funding\s*fee\s*(?:exempt|exemption|waived))', 15),
+            # Negative: AUS/underwriting docs are NOT COEs
+            (r'(?:desktop\s*underwriter|du\s*findings?|approve[d]?/eligible|aus\s*findings?|loan\s*prospector|underwriting\s*findings?|dti\s*ratio|qualifying\s*ratio)', -100),
+        ]),
+        ("DD-214", [
+            (r'(?:dd[\s-]?214)', 60),
+            (r'(?:certificate\s*of\s*release)', 50),
+            (r'(?:discharge\s*from\s*active\s*duty)', 50),
+            (r'(?:character\s*of\s*(?:service|discharge))', 40),
+            (r'(?:narrative\s*reason\s*for\s*separation)', 40),
+            (r'(?:branch\s*of\s*service|type\s*of\s*separation)', 30),
+            (r'(?:armed\s*forces|active\s*duty)', 20),
+            (r'(?:military\s*service|service\s*member)', 15),
+        ]),
+        # ID Documents
+        ("Government ID", [
+            (r'(?:driver.?s?\s*licen[sc]e)', 55),
+            (r'(?:state\s*id|identification\s*card)', 50),
+            (r'(?:social\s*security\s*card)', 55),
+            (r'(?:passport\b)', 50),
+            (r'(?:military\s*id|common\s*access\s*card)', 50),
+            (r'(?:government[\s-]issued\s*id)', 50),
+            (r'(?:expir(?:es?|ation\s*date))', 20),
+            (r'(?:date\s*of\s*birth|dob\b)', 15),
+            (r'(?:license\s*(?:number|no\.?|class))', 20),
+        ]),
+        # Hazard / Homeowner's Insurance — boosted standalone
         ("Hazard Insurance", [
-            (r'(?:hazard\s*insurance|homeowner.?s?\s*insurance)', 35),
-            (r'(?:insurance\s*(?:binder|declaration|policy))', 25),
-            (r'(?:dwelling\s*coverage|liability\s*coverage)', 15),
-            (r'(?:premium|deductible).*(?:dwelling|property)', 12),
+            (r'(?:homeowner.?s?\s*insurance\s*(?:policy|declaration|binder))', 60),
+            (r'(?:hazard\s*insurance)', 55),
+            (r'(?:home.?owners?\s*insurance)', 50),
+            (r'(?:declarations?\s*page)', 45),
+            (r'(?:named\s*insured)', 40),
+            (r'(?:policy\s*(?:number|period|effective))', 30),
+            (r'(?:dwelling\s*coverage|liability\s*coverage|personal\s*property)', 25),
+            (r'(?:premium\b)', 20),
+            (r'(?:deductible\b)', 15),
         ]),
     ]
 
@@ -2895,6 +3241,443 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Credit Report Parser
+# ---------------------------------------------------------------------------
+
+def extract_credit_report(text: str) -> dict:
+    """
+    Extract structured data from a tri-merge or single-bureau credit report.
+    Pulls borrower info, all 3 scores, tradelines, collections, public records.
+    100% offline — regex only.
+    """
+    import re
+
+    def _find(pattern, src, group=1, flags=re.IGNORECASE | re.MULTILINE):
+        m = re.search(pattern, src, flags)
+        if m:
+            try:
+                return m.group(group).strip()
+            except Exception:
+                return ""
+        return ""
+
+    def _findall(pattern, src, flags=re.IGNORECASE | re.MULTILINE):
+        return re.findall(pattern, src, flags)
+
+    # ── Borrower personal info ─────────────────────────────────────────────
+    # Require label followed by colon OR newline, then a real name (not another label word)
+    name = _find(r'(?:Borrower|Primary\s*Applicant|Consumer)[:\s]*\n?([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,3})', text)
+    if not name:
+        # "Borrower: CRYSTAL ROGERS" pattern
+        name = _find(r'(?:Borrower|Primary\s*Applicant|Consumer)[:\s]+([A-Z]{2,}(?:\s+[A-Z]{2,}){1,3})\b(?!\s+(?:Name|SSN|Social|Date|Address|Number))', text)
+    if not name:
+        name = _find(r'^([A-Z][A-Z\-\']{1,}\s+[A-Z][A-Z\-\']{1,}(?:\s+[A-Z][A-Z\-\']{1,})?)\s*$', text, flags=re.MULTILINE)
+
+    ssn = _find(r'(?:SSN|Social\s*Security)[:\s#]*([X\*\d]{3}[-\s][X\*\d]{2}[-\s]\d{4})', text)
+    if not ssn:
+        ssn = _find(r'\b(\d{3}-\d{2}-\d{4}|XXX-XX-\d{4})\b', text)
+
+    dob = _find(r'(?:DOB|Date\s*of\s*Birth|Birth\s*Date)[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})', text)
+
+    address = _find(r'(?:(?:Current|Present|Mailing)?\s*Address)[:\s]+(\d[^\n]{5,80})', text)
+    if not address:
+        address = _find(r'(\d{2,6}\s+[A-Z][A-Za-z\s]+(?:ST|AVE|DR|RD|BLVD|WAY|LN|CT|PL|CIR)[,\s]+[A-Z]{2}\s+\d{5})', text)
+
+    employer = _find(r'(?:Employer|Employment)[:\s]+([^\n]{3,60})', text)
+
+    # ── Credit scores ──────────────────────────────────────────────────────
+    # Tri-merge reports show all 3. Single bureau shows 1.
+    scores = {}
+
+    # Pattern: "Experian: 720" or "EXP 720" or "Equifax 715"
+    for bureau, patterns in [
+        ("Experian",  [r'Experian[:\s]+(\d{3})', r'\bEXP(?:ERIAN)?[:\s#\-]+(\d{3})\b', r'Experian\s*Score[:\s]+(\d{3})']),
+        ("Equifax",   [r'Equifax[:\s]+(\d{3})', r'\bEFX[:\s#\-]+(\d{3})\b', r'Equifax\s*Score[:\s]+(\d{3})']),
+        ("TransUnion",[r'Trans\s*Union[:\s]+(\d{3})', r'\bTU[:\s#\-]+(\d{3})\b', r'TransUnion\s*Score[:\s]+(\d{3})']),
+    ]:
+        for pat in patterns:
+            m = re.search(pat, text, re.IGNORECASE)
+            if m:
+                scores[bureau] = int(m.group(1))
+                break
+
+    # Fallback: find any 3-digit scores in a scores section
+    if not scores:
+        score_section = re.search(
+            r'(?:FICO|Credit|Score)[s\s]*(?:Summary|Overview)?[:\s]+([\s\S]{0,400})',
+            text, re.IGNORECASE
+        )
+        if score_section:
+            found = re.findall(r'\b([5-8]\d{2})\b', score_section.group(1))
+            if found:
+                labels = ["Experian", "Equifax", "TransUnion"]
+                for i, s in enumerate(found[:3]):
+                    scores[labels[i]] = int(s)
+
+    # Standalone: any 3-digit score 500-850 near bureau name
+    if not scores:
+        all_scores = re.findall(r'\b([5-8]\d{2})\b', text)
+        if len(all_scores) == 1:
+            scores["Score"] = int(all_scores[0])
+        elif len(all_scores) >= 3:
+            # Take first 3 unique
+            unique = []
+            for s in all_scores:
+                if int(s) not in unique:
+                    unique.append(int(s))
+                if len(unique) == 3:
+                    break
+            labels = ["Experian", "Equifax", "TransUnion"]
+            for i, s in enumerate(unique[:3]):
+                scores[labels[i]] = s
+
+    # Middle score calculation
+    middle_score = None
+    middle_bureau = None
+    if len(scores) == 3:
+        sorted_scores = sorted(scores.items(), key=lambda x: x[1])
+        middle_bureau, middle_score = sorted_scores[1]
+    elif len(scores) == 1:
+        middle_bureau, middle_score = list(scores.items())[0]
+
+    # ── Tradelines / accounts ─────────────────────────────────────────────
+    # Look for past due, derogatory, collections accounts
+    derogatory = []
+    derog_patterns = [
+        r'(?:COLLECTION|CHARGE[\s\-]?OFF|CHARGE OFF)[^\n]{0,120}',
+        r'(?:DEROGATORY|DELINQUENT|PAST\s*DUE)[^\n]{0,120}',
+        r'(?:30|60|90|120)\s*(?:DAYS?\s*)?(?:LATE|PAST\s*DUE)[^\n]{0,120}',
+        r'(?:REPOSSESSION|FORECLOSURE|BANKRUPTCY)[^\n]{0,120}',
+    ]
+    for pat in derog_patterns:
+        for m in re.finditer(pat, text, re.IGNORECASE):
+            line = m.group(0).strip()[:120]
+            if line and line not in derogatory:
+                derogatory.append(line)
+
+    # Collections specifically
+    collections = []
+    for m in re.finditer(r'(?:COLLECTION\s*ACCOUNT|IN\s*COLLECTIONS?)[^\n]{0,120}', text, re.IGNORECASE):
+        line = m.group(0).strip()[:120]
+        if line not in collections:
+            collections.append(line)
+
+    # Public records (bankruptcies, judgments, liens)
+    public_records = []
+    for m in re.finditer(r'(?:BANKRUPTCY|JUDGMENT|TAX\s*LIEN|CIVIL\s*JUDGMENT)[^\n]{0,120}', text, re.IGNORECASE):
+        line = m.group(0).strip()[:120]
+        if line not in public_records:
+            public_records.append(line)
+
+    # Inquiries count
+    inq_section = re.search(r'(?:Inquir(?:y|ies))[:\s]*([\s\S]{0,300})', text, re.IGNORECASE)
+    inquiry_count = 0
+    if inq_section:
+        inq_nums = re.findall(r'\b(\d+)\s*inquir', inq_section.group(0), re.IGNORECASE)
+        if inq_nums:
+            inquiry_count = int(inq_nums[0])
+        else:
+            # Count individual inquiry lines
+            inquiry_count = len(re.findall(r'\d{1,2}/\d{1,2}/\d{2,4}', inq_section.group(1)))
+
+    # Total past due amount
+    past_due_amounts = re.findall(r'Past\s*Due[:\s]+\$?([\d,]+)', text, re.IGNORECASE)
+    total_past_due = sum(float(a.replace(',', '')) for a in past_due_amounts) if past_due_amounts else 0
+
+    return {
+        "borrower": {
+            "name": name,
+            "ssn": ssn,
+            "dob": dob,
+            "address": address,
+            "employer": employer,
+        },
+        "scores": scores,
+        "middle_score": middle_score,
+        "middle_bureau": middle_bureau,
+        "derogatory": derogatory[:10],
+        "collections": collections[:10],
+        "public_records": public_records[:5],
+        "inquiry_count": inquiry_count,
+        "total_past_due": total_past_due,
+    }
+
+
+# ---------------------------------------------------------------------------
+# 1099 Parser
+# ---------------------------------------------------------------------------
+
+def extract_1099(text: str) -> dict:
+    """
+    Extract structured fields from a 1099 (NEC, MISC, INT, DIV, R, etc.).
+    100% offline — regex only.
+    """
+    import re
+
+    def _find(pattern, src, group=1, flags=re.IGNORECASE | re.MULTILINE):
+        m = re.search(pattern, src, flags)
+        if m:
+            try:
+                return m.group(group).strip()
+            except Exception:
+                return ""
+        return ""
+
+    def _money(val):
+        if not val:
+            return ""
+        return re.sub(r'[^\d.]', '', val)
+
+    # Form type
+    form_type = _find(r'\b(1099[-\s]?(?:NEC|MISC|INT|DIV|R|G|K|S|C|B|OID|SA|LTC|Q|PATR)?)\b', text)
+    if not form_type:
+        form_type = "1099"
+
+    # Tax year
+    year = _find(r'(?:Tax\s*Year|for\s*(?:calendar\s*)?year)[:\s]+(\d{4})', text)
+    if not year:
+        year = _find(r'\b(20\d{2})\b', text)
+
+    # Payer
+    payer_name = _find(r"(?:Payer.{0,20}(?:name|s\s+name))[:\s]+([^\n]{3,60})", text)
+    payer_tin  = _find(r"(?:Payer.{0,20}(?:TIN|EIN|ID))[:\s]+([\d\-]{9,12})", text)
+    if not payer_tin:
+        payer_tin = _find(r'\b(\d{2}-\d{7})\b', text)
+
+    # Recipient
+    recipient_name = _find(r"(?:Recipient.{0,20}(?:name|s\s+name))[:\s]+([^\n]{3,60})", text)
+    recipient_ssn  = _find(r"(?:Recipient.{0,20}(?:TIN|SSN|ID))[:\s]*([\d\*X]{3}[-\s][\d\*X]{2}[-\s]\d{4})", text)
+    if not recipient_ssn:
+        recipient_ssn = _find(r'\b(\d{3}-\d{2}-\d{4}|XXX-XX-\d{4})\b', text)
+
+    # Box amounts — key boxes by form type
+    box1  = _find(r'(?:^|\b)(?:1\.?\s*(?:Non-?employee\s*[Cc]omp|Rents|Interest\s*Income|Gross\s*Distribution))[:\s]+([\d,\.]+)', text, flags=re.IGNORECASE|re.MULTILINE)
+    box2  = _find(r'(?:2\.?\s*(?:Federal\s*Income\s*Tax\s*[Ww]ithheld|Royalties|Early\s*Distribution))[:\s]+([\d,\.]+)', text, flags=re.IGNORECASE|re.MULTILINE)
+    box3  = _find(r'(?:3\.?\s*(?:Other\s*Income|Nontaxable\s*Distribution))[:\s]+([\d,\.]+)', text, flags=re.IGNORECASE|re.MULTILINE)
+    box4  = _find(r'(?:4\.?\s*Federal\s*Income\s*Tax\s*[Ww]ithheld)[:\s]+([\d,\.]+)', text, flags=re.IGNORECASE|re.MULTILINE)
+
+    # Fallback: positional — same pattern as W-2, grab first money cluster
+    if not box1:
+        money_lines = re.findall(r'^([\d,]+\.\d{2})(?:\s+([\d,]+\.\d{2}))?$', text, re.MULTILINE)
+        money_lines = [(a, b) for a, b in money_lines if float(re.sub(r'[^\d.]', '', a) or '0') >= 1]
+        if money_lines:
+            box1 = money_lines[0][0]
+            box2 = money_lines[0][1] if money_lines[0][1] else ""
+
+    # Income calc
+    income_val = float(_money(box1) or '0') if box1 else 0.0
+    monthly = income_val / 12 if income_val else 0.0
+
+    return {
+        "form_type": form_type,
+        "year": year,
+        "payer_name": payer_name,
+        "payer_tin": payer_tin,
+        "recipient_name": recipient_name,
+        "recipient_ssn": recipient_ssn,
+        "box1": box1,
+        "box2": box2,
+        "box3": box3,
+        "box4_fed_tax": box4,
+        "annual_income": income_val,
+        "monthly_income": monthly,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Mortgage Statement Parser
+# ---------------------------------------------------------------------------
+
+def extract_mortgage_statement(text: str) -> dict:
+    import re
+
+    def _find(pat, src, group=1, flags=re.IGNORECASE | re.MULTILINE):
+        m = re.search(pat, src, flags)
+        return m.group(group).strip() if m else ""
+
+    def _find_after_label(label_pat, src, max_chars=80):
+        """Find value that appears on the SAME line OR the NEXT line after a label."""
+        m = re.search(label_pat + r'[:\s]*([^\n]{3,' + str(max_chars) + r'})', src, re.IGNORECASE)
+        if m:
+            val = m.group(1).strip()
+            # If the same-line value looks like a real value (not just another label phrase), use it
+            if val and not re.match(r'(?:is|are|the|of|for|your|our|this|a |an )', val, re.IGNORECASE):
+                return val
+        # Try next-line: label on one line, value on next
+        m = re.search(label_pat + r'[:\s]*\n([^\n]{3,' + str(max_chars) + r'})', src, re.IGNORECASE)
+        if m:
+            return m.group(1).strip()
+        return ""
+
+    # Servicer: typically appears as company name near top or labeled
+    # Try "serviced by CompanyName" or standalone labeled line
+    servicer = _find(r'(?:serviced\s*by|mortgage\s*servicer|your\s*servicer\s*is)[:\s]+([A-Z][^\n]{3,50})', text)
+    if not servicer:
+        # Company name before "is responsible for" or "is the servicer"
+        servicer = _find(r'([A-Z][A-Za-z\s,\.]+(?:Bank|Mortgage|Servicing|Financial|Home\s*Loans?|Federal|Corp|LLC|Inc))[^\n]{0,30}(?:servicer|responsible|collecting)', text)
+    if not servicer:
+        # First all-caps company name in first 500 chars
+        m = re.search(r'([A-Z][A-Z\s&,\.]{5,50}(?:BANK|MORTGAGE|SERVICING|FINANCIAL|HOME|FEDERAL|CORP|LLC))', text[:600])
+        if m:
+            servicer = m.group(1).strip()
+
+    # Borrower: "Borrower: Name" or "Account Holder: Name" or name labeled line
+    borrower = _find(r'(?:^|\n)(?:borrower|account\s*holder|customer\s*name)[:\s]+([A-Z][A-Za-z\s\-\']{3,40})', text)
+    if not borrower:
+        # Name after "Dear" greeting
+        borrower = _find(r'Dear\s+([A-Z][A-Za-z\s\-\']{3,40}),', text)
+    if not borrower:
+        # "Prepared for: Name" pattern
+        borrower = _find(r'(?:prepared\s*for|statement\s*for)[:\s]+([A-Z][A-Za-z\s\-\']{3,40})', text)
+
+    loan_num      = _find(r'(?:loan\s*(?:number|no\.?|#)|account\s*(?:number|no\.?|#))[:\s#]*([\d\-]{4,20})', text)
+    prop_addr     = _find(r'(?:property\s*(?:address|location)|subject\s*property|property)[:\s]+(\d+[^\n]{5,70})', text)
+    principal_bal = _find(r'(?:principal\s*balance|outstanding\s*(?:principal\s*)?balance|unpaid\s*(?:principal\s*)?balance)[:\s\$]*([\d,]+\.?\d*)', text)
+    escrow_bal    = _find(r'(?:escrow\s*balance|escrow\s*account\s*balance)[:\s\$]*([\d,]+\.?\d*)', text)
+    payment_amt   = _find(r'(?:(?:total\s*)?(?:amount\s*(?:due|enclosed)|monthly\s*payment(?:\s*amount)?|payment\s*amount|regular\s*payment))[:\s\$]*([\d,]+\.?\d*)', text)
+    due_date      = _find(r'(?:payment\s*due\s*(?:date|by|on)|due\s*date|next\s*payment\s*due)[:\s]+([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4}|[A-Z][a-z]+\s+\d{1,2},?\s*\d{4}|\d{8})', text)
+    interest_rate = _find(r'(?:interest\s*rate|note\s*rate|annual\s*(?:interest\s*)?rate)[:\s]+(\d+\.?\d*\s*%)', text)
+    maturity      = _find(r'(?:maturity\s*date|loan\s*(?:matures|maturity)|maturity)[:\s]+([0-9]{1,2}[\/\-][0-9]{1,2}[\/\-][0-9]{2,4}|[A-Z][a-z]+\s+\d{1,2},?\s*\d{4}|\d{8})', text)
+    ytd_interest  = _find(r'(?:year[\s\-]to[\s\-]date\s*interest(?:\s*paid)?|ytd\s*interest)[:\s\$]*([\d,]+\.?\d*)', text)
+
+    return {
+        "servicer": servicer,
+        "borrower": borrower,
+        "loan_number": loan_num,
+        "property_address": prop_addr,
+        "principal_balance": principal_bal,
+        "escrow_balance": escrow_bal,
+        "payment_amount": payment_amt,
+        "due_date": due_date,
+        "interest_rate": interest_rate,
+        "maturity_date": maturity,
+        "ytd_interest_paid": ytd_interest,
+    }
+
+
+# ---------------------------------------------------------------------------
+# VA Certificate of Eligibility Parser
+# ---------------------------------------------------------------------------
+
+def extract_coe(text: str) -> dict:
+    import re
+    def _find(pat, src, group=1, flags=re.IGNORECASE | re.MULTILINE):
+        m = re.search(pat, src, flags)
+        return m.group(group).strip() if m else ""
+
+    veteran_name  = _find(r'(?:veteran.{0,20}name|name\s*of\s*veteran|this\s*is\s*to\s*certify\s*that)[:\s]+([A-Z][^\n]{3,50})', text)
+    if not veteran_name:
+        veteran_name = _find(r'(?:borrower|applicant)[:\s]+([A-Z][a-zA-Z\-\'\s]{3,40})', text)
+    service_num   = _find(r'(?:service\s*(?:number|no\.?)|va\s*file\s*(?:number|no\.?))[:\s#]*([\w\-]{5,15})', text)
+    entitlement   = _find(r'(?:entitlement\s*(?:amount|code|charged))[:\s]+\$?([\d,\.]+)', text)
+    ent_code      = _find(r'(?:entitlement\s*code)[:\s]+([^\n]{1,10})', text)
+    funding_fee   = _find(r'(?:funding\s*fee)[:\s]+([^\n]{1,30})', text)
+    exempt        = bool(re.search(r'(?:exempt(?:ion)?|waived|service[\s-]?connected\s*disability)', text, re.IGNORECASE))
+    loan_guaranty = _find(r'(?:guaranty\s*(?:amount|percentage)|maximum\s*guaranty)[:\s]+\$?([\d,\.%]+)', text)
+    coe_date      = _find(r'(?:date\s*(?:issued|of\s*issue|of\s*certificate))[:\s]+([^\n]{4,20})', text)
+    remaining_ent = _find(r'(?:remaining\s*entitlement|available\s*entitlement)[:\s]+\$?([\d,\.]+)', text)
+
+    return {
+        "veteran_name": veteran_name,
+        "service_number": service_num,
+        "entitlement_amount": entitlement,
+        "entitlement_code": ent_code,
+        "remaining_entitlement": remaining_ent,
+        "loan_guaranty": loan_guaranty,
+        "funding_fee_exempt": exempt,
+        "funding_fee_info": funding_fee,
+        "issue_date": coe_date,
+    }
+
+
+# ---------------------------------------------------------------------------
+# DD-214 Parser
+# ---------------------------------------------------------------------------
+
+def extract_dd214(text: str) -> dict:
+    import re
+    def _find(pat, src, group=1, flags=re.IGNORECASE | re.MULTILINE):
+        m = re.search(pat, src, flags)
+        return m.group(group).strip() if m else ""
+
+    name          = _find(r'(?:1[a\.]?\s*name\s*(?:of\s*member)?|last\s*first\s*middle)[:\s]+([A-Z][^\n]{3,50})', text)
+    if not name:
+        name      = _find(r'^([A-Z]+,\s*[A-Z]+(?:\s+[A-Z]+)?)\s*$', text, flags=re.MULTILINE)
+    ssn           = _find(r'(?:2[a\.]?\s*(?:social\s*security|ssn))[:\s]*([\dX\*]{3}[-\s][\dX\*]{2}[-\s]\d{4})', text)
+    if not ssn:
+        ssn       = _find(r'\b(\d{3}-\d{2}-\d{4}|XXX-XX-\d{4})\b', text)
+    dob           = _find(r'(?:3[a\.]?\s*date\s*of\s*birth|dob)[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})', text)
+    branch        = _find(r'(?:branch\s*of\s*service|component|armed\s*forces)[:\s]+([^\n]{3,40})', text)
+    rank          = _find(r'(?:grade[,\s]*rate[,\s]*or\s*rank|rank\s*at\s*discharge)[:\s]+([^\n]{2,20})', text)
+    entry_date    = _find(r'(?:date\s*entered\s*(?:active\s*duty|service)|entry\s*date)[:\s]+([^\n]{4,20})', text)
+    separation    = _find(r'(?:date\s*of\s*(?:separation|discharge|release)|separation\s*date)[:\s]+([^\n]{4,20})', text)
+    char_discharge= _find(r'(?:character\s*of\s*(?:service|discharge))[:\s]+([^\n]{3,40})', text)
+    years_service = _find(r'(?:total\s*(?:active\s*)?(?:service|time))[:\s]+([^\n]{3,30})', text)
+    disability    = bool(re.search(r'(?:service[\s-]?connected\s*disability|disabled\s*veteran|va\s*disability)', text, re.IGNORECASE))
+
+    return {
+        "name": name,
+        "ssn": ssn,
+        "dob": dob,
+        "branch": branch,
+        "rank": rank,
+        "entry_date": entry_date,
+        "separation_date": separation,
+        "character_of_discharge": char_discharge,
+        "total_service": years_service,
+        "disability_noted": disability,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Government ID Parser
+# ---------------------------------------------------------------------------
+
+def extract_government_id(text: str) -> dict:
+    import re
+    def _find(pat, src, group=1, flags=re.IGNORECASE | re.MULTILINE):
+        m = re.search(pat, src, flags)
+        return m.group(group).strip() if m else ""
+
+    # Determine ID type
+    id_type = "Unknown ID"
+    if re.search(r'driver.?s?\s*licen[sc]e', text, re.IGNORECASE):
+        id_type = "Driver's License"
+    elif re.search(r'social\s*security', text, re.IGNORECASE):
+        id_type = "Social Security Card"
+    elif re.search(r'passport', text, re.IGNORECASE):
+        id_type = "Passport"
+    elif re.search(r'state\s*id|identification\s*card', text, re.IGNORECASE):
+        id_type = "State ID"
+    elif re.search(r'military\s*id|common\s*access\s*card|cac\b', text, re.IGNORECASE):
+        id_type = "Military ID"
+
+    name    = _find(r'(?:name|full\s*name)[:\s]+([A-Z][a-zA-Z\-\'\s]{3,40})', text)
+    if not name:
+        name = _find(r'^([A-Z][A-Z\-\']+\s+[A-Z][A-Z\-\']+(?:\s+[A-Z][A-Z\-\']+)?)\s*$', text, flags=re.MULTILINE)
+
+    dob     = _find(r'(?:dob|date\s*of\s*birth|birth\s*date)[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})', text)
+    expiry  = _find(r'(?:exp(?:ires?|iration)?|expiry\s*date)[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})', text)
+    issued  = _find(r'(?:issued|issue\s*date)[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})', text)
+    id_num  = _find(r'(?:lic(?:ense)?\s*(?:no\.?|number|#)|id\s*(?:no\.?|number|#)|dl\s*(?:no\.?|number|#))[:\s#]*([\w\-]{4,20})', text)
+    state   = _find(r'\b([A-Z]{2})\s+(?:driver|license|state\s*id)', text)
+    address = _find(r'(?:address)[:\s]+(\d[^\n]{5,60})', text)
+    ssn     = _find(r'\b(\d{3}-\d{2}-\d{4}|XXX-XX-\d{4})\b', text)
+
+    return {
+        "id_type": id_type,
+        "name": name,
+        "dob": dob,
+        "expiry": expiry,
+        "issued": issued,
+        "id_number": id_num,
+        "state": state,
+        "address": address,
+        "ssn": ssn,
+    }
+
+
+# ---------------------------------------------------------------------------
 # Main Processing Function
 # ---------------------------------------------------------------------------
 
@@ -2905,7 +3688,24 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None) -> dict
     """
     text = extract_text_from_pdf(pdf_bytes)
 
+    # Image-based (scanned) PDFs — for certain doc types we can still succeed
+    # with a stub result so the file is logged in the pipeline rather than erroring.
+    _image_ok_types = {
+        "VA Certificate of Eligibility", "DD-214", "Hazard Insurance",
+        "Government ID", "Appraisal", "Purchase Contract",
+    }
     if not text or len(text.strip()) < 50:
+        if doc_type in _image_ok_types:
+            return {
+                "success": True,
+                "doc_type": doc_type,
+                "text_length": 0,
+                "conditions": "",
+                "risks": "",
+                "bank_rules": "",
+                "extracted_data": {"_image_only": True},
+                "image_only": True,
+            }
         return {
             "success": False,
             "error": "Could not extract enough text from this PDF. It may be a scanned image (OCR not yet supported in offline mode).",
@@ -2929,6 +3729,27 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None) -> dict
     elif doc_type == "1003 Application":
         result["conditions"] = ""
         result["extracted_data"] = extract_1003(text)
+    elif doc_type == "W-2":
+        result["conditions"] = ""
+        result["extracted_data"] = extract_w2(text)
+    elif doc_type == "1099":
+        result["conditions"] = ""
+        result["extracted_data"] = extract_1099(text)
+    elif doc_type == "Credit Report":
+        result["conditions"] = ""
+        result["extracted_data"] = extract_credit_report(text)
+    elif doc_type == "Mortgage Statement":
+        result["conditions"] = ""
+        result["extracted_data"] = extract_mortgage_statement(text)
+    elif doc_type == "VA Certificate of Eligibility":
+        result["conditions"] = ""
+        result["extracted_data"] = extract_coe(text)
+    elif doc_type == "DD-214":
+        result["conditions"] = ""
+        result["extracted_data"] = extract_dd214(text)
+    elif doc_type == "Government ID":
+        result["conditions"] = ""
+        result["extracted_data"] = extract_government_id(text)
     elif doc_type == "Purchase Contract":
         result["conditions"] = ""
         result["extracted_data"] = extract_purchase_contract(text)

@@ -131,8 +131,14 @@ def update_loan(loan_id: int, **kwargs):
     _save(loans)
 
 
-def attach_document(loan_id: int, filename: str, doc_type: str, pdf_bytes: bytes) -> dict:
-    """Save a PDF to disk and record it in the loan's documents list. Returns the doc record."""
+def attach_document(loan_id: int, filename: str, doc_type: str, pdf_bytes: bytes,
+                    extracted: dict | None = None) -> dict:
+    """Save a PDF to disk and record it in the loan's documents list. Returns the doc record.
+
+    If `extracted` is provided, key fields (property_address, purchase_price,
+    loan_amount, loan_type, loan_officer) are promoted to the loan record so
+    template generation can pull them without re-parsing the PDF.
+    """
     os.makedirs(_DOCS_DIR, exist_ok=True)
     loan_dir = os.path.join(_DOCS_DIR, str(loan_id))
     os.makedirs(loan_dir, exist_ok=True)
@@ -150,18 +156,54 @@ def attach_document(loan_id: int, filename: str, doc_type: str, pdf_bytes: bytes
         "attached": datetime.now().isoformat()[:16],
         "size_kb": round(len(pdf_bytes) / 1024, 1),
     }
+    if extracted:
+        doc_record["extracted_data"] = extracted
+
+    promoted = _promote_fields(doc_type, extracted or {})
+
     loans = _load()
     for loan in loans:
         if loan.get("id") == loan_id:
             docs = loan.get("documents", [])
-            # Replace if same filename already attached
             docs = [d for d in docs if d.get("filename") != safe_name]
             docs.append(doc_record)
             loan["documents"] = docs
+            for k, v in promoted.items():
+                if v and not loan.get(k):
+                    loan[k] = v
             loan["updated"] = datetime.now().isoformat()[:10]
             break
     _save(loans)
     return doc_record
+
+
+def _promote_fields(doc_type: str, extracted: dict) -> dict:
+    """Pick fields from extracted data that should live on the loan record."""
+    out: dict = {}
+    if not extracted:
+        return out
+    if doc_type == "Purchase Contract":
+        prop = (extracted.get("property") or {}).get("address")
+        price = (extracted.get("transaction") or {}).get("purchase_price")
+        if prop:
+            out["property_address"] = prop
+        if price:
+            out["purchase_price"] = price
+    elif doc_type == "1003 Application":
+        loan_info = extracted.get("loan") or {}
+        prop = extracted.get("property_address") or loan_info.get("property_address")
+        if prop:
+            out["property_address"] = prop
+        if loan_info.get("amount"):
+            out["loan_amount"] = loan_info["amount"]
+        if loan_info.get("purpose"):
+            out["loan_type"] = loan_info["purpose"]
+        lo = extracted.get("loan_officer") or {}
+        if isinstance(lo, dict) and lo.get("name"):
+            out["loan_officer"] = lo["name"]
+        elif isinstance(lo, str) and lo:
+            out["loan_officer"] = lo
+    return out
 
 
 def get_documents(loan_id: int) -> list:
