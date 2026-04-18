@@ -79,8 +79,8 @@ button[kind="secondary"] p { color: var(--slate-600) !important; }
 button[kind="secondary"]:hover p { color: var(--accent) !important; }
 [data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea, [data-testid="stSelectbox"] > div > div, [data-testid="stNumberInput"] input { background: var(--bg-subtle) !important; border: 1px solid var(--slate-300) !important; border-radius: var(--radius-sm) !important; color: var(--slate-900) !important; font-size: 13px !important; }
 [data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.1) !important; }
-[data-testid="stFileUploader"] { background: rgba(255,255,255,0.03) !important; border: 1px dashed rgba(57,255,20,0.25) !important; border-radius: var(--radius-md) !important; }
-[data-testid="stFileUploader"]:hover { border-color: rgba(57,255,20,0.5) !important; background: rgba(57,255,20,0.03) !important; }
+[data-testid="stFileUploader"] { background: rgba(255,255,255,0.02) !important; border: 1.5px dashed rgba(57,255,20,0.3) !important; border-radius: 14px !important; padding: 8px !important; transition: all 0.18s ease-in-out !important; }
+[data-testid="stFileUploader"]:hover { border-color: rgba(57,255,20,0.6) !important; background: rgba(57,255,20,0.04) !important; box-shadow: 0 0 24px rgba(57,255,20,0.12) !important; }
 [data-testid="stFileUploader"] section { background: transparent !important; }
 [data-testid="stFileUploader"] button { background: rgba(57,255,20,0.08) !important; border: 1px solid rgba(57,255,20,0.3) !important; color: #39FF14 !important; }
 [data-testid="stFileUploader"] small, [data-testid="stFileUploader"] span, [data-testid="stFileUploader"] p { color: #6b7280 !important; }
@@ -169,6 +169,46 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .pipeline-scroll button { height: 28px !important; min-height: 28px !important; font-size: 12px !important; font-weight: 600 !important; padding: 0 8px !important; border-radius: 3px !important; background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #e5e7eb !important; box-shadow: none !important; transform: none !important; }
 .pipeline-scroll button:hover { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.25) !important; color: #ffffff !important; transform: none !important; box-shadow: none !important; }
 .pipeline-scroll button p { color: inherit !important; font-size: 12px !important; font-weight: 600 !important; }
+/* Primary (Open) button inside pipeline — neon-green, more prominent */
+.pipeline-scroll button[kind="primary"], button[kind="primary"][data-testid*="open_"] {
+    background: linear-gradient(180deg, #39FF14 0%, #2ed410 100%) !important;
+    border: 1px solid #39FF14 !important;
+    color: #0a0a0a !important;
+    font-weight: 800 !important;
+    font-size: 13px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+    letter-spacing: 0.5px !important;
+    box-shadow: 0 0 12px rgba(57,255,20,0.35) !important;
+}
+.pipeline-scroll button[kind="primary"]:hover, button[kind="primary"][data-testid*="open_"]:hover {
+    background: linear-gradient(180deg, #4aff2a 0%, #39FF14 100%) !important;
+    box-shadow: 0 0 18px rgba(57,255,20,0.55) !important;
+    color: #000 !important;
+}
+.pipeline-scroll button[kind="primary"] p { color: #0a0a0a !important; font-weight: 800 !important; font-size: 13px !important; }
+/* Hoverable contact chip tooltip */
+.pa-tip { position: relative; cursor: help; display: inline-block; }
+.pa-tip-box { visibility: hidden; opacity: 0; position: absolute; bottom: 125%; left: 0; z-index: 9999;
+    background: #1a1a1a; border: 1px solid rgba(57,255,20,0.35); border-radius: 8px;
+    padding: 8px 10px; min-width: 200px; max-width: 320px;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.6); transition: opacity 0.12s ease-in-out;
+    white-space: normal; pointer-events: none; }
+.pa-tip:hover .pa-tip-box { visibility: visible; opacity: 1; }
+/* Scan results: tight like pipeline cards */
+.scan-scroll button { height: 26px !important; min-height: 26px !important; font-size: 11px !important; font-weight: 600 !important; padding: 0 7px !important; border-radius: 3px !important; background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #e5e7eb !important; box-shadow: none !important; transform: none !important; }
+.scan-scroll button:hover { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.25) !important; color: #ffffff !important; }
+.scan-scroll button p { color: inherit !important; font-size: 11px !important; font-weight: 600 !important; margin: 0 !important; }
+.scan-scroll [data-testid="stCheckbox"] label { font-size: 11px !important; font-weight: 700 !important; color: #39FF14 !important; }
+.scan-scroll [data-testid="stCheckbox"] { padding-top: 2px !important; }
+.scan-scroll [data-baseweb="select"] > div { min-height: 26px !important; height: 26px !important; font-size: 11px !important; }
+.scan-scroll [data-baseweb="select"] * { font-size: 11px !important; }
+.scan-scroll div[data-testid="stVerticalBlock"] { gap: 2px !important; }
+.scan-scroll div[data-testid="stHorizontalBlock"] { gap: 4px !important; align-items: center !important; }
+.scan-scroll .cond-row { display:flex; align-items:center; gap:6px; padding:3px 0; border-bottom:1px dashed rgba(255,255,255,0.06); }
+.scan-scroll .cond-num { color:#39FF14; font-weight:800; font-size:11px; min-width:22px; }
+.scan-scroll .cond-desc { color:#e5e7eb; font-size:12px; line-height:1.35; flex:1; }
+.scan-scroll .pa-section { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.6px; margin:6px 0 2px 0; }
 </style>
 
 """, unsafe_allow_html=True)
@@ -539,8 +579,6 @@ def show_sidebar():
 
 def show_dashboard():
     """Compact document scanning page — always auto-detect, additive scanning."""
-    st.markdown("## Scanner")
-
     _BULK_DOC_TYPES = [
         "Approval Letter", "Closing Disclosure (CD)", "Loan Estimate (LE)",
         "1003 Application", "Purchase Contract", "Credit Report",
@@ -554,9 +592,75 @@ def show_dashboard():
     if "scan_batches" not in st.session_state:
         st.session_state.scan_batches = []
 
+    _has_batches = bool(st.session_state.scan_batches)
+    _has_upload = bool(st.session_state.get("dash_uploader"))
+
+    # ── Header: hero when empty, compact when active ─────────────────
+    if not _has_batches and not _has_upload:
+        _loan_ct = 0
+        try:
+            from crm import get_all_loans as _gl_hero
+            _loan_ct = len(_gl_hero())
+        except Exception:
+            pass
+        _user = st.session_state.get("user_name", "") or "there"
+        st.markdown(
+            f"""
+            <div style="margin:8px 0 18px 0;padding:22px 26px;
+                 background:linear-gradient(135deg, rgba(57,255,20,0.06) 0%, rgba(57,255,20,0.015) 100%);
+                 border:1px solid rgba(57,255,20,0.18);border-radius:14px;
+                 box-shadow:0 4px 24px rgba(0,0,0,0.25);">
+              <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">
+                <div style="width:42px;height:42px;border-radius:11px;
+                     background:linear-gradient(135deg,#39FF14,#2ed410);
+                     display:flex;align-items:center;justify-content:center;
+                     box-shadow:0 0 16px rgba(57,255,20,0.4);">
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
+                       stroke="#0a0a0a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="16" rx="2"/>
+                    <path d="M7 8h10M7 12h10M7 16h6"/>
+                  </svg>
+                </div>
+                <div>
+                  <div style="font-size:22px;font-weight:800;color:#ffffff;line-height:1.1;letter-spacing:-0.4px;">
+                    Welcome back, {_user.split()[0] if _user else 'there'}.
+                  </div>
+                  <div style="font-size:13px;color:#9ca3af;margin-top:3px;">
+                    Drop in any loan document — I'll auto-detect the type, pull conditions & contacts, and match it to your pipeline.
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;">
+                <div style="font-size:11px;color:#9ca3af;">
+                  <span style="color:#39FF14;font-weight:700;">●</span>
+                  Approval · CD · LE · 1003 · Purchase Contract · Bank Stmt · W-2 · Appraisal · Title · HOI · and more
+                </div>
+                <div style="font-size:11px;color:#9ca3af;margin-left:auto;">
+                  <b style="color:#39FF14;">{_loan_ct}</b> loan{'s' if _loan_ct != 1 else ''} in pipeline
+                </div>
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown(
+            '<div style="display:flex;align-items:center;gap:10px;margin:4px 0 10px 0;">'
+            '<div style="width:26px;height:26px;border-radius:7px;'
+            'background:linear-gradient(135deg,#39FF14,#2ed410);'
+            'display:flex;align-items:center;justify-content:center;">'
+            '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" '
+            'stroke="#0a0a0a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'
+            '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>'
+            '</svg></div>'
+            '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;">Scanner</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+
     # ── File uploader (additive) ─────────────────────────────────────
     new_files = st.file_uploader(
-        "Upload PDFs",
+        "Drop PDFs here — or click to browse" if not _has_upload else "Add more PDFs",
         type=["pdf"], accept_multiple_files=True,
         key="dash_uploader",
     )
@@ -652,10 +756,18 @@ def show_dashboard():
                     st.warning(f"Identical file uploaded {len(_fidxs)}x: {', '.join(_dupe_fnames)} — only the first will be scanned.")
 
         # ── Auto-detect + fingerprint every file ────────────────────
+        # Order matters — first match wins. Most-specific tokens first so
+        # ambiguous matches (e.g. "approval" containing nothing HOI-related)
+        # aren't hijacked by generic keywords further down.
         _FILENAME_FALLBACKS = [
+            (["approval", "commitment letter", "du findings", "desktop underwriter",
+              "lpa findings", "aus findings", "du ", "lpa ", "conditional approval",
+              "loan approval", "underwriting approval", "uw approval",
+              "loan decision", "underwriting decision", "uw decision",
+              "credit decision", "decision", "findings", "loan estimate approval",
+              "conditions list", "loan conditions"], "Approval Letter"),
             (["coe", "certificate of eligibility", "cert of eligib"], "VA Certificate of Eligibility"),
             (["dd214", "dd-214", "dd 214", "discharge", "dd_214"], "DD-214"),
-            (["hoi", "hazard", "homeowner", "home owner", "insurance dec", "declarations", "insurance policy"], "Hazard Insurance"),
             (["license", "drivers license", "id card", "government id", "photo id", "passport", "id -", "- id", "_id"], "Government ID"),
             (["w2", "w-2", "wage and tax"], "W-2"),
             (["1099"], "1099"),
@@ -666,9 +778,14 @@ def show_dashboard():
             (["purchase contract", "purchase agreement", "sales contract"], "Purchase Contract"),
             (["title commitment", "title insurance"], "Title Commitment"),
             (["mortgage statement", "loan statement"], "Mortgage Statement"),
-            (["du ", "desktop underwriter", "lpa ", "aus findings", "approval", "commitment letter"], "Approval Letter"),
             (["paystub", "pay stub", "paycheck", "pay check", "earnings statement"], "Pay Stub"),
             (["tax return", "1040", "tax transcript"], "Tax Return"),
+            # HOI last + tightened keywords — "insurance dec" / "declarations"
+            # alone are too broad (appear in many loan docs). Require real
+            # HOI-instance tokens.
+            (["hoi", "hazard insurance", "homeowner insurance", "home owner insurance",
+              "insurance binder", "insurance policy", "hoi dec", "insurance dec page",
+              "declarations page"], "Hazard Insurance"),
         ]
 
         def _filename_fallback(fname: str) -> str | None:
@@ -760,11 +877,21 @@ def show_dashboard():
         _approval_types = {"Approval Letter", "Broker Package (BP)"}
         for _pb in st.session_state.get("scan_batches", []):
             if _pb.get("type") in _approval_types:
-                for _c in (_pb.get("result") or {}).get("conditions", []):
-                    _desc = (_c.get("desc") or "").lower()
+                _raw_conds = (_pb.get("result") or {}).get("conditions", [])
+                # conditions can be either list[dict] (newer) or list[str] /
+                # a single multiline str (older / markdown-style). Normalize.
+                if isinstance(_raw_conds, str):
+                    _raw_conds = [ln.strip(" -•\t") for ln in _raw_conds.splitlines() if ln.strip()]
+                for _c in _raw_conds:
+                    if isinstance(_c, dict):
+                        _desc = (_c.get("desc") or "").lower()
+                        _desc_src = _c.get("desc", "")
+                    else:
+                        _desc = str(_c).lower()
+                        _desc_src = str(_c)
                     if any(kw in _desc for kw in ["bank statement", "bank stmt", "checking", "savings",
                                                    "asset", "deposit", "60 day", "2 month", "statement"]):
-                        _approval_bank_conds.append(_c.get("desc", ""))
+                        _approval_bank_conds.append(_desc_src)
                 if _approval_bank_conds:
                     _approval_source = _pb["file"]
                     break
@@ -1078,7 +1205,13 @@ def show_dashboard():
 
         for _bidx, _batch in enumerate(st.session_state.scan_batches[_page_start:_page_end], start=_page_start):
             _r = _batch["result"]
-            _cond_count = len(_r.get("conditions", [])) if isinstance(_r.get("conditions"), list) else 0
+            _raw_c = _r.get("conditions")
+            if isinstance(_raw_c, list):
+                _cond_count = len(_raw_c)
+            elif isinstance(_raw_c, str):
+                _cond_count = len([ln for ln in _raw_c.splitlines() if ln.strip()])
+            else:
+                _cond_count = 0
             _cont_count = len(_r.get("contacts", {})) if isinstance(_r.get("contacts"), dict) else 0
             _lm = _batch.get("loan_match") or {}
             _lm_suggestion = _lm.get("suggestion", "no_match")
@@ -1103,7 +1236,7 @@ def show_dashboard():
             with _exp_col:
                 _exp = st.expander(
                     f"✓ {_batch['file']} — {_batch['type']} ({_cond_count} cond){_match_badge}",
-                    expanded=False
+                    expanded=(_cond_count > 0)
                 )
             with _exp:
                 # ── Loan match action row ──────────────────────────────
@@ -1233,23 +1366,146 @@ def show_dashboard():
                             st.session_state.pop(f"ds_start_new_{_bidx}", None)
                             st.rerun()
 
-                # ── Conditions / contacts summary ──────────────────────
+                # ── Conditions (interactive, compact) ──────────────────
                 if _cond_count:
-                    st.markdown("**Conditions**")
-                    for _c in _r.get("conditions", [])[:10]:
-                        st.markdown(f"- {_c.get('desc', '')[:80]}")
+                    st.markdown('<div class="scan-scroll">', unsafe_allow_html=True)
+                    st.markdown('<div class="pa-section">Conditions</div>', unsafe_allow_html=True)
+                    _PARTY_OPTS_SCAN = [
+                        "Borrower", "Co-Borrower", "Title", "Realtor", "Seller",
+                        "Underwriter", "Jr Underwriter", "Loan Officer", "Closer",
+                        "Insurance", "Appraiser", "Employer", "Manager",
+                    ]
+                    _COND_STATS_SCAN = ["Needed", "Requested", "Important", "Ready to Clear", "Cleared"]
+
+                    def _infer_party(_desc: str) -> str:
+                        _d = (_desc or "").lower()
+                        if any(k in _d for k in ["insurance", "hoi", "hazard", "flood"]): return "Insurance"
+                        if any(k in _d for k in ["title", "lien", "payoff", "survey"]):  return "Title"
+                        if any(k in _d for k in ["appraisal", "appraiser", "value"]):    return "Appraiser"
+                        if any(k in _d for k in ["voe", "employer", "employment"]):      return "Employer"
+                        if any(k in _d for k in ["purchase contract", "realtor", "agent"]): return "Realtor"
+                        if "seller" in _d:                                               return "Seller"
+                        if any(k in _d for k in ["closer", "cd ", "closing disclosure"]):return "Closer"
+                        return "Borrower"
+
+                    _scan_fkey = f"scan_{_bidx}"
+                    _raw_conds = _r.get("conditions", []) or []
+                    if isinstance(_raw_conds, str):
+                        _raw_conds = [ln.strip(" -•\t") for ln in _raw_conds.splitlines() if ln.strip()]
+                    _norm_conds = []
+                    for _i, _c in enumerate(_raw_conds):
+                        _cc = dict(_c) if isinstance(_c, dict) else {"desc": str(_c)}
+                        _cc.setdefault("num", str(_i + 1))
+                        _cc["desc"] = _cc.get("desc") or _cc.get("description") or "—"
+                        if not _cc.get("party"):
+                            _cc["party"] = _infer_party(_cc["desc"])
+                        _cc.setdefault("status", "Needed")
+                        _norm_conds.append(_cc)
+
+                    for _c in _norm_conds:
+                        _uid = f"{_scan_fkey}_{_c['num']}"
+                        # Single tight row: [✓] #N desc [status] [parties] [📧] [📁]
+                        _r1, _r2, _r3, _r4, _r5, _r6 = st.columns([0.5, 4, 1.2, 1.6, 0.5, 0.5])
+                        with _r1:
+                            _chk = st.checkbox("", value=False, key=f"{_uid}_chk",
+                                               label_visibility="collapsed")
+                        with _r2:
+                            st.markdown(
+                                f'<div style="font-size:12px;line-height:1.3;padding-top:3px;">'
+                                f'<b style="color:#39FF14;">#{_c["num"]}</b> '
+                                f'<span style="color:#e5e7eb;">{_c["desc"][:110]}</span></div>',
+                                unsafe_allow_html=True,
+                            )
+                        with _r3:
+                            _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c["status"] in _COND_STATS_SCAN else 0
+                            _cstat = st.selectbox("s", _COND_STATS_SCAN, index=_sidx,
+                                                  key=f"{_uid}_stat", label_visibility="collapsed")
+                        with _r4:
+                            _cparties = st.multiselect("p", _PARTY_OPTS_SCAN,
+                                                       default=[_c["party"]] if _c["party"] in _PARTY_OPTS_SCAN else [],
+                                                       key=f"{_uid}_party", label_visibility="collapsed")
+                        with _r5:
+                            if st.button("📧", key=f"{_uid}_email", help="Draft email"):
+                                st.session_state[f"{_uid}_email_open"] = True
+                        with _r6:
+                            _fd = not (_lm_suggestion == "match" and _lm_loan_id)
+                            if st.button("📁", key=f"{_uid}_fetch", disabled=_fd,
+                                         help="Match to loan first" if _fd else "Fetch from folder"):
+                                try:
+                                    from pathlib import Path as _P
+                                    from folder_manager import fetch_for_condition as _ffc
+                                    _ml = next((l for l in _gl() if l.get("id") == _lm_loan_id), None)
+                                    _fp = (_ml or {}).get("folder_path", "")
+                                    if _fp:
+                                        st.session_state[f"{_uid}_fetch_hits"] = _ffc(_P(_fp), int(_c["num"]))
+                                    else:
+                                        st.session_state[f"{_uid}_fetch_hits"] = []
+                                        st.toast("No folder path on loan", icon="⚠️")
+                                except Exception as _e:
+                                    st.toast(f"Fetch failed: {_e}", icon="⚠️")
+
+                        # ── Email drafter panel (toggled by 📧) ──
+                        if st.session_state.get(f"{_uid}_email_open"):
+                            _ec1, _ec2, _ec3 = st.columns([1.5, 1, 0.5])
+                            with _ec1:
+                                _p_choice = st.selectbox(
+                                    "To", _PARTY_OPTS_SCAN,
+                                    index=_PARTY_OPTS_SCAN.index(_cparties[0]) if _cparties and _cparties[0] in _PARTY_OPTS_SCAN else (
+                                        _PARTY_OPTS_SCAN.index(_c["party"]) if _c["party"] in _PARTY_OPTS_SCAN else 0
+                                    ),
+                                    key=f"{_uid}_email_to", label_visibility="collapsed",
+                                )
+                            with _ec2:
+                                _lang = st.selectbox(
+                                    "Language", ["English", "Spanish"],
+                                    key=f"{_uid}_email_lang", label_visibility="collapsed",
+                                )
+                            with _ec3:
+                                if st.button("✕", key=f"{_uid}_email_close", help="Close"):
+                                    for _k in (f"{_uid}_email_open", f"{_uid}_email_body"):
+                                        st.session_state.pop(_k, None)
+                                    st.rerun()
+                            try:
+                                from ai_engine import draft_email as _draft
+                                _ebody = _draft(f"- #{_c['num']}: {_c['desc']}", _p_choice, _lang)
+                            except Exception as _e:
+                                _ebody = f"(Draft failed: {_e})"
+                            st.code(_ebody, language=None)
+                        _hits = st.session_state.get(f"{_uid}_fetch_hits")
+                        if _hits is not None:
+                            if _hits:
+                                _lines = " · ".join(
+                                    f"`{(_h.get('file') or _h.get('path') or '?')}`"
+                                    for _h in _hits[:5]
+                                )
+                                st.markdown(
+                                    f'<div style="font-size:11px;color:#9ca3af;padding:2px 0 4px 32px;">{_lines}</div>',
+                                    unsafe_allow_html=True,
+                                )
+                            else:
+                                st.markdown(
+                                    '<div style="font-size:11px;color:#6b7280;padding:2px 0 4px 32px;">No matching docs.</div>',
+                                    unsafe_allow_html=True,
+                                )
+                    st.markdown('</div>', unsafe_allow_html=True)
                 if _cont_count:
-                    st.markdown("**Contacts**")
+                    _cchips = []
                     for _k, _v in _r.get("contacts", {}).items():
                         if not isinstance(_v, dict):
                             continue
                         _name = _v.get("name", "") or _v.get("company", "")
-                        _phone = _v.get("phone", "")
-                        _email = _v.get("email", "")
-                        _brok = _v.get("brokerage", "")
-                        _parts = [p for p in [_name, _brok, _phone, _email] if p]
+                        _parts = [p for p in [_name, _v.get("phone", ""), _v.get("email", "")] if p]
                         if _parts:
-                            st.markdown(f"- **{_k.replace('_',' ').title()}**: {' · '.join(_parts)}")
+                            _cchips.append(
+                                f'<span style="display:inline-block;font-size:11px;'
+                                f'background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.2);'
+                                f'border-radius:10px;padding:2px 8px;margin:2px 4px 2px 0;color:#e5e7eb;">'
+                                f'<b style="color:#39FF14;">{_k.replace("_"," ").title()}</b> · '
+                                f'{" · ".join(_parts)}</span>'
+                            )
+                    if _cchips:
+                        st.markdown('<div class="pa-section" style="margin-top:8px;">Contacts</div>', unsafe_allow_html=True)
+                        st.markdown("".join(_cchips), unsafe_allow_html=True)
 
                 # ── Purchase Contract extended fields ──────────────────
                 if _batch.get("type") == "Purchase Contract":
@@ -1736,10 +1992,16 @@ def show_pipeline():
         if st.button("+Add Loan", use_container_width=True, type="primary"):
             st.session_state.pipeline_add_open = not st.session_state.get("pipeline_add_open", False)
     with tb2:
+        _opts = ["All"] + STATUS_OPTIONS
+        _default = st.session_state.get("pipeline_filter_val", "All")
+        if _default not in _opts:
+            _default = "All"
         filter_status = st.selectbox(
-            "Status", ["All"] + STATUS_OPTIONS,
+            "Status", _opts,
+            index=_opts.index(_default),
             key="pipeline_filter",
         )
+        st.session_state["pipeline_filter_val"] = filter_status
     with tb3:
         search_loan = st.text_input(
             "Search", placeholder="Loan # or borrower name",
@@ -2322,20 +2584,20 @@ def show_pipeline():
         return parts[0].lower() if parts else ""
 
     if sort_by == "Closing Date":
-        loans.sort(key=lambda l: l.get("closing_date") or l.get("due_date") or "9999")
+        loans.sort(key=lambda l: str(l.get("closing_date") or l.get("due_date") or "9999"))
     elif sort_by == "Lock Expiry":
-        loans.sort(key=lambda l: l.get("lock_expiry") or "9999")
+        loans.sort(key=lambda l: str(l.get("lock_expiry") or "9999"))
     elif sort_by == "Last Name":
-        loans.sort(key=lambda l: _last_name(l.get("borrower", "")))
+        loans.sort(key=lambda l: _last_name(l.get("borrower") or ""))
     elif sort_by == "First Name":
-        loans.sort(key=lambda l: _first_name(l.get("borrower", "")))
+        loans.sort(key=lambda l: _first_name(l.get("borrower") or ""))
     elif sort_by == "Loan #":
-        loans.sort(key=lambda l: l.get("loan_num", ""))
+        loans.sort(key=lambda l: str(l.get("loan_num") or ""))
     elif sort_by == "Status":
         _status_order = {s: i for i, s in enumerate(STATUS_OPTIONS)}
         loans.sort(key=lambda l: _status_order.get(l.get("status"), 99))
     else:  # Newest (default — most recently created first)
-        loans.sort(key=lambda l: l.get("id", 0), reverse=True)
+        loans.sort(key=lambda l: l.get("id") or 0, reverse=True)
 
     if not loans:
         st.info("No loans in pipeline yet. Click **+Add Loan** to get started.")
@@ -2351,19 +2613,18 @@ def show_pipeline():
         "Overdue":   ("#9ca3af", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.1)"),
         "Closed":    ("#9ca3af", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.1)"),
     }
-    _stat_chips = " ".join(
-        f'<span style="background:{_chip_tints.get(s, ("#9ca3af","rgba(255,255,255,0.03)","rgba(255,255,255,0.1)"))[1]};'
-        f'border:1px solid {_chip_tints.get(s, ("#9ca3af","rgba(255,255,255,0.03)","rgba(255,255,255,0.1)"))[2]};border-radius:3px;'
-        f'padding:2px 8px;font-size:12px;font-weight:600;color:{_chip_tints.get(s, ("#9ca3af","rgba(255,255,255,0.03)","rgba(255,255,255,0.1)"))[0]};'
-        f'display:inline-block;margin-bottom:2px;">'
-        f'{counts[s]} <span style="font-size:10px;'
-        f'font-weight:500;text-transform:uppercase;letter-spacing:0.3px;">{s}</span></span>'
-        for s in STATUS_OPTIONS
-    )
-    st.markdown(
-        f'<div style="margin:4px 0 8px 0;">{_stat_chips}</div>',
-        unsafe_allow_html=True,
-    )
+    # Status filter chips — real Streamlit buttons, stay in-tab
+    _chip_labels = ["All"] + list(STATUS_OPTIONS)
+    _chip_cols = st.columns(len(_chip_labels))
+    for _i, _s in enumerate(_chip_labels):
+        with _chip_cols[_i]:
+            _n = len(all_loans) if _s == "All" else counts.get(_s, 0)
+            _lbl = f"{_n}  {_s}"
+            _active = (filter_status == _s)
+            if st.button(_lbl, key=f"statchip_{_s}", type=("primary" if _active else "secondary"), use_container_width=True):
+                st.session_state["pipeline_filter_val"] = _s
+                st.session_state.pop("pipeline_filter", None)
+                st.rerun()
 
     # ── Pipeline-wide progress bar ────────────────────────────────────────────
     _total_loans = len(all_loans)
@@ -2372,26 +2633,24 @@ def show_pipeline():
         _in_prog = counts.get("Requested", 0)
         _pipeline_pct = int((_closed / _total_loans) * 100)
         _pipeline_bar_html = (
-            f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:3px;'
-            f'padding:6px 10px;margin-bottom:8px;">'
-            f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
-            f'<span style="font-size:11px;font-weight:600;color:#ffffff;">Pipeline Progress</span>'
-            f'<span style="font-size:11px;color:#9ca3af;">'
-            f'{_closed} cleared / closed &nbsp;·&nbsp; {_in_prog} in progress &nbsp;·&nbsp; {_total_loans} total</span>'
+            f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:2px;'
+            f'padding:5px 8px;margin-bottom:6px;">'
+            f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'
+            f'<span style="font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.4px;">Pipeline Progress</span>'
+            f'<span style="font-size:10px;color:#9ca3af;">'
+            f'{_closed} cleared&nbsp;·&nbsp;{_in_prog} in progress&nbsp;·&nbsp;{_total_loans} total</span>'
             f'</div>'
-            f'<div style="background:rgba(255,255,255,0.1);border-radius:2px;height:8px;overflow:hidden;position:relative;">'
-            # cleared/closed portion (green)
+            f'<div style="background:rgba(255,255,255,0.1);border-radius:1px;height:6px;overflow:hidden;position:relative;">'
             f'<div style="background:#39FF14;width:{_pipeline_pct}%;height:100%;'
-            f'border-radius:2px 0 0 2px;position:absolute;left:0;"></div>'
-            # in-progress portion (orange) stacked after green
+            f'position:absolute;left:0;"></div>'
             f'<div style="background:#f59e0b;'
             f'width:{int((_in_prog/_total_loans)*100)}%;height:100%;'
             f'position:absolute;left:{_pipeline_pct}%;"></div>'
             f'</div>'
-            f'<div style="display:flex;gap:12px;margin-top:4px;">'
-            f'<span style="font-size:10px;color:#39FF14;font-weight:600;">&#9632; Cleared/Closed {_pipeline_pct}%</span>'
-            f'<span style="font-size:10px;color:#f59e0b;font-weight:600;">&#9632; In Progress {int((_in_prog/_total_loans)*100)}%</span>'
-            f'<span style="font-size:10px;color:#ef4444;font-weight:600;">&#9632; Pending/Overdue {100 - _pipeline_pct - int((_in_prog/_total_loans)*100)}%</span>'
+            f'<div style="display:flex;gap:10px;margin-top:3px;">'
+            f'<span style="font-size:9px;color:#39FF14;font-weight:600;">&#9632; Cleared {_pipeline_pct}%</span>'
+            f'<span style="font-size:9px;color:#f59e0b;font-weight:600;">&#9632; In Progress {int((_in_prog/_total_loans)*100)}%</span>'
+            f'<span style="font-size:9px;color:#ef4444;font-weight:600;">&#9632; Pending/Overdue {100 - _pipeline_pct - int((_in_prog/_total_loans)*100)}%</span>'
             f'</div>'
             f'</div>'
         )
@@ -2503,11 +2762,10 @@ def show_pipeline():
         _contacts_data = loan.get("contacts", {})
         _contact_chips = []
         _contact_label_map = {
-            "buyer": "Buyer", "borrower": "Buyer", "co_borrower": "Co-Buyer",
             "seller": "Seller", "listing_agent": "L.Agent", "selling_agent": "B.Agent",
-            "title": "Title",
+            "title": "Title", "insurance": "HOI",
         }
-        for _ck in ["buyer", "borrower", "co_borrower", "seller", "listing_agent", "selling_agent", "title"]:
+        for _ck in ["seller", "listing_agent", "selling_agent", "title", "insurance"]:
             _cv = _contacts_data.get(_ck)
             if not _cv or not isinstance(_cv, dict):
                 continue
@@ -2515,11 +2773,31 @@ def show_pipeline():
             if not _cname:
                 continue
             _clabel = _contact_label_map.get(_ck, _ck)
-            _contact_chips.append(f'<span style="color:#6b7280;">{_clabel}:</span> {_cname}')
+            _cphone = _cv.get("phone", "")
+            _cemail = _cv.get("email", "")
+            _ccompany = _cv.get("company", "") if _cv.get("name") else ""
+            _tip_rows = []
+            if _ccompany:
+                _tip_rows.append(f'<div style="color:#9ca3af;font-size:11px;">{_ccompany}</div>')
+            if _cphone:
+                _tip_rows.append(f'<div style="color:#d1d5db;font-size:12px;">📞 {_cphone}</div>')
+            if _cemail:
+                _tip_rows.append(f'<div style="color:#d1d5db;font-size:12px;">✉️ {_cemail}</div>')
+            _tip_html = "".join(_tip_rows) if _tip_rows else '<div style="color:#9ca3af;font-size:11px;">No contact details</div>'
+            _tooltip = (
+                f'<span class="pa-tip-box">'
+                f'<div style="color:#39FF14;font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
+                f'<div style="color:#ffffff;font-size:13px;font-weight:600;margin-bottom:4px;">{_cname}</div>'
+                f'{_tip_html}'
+                f'</span>'
+            )
+            _contact_chips.append(
+                f'<span class="pa-tip"><span style="color:#6b7280;">{_clabel}:</span> {_cname}{_tooltip}</span>'
+            )
         _contacts_line = ""
         if _contact_chips:
             _contacts_line = (
-                f'<div style="font-size:9px;color:#9ca3af;margin-top:2px;">'
+                f'<div style="font-size:9px;color:#9ca3af;margin-top:2px;margin-bottom:8px;">'
                 + " · ".join(_contact_chips) + '</div>'
             )
 
@@ -2591,9 +2869,9 @@ def show_pipeline():
         )
 
         # ── Compact action row: Open | Status | Assign ───────────────
-        ac1, ac2, ac3 = st.columns([1, 1.5, 2])
+        ac1, ac2, ac3 = st.columns([1.3, 1.5, 2])
         with ac1:
-            if st.button(f"Open", key=f"open_{lid}"):
+            if st.button(f"▸ OPEN", key=f"open_{lid}", type="primary", use_container_width=True):
                 st.session_state.detail_loan_id = lid
                 st.session_state.page = "loan_detail"
                 st.rerun()
@@ -2619,6 +2897,114 @@ def show_pipeline():
                 update_loan(lid, assigned_to=_new_val)
                 log_activity(lid, "reassign", f"Reassigned to {new_assignee}", user=my_name)
                 st.rerun()
+
+        # ── HOI / Title quick-generate + copyable contacts ───────────────────
+        _docs_key = f"docs_open_{lid}"
+        _docs_open = st.session_state.get(_docs_key, False)
+        _docs_lbl = f"📄 Docs & Contacts  {'▲' if _docs_open else '▼'}"
+        if st.button(_docs_lbl, key=f"docsbtn_{lid}", use_container_width=True):
+            st.session_state[_docs_key] = not _docs_open
+            st.rerun()
+
+        if st.session_state.get(_docs_key):
+            _pl_contacts = loan.get("contacts", {}) or {}
+            _hoi_col, _title_col = st.columns(2)
+
+            # ── HOI side ────────────────────────────────────────────────
+            with _hoi_col:
+                if st.button("Generate HOI", key=f"pl_gen_hoi_{lid}", use_container_width=True):
+                    try:
+                        from template_filler import fill_template, build_context, OUTPUT_ROOT
+                        import os as _os, re as _re
+                        _ctx = build_context(loan)
+                        _safe = _re.sub(r"[^A-Za-z0-9_-]+", "_", _ctx["borrower_name"])[:40]
+                        _out = _os.path.join(OUTPUT_ROOT, str(lid), f"HOI Request_{_safe}.docx")
+                        fill_template("HOI Request.docx", _ctx, _out)
+                        log_activity(lid, "generated", "HOI Request generated", user=my_name)
+                        st.session_state[f"_pl_hoi_path_{lid}"] = _out
+                        st.toast("HOI Request generated", icon="✅")
+                        st.rerun()
+                    except Exception as _e:
+                        st.error(f"HOI gen failed: {_e}")
+                _p_hoi = st.session_state.get(f"_pl_hoi_path_{lid}")
+                if _p_hoi:
+                    try:
+                        with open(_p_hoi, "rb") as _fh:
+                            st.download_button(
+                                "⬇ Download HOI",
+                                _fh.read(),
+                                file_name=_p_hoi.split(chr(92))[-1] if chr(92) in _p_hoi else _p_hoi.split("/")[-1],
+                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                key=f"pl_dl_hoi_{lid}",
+                                use_container_width=True,
+                            )
+                    except FileNotFoundError:
+                        pass
+                _rc = _pl_contacts.get("insurance") or {}
+                _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
+                _phone, _email = _rc.get("phone", ""), _rc.get("email", "")
+                st.markdown(
+                    '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);'
+                    'border-radius:8px;padding:8px;margin-top:6px;">'
+                    '<div style="font-size:10px;color:#39FF14;font-weight:700;'
+                    'text-transform:uppercase;margin-bottom:4px;">HOI / Insurance</div>'
+                    + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;">{_name}</div>' if _name else '')
+                    + ('' if (_name or _phone or _email) else '<span style="color:#9ca3af;font-size:11px;">Not set</span>')
+                    + '</div>',
+                    unsafe_allow_html=True,
+                )
+                if _phone:
+                    st.code(_phone, language=None)
+                if _email:
+                    st.code(_email, language=None)
+
+            # ── Title side ──────────────────────────────────────────────
+            with _title_col:
+                if st.button("Generate Title", key=f"pl_gen_title_{lid}", use_container_width=True):
+                    try:
+                        from template_filler import fill_template, build_context, OUTPUT_ROOT
+                        import os as _os, re as _re
+                        _ctx = build_context(loan)
+                        _safe = _re.sub(r"[^A-Za-z0-9_-]+", "_", _ctx["borrower_name"])[:40]
+                        _out = _os.path.join(OUTPUT_ROOT, str(lid), f"Title Request_{_safe}.docx")
+                        fill_template("Title Request copy.docx", _ctx, _out)
+                        log_activity(lid, "generated", "Title Request generated", user=my_name)
+                        st.session_state[f"_pl_title_path_{lid}"] = _out
+                        st.toast("Title Request generated", icon="✅")
+                        st.rerun()
+                    except Exception as _e:
+                        st.error(f"Title gen failed: {_e}")
+                _p_ttl = st.session_state.get(f"_pl_title_path_{lid}")
+                if _p_ttl:
+                    try:
+                        with open(_p_ttl, "rb") as _fh:
+                            st.download_button(
+                                "⬇ Download Title",
+                                _fh.read(),
+                                file_name=_p_ttl.split(chr(92))[-1] if chr(92) in _p_ttl else _p_ttl.split("/")[-1],
+                                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                                key=f"pl_dl_title_{lid}",
+                                use_container_width=True,
+                            )
+                    except FileNotFoundError:
+                        pass
+                _rc = _pl_contacts.get("title") or {}
+                _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
+                _phone, _email = _rc.get("phone", ""), _rc.get("email", "")
+                st.markdown(
+                    '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);'
+                    'border-radius:8px;padding:8px;margin-top:6px;">'
+                    '<div style="font-size:10px;color:#39FF14;font-weight:700;'
+                    'text-transform:uppercase;margin-bottom:4px;">Title Company</div>'
+                    + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;">{_name}</div>' if _name else '')
+                    + ('' if (_name or _phone or _email) else '<span style="color:#9ca3af;font-size:11px;">Not set</span>')
+                    + '</div>',
+                    unsafe_allow_html=True,
+                )
+                if _phone:
+                    st.code(_phone, language=None)
+                if _email:
+                    st.code(_email, language=None)
 
         # ── Share this loan ──────────────────────────────────────────────────
         from sharing import get_members, share_loan as _share_loan, send_update as _send_update
@@ -4031,6 +4417,44 @@ def show_loan_detail():
                     )
             except FileNotFoundError:
                 pass
+
+    # ── Quick-copy Title & HOI contacts ─────────────────────────────────────
+    _qc_contacts = loan.get("contacts", {}) or {}
+    st.markdown(
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Title &amp; HOI Contact — Copy</span>',
+        unsafe_allow_html=True,
+    )
+    _qc_c1, _qc_c2 = st.columns(2)
+    for _col, _role_key, _role_label in [
+        (_qc_c1, "title", "Title"),
+        (_qc_c2, "insurance", "HOI / Insurance"),
+    ]:
+        with _col:
+            _rc = _qc_contacts.get(_role_key) or {}
+            _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
+            _phone = _rc.get("phone", "")
+            _email = _rc.get("email", "")
+            st.markdown(
+                f'<div style="font-size:10px;color:#39FF14;font-weight:700;'
+                f'text-transform:uppercase;margin-bottom:4px;">{_role_label}</div>',
+                unsafe_allow_html=True,
+            )
+            if not (_name or _phone or _email):
+                st.markdown(
+                    '<span style="color:#9ca3af;font-size:12px;">Not set</span>',
+                    unsafe_allow_html=True,
+                )
+                continue
+            if _name:
+                st.markdown(
+                    f'<div style="color:#d1d5db;font-size:13px;font-weight:600;margin-bottom:2px;">{_name}</div>',
+                    unsafe_allow_html=True,
+                )
+            if _phone:
+                st.code(_phone, language=None)
+            if _email:
+                st.code(_email, language=None)
 
     # ── Open Conditions (interactive — checkbox, status, parties, email) ────
     _conditions = loan.get("conditions", [])

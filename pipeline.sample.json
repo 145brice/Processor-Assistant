@@ -1,0 +1,163 @@
+[
+  {
+    "id": 2,
+    "loan_num": "5000009874561",
+    "borrower": "Carlos & Diana Reyes",
+    "status": "Overdue",
+    "due_date": "2026-03-25",
+    "closing_date": "2026-03-28",
+    "lock_expiry": "2026-04-10",
+    "missing_docs": "HOI Policy, CPL, Wire Instructions",
+    "folder_path": "",
+    "created": "2026-03-15",
+    "updated": "2026-03-24",
+    "notes": "Conventional purchase. Insurance binder sent back incorrect mortgagee clause. Resent 3/20.",
+    "assigned_to": "",
+    "created_by": "Sandbox User"
+  },
+  {
+    "id": 5,
+    "loan_num": "5000006689012",
+    "borrower": "Patel Family Trust",
+    "status": "Overdue",
+    "due_date": "2026-04-01",
+    "closing_date": "2026-04-01",
+    "lock_expiry": "",
+    "missing_docs": "Certificate of Good Standing, Operating Agreement, Property Tax Roll",
+    "folder_path": "",
+    "created": "2026-03-17",
+    "updated": "2026-04-16",
+    "notes": "DSCR loan, LLC vesting. Investor — first rental property requirement applies.",
+    "assigned_to": "",
+    "created_by": "Sandbox User",
+    "conditions": [],
+    "contacts": {
+      "listing_agent": {
+        "name": "Jessica Rosa and Angie Grajzl",
+        "brokerage": "RE/MAX Traditions",
+        "phone": "440-255-6505",
+        "email": "jesslarosa620@gmail.com"
+      },
+      "selling_agent": {
+        "name": "Christie Barkan",
+        "brokerage": "KW Living",
+        "phone": "",
+        "email": ""
+      },
+      "title": {
+        "company": "CLE Title/Northern Title",
+        "contact": "",
+        "phone": "",
+        "email": ""
+      }
+    },
+    "documents": [
+      {
+        "filename": "PurchaseAgreement.pdf",
+        "doc_type": "Purchase Contract",
+        "path": "c:\\Users\\user\\OneDrive\\Desktop\\processor-traien\\Processor-Assistant\\loan_docs\\5\\PurchaseAgreement.pdf",
+        "attached": "2026-04-16T13:39",
+        "size_kb": 1134.6,
+        "extracted_data": {
+          "buyer": {
+            "name": "Andrew Weingart",
+            "phone": "",
+            "email": ""
+          },
+          "seller": {
+            "name": "Cory Chiappone",
+            "phone": "",
+            "email": ""
+          },
+          "property": {
+            "address": "38425 Laura Dr, Eastlake, OH 44095"
+          },
+          "transaction": {
+            "purchase_price": "180,000",
+            "closing_date": "03/25/2022",
+            "date_signed": "",
+            "obligation_date": "",
+            "earnest_money": "1,800",
+            "down_payment": "",
+            "seller_concessions": ""
+          },
+          "listing_agent": {
+            "name": "Jessica Rosa and Angie Grajzl",
+            "brokerage": "RE/MAX Traditions",
+            "phone": "440-255-6505",
+            "email": "jesslarosa620@gmail.com"
+          },
+          "selling_agent": {
+            "name": "Christie Barkan",
+            "brokerage": "KW Living",
+            "phone": "",
+            "email": ""
+          },
+          "title": {
+            "company": "CLE Title/Northern Title",
+            "contact": "",
+            "phone": "",
+            "email": ""
+          },
+          "contingencies": {
+            "inspection": "",
+            "appraisal": "",
+            "financing": ""
+          },
+          "addendums": [],
+          "missing_required": []
+        }
+      }
+    ],
+    "property_address": "38425 Laura Dr, Eastlake, OH 44095",
+    "purchase_price": "180,000"
+  },
+  {
+    "id": 6,
+    "loan_num": "5000003321098",
+    "borrower": "Jennifer & Mark Thompson",
+    "status": "Overdue",
+    "due_date": "2026-04-05",
+    "closing_date": "2026-04-05",
+    "lock_expiry": "2026-03-30",
+    "missing_docs": "Signed 1003, Appraisal, Verification of Mortgage",
+    "folder_path": "",
+    "created": "2026-03-18",
+    "updated": "2026-03-24",
+    "notes": "FHA cash-out refi. Rushmore payoff needed. Waiting on borrower.",
+    "assigned_to": "",
+    "created_by": "Sandbox User"
+  },
+  {
+    "id": 7,
+    "loan_num": "5000007745230",
+    "borrower": "David Nguyen",
+    "status": "Overdue",
+    "due_date": "2026-04-12",
+    "closing_date": "2026-04-12",
+    "lock_expiry": "2026-04-18",
+    "missing_docs": "VOE, 2 months bank statements",
+    "folder_path": "",
+    "created": "2026-03-20",
+    "updated": "2026-03-24",
+    "notes": "VA purchase. COE on file. Waiting on employer verification.",
+    "assigned_to": "",
+    "created_by": "Sandbox User"
+  },
+  {
+    "id": 8,
+    "loan_num": "5000001198765",
+    "borrower": "Angela & Robert Davis",
+    "status": "Overdue",
+    "due_date": "2026-03-27",
+    "closing_date": "2026-03-27",
+    "lock_expiry": "2026-03-26",
+    "missing_docs": "Final CD approval, Closing disclosure signature",
+    "folder_path": "",
+    "created": "2026-03-22",
+    "updated": "2026-03-24",
+    "notes": "Conventional refi. Lock expires tomorrow — escalate if CD not back today.",
+    "assigned_to": "",
+    "created_by": "Sandbox User"
+  }
+]

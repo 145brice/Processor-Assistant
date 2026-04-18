@@ -1078,6 +1078,150 @@ _EMAIL_TEMPLATES = {
             "Gracias,\n[Su Nombre]\nProcesador de Prestamos"
         ),
     },
+    "Co-Borrower": {
+        "English": (
+            "Subject: Action Required - Outstanding Loan Conditions\n\n"
+            "Dear Co-Borrower,\n\n"
+            "To keep your loan moving toward closing, we need the following item(s) from you:\n\n"
+            "{conditions}\n\n"
+            "Please provide at your earliest convenience.\n\n"
+            "Thank you,\n[Your Name]\nLoan Processor"
+        ),
+        "Spanish": (
+            "Asunto: Accion Requerida - Condiciones Pendientes del Prestamo\n\n"
+            "Estimado/a Co-Prestatario/a,\n\n"
+            "Para mantener su prestamo avanzando hacia el cierre, necesitamos lo siguiente de su parte:\n\n"
+            "{conditions}\n\n"
+            "Por favor proporcionelo lo antes posible.\n\n"
+            "Gracias,\n[Su Nombre]\nProcesador de Prestamos"
+        ),
+    },
+    "Realtor": {
+        "English": (
+            "Subject: Outstanding Items - Loan File\n\n"
+            "Hello,\n\n"
+            "We have the following outstanding item(s) for your buyer's loan file:\n\n"
+            "{conditions}\n\n"
+            "Please assist in obtaining these as soon as possible.\n\n"
+            "Thank you,\n[Your Name]\nLoan Processor"
+        ),
+        "Spanish": (
+            "Asunto: Documentos Pendientes - Expediente de Prestamo\n\n"
+            "Hola,\n\n"
+            "Tenemos los siguientes documentos pendientes para el expediente de prestamo de su comprador:\n\n"
+            "{conditions}\n\n"
+            "Por favor ayudenos a obtenerlos lo antes posible.\n\n"
+            "Gracias,\n[Su Nombre]\nProcesador de Prestamos"
+        ),
+    },
+    "Seller": {
+        "English": (
+            "Subject: Seller Documentation Needed\n\n"
+            "Dear Seller,\n\n"
+            "We need the following item(s) from the seller to proceed with closing:\n\n"
+            "{conditions}\n\n"
+            "Please provide at your earliest convenience.\n\n"
+            "Thank you,\n[Your Name]\nLoan Processor"
+        ),
+        "Spanish": (
+            "Asunto: Documentacion del Vendedor Necesaria\n\n"
+            "Estimado/a Vendedor/a,\n\n"
+            "Necesitamos los siguientes documentos del vendedor para proceder con el cierre:\n\n"
+            "{conditions}\n\n"
+            "Por favor proporcionelos lo antes posible.\n\n"
+            "Gracias,\n[Su Nombre]\nProcesador de Prestamos"
+        ),
+    },
+    "Loan Officer": {
+        "English": (
+            "Subject: Loan File Update - Action Needed\n\n"
+            "Hi,\n\n"
+            "The following item(s) on this loan need your attention:\n\n"
+            "{conditions}\n\n"
+            "Please advise on next steps.\n\n"
+            "Thanks,\n[Your Name]\nLoan Processor"
+        ),
+        "Spanish": (
+            "Asunto: Actualizacion del Expediente - Accion Necesaria\n\n"
+            "Hola,\n\n"
+            "Los siguientes documentos de este prestamo necesitan su atencion:\n\n"
+            "{conditions}\n\n"
+            "Por favor indique los siguientes pasos.\n\n"
+            "Gracias,\n[Su Nombre]\nProcesador de Prestamos"
+        ),
+    },
+    "Closer": {
+        "English": (
+            "Subject: Closing Conditions - Loan File\n\n"
+            "Dear Closer,\n\n"
+            "The following closing-related item(s) are outstanding:\n\n"
+            "{conditions}\n\n"
+            "Please advise when we can schedule closing.\n\n"
+            "Thank you,\n[Your Name]\nLoan Processor"
+        ),
+        "Spanish": (
+            "Asunto: Condiciones de Cierre - Expediente de Prestamo\n\n"
+            "Estimado/a Cerrador/a,\n\n"
+            "Los siguientes documentos relacionados con el cierre estan pendientes:\n\n"
+            "{conditions}\n\n"
+            "Por favor indique cuando podemos programar el cierre.\n\n"
+            "Gracias,\n[Su Nombre]\nProcesador de Prestamos"
+        ),
+    },
+    "Employer": {
+        "English": (
+            "Subject: Verification of Employment Request\n\n"
+            "To Whom It May Concern,\n\n"
+            "We are processing a mortgage application and need the following from the employer:\n\n"
+            "{conditions}\n\n"
+            "Please return at your earliest convenience.\n\n"
+            "Thank you,\n[Your Name]\nLoan Processor"
+        ),
+        "Spanish": (
+            "Asunto: Solicitud de Verificacion de Empleo\n\n"
+            "A quien corresponda,\n\n"
+            "Estamos procesando una solicitud de hipoteca y necesitamos lo siguiente del empleador:\n\n"
+            "{conditions}\n\n"
+            "Por favor devuelvalo lo antes posible.\n\n"
+            "Gracias,\n[Su Nombre]\nProcesador de Prestamos"
+        ),
+    },
+    "Jr Underwriter": {
+        "English": (
+            "Subject: Condition Response / Documentation Submission\n\n"
+            "Hi,\n\n"
+            "Please find the following items submitted in response to outstanding conditions:\n\n"
+            "{conditions}\n\n"
+            "Let me know if anything else is needed.\n\n"
+            "Thanks,\n[Your Name]\nLoan Processor"
+        ),
+        "Spanish": (
+            "Asunto: Respuesta a Condiciones / Envio de Documentacion\n\n"
+            "Hola,\n\n"
+            "Adjunto los siguientes documentos en respuesta a las condiciones pendientes:\n\n"
+            "{conditions}\n\n"
+            "Avisame si algo mas es necesario.\n\n"
+            "Gracias,\n[Su Nombre]\nProcesador de Prestamos"
+        ),
+    },
+    "Manager": {
+        "English": (
+            "Subject: Loan File - Escalation\n\n"
+            "Hi,\n\n"
+            "The following item(s) on this loan need manager review:\n\n"
+            "{conditions}\n\n"
+            "Please advise.\n\n"
+            "Thanks,\n[Your Name]\nLoan Processor"
+        ),
+        "Spanish": (
+            "Asunto: Expediente de Prestamo - Escalacion\n\n"
+            "Hola,\n\n"
+            "Los siguientes documentos de este prestamo requieren revision del gerente:\n\n"
+            "{conditions}\n\n"
+            "Por favor indique.\n\n"
+            "Gracias,\n[Su Nombre]\nProcesador de Prestamos"
+        ),
+    },
 }
 
 
@@ -3059,14 +3203,49 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
             (r'(?:closing\s*date|settlement\s*date).*(?:escrow|title)', 15),
             (r'inspection\s*(?:period|contingency)', 12),
         ]),
-        # Approval / Commitment Letter
+        # Approval / Commitment Letter (merged — includes AUS findings)
         ("Approval Letter", [
-            (r'(?:approv(?:al|ed)\s*(?:letter|notification|notice))', 40),
-            (r'commitment\s*letter', 40),
-            (r'(?:conditional(?:ly)?\s*approv)', 30),
-            (r'(?:conditions?\s*(?:of\s*approval|prior\s*to|to\s*be\s*satisfied))', 25),
-            (r'(?:underwriting\s*(?:decision|conditions?))', 20),
-            (r'(?:prior\s*to\s*(?:closing|funding|docs))', 15),
+            (r'(?:approv(?:al|ed)\s*(?:letter|notification|notice))', 50),
+            (r'commitment\s*letter', 50),
+            (r'(?:conditional(?:ly)?\s*approv)', 45),
+            (r'(?:this\s*loan\s*(?:has\s*been|is)\s*approved)', 55),
+            (r'(?:subject\s*to\s*the\s*following\s*conditions?)', 45),
+            (r'(?:cleared?\s*to\s*close|clear\s*to\s*close|\bctc\b)', 40),
+            (r'(?:prior[\s-]*to[\s-]*(?:closing|funding|docs?)\s*condition)', 40),
+            # Common wholesaler condition-category labels — very decisive
+            (r'\bprior\s*to\s*docs?\b', 45),
+            (r'\bprior\s*to\s*funding\b', 45),
+            (r'\bprior\s*to\s*closing\b', 40),
+            (r'\bptd\s*conditions?\b', 40),
+            (r'\bptf\s*conditions?\b', 40),
+            # Orion/AFN-style and generic "LOAN DECISION" header
+            (r'\bloan\s*decision\b', 60),
+            (r'\bcredit\s*decision\b', 45),
+            (r'\bunderwriting\s*decision\b', 45),
+            (r'\buw\s*decision\b', 40),
+            (r'\bloan\s*approval\b', 50),
+            (r'\bloan\s*conditions?\b', 45),
+            (r'(?:loan\s*conditions?|conditions?\s*(?:of\s*approval|list|summary))', 35),
+            (r'(?:conditions?\s*(?:prior\s*to|to\s*be\s*(?:satisfied|met|cleared)))', 30),
+            (r'(?:underwrit(?:ing|er)\s*(?:decision|conditions?|approval))', 30),
+            (r'(?:broker\s*copy|lender\s*copy).*(?:conditions?|approval)', 25),
+            # AUS findings (formerly a second Approval Letter entry)
+            (r'(?:desktop\s*underwriter|du\s*findings?|du\s*approve[d]?)', 60),
+            (r'(?:loan\s*prospector|lpa\s*findings?|freddie\s*mac\s*findings?)', 60),
+            (r'(?:approve[d]?/eligible|approve[d]?/ineligible|refer\s*with\s*caution)', 50),
+            (r'(?:fannie\s*mae\s*(?:approval|approve|findings?)|fnma\s*findings?)', 50),
+            (r'(?:underwriting\s*findings?|aus\s*findings?)', 35),
+            (r'(?:maximum\s*loan\s*amount|qualifying\s*ratio|dti\s*ratio)', 20),
+            # Generic phrasing that shows up on wholesaler approvals w/o AUS language
+            (r'(?:pre[\s-]*approval|pre[\s-]*qual(?:ification)?)', 30),
+            (r'(?:approval\s*summary|approval\s*notice)', 35),
+            # Condition-row structure: "Responsible # Status Date Description"
+            # or a condition grid with Underwriter/Broker/Other party columns
+            (r'responsible\s*#?\s*status\s*(?:date\s*)?description', 50),
+            (r'(?:senior\s*underwriter|account\s*executive|account\s*manager)\s*:', 35),
+            (r'(?:expiration\s*dates|closing\s*made\s*simple)', 30),
+            (r'(?:borrower(?:\(s\))?\s*(?:name|information)[\s\S]{0,200}?'
+             r'(?:loan\s*(?:amount|number|program|type)))', 20),
         ]),
         # Change of Circumstance
         ("Change of Circumstance (COC)", [
@@ -3138,16 +3317,6 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
             (r'(?:schedule\s*[ab]|exceptions?.*(?:title|lien))', 20),
             (r'(?:legal\s*description|vesting)', 15),
         ]),
-        # Approval Letter / AUS Findings (DU/LP)
-        ("Approval Letter", [
-            (r'(?:desktop\s*underwriter|du\s*findings?|du\s*approve[d]?)', 60),
-            (r'(?:loan\s*prospector|lpa\s*findings?|freddie\s*mac\s*findings?)', 60),
-            (r'(?:approve[d]?/eligible|approve[d]?/ineligible|refer\s*with\s*caution)', 50),
-            (r'(?:fannie\s*mae\s*(?:approval|approve|findings?)|fnma\s*findings?)', 50),
-            (r'(?:conditional\s*approval|commitment\s*letter|pre-?approval)', 40),
-            (r'(?:underwriting\s*findings?|aus\s*findings?)', 35),
-            (r'(?:maximum\s*loan\s*amount|qualifying\s*ratio|dti\s*ratio)', 20),
-        ]),
         # Mortgage Statement
         ("Mortgage Statement", [
             (r'(?:mortgage\s*statement|loan\s*statement)', 50),
@@ -3207,16 +3376,136 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
     best_score = 0
     best_signals = []
 
+    # Strong approval-letter indicators — if present, any non-Approval doc
+    # that lacks its own body-tells is almost certainly being *referenced*
+    # as a condition inside the approval, not the approval itself.
+    _has_approval_signal = any(re.search(p, t) for p in [
+        r'this\s*loan\s*(?:has\s*been|is)\s*approved',
+        r'subject\s*to\s*the\s*following\s*conditions?',
+        r'conditional(?:ly)?\s*approv',
+        r'prior[\s-]*to[\s-]*(?:closing|funding|docs?)\s*condition',
+        r'loan\s*conditions?\s*(?:list|summary|report)',
+        r'(?:du\s*findings?|loan\s*product\s*advisor|\blpa\b)',
+        r'(?:cleared?\s*to\s*close|\bctc\b)',
+        r'commitment\s*letter',
+        # Orion/AFN + generic wholesaler condition-grid approvals
+        r'\bloan\s*decision\b',
+        r'\bloan\s*approval\b',
+        r'\bloan\s*conditions?\b',
+        r'\bcredit\s*decision\b',
+        r'\bprior\s*to\s*(?:docs?|funding|closing)\b',
+        r'\bptd\s*conditions?\b',
+        r'responsible\s*#?\s*status\s*(?:date\s*)?description',
+        r'(?:senior\s*underwriter|account\s*executive|account\s*manager)\s*:',
+    ])
+
+    # Body-tells: phrases that appear ONLY in an actual instance of that
+    # doc type, not when the type is merely referenced by name. If a doc
+    # scores high for type X but has zero body-tells for X, it's being
+    # name-dropped inside another doc.
+    _BODY_TELLS = {
+        "Hazard Insurance": [
+            r'declarations?\s*page', r'policy\s*(?:number|period|effective)',
+            r'named\s*insured', r'dwelling\s*coverage', r'coverage\s*(?:a|b|c|d)\b',
+        ],
+        "Title Commitment": [
+            r'commitment\s*(?:effective\s*date|for\s*title\s*insurance|no\.?\s*[A-Z0-9])',
+            r'schedule\s*a[\s\S]{0,120}?(?:effective\s*date|proposed\s*insured|amount\s*of\s*insurance)',
+            r'schedule\s*b[\s\S]{0,120}?(?:requirements?|exceptions?)',
+            r'proposed\s*insured',
+            r'(?:title\s*company|title\s*agent|underwriter).{0,60}(?:file\s*(?:no|number)|order\s*(?:no|number))',
+        ],
+        "Appraisal": [
+            r'uniform\s*residential\s*appraisal\s*report', r'\b1004\b',
+            r'comparable\s*sale\s*\d', r'subject\s*property\s*(?:address|characteristics)',
+            r'reconciliation', r'final\s*(?:opinion\s*of\s*)?value',
+            r'sales\s*comparison\s*approach', r'cost\s*approach',
+        ],
+        "Bank Statement": [
+            r'(?:beginning|ending)\s*balance', r'statement\s*period',
+            r'deposits?\s*(?:and|&)\s*credits?', r'withdrawals?\s*(?:and|&)\s*debits?',
+            r'account\s*summary', r'available\s*balance',
+        ],
+        "Credit Report": [
+            r'(?:experian|equifax|transunion|trans\s*union)',
+            r'(?:fico|beacon|vantage)\s*score',
+            r'tradeline', r'tri[\s-]*merge',
+            r'payment\s*history.*\d{1,3}\s*months',
+        ],
+        "Pay Stub": [
+            r'(?:pay\s*period|pay\s*date)', r'gross\s*pay.*net\s*pay',
+            r'ytd\s*(?:gross|earnings|pay)', r'federal\s*(?:income\s*)?tax\s*withheld',
+            r'fica|medicare', r'earnings\s*statement',
+        ],
+        "W-2": [
+            r'wage\s*and\s*tax\s*statement', r'employer.{0,30}(?:identification|ein)',
+            r'box\s*\d+', r'social\s*security\s*wages',
+            r'federal\s*income\s*tax\s*withheld',
+        ],
+        "Tax Return": [
+            r'form\s*1040', r'adjusted\s*gross\s*income',
+            r'(?:schedule\s*[a-e]\b).*(?:line|amount)',
+            r'taxable\s*income', r'total\s*income.*line\s*\d',
+        ],
+        "1099": [
+            r'\b1099[-\s]?(?:NEC|MISC|INT|DIV|R|G|K|S|C|B|OID|PATR|Q|SA|LTC|A|H|LS|SB)\b',
+            r'omb\s*no\.?\s*1545-', r'payer.{0,30}(?:tin|id)',
+            r'recipient.{0,30}(?:tin|ssn)',
+        ],
+        "Mortgage Statement": [
+            r'(?:principal\s*balance|unpaid\s*principal)',
+            r'escrow\s*(?:balance|summary|activity)',
+            r'(?:next\s*payment\s*date|payment\s*due\s*date)',
+            r'(?:servicer|loan\s*servic(?:er|ing))',
+        ],
+        "Purchase Contract": [
+            r'purchase\s*(?:and\s*sale\s*)?(?:agreement|contract)',
+            r'earnest\s*money.{0,100}(?:\$|dollar)',
+            r'closing\s*date', r'(?:inspection|financing)\s*contingency',
+            r'(?:buyer|purchaser).{0,200}(?:seller|vendor)',
+        ],
+        "Closing Disclosure (CD)": [
+            r'closing\s*disclosure', r'projected\s*payments',
+            r'cash\s*to\s*close', r'(?:loan\s*terms|origination\s*charges)',
+            r'(?:services\s*borrower\s*(?:did|cannot)\s*shop\s*for)',
+        ],
+        "Loan Estimate (LE)": [
+            r'loan\s*estimate(?!\s*(?:required|needed|missing))',
+            r'(?:estimated\s*closing\s*costs|estimated\s*total)',
+            r'projected\s*payments',
+            r'(?:comparisons?|other\s*considerations)',
+            r'in\s*5\s*years',
+        ],
+        "1003 Application": [
+            r'uniform\s*residential\s*loan\s*application',
+            r'\bform\s*1003\b', r'section\s*[1-9][a-z]?\.\s*',
+            r'demographic\s*information\s*(?:addendum|section)',
+            r'(?:declarations\s*section|acknowledgments\s*and\s*agreements)',
+        ],
+    }
+
+    _present_body_tells = {
+        dt: any(re.search(p, t) for p in pats)
+        for dt, pats in _BODY_TELLS.items()
+    }
+
     for doc_type, patterns in _RULES:
         score = 0
         signals = []
         for pat, weight in patterns:
             if re.search(pat, t):
                 score += weight
-                # Grab the matching phrase for display
                 m = re.search(pat, t)
                 if m:
                     signals.append(m.group(0).strip()[:50])
+        # Uniform guard: non-Approval types get heavily penalized when the
+        # text clearly is an approval (signals present) OR when the type's
+        # own body-tells are completely absent.
+        if doc_type != "Approval Letter" and doc_type in _BODY_TELLS:
+            if _has_approval_signal:
+                score = int(score * 0.2)
+            if not _present_body_tells.get(doc_type, False):
+                score = int(score * 0.3)
         if score > best_score:
             best_score = score
             best_type = doc_type
@@ -3677,6 +3966,84 @@ def extract_government_id(text: str) -> dict:
     }
 
 
+def extract_loan_estimate(text: str) -> dict:
+    """Pull key fields from a Loan Estimate — most importantly lock_expiry.
+
+    LE layout (TRID): top-right box has "Rate Lock" Yes/No and an expiry line
+    "Until __/__/____ at __:__ a.m./p.m.". Also carries loan_amount, rate,
+    loan_term, property address, borrower name — useful fallbacks.
+    """
+    import re
+
+    def _find(pat, src=text, group=1, flags=re.IGNORECASE | re.DOTALL):
+        m = re.search(pat, src, flags)
+        return m.group(group).strip() if m else ""
+
+    # Rate lock expiration — a few common phrasings
+    lock_expiry = ""
+    for pat in [
+        # "...your rate is locked until MM/DD/YYYY at ..."
+        r'rate\s*(?:is\s*)?lock(?:ed)?\s*(?:until|through|expires?)[^0-9]{0,40}'
+        r'(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})',
+        # "Lock Expires: MM/DD/YYYY" / "Lock Expiration MM/DD/YYYY"
+        r'lock\s*(?:expir(?:es|ation)|exp\.?)\s*(?:date)?[:\s]*'
+        r'(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})',
+        # "Until MM/DD/YYYY at ... Before closing..." (TRID box wording)
+        r'until\s+(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})\s*(?:at\s*\d{1,2}:\d{2})?\s*'
+        r'(?:a\.?m\.?|p\.?m\.?)?[^.]{0,80}(?:before\s*closing|rate\s*lock)',
+        # plain "Rate Lock ... YES ... MM/DD/YYYY"
+        r'rate\s*lock[\s\S]{0,120}?yes[\s\S]{0,80}?(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})',
+    ]:
+        m = re.search(pat, text, re.IGNORECASE)
+        if m:
+            lock_expiry = m.group(1).strip()
+            break
+
+    # Normalize to YYYY-MM-DD when possible (pipeline stores it that way)
+    if lock_expiry:
+        m = re.match(r'(\d{1,2})[/\-\.](\d{1,2})[/\-\.](\d{2,4})', lock_expiry)
+        if m:
+            mo, dy, yr = m.group(1), m.group(2), m.group(3)
+            if len(yr) == 2:
+                yr = ("20" + yr) if int(yr) < 80 else ("19" + yr)
+            lock_expiry = f"{yr}-{int(mo):02d}-{int(dy):02d}"
+
+    # Rate-lock Yes/No flag
+    rate_locked = bool(re.search(
+        r'rate\s*lock[\s\S]{0,80}?\byes\b', text, re.IGNORECASE
+    )) or bool(lock_expiry)
+
+    # Other useful fields (best-effort — LE layouts vary)
+    loan_amount = _find(r'loan\s*amount[^$\d]{0,20}\$?\s*([\d,]+(?:\.\d{2})?)')
+    interest_rate = _find(r'interest\s*rate[^%\d]{0,20}([\d.]+)\s*%')
+    loan_term = _find(r'loan\s*term[^0-9]{0,20}(\d{1,3})\s*(?:years?|yrs?)')
+    property_address = _find(
+        r'property[:\s]+([0-9][^\n]{5,100}?)(?:\n|$)',
+        flags=re.IGNORECASE,
+    )
+    borrower = _find(
+        r'(?:applicants?|borrowers?)[:\s]+([A-Z][a-zA-Z\-\'&\s,.]{3,80}?)(?:\n|$)',
+        flags=re.IGNORECASE,
+    )
+    issue_date = _find(
+        r'(?:date\s*issued|issue\s*date)[:\s]*'
+        r'(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})'
+    )
+    purpose = _find(r'\bpurpose[:\s]+([A-Za-z][A-Za-z\s/\-]{2,30})')
+
+    return {
+        "lock_expiry": lock_expiry,
+        "rate_locked": rate_locked,
+        "loan_amount": loan_amount,
+        "interest_rate": interest_rate,
+        "loan_term": loan_term,
+        "property_address": property_address,
+        "borrower": borrower,
+        "issue_date": issue_date,
+        "purpose": purpose,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Main Processing Function
 # ---------------------------------------------------------------------------
@@ -3754,6 +4121,9 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None) -> dict
         result["conditions"] = ""
         result["extracted_data"] = extract_purchase_contract(text)
         result["raw_text"] = text[:12000]  # retained for optional AI re-extraction
+    elif doc_type in ("Loan Estimate (LE)", "Loan Estimate"):
+        result["conditions"] = ""
+        result["extracted_data"] = extract_loan_estimate(text)
     else:
         result["conditions"] = extract_conditions(text, doc_type, user_history)
 

@@ -203,6 +203,16 @@ def _promote_fields(doc_type: str, extracted: dict) -> dict:
             out["loan_officer"] = lo["name"]
         elif isinstance(lo, str) and lo:
             out["loan_officer"] = lo
+    elif doc_type in ("Loan Estimate (LE)", "Loan Estimate"):
+        # Latest LE wins on lock_expiry — processors upload new LE after re-lock.
+        if extracted.get("lock_expiry"):
+            out["lock_expiry"] = extracted["lock_expiry"]
+        if extracted.get("loan_amount"):
+            out["loan_amount"] = extracted["loan_amount"]
+        if extracted.get("property_address"):
+            out["property_address"] = extracted["property_address"]
+        if extracted.get("purpose"):
+            out["loan_type"] = extracted["purpose"]
     return out
 
 
