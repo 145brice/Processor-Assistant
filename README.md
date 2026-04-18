@@ -319,11 +319,13 @@ Works over office WiFi, mapped network drives, or shared OneDrive subfolders.
 ### 4. Email Watch
 Auto-checks your inbox for new PDF attachments, verifies each one, stages for review.
 
+**Sidebar nav:** Email Watch is a top-level section with two sub-pages — **Controls** (setup, start/stop, credentials) and **Results** (live match queue with attachment count badge). Monitor incoming attachments while still working in Pipeline or Scanner.
+
 **Setup:** Pick provider (Gmail/Outlook/Yahoo/Custom), enter email and App Password, set check interval, save and start.
 
 **What happens:** Downloads attachment to `incoming/`, runs Quick Doc Verify, queues a review card. You see it in Email Watch, Quick Verify, and the sidebar indicator.
 
-**Actions:** Save to folder, Open in Reader, Dismiss. Nothing auto-saves.
+**Actions:** Click the 🖼️/📄/📋 **Preview** icon to expand an inline preview (images render directly, PDFs embed, text/CSV shows the first 3,000 chars). Then Save to folder, Download, Open in Reader, or Dismiss. Nothing auto-saves.
 
 ---
 

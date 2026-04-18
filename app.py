@@ -14,6 +14,13 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# --- No-cache headers (so CSS/JS edits take effect on reload without F12) ---
+st.markdown("""
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+""", unsafe_allow_html=True)
+
 # --- Custom CSS ---
 st.markdown(r"""
 <style>
@@ -45,34 +52,64 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
     background-size: 32px 32px; pointer-events: none; z-index: 0;
 }
 [data-testid="stAppViewContainer"] > div:first-child { background: transparent !important; }
-#MainMenu, footer, header { visibility: hidden; height: 0; }
+#MainMenu, footer { visibility: hidden; height: 0; }
+/* Header must stay visible so sidebar reopen arrow is reachable */
+header, [data-testid="stHeader"] { background: transparent !important; visibility: visible !important; display: flex !important; height: auto !important; min-height: 40px !important; z-index: 999999 !important; }
+header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { display: none !important; }
+/* Sidebar is permanent — hide all collapse/expand controls so users can't hide it */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarHeader"],
+[data-testid="stSidebarHeader"] *,
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"],
+[data-testid="stSidebar"] button[kind="headerNoPadding"],
+[data-testid="stSidebar"] [data-testid="baseButton-headerNoPadding"],
+[data-testid="stSidebar"] [aria-label*="collapse" i],
+[data-testid="stSidebar"] [aria-label*="close" i],
+[data-testid="stSidebar"] [aria-label*="sidebar" i],
+header button:not([kind]):not([aria-label*="menu" i]):not([aria-label*="theme" i]) {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important; height: 0 !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
+}
+/* Force sidebar to stay open regardless of collapse state */
+[data-testid="stSidebar"][aria-expanded="false"] {
+    transform: translateX(0) !important;
+    margin-left: 0 !important;
+    visibility: visible !important;
+}
 .stDeployButton { display: none; }
-[data-testid="collapsedControl"] { display: none !important; }
-[data-testid="stSidebarCollapsedControl"] { display: none !important; }
-[data-testid="stSidebarContent"] [data-testid="stBaseButton-headerNoPadding"] { display: none !important; }
-button[aria-label="Close sidebar"] { display: none !important; }
-button[aria-label="Collapse sidebar"] { display: none !important; }
-button[title="Collapse sidebar"] { display: none !important; }
-[data-testid="stSidebar"] > div > div > div > button { display: none !important; }
+/* Keep native sidebar collapse/expand toggle visible so users can reopen the sidebar */
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #222222 0%, #181818 100%) !important; border-right: 1px solid rgba(255,255,255,0.1) !important; }
-[data-testid="stSidebar"] > div:first-child { padding: 1.5rem 1rem; }
-[data-testid="stSidebar"] button { background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; border-radius: var(--radius-sm) !important; font-size: 13px !important; font-weight: 500 !important; text-align: left !important; padding: 8px 12px !important; margin-bottom: 3px !important; width: 100% !important; box-shadow: none !important; transition: all 0.2s ease !important; height: auto !important; min-height: 36px !important; opacity: 1 !important; display: block !important; visibility: visible !important; }
-[data-testid="stSidebar"] button:hover { background: rgba(57,255,20,0.12) !important; border-color: rgba(57,255,20,0.35) !important; color: var(--accent) !important; }
+[data-testid="stSidebar"] > div:first-child { padding: 0.75rem 1rem 1rem 1rem !important; }
+[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding-top: 0.5rem !important; margin-top: 0 !important; }
+[data-testid="stSidebar"] .block-container { padding-top: 0.75rem !important; }
+[data-testid="stSidebar"] button, [data-testid="stSidebar"] button[kind], [data-testid="stSidebar"] [data-testid*="baseButton"] { background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; border-radius: var(--radius-sm) !important; font-size: 13px !important; font-weight: 500 !important; text-align: left !important; padding: 8px 12px !important; margin-bottom: 3px !important; width: 100% !important; box-shadow: none !important; transition: all 0.2s ease !important; height: auto !important; min-height: 36px !important; opacity: 1 !important; display: block !important; visibility: visible !important; }
+[data-testid="stSidebar"] button p, [data-testid="stSidebar"] button span, [data-testid="stSidebar"] button div { background: transparent !important; color: #c0c0c0 !important; }
+[data-testid="stSidebar"] button[kind="primary"] { background: rgba(57,255,20,0.08) !important; border: 1px solid var(--accent) !important; color: var(--accent) !important; font-weight: 600 !important; box-shadow: 0 0 8px rgba(57,255,20,0.18) !important; }
+[data-testid="stSidebar"] button[kind="primary"] p, [data-testid="stSidebar"] button[kind="primary"] span, [data-testid="stSidebar"] button[kind="primary"] div { color: var(--accent) !important; font-weight: 600 !important; background: transparent !important; }
+[data-testid="stSidebar"] button[kind="primary"]:hover { background: rgba(57,255,20,0.14) !important; border-color: var(--accent) !important; color: var(--accent) !important; box-shadow: 0 0 14px rgba(57,255,20,0.35) !important; }
+[data-testid="stSidebar"] button[kind="primary"]:focus, [data-testid="stSidebar"] button[kind="primary"]:active { background: rgba(57,255,20,0.08) !important; color: var(--accent) !important; border-color: var(--accent) !important; }
+[data-testid="stSidebar"] button:hover { background: rgba(57,255,20,0.12) !important; border-color: rgba(57,255,20,0.35) !important; color: var(--accent) !important; outline: none !important; box-shadow: none !important; }
+[data-testid="stSidebar"] button:focus, [data-testid="stSidebar"] button:focus-visible, [data-testid="stSidebar"] button:active, [data-testid="stSidebar"] button[data-focused="true"] { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; outline: none !important; box-shadow: none !important; }
+[data-testid="stSidebar"] button:focus p, [data-testid="stSidebar"] button:focus-visible p, [data-testid="stSidebar"] button:active p { color: #c0c0c0 !important; background: transparent !important; }
 button { text-align: left !important; justify-content: flex-start !important; }
 button * { text-align: left !important; }
 button p { text-align: left !important; width: 100% !important; }
 button > div { justify-content: flex-start !important; text-align: left !important; }
 .block-container { padding: 1.5rem 2rem 3rem 2rem !important; max-width: 1200px !important; }
 h1 { font-size: 24px !important; font-weight: 800 !important; color: var(--slate-900) !important; }
-h2 { font-size: 18px !important; font-weight: 700 !important; color: var(--slate-900) !important; }
+h2, [data-testid="stMarkdownContainer"] h2, .main h2, .block-container h2 { font-size: 42px !important; font-weight: 800 !important; color: var(--accent) !important; padding: 8px 0 8px 14px !important; border-left: 4px solid var(--accent) !important; text-shadow: 0 0 16px rgba(57,255,20,0.5) !important; margin-bottom: 14px !important; line-height: 1.2 !important; }
+h2 span, [data-testid="stMarkdownContainer"] h2 span { font-size: inherit !important; color: var(--accent) !important; font-weight: inherit !important; }
 h3 { font-size: 15px !important; font-weight: 600 !important; color: var(--slate-700) !important; }
 p, li { color: var(--slate-600) !important; font-size: 13px !important; }
 label { color: var(--slate-700) !important; font-size: 13px !important; font-weight: 500 !important; }
 [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span { color: var(--slate-600) !important; font-size: 13px !important; }
 [data-testid="stMarkdownContainer"] strong { color: var(--slate-900) !important; font-weight: 600 !important; }
-button[kind="primary"] { background: var(--accent) !important; color: #000000 !important; border: none !important; border-radius: var(--radius-sm) !important; font-weight: 700 !important; font-size: 13px !important; height: 36px !important; box-shadow: 0 0 20px rgba(57, 255, 20, 0.25) !important; transition: all 0.25s ease !important; }
-button[kind="primary"]:hover { background: #fff !important; box-shadow: 0 0 25px rgba(57, 255, 20, 0.4) !important; transform: translateY(-2px) !important; }
-button[kind="primary"] p { color: #000000 !important; font-weight: 700 !important; }
+button[kind="primary"] { background: rgba(57,255,20,0.08) !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; border-radius: var(--radius-sm) !important; font-weight: 700 !important; font-size: 13px !important; height: 36px !important; box-shadow: 0 0 10px rgba(57, 255, 20, 0.18) !important; transition: all 0.25s ease !important; }
+button[kind="primary"]:hover { background: rgba(57,255,20,0.15) !important; color: var(--accent) !important; border-color: var(--accent) !important; box-shadow: 0 0 18px rgba(57, 255, 20, 0.4) !important; transform: translateY(-1px) !important; }
+button[kind="primary"] p { color: var(--accent) !important; font-weight: 700 !important; }
 button[kind="secondary"] { background: linear-gradient(135deg, #2a2a2a 0%, #222222 100%) !important; color: #c0c0c0 !important; border: 1px solid rgba(255,255,255,0.15) !important; border-radius: var(--radius-sm) !important; font-weight: 500 !important; font-size: 12px !important; height: 34px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
 button[kind="secondary"]:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: var(--accent-light) !important; box-shadow: var(--neon-glow) !important; }
 button[kind="secondary"] p { color: var(--slate-600) !important; }
@@ -102,6 +139,9 @@ hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
 [data-testid="stProgress"] { background: var(--slate-300) !important; }
 [data-testid="stVerticalBlockBorderWrapper"] { background: var(--bg-white) !important; border: 1px solid var(--slate-200) !important; border-radius: var(--radius-sm) !important; box-shadow: none !important; }
 [data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: rgba(255,255,255,0.2) !important; box-shadow: none !important; transform: none !important; }
+[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] { background: transparent !important; border: none !important; box-shadow: none !important; }
+[data-testid="stSidebar"] button > div, [data-testid="stSidebar"] button > div > div, [data-testid="stSidebar"] [data-testid="baseButton-secondary"] { background: transparent !important; }
+[data-testid="stSidebar"] [data-testid="baseButton-secondary"]:hover { background: rgba(57,255,20,0.12) !important; }
 [data-baseweb="popover"] ul, [data-baseweb="menu"] { background: var(--bg-white) !important; border: 1px solid var(--slate-300) !important; box-shadow: var(--shadow-hover) !important; }
 [data-baseweb="popover"] li, [data-baseweb="menu"] li { background: var(--bg-white) !important; color: var(--slate-900) !important; }
 [data-baseweb="popover"] li:hover, [data-baseweb="menu"] li:hover { background: var(--accent-light) !important; color: var(--accent) !important; }
@@ -153,7 +193,7 @@ hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
 .login-title { font-size: 22px; font-weight: 800; color: var(--slate-900); text-align: center; letter-spacing: -0.4px; }
 .login-sub { font-size: 12px; color: var(--slate-500); text-align: center; margin-bottom: 20px; }
 .login-page-wrap { max-width: 360px; margin: 0 auto; padding: 0 0 40px 0; }
-.login-sandbox-btn button { background: var(--accent) !important; color: #000 !important; border: none !important; font-weight: 700 !important; font-size: 13px !important; border-radius: 12px !important; height: 44px !important; min-height: 44px !important; box-shadow: 0 0 20px rgba(57, 255, 20, 0.25) !important; transition: all 0.25s ease !important; }
+.login-sandbox-btn button { background: rgba(57,255,20,0.08) !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; font-weight: 700 !important; font-size: 13px !important; border-radius: 12px !important; height: 44px !important; min-height: 44px !important; box-shadow: 0 0 14px rgba(57, 255, 20, 0.25) !important; transition: all 0.25s ease !important; }
 .login-sandbox-btn button:hover { box-shadow: 0 0 30px rgba(57, 255, 20, 0.4) !important; transform: translateY(-2px) !important; }
 .login-sandbox-btn button p { color: #000 !important; font-weight: 700 !important; }
 .login-divider { display:flex;align-items:center;gap:10px;margin:18px 0 14px; }
@@ -161,6 +201,8 @@ hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
 .login-divider hr { flex:1;border:none;border-top:1px solid var(--slate-200); }
 [data-testid="stToast"], div[data-testid="stToast"] > div { background: var(--bg-white) !important; color: var(--slate-900) !important; border: 1px solid var(--slate-300) !important; }
 div[data-baseweb="popover"], ul[data-testid="stSelectboxVirtualDropdown"] { background: var(--bg-white) !important; border: 1px solid var(--slate-300) !important; }
+[data-baseweb="tooltip"] { background: #1a1a1a !important; color: #c0c0c0 !important; border: 1px solid rgba(255,255,255,0.15) !important; box-shadow: none !important; }
+[data-baseweb="tooltip"] * { background: transparent !important; color: #c0c0c0 !important; }
 div[data-baseweb="popover"] li, ul[data-testid="stSelectboxVirtualDropdown"] li { color: var(--slate-900) !important; }
 div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown"] li:hover { background: var(--accent-light) !important; }
 [data-testid="stCaptionContainer"] p { color: var(--slate-500) !important; }
@@ -171,22 +213,22 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .pipeline-scroll button p { color: inherit !important; font-size: 12px !important; font-weight: 600 !important; }
 /* Primary (Open) button inside pipeline — neon-green, more prominent */
 .pipeline-scroll button[kind="primary"], button[kind="primary"][data-testid*="open_"] {
-    background: linear-gradient(180deg, #39FF14 0%, #2ed410 100%) !important;
-    border: 1px solid #39FF14 !important;
-    color: #0a0a0a !important;
+    background: rgba(57,255,20,0.08) !important;
+    border: 1px solid var(--accent) !important;
+    color: var(--accent) !important;
     font-weight: 800 !important;
     font-size: 13px !important;
     height: 34px !important;
     min-height: 34px !important;
     letter-spacing: 0.5px !important;
-    box-shadow: 0 0 12px rgba(57,255,20,0.35) !important;
+    box-shadow: 0 0 10px rgba(57,255,20,0.2) !important;
 }
 .pipeline-scroll button[kind="primary"]:hover, button[kind="primary"][data-testid*="open_"]:hover {
-    background: linear-gradient(180deg, #4aff2a 0%, #39FF14 100%) !important;
-    box-shadow: 0 0 18px rgba(57,255,20,0.55) !important;
-    color: #000 !important;
+    background: rgba(57,255,20,0.16) !important;
+    box-shadow: 0 0 16px rgba(57,255,20,0.45) !important;
+    color: var(--accent) !important;
 }
-.pipeline-scroll button[kind="primary"] p { color: #0a0a0a !important; font-weight: 800 !important; font-size: 13px !important; }
+.pipeline-scroll button[kind="primary"] p { color: var(--accent) !important; font-weight: 800 !important; font-size: 13px !important; }
 /* Hoverable contact chip tooltip */
 .pa-tip { position: relative; cursor: help; display: inline-block; }
 .pa-tip-box { visibility: hidden; opacity: 0; position: absolute; bottom: 125%; left: 0; z-index: 9999;
@@ -213,18 +255,7 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 
 """, unsafe_allow_html=True)
 
-# Force sidebar expanded — clear any cached collapsed state via JS
-import streamlit.components.v1 as _components
-_components.html("""
-<script>
-var keys = Object.keys(localStorage);
-for (var i = 0; i < keys.length; i++) {
-    if (keys[i].toLowerCase().indexOf('sidebar') !== -1) {
-        localStorage.removeItem(keys[i]);
-    }
-}
-</script>
-""", height=0)
+
 
 # --- Session State Defaults ---
 DEFAULTS = {
@@ -483,7 +514,7 @@ def show_sidebar():
         is_sandbox = st.session_state.get("sandbox_mode", False)
 
         st.markdown(
-            '<div style="padding:4px 0 12px 0;">'
+            '<div style="padding:0 0 36px 0;margin-top:-4px;">'
             '<div style="font-size:18px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;">'
             'Processor Assistant</div>'
             '<div style="font-size:10px;color:var(--slate-400);margin-top:2px;">Offline · Local</div>'
@@ -510,43 +541,69 @@ def show_sidebar():
             )
 
         _current_page = st.session_state.get("page", "dashboard")
+
+        # ── Email Watch live stats for badge ─────────────────────────────────
+        import email_watch as _ew
+        _ew_status  = _ew.get_status()
+        _ew_pending = _ew_status["pending_count"]
+        _ew_running = _ew_status["running"]
+        _ew_dot     = "●" if _ew_running else "○"
+        _ew_badge   = f" ({_ew_pending})" if _ew_pending else ""
+
         _nav_items = [
-            ("Scanner",     "dashboard",  "⬡"),
-            ("Pipeline",    "pipeline",   "⬡"),
-            ("Reader",      "reader",     "⬡"),
-            ("Team",        "team",       "⬡"),
-            ("Email Watch", "email_watch","⬡"),
-            ("AI",          "ollama",     "⬡"),
-            ("Billing",     "billing",    "⬡"),
+            ("Scanner",  "dashboard", "⬡"),
+            ("Pipeline", "pipeline",  "⬡"),
+            ("Reader",   "reader",    "⬡"),
+            ("Team",     "team",      "⬡"),
+            ("AI",       "ollama",    "⬡"),
+            ("Billing",  "billing",   "⬡"),
         ]
         if not is_sandbox:
             _nav_items.append(("History", "history", "⬡"))
 
         for _nav_label, _nav_page, _nav_icon in _nav_items:
             _active = _current_page == _nav_page
-            if st.button(_nav_label, key=f"nav_{_nav_page}", use_container_width=True):
+            _btn_label = ("● " + _nav_label) if _active else _nav_label
+            if st.button(_btn_label, key=f"nav_{_nav_page}", use_container_width=True,
+                         type=("primary" if _active else "secondary")):
                 st.session_state.page = _nav_page
                 _save_session()
                 st.rerun()
 
-        st.markdown("---")
+        # ── Email Watch — top-level + sub-nav ────────────────────────────────
+        _ew_pages   = ("email_watch", "email_watch_controls")
+        _ew_active  = _current_page in _ew_pages
+        _ew_top_lbl = f"{_ew_dot} Email Watch{_ew_badge}"
+        if _ew_active:
+            _ew_top_lbl = "● " + _ew_top_lbl
+        if st.button(_ew_top_lbl, key="nav_email_watch_top", use_container_width=True,
+                     type=("primary" if _ew_active else "secondary")):
+            if _ew_active:
+                st.session_state["ew_nav_open"] = not st.session_state.get("ew_nav_open", True)
+            else:
+                st.session_state["ew_nav_open"] = True
+                st.session_state.page = "email_watch_controls"
+                _save_session()
+                st.rerun()
+        _ew_open = _ew_active or st.session_state.get("ew_nav_open", False)
+        if _ew_open:
+            _ew_sub = [
+                ("Controls", "email_watch_controls"),
+                ("Results",  "email_watch"),
+            ]
+            for _sub_lbl, _sub_page in _ew_sub:
+                _sub_active = _current_page == _sub_page
+                _suffix = f"  ({_ew_pending})" if (_sub_page == "email_watch" and _ew_pending) else ""
+                _c_gutter, _c_btn = st.columns([1, 8])
+                with _c_btn:
+                    if st.button(_sub_lbl + _suffix, key=f"nav_{_sub_page}", use_container_width=True,
+                                 type=("primary" if _sub_active else "secondary")):
+                        st.session_state.page = _sub_page
+                        st.session_state["ew_nav_open"] = True
+                        _save_session()
+                        st.rerun()
 
-        # ── Email Watch status indicator ──────────────────────────────────────
-        import email_watch as _ew
-        _ew_status = _ew.get_status()
-        _ew_pending = _ew_status["pending_count"]
-        _ew_last = _ew_status["last_time"] or "—"
-        if _ew_status["running"]:
-            _ew_lbl = f"Watching · {_ew_pending} pending"
-        else:
-            _ew_lbl = f"Off · {_ew_last}"
-        st.markdown(
-            f'<div style="background:#1e1e1e;border:1px solid rgba(255,255,255,0.1);'
-            f'border-radius:var(--radius-sm);padding:5px 10px;margin-bottom:4px;font-size:12px;'
-            f'color:#9ca3af;">'
-            f'{"●" if _ew_status["running"] else "○"} Email Watch · {_ew_pending} pending</div>',
-            unsafe_allow_html=True,
-        )
+        st.markdown("---")
 
         # ── AI status indicator ───────────────────────────────────────────────
         import ai_router as _ar
@@ -1404,8 +1461,8 @@ def show_dashboard():
 
                     for _c in _norm_conds:
                         _uid = f"{_scan_fkey}_{_c['num']}"
-                        # Single tight row: [✓] #N desc [status] [parties] [📧] [📁]
-                        _r1, _r2, _r3, _r4, _r5, _r6 = st.columns([0.5, 4, 1.2, 1.6, 0.5, 0.5])
+                        # Single tight row: [✓] #N desc [status] [parties] [📧] [📁] [📖]
+                        _r1, _r2, _r3, _r4, _r5, _r6, _r7 = st.columns([0.5, 4, 1.2, 1.6, 0.5, 0.5, 0.5])
                         with _r1:
                             _chk = st.checkbox("", value=False, key=f"{_uid}_chk",
                                                label_visibility="collapsed")
@@ -1443,6 +1500,10 @@ def show_dashboard():
                                         st.toast("No folder path on loan", icon="⚠️")
                                 except Exception as _e:
                                     st.toast(f"Fetch failed: {_e}", icon="⚠️")
+                        with _r7:
+                            if st.button("📖", key=f"{_uid}_guide", help="Check vs. Fannie/Freddie guidelines"):
+                                st.session_state[f"{_uid}_guide_open"] = True
+                                st.session_state.pop(f"{_uid}_guide_results", None)
 
                         # ── Email drafter panel (toggled by 📧) ──
                         if st.session_state.get(f"{_uid}_email_open"):
@@ -1485,6 +1546,60 @@ def show_dashboard():
                             else:
                                 st.markdown(
                                     '<div style="font-size:11px;color:#6b7280;padding:2px 0 4px 32px;">No matching docs.</div>',
+                                    unsafe_allow_html=True,
+                                )
+
+                        # ── Guidelines panel (toggled by 📖) ──
+                        if st.session_state.get(f"{_uid}_guide_open"):
+                            _gc1, _gc2 = st.columns([9, 0.5])
+                            with _gc2:
+                                if st.button("✕", key=f"{_uid}_guide_close", help="Close"):
+                                    for _k in (f"{_uid}_guide_open", f"{_uid}_guide_results"):
+                                        st.session_state.pop(_k, None)
+                                    st.rerun()
+                            _gres = st.session_state.get(f"{_uid}_guide_results")
+                            if _gres is None:
+                                with st.spinner("Searching Fannie Mae & Freddie Mac…"):
+                                    try:
+                                        from guidelines import check_conditions_against_guidelines as _cag
+                                        _out = _cag([{"num": _c["num"], "desc": _c["desc"]}])
+                                        if isinstance(_out, dict) and _out.get("error"):
+                                            _gres = {"error": _out["error"]}
+                                        else:
+                                            _gres = _out.get(_c["num"], {}).get("guidelines", [])
+                                    except Exception as _e:
+                                        _gres = {"error": f"{_e}"}
+                                    st.session_state[f"{_uid}_guide_results"] = _gres
+                            if isinstance(_gres, dict) and _gres.get("error"):
+                                st.markdown(
+                                    f'<div style="font-size:11px;color:#fbbf24;padding:4px 8px;'
+                                    f'background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);'
+                                    f'border-radius:6px;margin:4px 0 4px 32px;">⚠️ {_gres["error"]}</div>',
+                                    unsafe_allow_html=True,
+                                )
+                            elif isinstance(_gres, list) and _gres:
+                                for _gm in _gres[:4]:
+                                    _src = _gm.get("source", "")
+                                    _sec = _gm.get("section", "")
+                                    _pg  = _gm.get("page", "")
+                                    _sc  = _gm.get("score", 0)
+                                    _ex  = (_gm.get("excerpt", "") or "").replace("\n", " ")[:360]
+                                    _sec_part = f" · <b>{_sec}</b>" if _sec else ""
+                                    st.markdown(
+                                        f'<div style="font-size:11px;color:#e5e7eb;padding:6px 10px;margin:3px 0 3px 32px;'
+                                        f'background:rgba(57,255,20,0.05);border-left:2px solid rgba(57,255,20,0.45);'
+                                        f'border-radius:4px;">'
+                                        f'<span style="color:#39FF14;font-weight:700;">{_src}</span>'
+                                        f'{_sec_part}'
+                                        f' <span style="color:#9ca3af;">p.{_pg} · {_sc}% match</span><br/>'
+                                        f'<span style="color:#cbd5e1;font-size:10.5px;">{_ex}…</span>'
+                                        f'</div>',
+                                        unsafe_allow_html=True,
+                                    )
+                            elif isinstance(_gres, list):
+                                st.markdown(
+                                    '<div style="font-size:11px;color:#6b7280;padding:4px 0 4px 32px;">'
+                                    'No relevant guideline sections found.</div>',
                                     unsafe_allow_html=True,
                                 )
                     st.markdown('</div>', unsafe_allow_html=True)
@@ -3358,12 +3473,37 @@ def show_reader():
         st.markdown(f"### {open_file['name']}")
         st.caption(f"{open_file['path']}")
 
+        _IMG_EXT = {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tif", ".tiff", ".webp"}
         if open_file["ext"] == ".pdf":
             _show_pdf_reader(open_file["path"], search_term)
         elif open_file["ext"] in {".txt", ".csv"}:
             _show_text_reader(open_file["path"], search_term)
+        elif open_file["ext"] in _IMG_EXT:
+            try:
+                st.image(open_file["path"], use_container_width=True)
+            except Exception as _e:
+                st.error(f"Could not display image: {_e}")
+            with open(open_file["path"], "rb") as _ifh:
+                st.download_button(
+                    f"⬇ Download {open_file['name']}",
+                    _ifh.read(),
+                    file_name=open_file["name"],
+                    mime=f"image/{open_file['ext'].lstrip('.')}",
+                    key=f"img_dl_{open_file['name']}",
+                )
         else:
-            st.info("File type cannot be read here. Open it directly in File Explorer.")
+            # Offer download for office docs / unknown types
+            try:
+                with open(open_file["path"], "rb") as _ofh:
+                    st.info("This file type can't be rendered inline — download it below.")
+                    st.download_button(
+                        f"⬇ Download {open_file['name']}",
+                        _ofh.read(),
+                        file_name=open_file["name"],
+                        key=f"other_dl_{open_file['name']}",
+                    )
+            except Exception as _e:
+                st.error(f"Could not open file: {_e}")
 
 
 def show_team_page():
@@ -3518,15 +3658,14 @@ def show_history():
                 st.markdown(entry.get("risks", ""))
 
 
-def show_email_watch_page():
-    """Email inbox watcher — setup, toggle, and matched attachment inbox."""
+def show_email_watch_controls_page():
+    """Email Watch — Controls: status, start/stop, credentials, settings."""
     import email_watch as ew
 
-    st.markdown("## Email Email Watch")
+    st.markdown("## Email Watch · Controls")
     st.caption(
-        "Watch your inbox for new PDF attachments. When one arrives, the app reads it, "
-        "tries to match the borrower name to your pipeline, and asks what to do with it. "
-        "100% local — your credentials never leave your computer."
+        "Watch your inbox for new attachments. Runs in the background — "
+        "you can use Scanner or Pipeline normally while it checks."
     )
 
     cfg = ew.get_config()
@@ -3555,7 +3694,7 @@ def show_email_watch_page():
         )
 
     # ── Toggle ───────────────────────────────────────────────────────────────
-    t1, t2 = st.columns([1, 4])
+    t1, t2, t3 = st.columns([1, 1, 3])
     with t1:
         if status["running"]:
             if st.button("⏹ Stop Watching", use_container_width=True, type="primary"):
@@ -3571,8 +3710,140 @@ def show_email_watch_page():
                     st.rerun()
                 except Exception as exc:
                     st.error(f"Could not start: {exc}  ·  Set up your credentials below first.")
+    with t2:
+        if st.button("🔄 Check Now", use_container_width=True,
+                     help="Run one check immediately without waiting for interval"):
+            with st.spinner("Checking inbox…"):
+                _found, _msg = ew.check_now()
+            if _msg.startswith("Error"):
+                st.error(_msg)
+            elif _found:
+                st.success(f"Found {_found} new PDF(s) — see below.")
+            else:
+                st.info(_msg)
+            st.rerun()
 
-    st.markdown("---")
+    # ── Credentials setup ─────────────────────────────────────────────────────
+    with st.expander("⚙️ Email Credentials" + (" (configured)" if cfg else " (not set up)"), expanded=not cfg):
+        st.markdown(
+            '<div style="background:rgba(251,191,36,0.05);border-left:3px solid #fbbf24;border-radius:6px;'
+            'padding:8px 14px;margin-bottom:12px;font-size:12px;color:#f9e79f;">'
+            '⚠️ <b>Gmail users:</b> You must use an App Password, not your real password.<br>'
+            'Go to: <b>myaccount.google.com → Security → 2-Step Verification → App Passwords</b><br>'
+            'Select "Mail" + "Windows Computer" → copy the 16-character code → paste below.</div>',
+            unsafe_allow_html=True,
+        )
+
+        provider = st.selectbox(
+            "Email provider",
+            list(ew.PROVIDERS.keys()),
+            index=list(ew.PROVIDERS.keys()).index(cfg.get("provider", "Gmail"))
+            if cfg.get("provider") in ew.PROVIDERS else 0,
+            key="ew_provider",
+        )
+        email_addr = st.text_input(
+            "Your email address",
+            value=cfg.get("email", ""),
+            placeholder="you@gmail.com",
+            key="ew_email",
+        )
+        password = st.text_input(
+            "App password (not your real password)",
+            value=cfg.get("password", ""),
+            type="password",
+            placeholder="xxxx xxxx xxxx xxxx",
+            key="ew_pass",
+        )
+        if provider == "Custom":
+            custom_host = st.text_input(
+                "IMAP server hostname",
+                value=cfg.get("host", ""),
+                placeholder="imap.yourprovider.com",
+                key="ew_host",
+            )
+        else:
+            custom_host = ""
+
+        iv1, iv2 = st.columns(2)
+        with iv1:
+            interval = st.select_slider(
+                "Check every",
+                options=[2, 5, 10, 15, 30],
+                value=cfg.get("interval_minutes", 5),
+                format_func=lambda x: f"{x} min",
+                key="ew_interval",
+            )
+        with iv2:
+            since_hours = st.select_slider(
+                "Only look back",
+                options=[0, 1, 2, 3, 6, 12, 24],
+                value=cfg.get("since_hours", 1),
+                format_func=lambda x: "All unread" if x == 0 else f"Last {x}h",
+                key="ew_since",
+            )
+
+        if st.button("Save Credentials", key="ew_save_creds", type="primary"):
+            if email_addr and password:
+                ew.save_config(email_addr, password, provider, custom_host, interval, since_hours)
+                st.success("Credentials saved. Click ▶ Start Watching to begin.")
+                st.rerun()
+            else:
+                st.error("Enter both email address and app password.")
+
+    # ── How it works ─────────────────────────────────────────────────────────
+    with st.expander("ℹ️ How Email Watch works"):
+        st.markdown("""
+**What it does:**
+- Checks your inbox every N minutes (runs in the background — you can use the rest of the app normally)
+- Looks for **unread emails with PDF attachments**
+- Downloads each PDF to the `incoming/` folder in this app's directory
+- Reads the first 3 pages of the PDF to extract borrower names
+- Fuzzy-matches those names against every loan in your Pipeline
+- Shows a notification card here and in the sidebar
+
+**Privacy:**
+- Your credentials are saved locally in `email_config.json` in the app folder
+- The app connects to your IMAP server, downloads attachments, then disconnects
+- Nothing is sent anywhere — reads only, no cloud
+
+**Toggle:**
+- On: background thread checks every N minutes, then sleeps
+- Off: thread stops within a few seconds — no more peeking
+
+**Borrower matching confidence:**
+- ● 80%+ = high confidence match (name found in PDF text)
+- ● 50–79% = possible match (partial name found)
+- ● Below 50% = no match — file saved to `incoming/` folder, you decide
+        """)
+
+
+def show_email_watch_page():
+    """Email Watch — Results: pending matches and incoming queue."""
+    import email_watch as ew
+
+    _ew_status  = ew.get_status()
+    _ew_pending = _ew_status["pending_count"]
+    _ew_running = _ew_status["running"]
+
+    # compact status strip + Controls shortcut
+    _dot   = "●" if _ew_running else "○"
+    _state = f"Watching · last check {_ew_status['last_time'] or '—'}" if _ew_running else "Watch is off"
+    _rs1, _rs2 = st.columns([5, 1])
+    with _rs1:
+        st.markdown(
+            f'<div style="background:#1e1e1e;border-left:3px solid '
+            f'{"#39FF14" if _ew_running else "rgba(255,255,255,0.15)"};border-radius:6px;'
+            f'padding:6px 14px;font-size:12px;color:#9ca3af;">'
+            f'{_dot} {_state} · <b style="color:#fff">{_ew_pending} attachment(s) waiting</b></div>',
+            unsafe_allow_html=True,
+        )
+    with _rs2:
+        if st.button("⚙️ Controls", key="ew_goto_controls", use_container_width=True):
+            st.session_state.page = "email_watch_controls"
+            st.session_state["ew_nav_open"] = True
+            st.rerun()
+
+    st.markdown("## Email Watch · Results")
 
     # ── Pending matches ───────────────────────────────────────────────────────
     matches = ew.get_matches()
@@ -3608,11 +3879,23 @@ def show_email_watch_page():
                     if folder:
                         st.markdown(
                             f'<div style="font-size:12px;color:#39FF14;margin-top:4px;">'
-                            f'Folder Suggested folder: {folder}</div>',
+                            f'Suggested folder: {folder}</div>',
                             unsafe_allow_html=True,
                         )
 
+                    _fp = m.get("file_path", "")
+                    _fname_low = (m.get("filename") or "").lower()
+                    _IMG_EXT = (".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tif", ".tiff", ".webp")
+                    _can_preview = _fp and os.path.exists(_fp) and _fname_low.endswith(
+                        _IMG_EXT + (".pdf", ".txt", ".csv")
+                    )
+
                 with mc2:
+                    if _can_preview:
+                        _icon = "🖼️" if _fname_low.endswith(_IMG_EXT) else ("📄" if _fname_low.endswith(".pdf") else "📋")
+                        if st.button(f"{_icon} Preview", key=f"ew_preview_{i}", use_container_width=True):
+                            _toggle = f"ew_preview_open_{i}"
+                            st.session_state[_toggle] = not st.session_state.get(_toggle, False)
                     if folder and os.path.isdir(folder):
                         if st.button("Save to folder", key=f"ew_save_{i}", use_container_width=True, type="primary"):
                             import shutil
@@ -3621,13 +3904,52 @@ def show_email_watch_page():
                             ew.dismiss(i)
                             st.success(f"Saved to {dest}")
                             st.rerun()
+                    # Direct download — works for every file type
+                    try:
+                        with open(m["file_path"], "rb") as _dfh:
+                            st.download_button(
+                                "⬇ Download", _dfh.read(),
+                                file_name=m["filename"],
+                                key=f"ew_dl_{i}", use_container_width=True,
+                            )
+                    except Exception:
+                        pass
                     if st.button("Open in Reader", key=f"ew_read_{i}", use_container_width=True):
-                        st.session_state.reader_open_file = m["file_path"]
+                        import os as _os_ew
+                        _fp2 = m["file_path"]
+                        _fname = m.get("filename") or _os_ew.path.basename(_fp2)
+                        _ext = _os_ew.path.splitext(_fname)[1].lower()
+                        st.session_state.reader_open_file = {
+                            "name": _fname, "path": _fp2, "rel": _fname,
+                            "ext": _ext, "size_kb": 0,
+                        }
+                        st.session_state["reader_page"] = 1
                         st.session_state.page = "reader"
                         st.rerun()
                     if st.button("Dismiss", key=f"ew_dismiss_{i}", use_container_width=True):
                         ew.dismiss(i)
                         st.rerun()
+
+                # ── Preview panel (below columns, full width) ──────────
+                if _can_preview and st.session_state.get(f"ew_preview_open_{i}", False):
+                    try:
+                        if _fname_low.endswith(_IMG_EXT):
+                            st.image(_fp, use_container_width=True)
+                        elif _fname_low.endswith(".pdf"):
+                            import base64 as _b64
+                            with open(_fp, "rb") as _pfh:
+                                _b64data = _b64.b64encode(_pfh.read()).decode("utf-8")
+                            st.markdown(
+                                f'<iframe src="data:application/pdf;base64,{_b64data}" '
+                                f'width="100%" height="500" style="border:1px solid rgba(255,255,255,0.1);'
+                                f'border-radius:6px;"></iframe>',
+                                unsafe_allow_html=True,
+                            )
+                        elif _fname_low.endswith((".txt", ".csv")):
+                            with open(_fp, "r", encoding="utf-8", errors="replace") as _tfh:
+                                st.code(_tfh.read()[:3000], language=None)
+                    except Exception as _pe:
+                        st.caption(f"_(Preview failed: {_pe})_")
 
         if st.button("Dismiss All", key="ew_dismiss_all"):
             ew.clear_all()
@@ -3738,98 +4060,7 @@ def show_email_watch_page():
                                 pass
                             st.rerun()
 
-    # ── Credentials setup ─────────────────────────────────────────────────────
-    with st.expander("⚙️ Email Credentials" + (" (configured)" if cfg else " (not set up)"), expanded=not cfg):
-        st.markdown(
-            '<div style="background:rgba(251,191,36,0.05);border-left:3px solid #fbbf24;border-radius:6px;'
-            'padding:8px 14px;margin-bottom:12px;font-size:12px;color:#f9e79f;">'
-            '⚠️ <b>Gmail users:</b> You must use an App Password, not your real password.<br>'
-            'Go to: <b>myaccount.google.com → Security → 2-Step Verification → App Passwords</b><br>'
-            'Select "Mail" + "Windows Computer" → copy the 16-character code → paste below.</div>',
-            unsafe_allow_html=True,
-        )
-
-        provider = st.selectbox(
-            "Email provider",
-            list(ew.PROVIDERS.keys()),
-            index=list(ew.PROVIDERS.keys()).index(cfg.get("provider", "Gmail"))
-            if cfg.get("provider") in ew.PROVIDERS else 0,
-            key="ew_provider",
-        )
-        email_addr = st.text_input(
-            "Your email address",
-            value=cfg.get("email", ""),
-            placeholder="you@gmail.com",
-            key="ew_email",
-        )
-        password = st.text_input(
-            "App password (not your real password)",
-            value=cfg.get("password", ""),
-            type="password",
-            placeholder="xxxx xxxx xxxx xxxx",
-            key="ew_pass",
-        )
-        if provider == "Custom":
-            custom_host = st.text_input(
-                "IMAP server hostname",
-                value=cfg.get("host", ""),
-                placeholder="imap.yourprovider.com",
-                key="ew_host",
-            )
-        else:
-            custom_host = ""
-
-        iv1, iv2 = st.columns(2)
-        with iv1:
-            interval = st.select_slider(
-                "Check every",
-                options=[2, 5, 10, 15, 30],
-                value=cfg.get("interval_minutes", 5),
-                format_func=lambda x: f"{x} min",
-                key="ew_interval",
-            )
-        with iv2:
-            since_hours = st.select_slider(
-                "Only look back",
-                options=[0, 1, 2, 3, 6, 12, 24],
-                value=cfg.get("since_hours", 1),
-                format_func=lambda x: "All unread" if x == 0 else f"Last {x}h",
-                key="ew_since",
-            )
-
-        if st.button("Save Credentials", key="ew_save_creds", type="primary"):
-            if email_addr and password:
-                ew.save_config(email_addr, password, provider, custom_host, interval, since_hours)
-                st.success("Credentials saved. Click ▶ Start Watching to begin.")
-                st.rerun()
-            else:
-                st.error("Enter both email address and app password.")
-
-    # ── How it works ─────────────────────────────────────────────────────────
-    with st.expander("ℹ️ How Email Watch works"):
-        st.markdown("""
-**What it does:**
-- Checks your inbox every N minutes (runs in the background — you can use the rest of the app normally)
-- Looks for **unread emails with PDF attachments**
-- Downloads each PDF to the `incoming/` folder in this app's directory
-- Reads the first 3 pages of the PDF to extract borrower names
-- Fuzzy-matches those names against every loan in your Pipeline
-- Shows a notification card here and in the sidebar
-
-**Privacy:**
-- Your credentials are saved locally in `email_config.json` in the app folder
-- The app connects to your IMAP server, downloads attachments, then disconnects
-- Nothing is sent anywhere — reads only, no cloud
-
-**Toggle:**
-- On: background thread checks every N minutes, then sleeps
-- Off: thread stops within a few seconds — no more peeking
-
-**Borrower matching confidence:**
-- ● 80%+ = high confidence match (name found in PDF text)
-- ● 50–79% = possible match (partial name found)
-- ● Below 50% = no match — file saved to `incoming/` folder, you decide
-        """)
+    st.caption("Go to **Email Watch → Controls** to start/stop watching or update credentials.")
 
 
 # --- AI Settings Page ---
@@ -4490,6 +4721,66 @@ def show_loan_detail():
             _chk, _cstat, _cparties = _render_condition(_c, _ld_fkey, PARTY_OPTIONS_LD, COND_STATUSES_LD)
             if _chk:
                 _ld_checked.append({**_c, "party": _cparties[0] if _cparties else _c["party"], "all_parties": _cparties})
+
+            # ── Per-condition 📖 Guidelines check ──
+            _ld_uid = f"{_ld_fkey}_{_c['num']}"
+            _gb1, _gb2 = st.columns([0.5, 9.5])
+            with _gb1:
+                if st.button("📖", key=f"{_ld_uid}_guide", help="Check vs. Fannie/Freddie guidelines"):
+                    st.session_state[f"{_ld_uid}_guide_open"] = True
+                    st.session_state.pop(f"{_ld_uid}_guide_results", None)
+            if st.session_state.get(f"{_ld_uid}_guide_open"):
+                _gc1, _gc2 = st.columns([9, 0.5])
+                with _gc2:
+                    if st.button("✕", key=f"{_ld_uid}_guide_close"):
+                        for _k in (f"{_ld_uid}_guide_open", f"{_ld_uid}_guide_results"):
+                            st.session_state.pop(_k, None)
+                        st.rerun()
+                _gres = st.session_state.get(f"{_ld_uid}_guide_results")
+                if _gres is None:
+                    with st.spinner("Searching Fannie Mae & Freddie Mac…"):
+                        try:
+                            from guidelines import check_conditions_against_guidelines as _cag_ld
+                            _out = _cag_ld([{"num": _c["num"], "desc": _c["desc"]}])
+                            if isinstance(_out, dict) and _out.get("error"):
+                                _gres = {"error": _out["error"]}
+                            else:
+                                _gres = _out.get(_c["num"], {}).get("guidelines", [])
+                        except Exception as _e:
+                            _gres = {"error": f"{_e}"}
+                        st.session_state[f"{_ld_uid}_guide_results"] = _gres
+                if isinstance(_gres, dict) and _gres.get("error"):
+                    st.markdown(
+                        f'<div style="font-size:11px;color:#fbbf24;padding:4px 8px;'
+                        f'background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);'
+                        f'border-radius:6px;margin:4px 0 4px 32px;">⚠️ {_gres["error"]}</div>',
+                        unsafe_allow_html=True,
+                    )
+                elif isinstance(_gres, list) and _gres:
+                    for _gm in _gres[:4]:
+                        _src = _gm.get("source", "")
+                        _sec = _gm.get("section", "")
+                        _pg  = _gm.get("page", "")
+                        _sc  = _gm.get("score", 0)
+                        _ex  = (_gm.get("excerpt", "") or "").replace("\n", " ")[:360]
+                        _sec_part = f" · <b>{_sec}</b>" if _sec else ""
+                        st.markdown(
+                            f'<div style="font-size:11px;color:#e5e7eb;padding:6px 10px;margin:3px 0 3px 32px;'
+                            f'background:rgba(57,255,20,0.05);border-left:2px solid rgba(57,255,20,0.45);'
+                            f'border-radius:4px;">'
+                            f'<span style="color:#39FF14;font-weight:700;">{_src}</span>'
+                            f'{_sec_part}'
+                            f' <span style="color:#9ca3af;">p.{_pg} · {_sc}% match</span><br/>'
+                            f'<span style="color:#cbd5e1;font-size:10.5px;">{_ex}…</span>'
+                            f'</div>',
+                            unsafe_allow_html=True,
+                        )
+                elif isinstance(_gres, list):
+                    st.markdown(
+                        '<div style="font-size:11px;color:#6b7280;padding:4px 0 4px 32px;">'
+                        'No relevant guideline sections found.</div>',
+                        unsafe_allow_html=True,
+                    )
 
         # ── Email Draft — below conditions, auto-populate from stored contacts ──
         st.markdown(
@@ -5317,6 +5608,8 @@ def main():
             show_team_page()
         elif page == "email_watch":
             show_email_watch_page()
+        elif page == "email_watch_controls":
+            show_email_watch_controls_page()
         elif page == "ollama":
             show_ollama_page()
         elif page == "billing":

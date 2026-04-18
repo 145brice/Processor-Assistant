@@ -118,6 +118,25 @@ def get_status() -> dict:
     }
 
 
+def check_now(config: dict | None = None) -> tuple[int, str]:
+    """Run one inbox check synchronously. Returns (found_count, status_msg).
+    Useful for manual 'Check Now' button — no thread required."""
+    global _last_time, _last_status
+    if config is None:
+        config = get_config()
+    if not config.get("host") or not config.get("email"):
+        return (0, "Not configured")
+    try:
+        found = _check(config)
+        _last_time   = datetime.now().strftime("%I:%M %p")
+        _last_status = f"✓ {found} new PDF(s)" if found else "✓ No new attachments"
+        return (found, _last_status)
+    except Exception as exc:
+        _last_time   = datetime.now().strftime("%I:%M %p")
+        _last_status = f"Error: {str(exc)[:100]}"
+        return (0, _last_status)
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Pending matches API
 # ─────────────────────────────────────────────────────────────────────────────
@@ -173,9 +192,11 @@ def _check(config: dict) -> int:
 
     since_hours = int(config.get("since_hours", 0))
     if since_hours > 0:
+        # When user picks a time window, include already-read mail too
+        # (avoids missing a test they already peeked at in Gmail).
         from datetime import datetime as _dt, timedelta as _td
         since_date = (_dt.now() - _td(hours=since_hours)).strftime("%d-%b-%Y")
-        _, data = mail.search(None, f'UNSEEN SINCE {since_date}')
+        _, data = mail.search(None, f'SINCE {since_date}')
     else:
         _, data = mail.search(None, "UNSEEN")
     eids = data[0].split()
@@ -189,13 +210,31 @@ def _check(config: dict) -> int:
             sender      = _hval(msg.get("From",    ""))
             subject     = _hval(msg.get("Subject", ""))
 
+            # Accepted doc/image extensions — anything a processor might send in
+            _ACCEPT_EXT = (
+                ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tif", ".tiff",
+                ".heic", ".heif", ".webp",
+                ".doc", ".docx", ".xls", ".xlsx", ".csv", ".txt", ".rtf",
+            )
             for part in msg.walk():
-                ctype = part.get_content_type()
-                disp  = str(part.get("Content-Disposition", ""))
-                if "attachment" not in disp and ctype != "application/pdf":
-                    continue
+                ctype = (part.get_content_type() or "").lower()
+                disp  = str(part.get("Content-Disposition", "")).lower()
                 fname = _hval(part.get_filename() or "")
-                if not fname.lower().endswith(".pdf"):
+                # Skip inline html/text parts with no filename
+                if not fname:
+                    continue
+                # Must be either a declared attachment OR a known file extension
+                _is_attach = "attachment" in disp
+                _is_doc_ctype = (
+                    ctype.startswith("image/") or
+                    ctype.startswith("application/pdf") or
+                    ctype.startswith("application/msword") or
+                    ctype.startswith("application/vnd.openxmlformats") or
+                    ctype.startswith("application/vnd.ms-excel")
+                )
+                if not (_is_attach or _is_doc_ctype):
+                    continue
+                if not fname.lower().endswith(_ACCEPT_EXT):
                     continue
                 payload = part.get_payload(decode=True)
                 if not payload:
@@ -207,8 +246,13 @@ def _check(config: dict) -> int:
                 with open(save_path, "wb") as f:
                     f.write(payload)
 
-                from doc_verify import verify as _verify
-                v = _verify(payload, fname, borrower_hint=f"{sender} {subject}")
+                # Only run PDF verify on actual PDFs — images need OCR later
+                if fname.lower().endswith(".pdf"):
+                    from doc_verify import verify as _verify
+                    v = _verify(payload, fname, borrower_hint=f"{sender} {subject}")
+                else:
+                    # For non-PDFs, match by sender + subject text only
+                    v = _match_borrower_text(f"{sender} {subject}", fname)
                 with _lock:
                     _matches.append({
                         "filename":  fname,
@@ -235,6 +279,61 @@ def _hval(raw: str) -> str:
         else:
             out.append(str(bval))
     return "".join(out)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Non-PDF → pipeline borrower matching by sender/subject/filename only
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _match_borrower_text(blob: str, filename: str = "") -> dict:
+    """Match against pipeline borrowers using only sender/subject/filename text.
+    Used for images and office docs that don't have extractable text here."""
+    search_blob = f"{blob} {filename}".lower()
+
+    try:
+        from crm import get_all_loans
+        loans = get_all_loans()
+    except Exception:
+        loans = []
+
+    if not loans:
+        return _no_match()
+
+    try:
+        from thefuzz import fuzz
+        _fuzzy = True
+    except ImportError:
+        _fuzzy = False
+
+    best_loan, best_score = None, 0
+    for loan in loans:
+        bname = (loan.get("borrower") or "").strip()
+        if not bname:
+            continue
+        if bname.lower() in search_blob:
+            score = 90  # slightly lower ceiling than PDF text match
+        elif _fuzzy:
+            words = [w for w in bname.lower().split() if len(w) > 2]
+            scores = [fuzz.partial_ratio(w, search_blob) for w in words]
+            score = max(scores) if scores else 0
+        else:
+            score = 0
+        if score > best_score:
+            best_score, best_loan = score, loan
+
+    if best_score >= 80 and best_loan:
+        return {
+            "loan_id": best_loan.get("id"), "loan_num": best_loan.get("loan_num", ""),
+            "borrower": best_loan.get("borrower", ""), "confidence": best_score,
+            "suggestion": "match", "suggested_folder": best_loan.get("folder_path", ""),
+        }
+    if best_score >= 50 and best_loan:
+        return {
+            "loan_id": best_loan.get("id"), "loan_num": best_loan.get("loan_num", ""),
+            "borrower": best_loan.get("borrower", ""), "confidence": best_score,
+            "suggestion": "possible", "suggested_folder": best_loan.get("folder_path", ""),
+        }
+    return _no_match()
 
 
 # ─────────────────────────────────────────────────────────────────────────────
