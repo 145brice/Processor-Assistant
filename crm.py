@@ -83,14 +83,20 @@ def _save(loans: list):
 def get_all_loans() -> list:
     """Return all loans in the pipeline."""
     loans = _load()
-    # Auto-flag overdue loans
-    today = date.today().isoformat()
+    now = datetime.now()
     changed = False
     for loan in loans:
-        due = loan.get("due_date", "")
-        if due and due < today and loan.get("status") not in ("Cleared", "Closed", "Overdue"):
-            loan["status"] = "Overdue"
-            changed = True
+        if loan.get("status") in ("Cleared", "Closed", "Overdue"):
+            continue
+        # Auto-overdue: loan has been in Requested status for 24+ hours with no response
+        if loan.get("status") == "Requested" and loan.get("requested_at"):
+            try:
+                req_time = datetime.fromisoformat(loan["requested_at"])
+                if (now - req_time).total_seconds() > 86400:
+                    loan["status"] = "Overdue"
+                    changed = True
+            except (ValueError, TypeError):
+                pass
     if changed:
         _save(loans)
     return loans
@@ -133,6 +139,18 @@ def update_loan(loan_id: int, **kwargs):
     loans = _load()
     for loan in loans:
         if loan.get("id") == loan_id:
+            # Stamp requested_at on any condition newly set to Requested
+            if "conditions" in kwargs:
+                existing = {c.get("text", c.get("desc", "")): c for c in loan.get("conditions", [])}
+                for cond in kwargs["conditions"]:
+                    key = cond.get("text", cond.get("desc", ""))
+                    prev = existing.get(key, {})
+                    if (cond.get("status") == "Requested"
+                            and prev.get("status") != "Requested"
+                            and not cond.get("requested_at")):
+                        cond["requested_at"] = datetime.now().isoformat()
+                    elif cond.get("status") != "Requested":
+                        cond.pop("requested_at", None)
             loan.update(kwargs)
             loan["updated"] = datetime.now().isoformat()[:10]
             break
@@ -382,8 +400,18 @@ def set_retention_days(days: int):
 
 
 def set_status(loan_id: int, status: str):
-    """Quick status update."""
-    update_loan(loan_id, status=status)
+    """Quick status update. Stamps requested_at when moving to Requested."""
+    loans = _load()
+    for loan in loans:
+        if loan.get("id") == loan_id:
+            if status == "Requested" and loan.get("status") != "Requested":
+                loan["requested_at"] = datetime.now().isoformat()
+            elif status != "Requested":
+                loan.pop("requested_at", None)
+            loan["status"] = status
+            loan["updated"] = datetime.now().isoformat()[:10]
+            break
+    _save(loans)
 
 
 def get_loan(loan_id: int) -> dict | None:

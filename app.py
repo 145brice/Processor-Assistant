@@ -74,10 +74,15 @@ header button:not([kind]):not([aria-label*="menu" i]):not([aria-label*="theme" i
     opacity: 0 !important;
 }
 /* Force sidebar to stay open regardless of collapse state */
-[data-testid="stSidebar"][aria-expanded="false"] {
+[data-testid="stSidebar"],
+[data-testid="stSidebar"][aria-expanded="false"],
+[data-testid="stSidebar"][aria-expanded="true"] {
     transform: translateX(0) !important;
     margin-left: 0 !important;
     visibility: visible !important;
+    display: block !important;
+    min-width: 244px !important;
+    width: 244px !important;
 }
 .stDeployButton { display: none; }
 /* Keep native sidebar collapse/expand toggle visible so users can reopen the sidebar */
@@ -208,27 +213,64 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 [data-testid="stCaptionContainer"] p { color: var(--slate-500) !important; }
 .glow-text { text-shadow: 0 0 40px rgba(57, 255, 20, 0.3); }
 /* Pipeline: flat compact cards */
-.pipeline-scroll button { height: 28px !important; min-height: 28px !important; font-size: 12px !important; font-weight: 600 !important; padding: 0 8px !important; border-radius: 3px !important; background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #e5e7eb !important; box-shadow: none !important; transform: none !important; }
+.pipeline-scroll button { height: 22px !important; min-height: 22px !important; font-size: 11px !important; font-weight: 600 !important; padding: 0 6px !important; border-radius: 3px !important; background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #e5e7eb !important; box-shadow: none !important; transform: none !important; }
 .pipeline-scroll button:hover { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.25) !important; color: #ffffff !important; transform: none !important; box-shadow: none !important; }
-.pipeline-scroll button p { color: inherit !important; font-size: 12px !important; font-weight: 600 !important; }
+.pipeline-scroll button p { color: inherit !important; font-size: 11px !important; font-weight: 600 !important; margin: 0 !important; line-height: 1 !important; }
+.pipeline-scroll [data-testid="stSelectbox"] > div > div { min-height: 24px !important; height: 24px !important; font-size: 11px !important; padding: 0 6px !important; }
+.pipeline-scroll [data-testid="stSelectbox"] { margin-bottom: 0 !important; }
+.pipeline-scroll [data-testid="stVerticalBlock"] { gap: 2px !important; }
+.pipeline-scroll [data-testid="stHorizontalBlock"] { gap: 4px !important; margin-bottom: 0 !important; }
+.pipeline-scroll [data-testid="stMarkdownContainer"] { margin: 0 !important; padding: 0 !important; }
+.pipeline-scroll [data-testid="stMarkdownContainer"] p { margin: 0 !important; line-height: 1.2 !important; }
+.pipeline-scroll [data-testid="stExpander"] { margin-bottom: 2px !important; margin-top: 0 !important; }
+.pipeline-scroll [data-testid="stExpander"] summary { padding: 4px 10px !important; font-size: 11px !important; }
+.pipeline-scroll [data-testid="stVerticalBlockBorderWrapper"] { padding: 4px 8px !important; margin-bottom: 4px !important; }
+/* Tabbed alignment for loan rows — every field lines up across all rows */
+.pa-loan-grid {
+    display: grid;
+    grid-template-columns: 110px 1fr 90px 160px 130px 60px 34px 20px;
+    gap: 8px;
+    align-items: center;
+    width: 100%;
+}
+/* My loans toggle — styled to match top control row */
+.pa-myloans-toggle + div [data-testid="stCheckbox"] {
+    background: rgba(255,255,255,0.04) !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    border-radius: 6px !important;
+    padding: 7px 10px !important;
+    height: 38px !important;
+    display: flex !important;
+    align-items: center !important;
+    transition: all 0.2s ease !important;
+}
+.pa-myloans-toggle + div [data-testid="stCheckbox"]:hover {
+    border-color: rgba(57,255,20,0.4) !important;
+    background: rgba(57,255,20,0.05) !important;
+}
+.pa-myloans-toggle + div [data-testid="stCheckbox"] label {
+    font-size: 13px !important;
+    color: #d1d5db !important;
+    font-weight: 500 !important;
+}
 /* Primary (Open) button inside pipeline — neon-green, more prominent */
 .pipeline-scroll button[kind="primary"], button[kind="primary"][data-testid*="open_"] {
     background: rgba(57,255,20,0.08) !important;
     border: 1px solid var(--accent) !important;
     color: var(--accent) !important;
     font-weight: 800 !important;
-    font-size: 13px !important;
-    height: 34px !important;
-    min-height: 34px !important;
-    letter-spacing: 0.5px !important;
-    box-shadow: 0 0 10px rgba(57,255,20,0.2) !important;
+    font-size: 11px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    letter-spacing: 0.3px !important;
+    box-shadow: 0 0 8px rgba(57,255,20,0.15) !important;
 }
 .pipeline-scroll button[kind="primary"]:hover, button[kind="primary"][data-testid*="open_"]:hover {
     background: rgba(57,255,20,0.16) !important;
-    box-shadow: 0 0 16px rgba(57,255,20,0.45) !important;
+    box-shadow: 0 0 14px rgba(57,255,20,0.4) !important;
     color: var(--accent) !important;
 }
-.pipeline-scroll button[kind="primary"] p { color: var(--accent) !important; font-weight: 800 !important; font-size: 13px !important; }
+.pipeline-scroll button[kind="primary"] p { color: var(--accent) !important; font-weight: 800 !important; font-size: 11px !important; margin: 0 !important; line-height: 1 !important; }
 /* Hoverable contact chip tooltip */
 .pa-tip { position: relative; cursor: help; display: inline-block; }
 .pa-tip-box { visibility: hidden; opacity: 0; position: absolute; bottom: 125%; left: 0; z-index: 9999;
@@ -2073,6 +2115,19 @@ def show_dashboard():
 
 
 
+def _pipeline_cond_row(c):
+    _status = c.get("status", "")
+    _bg = "rgba(57,255,20,0.15)" if _status in ("Cleared","Ready to Clear") else "rgba(245,158,11,0.12)" if _status == "Requested" else "rgba(239,68,68,0.12)"
+    _clr = "#39FF14" if _status in ("Cleared","Ready to Clear") else "#f59e0b" if _status == "Requested" else "#ef4444"
+    return (
+        f'<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
+        f'<span style="font-size:10px;padding:1px 7px;border-radius:3px;font-weight:600;background:{_bg};color:{_clr};white-space:nowrap;">{_status}</span>'
+        f'<span style="font-size:11px;color:#d1d5db;">{c.get("text","")}</span>'
+        f'<span style="font-size:9px;color:#6b7280;margin-left:auto;">{", ".join(c.get("party",[]) if isinstance(c.get("party"), list) else [c.get("party","")]  )}</span>'
+        f'</div>'
+    )
+
+
 def show_pipeline():
     """Color-coded CRM loan pipeline dashboard."""
     import os
@@ -2087,9 +2142,12 @@ def show_pipeline():
     import json as _json
 
     st.markdown(
-        '<div style="margin-bottom:2px;">'
-        '<span style="font-size:16px;font-weight:700;color:#ffffff;">My Pipeline</span>'
-        '&nbsp;&nbsp;<span style="font-size:11px;color:#9ca3af;">Track loans by status</span>'
+        '<div style="background:linear-gradient(180deg,rgba(57,255,20,0.04) 0%,rgba(255,255,255,0.01) 100%);'
+        'border:1px solid rgba(57,255,20,0.18);border-radius:8px;padding:8px 14px 6px 14px;'
+        'margin-bottom:8px;box-shadow:0 0 20px rgba(57,255,20,0.05) inset;">'
+        '<div style="font-size:18px;font-weight:800;color:#39FF14;letter-spacing:-0.3px;'
+        'text-shadow:0 0 12px rgba(57,255,20,0.35);line-height:1.1;">My Pipeline</div>'
+        '<div style="font-size:10px;color:#9ca3af;margin-top:1px;font-weight:500;line-height:1.1;">Track loans by status</div>'
         '</div>',
         unsafe_allow_html=True,
     )
@@ -2104,6 +2162,7 @@ def show_pipeline():
     # ── Top action bar ──────────────────────────────────────────────────────
     tb1, tb2, tb3, tb4, tb5 = st.columns([1.5, 2, 2.5, 2, 1])
     with tb1:
+        st.markdown('<div style="height:26px;"></div>', unsafe_allow_html=True)
         if st.button("+Add Loan", use_container_width=True, type="primary"):
             st.session_state.pipeline_add_open = not st.session_state.get("pipeline_add_open", False)
     with tb2:
@@ -2132,12 +2191,18 @@ def show_pipeline():
                 "First Name",
                 "Loan #",
                 "Status",
+                "Loan Amount (High→Low)",
+                "Loan Amount (Low→High)",
+                "Loan Type",
+                "Borrower (A→Z)",
             ],
             key="pipeline_sort",
         )
     with tb5:
-        st.markdown('<div style="height:24px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:26px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="pa-myloans-toggle">', unsafe_allow_html=True)
         my_loans_only = st.checkbox("My loans", key="pipeline_myloans")
+        st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Add Loan form ────────────────────────────────────────────────────────
     if st.session_state.get("pipeline_add_open"):
@@ -2610,7 +2675,30 @@ def show_pipeline():
                     st.rerun()
 
     # ── Inbox (incoming shared loans) ────────────────────────────────────────
-    from sharing import scan_inbox, dismiss_from_inbox, inbox_count
+    from sharing import scan_inbox, dismiss_from_inbox, inbox_count, scan_notifications, dismiss_notification
+    # ── Activity notifications from shared loans ─────────────────────────────
+    _notifs = scan_notifications()
+    if _notifs:
+        _event_labels = {"opened": "opened", "updated": "updated", "status_changed": "changed status", "touched": "touched"}
+        with st.expander(f"🔔 {len(_notifs)} notification{'s' if len(_notifs)!=1 else ''}", expanded=True):
+            for _nf in _notifs:
+                _ev = _event_labels.get(_nf.get("event",""), _nf.get("event",""))
+                _nc1, _nc2 = st.columns([5, 1])
+                with _nc1:
+                    st.markdown(
+                        f'<div style="font-size:12px;color:#d1d5db;">'
+                        f'<b style="color:#39FF14;">{_nf.get("by","?")}</b> {_ev} '
+                        f'<b>#{_nf.get("loan_num","—")}</b> {_nf.get("borrower","")}'
+                        f'</div>'
+                        f'<div style="font-size:10px;color:#6b7280;">{_nf.get("ts","")[:16]}</div>',
+                        unsafe_allow_html=True,
+                    )
+                with _nc2:
+                    if st.button("✕", key=f"notif_dismiss_{_nf.get('_file','')}_{_nf.get('ts','')}",
+                                 use_container_width=True):
+                        dismiss_notification(_nf["_file"])
+                        st.rerun()
+
     inbox_items = scan_inbox()
     if inbox_items:
         n = len(inbox_items)
@@ -2711,6 +2799,14 @@ def show_pipeline():
     elif sort_by == "Status":
         _status_order = {s: i for i, s in enumerate(STATUS_OPTIONS)}
         loans.sort(key=lambda l: _status_order.get(l.get("status"), 99))
+    elif sort_by == "Loan Amount (High→Low)":
+        loans.sort(key=lambda l: float(l.get("loan_amount") or 0), reverse=True)
+    elif sort_by == "Loan Amount (Low→High)":
+        loans.sort(key=lambda l: float(l.get("loan_amount") or 0))
+    elif sort_by == "Loan Type":
+        loans.sort(key=lambda l: str(l.get("loan_type") or "").lower())
+    elif sort_by == "Borrower (A→Z)":
+        loans.sort(key=lambda l: str(l.get("borrower") or "").lower())
     else:  # Newest (default — most recently created first)
         loans.sort(key=lambda l: l.get("id") or 0, reverse=True)
 
@@ -2748,8 +2844,8 @@ def show_pipeline():
         _in_prog = counts.get("Requested", 0)
         _pipeline_pct = int((_closed / _total_loans) * 100)
         _pipeline_bar_html = (
-            f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:2px;'
-            f'padding:5px 8px;margin-bottom:6px;">'
+            f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;'
+            f'padding:6px 12px;margin-bottom:6px;margin-top:2px;">'
             f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'
             f'<span style="font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.4px;">Pipeline Progress</span>'
             f'<span style="font-size:10px;color:#9ca3af;">'
@@ -2770,6 +2866,18 @@ def show_pipeline():
             f'</div>'
         )
         st.markdown(_pipeline_bar_html, unsafe_allow_html=True)
+
+    # ── Visual break between header section and loan rows ────────────────────
+    st.markdown(
+        '<div style="height:28px;"></div>'
+        '<div style="height:2px;background:linear-gradient(90deg,rgba(57,255,20,0.35) 0%,rgba(57,255,20,0.08) 60%,transparent 100%);margin-bottom:0;"></div>'
+        '<div style="display:flex;align-items:center;gap:14px;margin:22px 0 18px 0;">'
+        '<div style="font-size:13px;font-weight:800;color:#39FF14;text-transform:uppercase;letter-spacing:2px;'
+        'padding:4px 12px;background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.3);border-radius:4px;">Loans</div>'
+        '<div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
 
     # ── Loan rows (scrollable container ~33vh) ───────────────────────────────
     st.markdown('<div class="pipeline-scroll">', unsafe_allow_html=True)
@@ -2872,6 +2980,26 @@ def show_pipeline():
                 f'border-radius:3px;font-size:9px;font-weight:500;border:1px solid rgba(245,158,11,0.3);">'
                 f'Missing</span>'
             )
+        # ── 24hr response countdown badge (loan-level, not condition-level) ──
+        if status == "Requested" and loan.get("requested_at"):
+            try:
+                from datetime import datetime as _dt2
+                _elapsed = (_dt2.now() - _dt2.fromisoformat(loan["requested_at"])).total_seconds()
+                _hrs_left = max(0, 24 - _elapsed / 3600)
+                if _elapsed > 86400:
+                    _inline_badges += (
+                        f'&nbsp;<span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:1px 6px;'
+                        f'border-radius:3px;font-size:9px;font-weight:700;border:1px solid rgba(239,68,68,0.4);">'
+                        f'⚠ NO RESPONSE {int((_elapsed-86400)/3600)}h overdue</span>'
+                    )
+                else:
+                    _inline_badges += (
+                        f'&nbsp;<span style="background:rgba(245,158,11,0.1);color:#f59e0b;padding:1px 6px;'
+                        f'border-radius:3px;font-size:9px;font-weight:600;border:1px solid rgba(245,158,11,0.3);">'
+                        f'⏱ {_hrs_left:.1f}h to respond</span>'
+                    )
+            except Exception:
+                pass
 
         # ── Contact chips ────────────────────────────────────────────
         _contacts_data = loan.get("contacts", {})
@@ -2963,20 +3091,24 @@ def show_pipeline():
                 f'text-decoration:none;opacity:0.6;">x</a>'
             )
 
-        # ── Single compact row (all HTML) ────────────────────────────
+        # ── Single compact row — grid-aligned columns (tabbed) ───────
         st.markdown(
-            f'<div style="border-left:3px solid {_status_clr};padding:4px 8px;margin-bottom:1px;">'
-            f'<div style="display:flex;align-items:center;gap:6px;flex-wrap:nowrap;">'
-            f'<span style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap;">#{_loan_num}</span>'
-            f'<span style="font-size:11px;color:#d1d5db;">{_borrower}</span>'
-            f'<span style="font-size:9px;color:{_status_clr};font-weight:600;">{emoji}{status}</span>'
-            f'{_inline_badges}'
-            f'<span style="font-size:8px;color:#6b7280;margin-left:auto;white-space:nowrap;">'
-            f'{_closing_dt} · {_lock_dt if _lock_dt else "—"}</span>'
-            f'<div style="width:40px;background:rgba(255,255,255,0.08);height:2px;border-radius:1px;">'
+            f'<div class="pa-loan-row" style="border-left:3px solid {_status_clr};padding:6px 8px;margin-bottom:3px;min-height:32px;">'
+            f'<div class="pa-loan-grid">'
+            f'<span class="pa-col-loan" style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">#{_loan_num}</span>'
+            f'<span class="pa-col-borrower" style="font-size:11px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_borrower}</span>'
+            f'<span class="pa-col-status" style="font-size:9px;color:{_status_clr};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{emoji}{status}</span>'
+            f'<span class="pa-col-badges" style="white-space:nowrap;overflow:hidden;">{_inline_badges}</span>'
+            f'<span class="pa-col-dates" style="font-size:9px;color:#6b7280;white-space:nowrap;display:grid;grid-template-columns:auto auto;column-gap:6px;row-gap:1px;justify-content:end;line-height:1.2;">'
+            f'<span style="color:#9ca3af;font-weight:600;text-align:right;">Close:</span>'
+            f'<span style="color:#d1d5db;text-align:right;">{_closing_dt}</span>'
+            f'<span style="color:#9ca3af;font-weight:600;text-align:right;">Lock:</span>'
+            f'<span style="color:#d1d5db;text-align:right;">{_lock_dt if _lock_dt else "—"}</span>'
+            f'</span>'
+            f'<div class="pa-col-bar" style="background:rgba(255,255,255,0.08);height:3px;border-radius:1px;align-self:center;">'
             f'<div style="background:{_bar_color};width:{_pct}%;height:100%;"></div></div>'
-            f'<span style="font-size:8px;color:{_bar_color};font-weight:700;">{_pct}%</span>'
-            f'{_remove_html}'
+            f'<span class="pa-col-pct" style="font-size:8px;color:{_bar_color};font-weight:700;text-align:right;">{_pct}%</span>'
+            f'<span class="pa-col-x" style="text-align:right;">{_remove_html}</span>'
             f'</div>'
             + (_contacts_line if _contacts_line else '')
             + f'</div>',
@@ -2987,18 +3119,46 @@ def show_pipeline():
         ac1, ac2, ac3 = st.columns([1.3, 1.5, 2])
         with ac1:
             if st.button(f"▸ OPEN", key=f"open_{lid}", type="primary", use_container_width=True):
+                from sharing import notify_shared_members as _nsm
+                _nsm(loan, my_name, "opened")
                 st.session_state.detail_loan_id = lid
                 st.session_state.page = "loan_detail"
                 st.rerun()
         with ac2:
+            _status_confirm_key = f"status_confirm_{lid}"
+            _status_pending_key = f"status_pending_{lid}"
             _new_status = st.selectbox(
                 "Status", STATUS_OPTIONS, index=STATUS_OPTIONS.index(status) if status in STATUS_OPTIONS else 0,
                 key=f"st_{lid}", label_visibility="collapsed",
             )
-            if _new_status != status:
-                set_status(lid, _new_status)
-                log_activity(lid, "status", f"Status → {_new_status}", user=my_name)
+            if _new_status != status and not st.session_state.get(_status_confirm_key):
+                st.session_state[_status_pending_key] = _new_status
+                st.session_state[_status_confirm_key] = True
                 st.rerun()
+        # ── Confirmation prompt outside columns so it renders full-width ──
+        if st.session_state.get(_status_confirm_key):
+            _pending = st.session_state.get(_status_pending_key, "")
+            _cf1, _cf2, _cf3 = st.columns([3, 1, 1])
+            with _cf1:
+                st.markdown(
+                    f'<div style="font-size:11px;color:#f59e0b;padding:4px 0;">'
+                    f'Change status to <b>{_pending}</b>?</div>',
+                    unsafe_allow_html=True,
+                )
+            with _cf2:
+                if st.button("✓ Yes", key=f"st_yes_{lid}", type="primary", use_container_width=True):
+                    set_status(lid, _pending)
+                    log_activity(lid, "status_manual", f"Status manually changed → {_pending}", user=my_name or "Unknown")
+                    from sharing import notify_shared_members as _nsm
+                    _nsm(loan, my_name, "status_changed")
+                    st.session_state.pop(_status_confirm_key, None)
+                    st.session_state.pop(_status_pending_key, None)
+                    st.rerun()
+            with _cf3:
+                if st.button("✗ No", key=f"st_no_{lid}", use_container_width=True):
+                    st.session_state.pop(_status_confirm_key, None)
+                    st.session_state.pop(_status_pending_key, None)
+                    st.rerun()
         with ac3:
             cur_assigned = loan.get("assigned_to", "")
             cur_display = cur_assigned if cur_assigned in user_names else "(Unassigned)"
@@ -3013,13 +3173,59 @@ def show_pipeline():
                 log_activity(lid, "reassign", f"Reassigned to {new_assignee}", user=my_name)
                 st.rerun()
 
-        # ── HOI / Title quick-generate + copyable contacts ───────────────────
+        # ── Notes & Conditions + Docs & Contacts expandable rows ────────────
+        _notes_key = f"notes_open_{lid}"
         _docs_key = f"docs_open_{lid}"
+        _notes_open = st.session_state.get(_notes_key, False)
         _docs_open = st.session_state.get(_docs_key, False)
-        _docs_lbl = f"📄 Docs & Contacts  {'▲' if _docs_open else '▼'}"
-        if st.button(_docs_lbl, key=f"docsbtn_{lid}", use_container_width=True):
-            st.session_state[_docs_key] = not _docs_open
-            st.rerun()
+        _nb1, _nb2 = st.columns(2)
+        with _nb1:
+            _notes_lbl = f"📋 Notes & Conditions  {'▲' if _notes_open else '▼'}"
+            if st.button(_notes_lbl, key=f"notesbtn_{lid}", use_container_width=True):
+                st.session_state[_notes_key] = not _notes_open
+                st.rerun()
+        with _nb2:
+            _docs_lbl = f"📄 Docs & Contacts  {'▲' if _docs_open else '▼'}"
+            if st.button(_docs_lbl, key=f"docsbtn_{lid}", use_container_width=True):
+                st.session_state[_docs_key] = not _docs_open
+                st.rerun()
+
+        if st.session_state.get(_notes_key):
+            from crm import get_activity as _get_act
+            _notes_txt = loan.get("notes", "") or "No notes."
+            _conds = loan.get("conditions", [])
+            _activity = _get_act(lid)
+            _status_changes = [a for a in _activity if a.get("action") in ("status_manual", "status")]
+            _activity_html = ""
+            if _status_changes:
+                _activity_html = (
+                    '<div style="font-size:10px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+                    'letter-spacing:0.8px;margin:10px 0 6px 0;">Status History</div>'
+                    + "".join([
+                        f'<div style="display:flex;gap:10px;padding:2px 0;font-size:10px;border-bottom:1px solid rgba(255,255,255,0.04);">'
+                        f'<span style="color:#6b7280;white-space:nowrap;">{a["ts"]}</span>'
+                        f'<span style="color:#d1d5db;">{a.get("detail","")}</span>'
+                        f'<span style="color:#9ca3af;margin-left:auto;white-space:nowrap;">{a.get("user","") or "—"}</span>'
+                        f'</div>'
+                        for a in reversed(_status_changes[:10])
+                    ])
+                )
+            st.markdown(
+                f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);'
+                f'border-radius:6px;padding:10px 14px;margin-bottom:4px;">'
+                f'<div style="font-size:10px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+                f'letter-spacing:0.8px;margin-bottom:6px;">Notes</div>'
+                f'<div style="font-size:12px;color:#d1d5db;line-height:1.5;">{_notes_txt}</div>'
+                + (
+                    f'<div style="font-size:10px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+                    f'letter-spacing:0.8px;margin:10px 0 6px 0;">Conditions</div>'
+                    + "".join([_pipeline_cond_row(c) for c in _conds])
+                    if _conds else '<div style="color:#6b7280;font-size:11px;margin-top:8px;">No conditions.</div>'
+                )
+                + _activity_html
+                + f'</div>',
+                unsafe_allow_html=True,
+            )
 
         if st.session_state.get(_docs_key):
             _pl_contacts = loan.get("contacts", {}) or {}
@@ -3056,6 +3262,7 @@ def show_pipeline():
                     except FileNotFoundError:
                         pass
                 _rc = _pl_contacts.get("insurance") or {}
+                if isinstance(_rc, str): _rc = {"name": _rc}
                 _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
                 _phone, _email = _rc.get("phone", ""), _rc.get("email", "")
                 st.markdown(
@@ -3104,6 +3311,7 @@ def show_pipeline():
                     except FileNotFoundError:
                         pass
                 _rc = _pl_contacts.get("title") or {}
+                if isinstance(_rc, str): _rc = {"name": _rc}
                 _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
                 _phone, _email = _rc.get("phone", ""), _rc.get("email", "")
                 st.markdown(
@@ -5555,6 +5763,8 @@ def show_loan_detail():
     if st.button("Save Notes", key="detail_save_notes"):
         update_loan(lid, notes=_new_notes)
         log_activity(lid, "note", f"Note updated: {_new_notes[:80]}", user=my_name)
+        from sharing import notify_shared_members as _nsm
+        _nsm(loan, my_name, "updated")
         st.toast("Notes saved", icon="✅")
         st.rerun()
 

@@ -224,6 +224,98 @@ def send_update(shared_loan: dict, sender_name: str, updates: dict) -> dict:
     return results
 
 
+# ── Activity notifications ────────────────────────────────────────────────────
+
+def notify_shared_members(loan: dict, sender_name: str, event: str):
+    """
+    Drop a lightweight .notify.json into every shared member's inbox
+    when a shared loan is opened, updated, or status-changed.
+    event: "opened" | "updated" | "status_changed" | "touched"
+    """
+    share_id = loan.get("share_id")
+    if not share_id:
+        return  # not a shared loan
+
+    config = get_team_config()
+    member_map = get_member_map()
+    sender_inbox = config.get("my_inbox", _DEFAULT_INBOX)
+
+    payload = {
+        "type": "notify",
+        "share_id": share_id,
+        "loan_num": loan.get("loan_num", ""),
+        "borrower": loan.get("borrower", ""),
+        "status": loan.get("status", ""),
+        "event": event,
+        "by": sender_name or "Unknown",
+        "ts": datetime.now().isoformat()[:19],
+        "owner_inbox": sender_inbox,
+    }
+
+    # Recipients = owner + all shared_with, minus sender
+    recipients = []
+    owner = loan.get("created_by") or loan.get("owner", "")
+    if owner and owner != sender_name:
+        owner_inbox = loan.get("owner_inbox", "")
+        if not owner_inbox:
+            owner_member = member_map.get(owner)
+            owner_inbox = owner_member.get("inbox", "") if owner_member else ""
+        if owner_inbox:
+            recipients.append((owner, owner_inbox))
+
+    for name in loan.get("shared_with", []):
+        if name == sender_name:
+            continue
+        member = member_map.get(name)
+        if member and member.get("inbox"):
+            recipients.append((name, member["inbox"]))
+
+    fname = f"notify_{share_id}_{datetime.now().strftime('%Y%m%d%H%M%S')}.notify.json"
+    for _name, inbox in recipients:
+        try:
+            os.makedirs(inbox, exist_ok=True)
+            with open(os.path.join(inbox, fname), "w", encoding="utf-8") as f:
+                json.dump(payload, f, indent=2, ensure_ascii=False)
+        except Exception:
+            pass
+
+
+def scan_notifications() -> list:
+    """Return all .notify.json files from local inbox, newest first."""
+    inbox = get_my_inbox()
+    if not inbox or not os.path.isdir(inbox):
+        return []
+    results = []
+    try:
+        for fname in os.listdir(inbox):
+            if not fname.endswith(".notify.json"):
+                continue
+            fpath = os.path.join(inbox, fname)
+            try:
+                with open(fpath, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                data["_file"] = fpath
+                results.append(data)
+            except Exception:
+                continue
+    except Exception:
+        return []
+    results.sort(key=lambda x: x.get("ts", ""), reverse=True)
+    return results
+
+
+def dismiss_notification(file_path: str):
+    try:
+        if os.path.exists(file_path):
+            os.remove(file_path)
+    except Exception:
+        pass
+
+
+def notification_count() -> int:
+    return len(scan_notifications())
+
+
 # ── Inbox scanning ─────────────────────────────────────────────────────────────
 
 def scan_inbox() -> list:

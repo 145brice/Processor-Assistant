@@ -95,9 +95,11 @@ Processor-Assistant/
 |                          downloads them, runs doc_verify, queues for review.
 |
 |-- crm.py                 Pipeline data layer. All CRUD for loans. Reads/writes
-|                          pipeline.json. Auto-flags overdue loans. Supports
-|                          created_by, assigned_to, share_id, lock expiry,
-|                          closing dates, and condition tracking per loan.
+|                          pipeline.json. Auto-flags overdue loans based on 24hr
+|                          response timer (stamps requested_at when loan moves to
+|                          Requested status). Supports created_by, assigned_to,
+|                          share_id, lock expiry, closing dates, and condition
+|                          tracking per loan.
 |
 |-- billing.py             Billing and usage tracker. Tracks monthly document
 |                          scans per user and calculates costs against the
@@ -121,7 +123,9 @@ Processor-Assistant/
 |
 |-- sharing.py             Private loan sharing. Each user has a personal inbox
 |                          folder. Sharing = writing a JSON file into someone's
-|                          inbox folder. No central hub.
+|                          inbox folder. No central hub. Activity notifications
+|                          (opened, updated, status changed) drop lightweight
+|                          .notify.json files into shared members' inboxes.
 |
 |-- db.py                  Local SQLite database. Stores user accounts (name,
 |                          role, password hash) and scan history. Creates
@@ -247,21 +251,38 @@ Works with PNC, Chase, Bank of America, Wells Fargo, and generic statement forma
 ---
 
 ### 2. My Pipeline
-Loan tracking dashboard. Compact, scrollable pipeline — fits on screen without endless scrolling.
+Loan tracking dashboard. Compact, scrollable pipeline — Excel-thin rows with tabbed column alignment across all loans.
 
 **Status colors:**
 - Red (Pending) — waiting on borrower or docs
-- Orange (Requested) — docs requested, waiting on response
+- Orange (Requested) — docs requested, 24hr response timer starts automatically
 - Green (Cleared) — all conditions met, ready to close
-- Gray (Overdue) — past due date, auto-flagged on page load
+- Gray (Overdue) — auto-flagged after 24hrs with no response to a Requested loan
 - Closed — funded and done
 
-**Each loan card shows (Excel-thin rows):**
-- Loan number, borrower name, status badge — all on a single compact line
-- Closing date and lock expiry on the same line
-- Color-coded inline badges: lock expiry warnings (red/orange/green)
-- 2px progress bar showing percent to closing
-- Action buttons: Open Detail, Change Status, Quick Note
+**24hr Response Timer:**
+When a loan is set to Requested, a countdown badge appears: `⏱ 18.5h to respond`.
+After 24hrs with no status change, the loan auto-flips to Overdue and shows `⚠ NO RESPONSE Xh overdue`.
+Lock expiry is tracked separately and has no effect on this timer.
+
+**Status change confirmation:**
+Manually changing a loan status shows "Are you sure?" with ✓ Yes / ✗ No before saving.
+Every manual change is logged with timestamp and username in the loan's activity trail.
+
+**Sort options:** Newest, Closing Date, Lock Expiry, Last Name, First Name, Loan #, Status, Loan Amount (High/Low), Loan Type, Borrower A→Z
+
+**Each loan row shows (tabbed grid alignment):**
+- Loan # | Borrower | Status | Lock badges | Close/Lock dates | Progress bar | %
+- Closing date and lock expiry labeled and right-aligned in their own column
+
+**📋 Notes & Conditions panel (inline expand per loan):**
+- Loan notes
+- All conditions with color-coded status badges
+- Status History — every manual status change with timestamp and user
+
+**📄 Docs & Contacts panel (inline expand per loan):**
+- Generate HOI / Title request docs
+- Copyable contact info for insurance and title
 
 **Pipeline area is scrollable** — fills ~75% of viewport height. Loans stay visible without needing to scroll the whole page.
 
@@ -311,6 +332,9 @@ One-time setup for private loan sharing. No server. No hub.
 4. They work on the loan, update status/notes
 5. Send Update pushes changes back
 6. You accept the update — changes sync
+
+**Activity notifications:**
+When a shared loan is opened, updated, or has a status change, a lightweight notification is dropped into every shared member's inbox automatically. Notifications appear in a 🔔 banner in the Team page — shows who did what, on which loan, and when. Dismiss individually with ✕.
 
 Works over office WiFi, mapped network drives, or shared OneDrive subfolders.
 
