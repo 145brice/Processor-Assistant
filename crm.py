@@ -56,7 +56,15 @@ PARTY_COLORS = {
 
 
 def _load() -> list:
-    """Load pipeline from JSON. Returns list of loan dicts."""
+    """Load pipeline from JSON. Seeds from pipeline.sample.json on first run."""
+    if not os.path.exists(_PIPELINE_FILE):
+        _sample = os.path.join(os.path.dirname(_PIPELINE_FILE), "pipeline.sample.json")
+        if os.path.exists(_sample):
+            try:
+                import shutil
+                shutil.copy2(_sample, _PIPELINE_FILE)
+            except OSError:
+                pass
     if not os.path.exists(_PIPELINE_FILE):
         return []
     try:

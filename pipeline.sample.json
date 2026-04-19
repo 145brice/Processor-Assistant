@@ -1,163 +1,99 @@
 [
   {
-    "id": 2,
-    "loan_num": "5000009874561",
+    "id": 1,
+    "loan_num": "LN-2025-001",
     "borrower": "Carlos & Diana Reyes",
+    "status": "Pending",
+    "closing_date": "2025-05-15",
+    "lock_expiry": "2025-05-10",
+    "loan_amount": 425000,
+    "property": "123 Maple St, Austin TX 78701",
+    "loan_type": "Conventional",
+    "notes": "Waiting on 2 months bank statements from borrower.",
+    "conditions": [
+      {"text": "Provide 2 most recent bank statements", "status": "Needed", "party": ["Borrower"]},
+      {"text": "VOE from employer — Allied Industries", "status": "Requested", "party": ["Borrower"]},
+      {"text": "Explanation letter for large deposit 3/12", "status": "Needed", "party": ["Borrower"]}
+    ],
+    "contacts": {"borrower_email": "carlos.reyes@email.com", "title": "Lone Star Title Co"},
+    "created_by": "Sandbox",
+    "assigned_to": ""
+  },
+  {
+    "id": 2,
+    "loan_num": "LN-2025-002",
+    "borrower": "Marcus & Tina Johnson",
+    "status": "Requested",
+    "closing_date": "2025-05-22",
+    "lock_expiry": "2025-05-18",
+    "loan_amount": 312000,
+    "property": "4400 Oak Creek Dr, Dallas TX 75201",
+    "loan_type": "FHA",
+    "notes": "All docs requested. Title has commitment ready.",
+    "conditions": [
+      {"text": "Copy of divorce decree", "status": "Requested", "party": ["Borrower"]},
+      {"text": "12 months cancelled rent checks or VOR", "status": "Requested", "party": ["Borrower"]},
+      {"text": "Title commitment — exception items", "status": "Ready to Clear", "party": ["Title"]}
+    ],
+    "contacts": {"borrower_email": "tjohnson@email.com", "title": "Texas Premier Title"},
+    "created_by": "Sandbox",
+    "assigned_to": ""
+  },
+  {
+    "id": 3,
+    "loan_num": "LN-2025-003",
+    "borrower": "Aisha Patel",
+    "status": "Cleared",
+    "closing_date": "2025-04-30",
+    "lock_expiry": "2025-04-28",
+    "loan_amount": 550000,
+    "property": "8801 Ridgeline Blvd, Houston TX 77002",
+    "loan_type": "Conventional",
+    "notes": "CTC issued. Scheduling closing with title.",
+    "conditions": [
+      {"text": "Final pay stub within 30 days of closing", "status": "Cleared", "party": ["Borrower"]},
+      {"text": "Homeowner insurance binder", "status": "Cleared", "party": ["Borrower"]},
+      {"text": "Title clear to close", "status": "Cleared", "party": ["Title"]}
+    ],
+    "contacts": {"borrower_email": "aisha.patel@email.com", "title": "Gulf Coast Title"},
+    "created_by": "Sandbox",
+    "assigned_to": ""
+  },
+  {
+    "id": 4,
+    "loan_num": "LN-2025-004",
+    "borrower": "Robert & Sandra Kim",
     "status": "Overdue",
-    "due_date": "2026-03-25",
-    "closing_date": "2026-03-28",
-    "lock_expiry": "2026-04-10",
-    "missing_docs": "HOI Policy, CPL, Wire Instructions",
-    "folder_path": "",
-    "created": "2026-03-15",
-    "updated": "2026-03-24",
-    "notes": "Conventional purchase. Insurance binder sent back incorrect mortgagee clause. Resent 3/20.",
-    "assigned_to": "",
-    "created_by": "Sandbox User"
+    "closing_date": "2025-04-01",
+    "lock_expiry": "2025-03-28",
+    "loan_amount": 198000,
+    "property": "301 Sunset Ave, San Antonio TX 78205",
+    "loan_type": "VA",
+    "notes": "Lock expired. Borrower unresponsive. Need to extend or cancel.",
+    "conditions": [
+      {"text": "Updated COE — Certificate of Eligibility", "status": "Needed", "party": ["Borrower"]},
+      {"text": "Pest inspection report", "status": "Needed", "party": ["Borrower"]}
+    ],
+    "contacts": {"borrower_email": "rkim@email.com"},
+    "created_by": "Sandbox",
+    "assigned_to": ""
   },
   {
     "id": 5,
-    "loan_num": "5000006689012",
-    "borrower": "Patel Family Trust",
-    "status": "Overdue",
-    "due_date": "2026-04-01",
-    "closing_date": "2026-04-01",
-    "lock_expiry": "",
-    "missing_docs": "Certificate of Good Standing, Operating Agreement, Property Tax Roll",
-    "folder_path": "",
-    "created": "2026-03-17",
-    "updated": "2026-04-16",
-    "notes": "DSCR loan, LLC vesting. Investor — first rental property requirement applies.",
-    "assigned_to": "",
-    "created_by": "Sandbox User",
-    "conditions": [],
-    "contacts": {
-      "listing_agent": {
-        "name": "Jessica Rosa and Angie Grajzl",
-        "brokerage": "RE/MAX Traditions",
-        "phone": "440-255-6505",
-        "email": "jesslarosa620@gmail.com"
-      },
-      "selling_agent": {
-        "name": "Christie Barkan",
-        "brokerage": "KW Living",
-        "phone": "",
-        "email": ""
-      },
-      "title": {
-        "company": "CLE Title/Northern Title",
-        "contact": "",
-        "phone": "",
-        "email": ""
-      }
-    },
-    "documents": [
-      {
-        "filename": "PurchaseAgreement.pdf",
-        "doc_type": "Purchase Contract",
-        "path": "c:\\Users\\user\\OneDrive\\Desktop\\processor-traien\\Processor-Assistant\\loan_docs\\5\\PurchaseAgreement.pdf",
-        "attached": "2026-04-16T13:39",
-        "size_kb": 1134.6,
-        "extracted_data": {
-          "buyer": {
-            "name": "Andrew Weingart",
-            "phone": "",
-            "email": ""
-          },
-          "seller": {
-            "name": "Cory Chiappone",
-            "phone": "",
-            "email": ""
-          },
-          "property": {
-            "address": "38425 Laura Dr, Eastlake, OH 44095"
-          },
-          "transaction": {
-            "purchase_price": "180,000",
-            "closing_date": "03/25/2022",
-            "date_signed": "",
-            "obligation_date": "",
-            "earnest_money": "1,800",
-            "down_payment": "",
-            "seller_concessions": ""
-          },
-          "listing_agent": {
-            "name": "Jessica Rosa and Angie Grajzl",
-            "brokerage": "RE/MAX Traditions",
-            "phone": "440-255-6505",
-            "email": "jesslarosa620@gmail.com"
-          },
-          "selling_agent": {
-            "name": "Christie Barkan",
-            "brokerage": "KW Living",
-            "phone": "",
-            "email": ""
-          },
-          "title": {
-            "company": "CLE Title/Northern Title",
-            "contact": "",
-            "phone": "",
-            "email": ""
-          },
-          "contingencies": {
-            "inspection": "",
-            "appraisal": "",
-            "financing": ""
-          },
-          "addendums": [],
-          "missing_required": []
-        }
-      }
+    "loan_num": "LN-2024-088",
+    "borrower": "Jennifer Morales",
+    "status": "Closed",
+    "closing_date": "2024-12-20",
+    "lock_expiry": "2024-12-18",
+    "loan_amount": 375000,
+    "property": "2200 Pecan Grove, Fort Worth TX 76102",
+    "loan_type": "Conventional",
+    "notes": "Funded 12/20/2024. All docs in file.",
+    "conditions": [
+      {"text": "All conditions cleared", "status": "Cleared", "party": ["Borrower"]}
     ],
-    "property_address": "38425 Laura Dr, Eastlake, OH 44095",
-    "purchase_price": "180,000"
-  },
-  {
-    "id": 6,
-    "loan_num": "5000003321098",
-    "borrower": "Jennifer & Mark Thompson",
-    "status": "Overdue",
-    "due_date": "2026-04-05",
-    "closing_date": "2026-04-05",
-    "lock_expiry": "2026-03-30",
-    "missing_docs": "Signed 1003, Appraisal, Verification of Mortgage",
-    "folder_path": "",
-    "created": "2026-03-18",
-    "updated": "2026-03-24",
-    "notes": "FHA cash-out refi. Rushmore payoff needed. Waiting on borrower.",
-    "assigned_to": "",
-    "created_by": "Sandbox User"
-  },
-  {
-    "id": 7,
-    "loan_num": "5000007745230",
-    "borrower": "David Nguyen",
-    "status": "Overdue",
-    "due_date": "2026-04-12",
-    "closing_date": "2026-04-12",
-    "lock_expiry": "2026-04-18",
-    "missing_docs": "VOE, 2 months bank statements",
-    "folder_path": "",
-    "created": "2026-03-20",
-    "updated": "2026-03-24",
-    "notes": "VA purchase. COE on file. Waiting on employer verification.",
-    "assigned_to": "",
-    "created_by": "Sandbox User"
-  },
-  {
-    "id": 8,
-    "loan_num": "5000001198765",
-    "borrower": "Angela & Robert Davis",
-    "status": "Overdue",
-    "due_date": "2026-03-27",
-    "closing_date": "2026-03-27",
-    "lock_expiry": "2026-03-26",
-    "missing_docs": "Final CD approval, Closing disclosure signature",
-    "folder_path": "",
-    "created": "2026-03-22",
-    "updated": "2026-03-24",
-    "notes": "Conventional refi. Lock expires tomorrow — escalate if CD not back today.",
-    "assigned_to": "",
-    "created_by": "Sandbox User"
+    "contacts": {"borrower_email": "j.morales@email.com", "title": "DFW Title Group"},
+    "created_by": "Sandbox",
+    "assigned_to": ""
   }
 ]
