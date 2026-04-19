@@ -3353,6 +3353,44 @@ def show_reader():
     st.markdown("## Document Reader")
     st.caption("Browse a local folder, open and read any document, or search inside it.")
 
+    # ── Smart Search (index-powered, instant) ────────────────────────────────
+    import document_index as _didx
+    _sq = st.text_input("Search saved docs (borrower, loan #, doc type, keyword):",
+                        placeholder="e.g. Smith bank statement  or  LOAN-12345",
+                        key="reader_smart_search")
+    if _sq:
+        _hits = _didx.search(_sq)
+        if _hits:
+            st.caption(f"{len(_hits)} result(s)")
+            for _h in _hits:
+                _label = " · ".join(filter(None, [
+                    _h.get("borrower"), _h.get("doc_type"),
+                    _h.get("month"), _h.get("year"),
+                ]))
+                _fname = _h.get("file_name") or os.path.basename(_h["file_path"])
+                _c1, _c2 = st.columns([6, 2])
+                with _c1:
+                    st.markdown(
+                        f'<div style="font-size:13px;font-weight:600;color:#c0c0c0;">{_fname}</div>'
+                        f'<div style="font-size:11px;color:#666;">{_label}</div>'
+                        f'<div style="font-size:10px;color:#444;">{_h["file_path"]}</div>',
+                        unsafe_allow_html=True,
+                    )
+                with _c2:
+                    if os.path.exists(_h["file_path"]):
+                        if st.button("Open", key=f"sr_open_{_h['id']}", use_container_width=True):
+                            _ext = os.path.splitext(_h["file_path"])[1].lower()
+                            st.session_state["reader_open_file"] = {
+                                "name": _fname, "path": _h["file_path"],
+                                "rel": _fname, "ext": _ext, "size_kb": 0,
+                            }
+                            st.session_state["reader_page"] = 1
+                            st.rerun()
+                    else:
+                        st.caption("_(moved)_")
+            st.markdown("---")
+    # ─────────────────────────────────────────────────────────────────────────
+
     # --- Folder input ---
     # Sync picked folder into widget key before rendering
     _rf = st.session_state.get("reader_folder", "")
@@ -3901,6 +3939,17 @@ def show_email_watch_page():
                             import shutil
                             dest = os.path.join(folder, m["filename"])
                             shutil.copy2(m["file_path"], dest)
+                            try:
+                                import document_index as _di
+                                _di.index_document(
+                                    file_path=dest,
+                                    borrower=m.get("borrower") or m.get("matched_loan"),
+                                    loan_number=m.get("loan_num"),
+                                    doc_type=m.get("doc_type"),
+                                    key_points=m.get("summary") or m.get("doc_type"),
+                                )
+                            except Exception:
+                                pass
                             ew.dismiss(i)
                             st.success(f"Saved to {dest}")
                             st.rerun()
@@ -4034,6 +4083,17 @@ def show_email_watch_page():
                                 import shutil as _shu
                                 _dest = os.path.join(_dest_folder, _qfname)
                                 _shu.move(_qfpath, _dest)
+                                try:
+                                    import document_index as _di
+                                    _di.index_document(
+                                        file_path=_dest,
+                                        borrower=_qv.get("borrower"),
+                                        loan_number=_qv.get("loan_num"),
+                                        doc_type=_qv.get("doc_type"),
+                                        key_points=_qv.get("doc_type"),
+                                    )
+                                except Exception:
+                                    pass
                                 st.success(f"Moved to {_dest}")
                                 st.rerun()
                         else:
@@ -4044,7 +4104,18 @@ def show_email_watch_page():
                                                      use_container_width=True, type="primary"):
                                 import shutil as _shu
                                 os.makedirs(_manual, exist_ok=True)
-                                _shu.move(_qfpath, os.path.join(_manual, _qfname))
+                                _final = os.path.join(_manual, _qfname)
+                                _shu.move(_qfpath, _final)
+                                try:
+                                    import document_index as _di
+                                    _di.index_document(
+                                        file_path=_final,
+                                        borrower=_qv.get("borrower"),
+                                        doc_type=_qv.get("doc_type"),
+                                        key_points=_qv.get("doc_type"),
+                                    )
+                                except Exception:
+                                    pass
                                 st.success("Moved.")
                                 st.rerun()
                     with _qc:
