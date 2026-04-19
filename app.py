@@ -555,7 +555,7 @@ def show_sidebar():
             ("Pipeline", "pipeline",  "⬡"),
             ("Reader",   "reader",    "⬡"),
             ("Team",     "team",      "⬡"),
-            ("AI",       "ollama",    "⬡"),
+            # ("AI", "ollama", "⬡"),  # HIDDEN — re-enable when ready to offer AI upsell/Ollama page
             ("Billing",  "billing",   "⬡"),
         ]
         if not is_sandbox:
