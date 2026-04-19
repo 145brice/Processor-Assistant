@@ -5682,7 +5682,8 @@ def main():
         elif page == "email_watch_controls":
             show_email_watch_controls_page()
         elif page == "ollama":
-            show_ollama_page()
+            st.session_state.page = "dashboard"
+            st.rerun()
         elif page == "billing":
             show_billing_page()
         elif page == "history":
