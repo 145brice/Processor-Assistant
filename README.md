@@ -276,6 +276,7 @@ Every manual change is logged with timestamp and username in the loan's activity
 **Each loan row shows (tabbed grid alignment):**
 - Loan # | Borrower | Status | Lock badges | Close/Lock dates | Progress bar | %
 - Closing date and lock expiry labeled and right-aligned in their own column
+- **Order-out badges** always visible on every row: `○ HOI` / `⏳ HOI` / `✓ HOI` for HOI, Title, and Appraisal — gray (not sent), amber (requested), green (received)
 
 **📋 Notes & Conditions panel (inline expand per loan):**
 - Loan notes
@@ -284,7 +285,11 @@ Every manual change is logged with timestamp and username in the loan's activity
 
 **📄 Docs & Contacts panel (inline expand per loan):**
 - Generate HOI / Title request docs
-- Copyable contact info for insurance and title
+- Contact cards for insurance and title with 📞 phone, ✉ email, and 📬 Gmail compose button
+- **Order Status** section — three dropdowns (HOI | Title | Appraisal) cycling Not Sent → Requested → Received. Updates save instantly, log to activity trail with user + timestamp, and reflect immediately on the row badges
+
+**📋 Notes & Conditions panel:**
+- Each outstanding condition shows a **📧 Remind** button — looks up the party's email (Borrower, Title, etc.) and opens Gmail pre-filled with a professional reminder about that specific condition
 
 **Pipeline area is scrollable** — fills ~75% of viewport height. Loans stay visible without needing to scroll the whole page.
 
