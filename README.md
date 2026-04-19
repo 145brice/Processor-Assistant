@@ -222,6 +222,8 @@ Routes to different outputs by document type:
 
 **Draft Email** — Check conditions, pick language (English/Spanish), pick recipient (Borrower, Title, Underwriter, Insurance, Closer, Appraiser), generate professional email instantly. Works for all 6 recipient types in both languages.
 
+After any draft generates, a **📬 Compose in Gmail** button appears — opens Gmail in a new tab with To, Subject, and body pre-filled. No API needed, works instantly.
+
 **Condition Export** — Download conditions as CSV or generate a printable HTML snapshot report.
 
 **Bank Statement** — 50-rule analysis + Account Summary card. Checks:
@@ -302,7 +304,7 @@ Every manual change is logged with timestamp and username in the loan's activity
   - Contact name + email auto-displays when a known party is selected
   - "To: email@address.com" pre-filled if email is stored
   - Draft Email or Draft with AI buttons
-- Contact management (borrower, title, agents)
+- Contact management (borrower, title, agents) — every contact card shows name, phone, email, and a **📬 Gmail** button that opens a pre-addressed compose window
 - Activity log with timestamped history
 - Lock expiry and closing date countdown
 

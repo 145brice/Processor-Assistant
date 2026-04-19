@@ -1570,10 +1570,22 @@ def show_dashboard():
                                     st.rerun()
                             try:
                                 from ai_engine import draft_email as _draft
+                                import urllib.parse as _uparse
                                 _ebody = _draft(f"- #{_c['num']}: {_c['desc']}", _p_choice, _lang)
                             except Exception as _e:
                                 _ebody = f"(Draft failed: {_e})"
                             st.code(_ebody, language=None)
+                            _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({
+                                "su": f"Condition #{_c['num']} — {_c.get('desc','')[:60]}",
+                                "body": _ebody,
+                            })
+                            st.markdown(
+                                f'<a href="{_gmail_compose}" target="_blank" style="display:inline-block;'
+                                f'margin-top:4px;padding:4px 12px;background:rgba(66,133,244,0.12);'
+                                f'border:1px solid rgba(66,133,244,0.4);border-radius:6px;color:#4285f4;'
+                                f'font-size:11px;font-weight:700;text-decoration:none;">📬 Compose in Gmail</a>',
+                                unsafe_allow_html=True,
+                            )
                         _hits = st.session_state.get(f"{_uid}_fetch_hits")
                         if _hits is not None:
                             if _hits:
@@ -3265,20 +3277,23 @@ def show_pipeline():
                 if isinstance(_rc, str): _rc = {"name": _rc}
                 _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
                 _phone, _email = _rc.get("phone", ""), _rc.get("email", "")
+                import urllib.parse as _uparse
+                _gmail_hoi = ("https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({"to": _email, "su": f"Re: {loan.get('loan_num','')} — HOI"})) if _email else ""
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);'
-                    'border-radius:8px;padding:8px;margin-top:6px;">'
-                    '<div style="font-size:10px;color:#39FF14;font-weight:700;'
-                    'text-transform:uppercase;margin-bottom:4px;">HOI / Insurance</div>'
-                    + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;">{_name}</div>' if _name else '')
+                    'border-radius:8px;padding:10px 12px;margin-top:6px;">'
+                    '<div style="font-size:10px;color:#39FF14;font-weight:700;text-transform:uppercase;margin-bottom:6px;">HOI / Insurance</div>'
+                    + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;margin-bottom:4px;">{_name}</div>' if _name else '')
+                    + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">📞 {_phone}</div>' if _phone else '')
+                    + (f'<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">'
+                       f'<span style="color:#9ca3af;font-size:11px;">✉ {_email}</span>'
+                       f'<a href="{_gmail_hoi}" target="_blank" style="padding:2px 8px;background:rgba(66,133,244,0.12);'
+                       f'border:1px solid rgba(66,133,244,0.35);border-radius:4px;color:#4285f4;font-size:10px;'
+                       f'font-weight:700;text-decoration:none;">📬 Gmail</a></div>' if _email else '')
                     + ('' if (_name or _phone or _email) else '<span style="color:#9ca3af;font-size:11px;">Not set</span>')
                     + '</div>',
                     unsafe_allow_html=True,
                 )
-                if _phone:
-                    st.code(_phone, language=None)
-                if _email:
-                    st.code(_email, language=None)
 
             # ── Title side ──────────────────────────────────────────────
             with _title_col:
@@ -3314,20 +3329,22 @@ def show_pipeline():
                 if isinstance(_rc, str): _rc = {"name": _rc}
                 _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
                 _phone, _email = _rc.get("phone", ""), _rc.get("email", "")
+                _gmail_ttl = ("https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({"to": _email, "su": f"Re: {loan.get('loan_num','')} — Title"})) if _email else ""
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);'
-                    'border-radius:8px;padding:8px;margin-top:6px;">'
-                    '<div style="font-size:10px;color:#39FF14;font-weight:700;'
-                    'text-transform:uppercase;margin-bottom:4px;">Title Company</div>'
-                    + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;">{_name}</div>' if _name else '')
+                    'border-radius:8px;padding:10px 12px;margin-top:6px;">'
+                    '<div style="font-size:10px;color:#39FF14;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Title Company</div>'
+                    + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;margin-bottom:4px;">{_name}</div>' if _name else '')
+                    + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">📞 {_phone}</div>' if _phone else '')
+                    + (f'<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">'
+                       f'<span style="color:#9ca3af;font-size:11px;">✉ {_email}</span>'
+                       f'<a href="{_gmail_ttl}" target="_blank" style="padding:2px 8px;background:rgba(66,133,244,0.12);'
+                       f'border:1px solid rgba(66,133,244,0.35);border-radius:4px;color:#4285f4;font-size:10px;'
+                       f'font-weight:700;text-decoration:none;">📬 Gmail</a></div>' if _email else '')
                     + ('' if (_name or _phone or _email) else '<span style="color:#9ca3af;font-size:11px;">Not set</span>')
                     + '</div>',
                     unsafe_allow_html=True,
                 )
-                if _phone:
-                    st.code(_phone, language=None)
-                if _email:
-                    st.code(_email, language=None)
 
         # ── Share this loan ──────────────────────────────────────────────────
         from sharing import get_members, share_loan as _share_loan, send_update as _send_update
@@ -5128,7 +5145,7 @@ def show_loan_detail():
 
         if _ld_draft_btn:
             from ai_engine import draft_email as _de
-            # Get recipient name/email from stored contact if available
+            import urllib.parse
             _recip_contact = _contact_party_map.get(_ld_recipient, {})
             _recip_label = _recip_contact.get("name") or _ld_recipient.split("—")[0].strip()
             if _ld_checked:
@@ -5136,7 +5153,6 @@ def show_loan_detail():
             else:
                 _cond_lines = [f"- Condition #{c['num']}: {c['desc']}" for c in _conditions[:10]]
             _email_out = _de("\n".join(_cond_lines), _recip_label, _ld_lang)
-            # Auto-fill To: if we have a stored email
             _recip_email = _recip_contact.get("email", "")
             if _recip_email:
                 st.markdown(
@@ -5144,9 +5160,22 @@ def show_loan_detail():
                     unsafe_allow_html=True,
                 )
             st.container(border=True).markdown(_email_out)
+            _gmail_url = "https://mail.google.com/mail/?view=cm&fs=1&" + urllib.parse.urlencode({
+                "to": _recip_email,
+                "su": f"Re: {loan.get('loan_num','')} — {loan.get('borrower','')}",
+                "body": _email_out,
+            })
+            st.markdown(
+                f'<a href="{_gmail_url}" target="_blank" style="display:inline-block;margin-top:8px;'
+                f'padding:6px 16px;background:rgba(66,133,244,0.12);border:1px solid rgba(66,133,244,0.4);'
+                f'border-radius:6px;color:#4285f4;font-size:12px;font-weight:700;text-decoration:none;">'
+                f'📬 Compose in Gmail</a>',
+                unsafe_allow_html=True,
+            )
 
         if _ld_ai_btn:
             import ai_router as _ld_ar
+            import urllib.parse
             _ld_backend = _ld_ar.get_preferred_backend()
             if _ld_backend == "script":
                 st.warning("AI backend not configured. Go to AI Settings.")
@@ -5157,7 +5186,21 @@ def show_loan_detail():
                         _conds_for_ai, _ld_recipient.split("—")[0].strip(), _ld_lang
                     )
                 if _ld_ai_text:
+                    _recip_contact2 = _contact_party_map.get(_ld_recipient, {})
+                    _recip_email2 = _recip_contact2.get("email", "")
                     st.container(border=True).markdown(_ld_ai_text)
+                    _gmail_url2 = "https://mail.google.com/mail/?view=cm&fs=1&" + urllib.parse.urlencode({
+                        "to": _recip_email2,
+                        "su": f"Re: {loan.get('loan_num','')} — {loan.get('borrower','')}",
+                        "body": _ld_ai_text,
+                    })
+                    st.markdown(
+                        f'<a href="{_gmail_url2}" target="_blank" style="display:inline-block;margin-top:8px;'
+                        f'padding:6px 16px;background:rgba(66,133,244,0.12);border:1px solid rgba(66,133,244,0.4);'
+                        f'border-radius:6px;color:#4285f4;font-size:12px;font-weight:700;text-decoration:none;">'
+                        f'📬 Compose in Gmail</a>',
+                        unsafe_allow_html=True,
+                    )
     else:
         st.markdown(
             '<span style="color:#9ca3af;font-size:12px;">No conditions attached to this loan yet. '
@@ -5179,11 +5222,11 @@ def show_loan_detail():
             "seller": "Seller", "listing_agent": "Listing Agent", "selling_agent": "Selling Agent",
             "title": "Title Company", "employer": "Employer",
         }
+        import urllib.parse as _uparse2
         _contact_html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
         for _ck, _cv in _contacts.items():
             if not _cv or not isinstance(_cv, dict):
                 continue
-            # Skip empty contacts (all values blank)
             if not any(str(v).strip() for v in _cv.values()):
                 continue
             _clabel = _party_labels.get(_ck, _ck.replace("_", " ").title())
@@ -5191,26 +5234,27 @@ def show_loan_detail():
             _cphone = _cv.get("phone", "")
             _cemail = _cv.get("email", "")
             _cbrok = _cv.get("brokerage", "")
-            _caddr = _cv.get("address", "")
             _cpos = _cv.get("position", "")
-            _detail_parts = []
-            if _cphone:
-                _detail_parts.append(f'{_cphone}')
+            _gmail_link = ""
             if _cemail:
-                _detail_parts.append(f'Email️ {_cemail}')
-            if _cbrok:
-                _detail_parts.append(f'{_cbrok}')
-            if _cpos:
-                _detail_parts.append(f'— {_cpos}')
-            if _caddr:
-                _detail_parts.append(f'{_caddr}')
-            _detail_str = " &nbsp;·&nbsp; ".join(_detail_parts) if _detail_parts else '<span style="color:#9ca3af;">No details</span>'
+                _gurl = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse2.urlencode({
+                    "to": _cemail,
+                    "su": f"Re: {loan.get('loan_num','')} — {loan.get('borrower','')}",
+                })
+                _gmail_link = (
+                    f'<a href="{_gurl}" target="_blank" style="margin-left:8px;padding:1px 8px;'
+                    f'background:rgba(66,133,244,0.12);border:1px solid rgba(66,133,244,0.35);'
+                    f'border-radius:4px;color:#4285f4;font-size:10px;font-weight:700;text-decoration:none;">📬 Gmail</a>'
+                )
             _contact_html += (
                 f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;">'
                 f'<div style="font-size:10px;color:#39FF14;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
-                f'<div style="color:#ffffff;font-size:13px;font-weight:600;">{_cname or "—"}</div>'
-                f'<div style="color:#9ca3af;font-size:11px;margin-top:3px;">{_detail_str}</div>'
-                f'</div>'
+                f'<div style="color:#ffffff;font-size:13px;font-weight:600;margin-bottom:4px;">{_cname or "—"}</div>'
+                + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">📞 {_cphone}</div>' if _cphone else '')
+                + (f'<div style="display:flex;align-items:center;font-size:11px;color:#9ca3af;">✉ {_cemail}{_gmail_link}</div>' if _cemail else '')
+                + (f'<div style="color:#9ca3af;font-size:11px;">{_cbrok}</div>' if _cbrok else '')
+                + (f'<div style="color:#9ca3af;font-size:11px;">{_cpos}</div>' if _cpos else '')
+                + f'</div>'
             )
         _contact_html += '</div>'
         st.markdown(_contact_html, unsafe_allow_html=True)
