@@ -568,7 +568,7 @@ def show_sidebar():
         # ── Who's logged in ──────────────────────────────────────────────────
         if is_sandbox:
             st.markdown(
-                '<div style="font-size:11px;color:var(--slate-500);margin-bottom:10px;">'
+                '<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">'
                 '* Sandbox Mode</div>',
                 unsafe_allow_html=True,
             )
