@@ -2,4 +2,4 @@ streamlit
 pypdf
 python-dotenv
 thefuzz
-grok-parser
+googletrans==4.0.0rc1
