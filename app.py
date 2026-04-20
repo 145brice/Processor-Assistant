@@ -316,6 +316,15 @@ DEFAULTS = {
     "reader_page": 1,
     "pipeline_add_open": False,
     "scroll_to": None,
+    "dti_income": 0.0,
+    "dti_debt": 0.0,
+    "dti_housing": 0.0,
+    "dti_source": "manual",
+    "dti_confidence": "low",
+    "cc_loan_amt": 0.0,
+    "cc_property_val": 0.0,
+    "cc_source": "manual",
+    "cc_confidence": "low",
 }
 
 # ── Persist auth across browser refreshes ──────────────────────────────────
@@ -4690,10 +4699,51 @@ def show_dti_calculator_page():
 
     with col1:
         st.markdown("### DTI Calculation")
-        income = st.number_input("Monthly Gross Income", min_value=0.0)
-        debt = st.number_input("Monthly Debt Payments", min_value=0.0)
-        housing = st.number_input("Proposed Housing Payment", min_value=0.0)
+
+        # Pull from scanned data button
+        col_pull, col_manual = st.columns([1, 1])
+        with col_pull:
+            if st.button("📊 Pull from Last Scan", key="pull_scan_dti"):
+                from financial_extractor import FinancialDataExtractor
+
+                # Get extracted data using the financial extractor
+                scan_results = st.session_state.get("scan_results")
+                if scan_results:
+                    extractor = FinancialDataExtractor()
+                    dti_data = extractor.extract_for_dti(scan_results)
+
+                    # Update session state with extracted data
+                    st.session_state["dti_income"] = dti_data["monthly_gross_income"]
+                    st.session_state["dti_debt"] = dti_data["monthly_debt_payments"]
+                    st.session_state["dti_source"] = dti_data["source"]
+                    st.session_state["dti_confidence"] = dti_data["confidence"]
+                    st.rerun()
+
+        with col_manual:
+            if st.button("✏️ Clear Manual Input", key="clear_manual_dti"):
+                st.session_state["dti_income"] = 0.0
+                st.session_state["dti_debt"] = 0.0
+                st.session_state["dti_housing"] = 0.0
+                st.rerun()
+
+        # Input fields with session state persistence
+        income = st.number_input("Monthly Gross Income", min_value=0.0,
+                               value=st.session_state.get("dti_income", 0.0), key="dti_income_input")
+        debt = st.number_input("Monthly Debt Payments", min_value=0.0,
+                             value=st.session_state.get("dti_debt", 0.0), key="dti_debt_input")
+        housing = st.number_input("Proposed Housing Payment", min_value=0.0,
+                                value=st.session_state.get("dti_housing", 0.0), key="dti_housing_input")
         loan_type = st.selectbox("Loan Type", ["conventional", "fha", "va"])
+
+        # Show data source indicator
+        data_source = st.session_state.get("dti_source", "manual")
+        confidence = st.session_state.get("dti_confidence", "low")
+
+        if data_source == "scanned_documents":
+            confidence_icon = {"high": "🟢", "medium": "🟡", "low": "🔴"}.get(confidence, "❓")
+            st.info(f"📊 Auto-filled from scanned documents ({confidence_icon} {confidence} confidence)")
+        elif st.session_state.get("dti_income", 0) > 0:
+            st.info("✏️ Manually entered data")
 
         if st.button("Calculate DTI", type="primary"):
             result = calc.calculate_dti(income, debt, housing, loan_type)
@@ -4709,9 +4759,48 @@ def show_dti_calculator_page():
 
     with col2:
         st.markdown("### Closing Cost Calculator")
-        loan_amt = st.number_input("Loan Amount", min_value=0.0)
-        property_val = st.number_input("Property Value", min_value=0.0)
+
+        # Pull from scanned data button for closing costs
+        col_pull_cc, col_clear_cc = st.columns([1, 1])
+        with col_pull_cc:
+            if st.button("📊 Pull from Last Scan", key="pull_scan_cc"):
+                from financial_extractor import FinancialDataExtractor
+
+                # Get extracted data using the financial extractor
+                scan_results = st.session_state.get("scan_results")
+                if scan_results:
+                    extractor = FinancialDataExtractor()
+                    closing_data = extractor.extract_for_closing_costs(scan_results)
+
+                    # Update session state with extracted data
+                    st.session_state["cc_loan_amt"] = closing_data["loan_amount"]
+                    st.session_state["cc_property_val"] = closing_data["property_value"]
+                    st.session_state["cc_source"] = closing_data["source"]
+                    st.session_state["cc_confidence"] = closing_data["confidence"]
+                    st.rerun()
+
+        with col_clear_cc:
+            if st.button("✏️ Clear", key="clear_cc"):
+                st.session_state["cc_loan_amt"] = 0.0
+                st.session_state["cc_property_val"] = 0.0
+                st.rerun()
+
+        # Input fields with session state persistence
+        loan_amt = st.number_input("Loan Amount ($)", min_value=0.0,
+                                 value=st.session_state.get("cc_loan_amt", 0.0), key="cc_loan_amt_input")
+        property_val = st.number_input("Property Value ($)", min_value=0.0,
+                                     value=st.session_state.get("cc_property_val", 0.0), key="cc_property_val_input")
         loan_type_cc = st.selectbox("Transaction Type", ["purchase", "refinance"], key="cc_type")
+
+        # Show data source indicator
+        data_source = st.session_state.get("cc_source", "manual")
+        confidence = st.session_state.get("cc_confidence", "low")
+
+        if data_source == "scanned_documents":
+            confidence_icon = {"high": "🟢", "medium": "🟡", "low": "🔴"}.get(confidence, "❓")
+            st.info(f"📊 Auto-filled from scanned documents ({confidence_icon} {confidence} confidence)")
+        elif st.session_state.get("cc_loan_amt", 0) > 0 or st.session_state.get("cc_property_val", 0) > 0:
+            st.info("✏️ Manually entered data")
 
         if st.button("Calculate Closing Costs", type="primary"):
             result = calc.calculate_closing_costs(loan_amt, property_val, loan_type_cc)
