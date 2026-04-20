@@ -4553,7 +4553,8 @@ def show_income_verifier_page():
         loan_data = loan_options[selected_loan]
 
         # Get extracted data (this would come from AI processing)
-        extracted_data = st.session_state.get("scan_results", {}).get("extracted_data", {})
+        scan_results = st.session_state.get("scan_results")
+        extracted_data = scan_results.get("extracted_data", {}) if scan_results else {}
 
         if extracted_data:
             verifier = IncomeVerifier()
@@ -4607,7 +4608,8 @@ def show_auto_data_entry_page():
     }
 
     # Get extracted data
-    extracted_data = st.session_state.get("scan_results", {}).get("extracted_data", {})
+    scan_results = st.session_state.get("scan_results")
+    extracted_data = scan_results.get("extracted_data", {}) if scan_results else {}
 
     if extracted_data:
         data_entry = AutoDataEntry()
