@@ -4138,9 +4138,16 @@ def show_snapshot_page():
     """Loan Snapshot - Complete vs Missing document view."""
     from loan_snapshot import generate_snapshot, get_missing_docs_email_body
     from crm import get_all_loans
+    from pathlib import Path
 
     # Show current loan banner
     current_loan = show_current_loan_banner()
+
+    if not current_loan:
+        st.warning("Please select a loan to view its snapshot.")
+        return
+
+    snapshot = generate_snapshot(Path(current_loan["folder_path"]))
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
@@ -4150,13 +4157,13 @@ def show_snapshot_page():
 
     sc1, sc2, sc3, sc4 = st.columns(4)
     with sc1:
-        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#39FF14;">{s["complete_count"]}</div><div class="stat-label">Complete</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#39FF14;">{snapshot["complete_count"]}</div><div class="stat-label">Complete</div></div>', unsafe_allow_html=True)
     with sc2:
-        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#ef4444;">{s["missing_count"]}</div><div class="stat-label">Missing</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#ef4444;">{snapshot["missing_count"]}</div><div class="stat-label">Missing</div></div>', unsafe_allow_html=True)
     with sc3:
-        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#f59e0b;">{s["stale_count"]}</div><div class="stat-label">Stale</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#f59e0b;">{snapshot["stale_count"]}</div><div class="stat-label">Stale</div></div>', unsafe_allow_html=True)
     with sc4:
-        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#a78bfa;">{s["partial_count"]}</div><div class="stat-label">Optional</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#a78bfa;">{snapshot["partial_count"]}</div><div class="stat-label">Optional</div></div>', unsafe_allow_html=True)
 
     if snapshot["missing"]:
         st.markdown('<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 6px;">Missing</div>', unsafe_allow_html=True)
@@ -4216,21 +4223,23 @@ def show_report_issue_page():
     with col2:
         attached_file = st.text_input("Attach file path (optional)", key="report_file")
 
-    if st.button("Submit Report", type="primary", key="report_submit"):
-        if issue_text.strip():
-            result = save_report(
-                issue_text,
-                attached_file if attached_file else None,
-                loan_id if loan_id else None,
-            )
-            if result.get("success"):
-                st.success(f"Report saved: {result.get('report_id')}")
-                st.markdown("**Report saved successfully!** Sensitive data has been masked before sharing.")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Submit Report", type="primary", key="report_submit"):
+            if issue_text.strip():
+                result = save_report(
+                    issue_text,
+                    attached_file if attached_file else None,
+                    loan_id if loan_id else None,
+                )
+                if result.get("success"):
+                    st.success(f"Report saved: {result.get('report_id')}")
+                    st.markdown("**Report saved successfully!** Sensitive data has been masked before sharing.")
+                else:
+                    st.error("Failed to save report")
             else:
-                st.error("Failed to save report")
-        else:
-            st.warning("Please describe the issue")
-    with c2:
+                st.warning("Please describe the issue")
+    with col2:
         if st.button("Cancel", key="report_cancel"):
             st.session_state["show_report_issue"] = False
             st.rerun()
