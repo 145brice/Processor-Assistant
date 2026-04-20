@@ -4135,52 +4135,16 @@ def show_team_page():
 # --- Quick Tool Functions ---
 
 def show_snapshot_page():
-    """Loan Snapshot — Complete vs Missing document view."""
+    """Loan Snapshot - Complete vs Missing document view."""
     from loan_snapshot import generate_snapshot, get_missing_docs_email_body
     from crm import get_all_loans
-    from pathlib import Path
 
-    st.markdown("## Loan Snapshot")
+    # Show current loan banner
+    current_loan = show_current_loan_banner()
 
-    all_loans = get_all_loans()
-    _DOCS_BASE = os.path.join(os.path.dirname(__file__), "loan_docs")
-
-    # Build selector: {display_label: loan_id or None}
-    loan_options = {f"{l['borrower']} ({l['loan_num']})": l["id"] for l in all_loans}
-    loan_options["Custom Folder"] = None
-
-    col1, _col2 = st.columns([2, 1])
-    with col1:
-        selected_label = st.selectbox("Select Loan", list(loan_options.keys()))
-
-    folder_path = None
-    selected_id = loan_options[selected_label]
-    if selected_id is None:
-        folder_str = st.text_input("Folder path")
-        if folder_str:
-            folder_path = Path(folder_str)
-    else:
-        folder_path = Path(os.path.join(_DOCS_BASE, str(selected_id)))
-
-    if not folder_path:
-        return
-
-    if not folder_path.exists():
-        st.warning("No documents found for this loan yet.")
-        return
-
-    snapshot = generate_snapshot(folder_path)
-    s = snapshot["summary"]
-    miss_ct = s["missing_count"]
-    status_color = "#39FF14" if snapshot["complete_pct"] >= 100 else ("#f59e0b" if miss_ct < 3 else "#ef4444")
-
-    st.markdown("---")
     st.markdown(
-        f'<div style="background:rgba(255,255,255,0.03);border:1px solid {status_color};'
-        f'border-radius:8px;padding:12px 16px;margin-bottom:16px;">'
-        f'<span style="font-size:18px;font-weight:800;color:{status_color};">{snapshot["status"]}</span>'
-        f'<span style="color:#9ca3af;font-size:13px;margin-left:12px;">'
-        f'{snapshot["complete_pct"]:.0f}% complete</span></div>',
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '📋 Loan Snapshot</div>',
         unsafe_allow_html=True,
     )
 
@@ -4545,6 +4509,9 @@ def show_income_verifier_page():
     from income_verifier import IncomeVerifier
     from crm import get_all_loans
 
+    # Show current loan banner
+    current_loan = show_current_loan_banner()
+
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
         '📊 Income & Employment Verifier</div>',
@@ -4683,9 +4650,47 @@ def show_credit_summary_page():
         st.markdown(f"**Analysis:** {summary.get('analysis', 'No analysis available')}")
 
 
+def show_current_loan_banner():
+    """Show current loan information banner."""
+    from crm import get_all_loans
+
+    loans = get_all_loans()
+    if loans:
+        # Show current/selected loan
+        current_loan_id = st.session_state.get("current_loan_id")
+        if current_loan_id:
+            current_loan = next((l for l in loans if l.get("id") == current_loan_id), None)
+            if current_loan:
+                st.markdown(
+                    f'<div style="background:#1a1a1a;border:1px solid #39FF14;border-radius:8px;padding:12px 16px;margin-bottom:20px;">'
+                    f'<div style="color:#39FF14;font-weight:600;font-size:14px;margin-bottom:4px;">Current Loan</div>'
+                    f'<div style="color:#ffffff;font-weight:700;font-size:16px;">{current_loan["borrower"]}</div>'
+                    f'<div style="color:#9ca3af;font-size:13px;margin-top:2px;">{current_loan["loan_num"]} • {current_loan["status"]}</div>'
+                    f'</div>',
+                    unsafe_allow_html=True,
+                )
+                return current_loan
+
+        # If no current loan, show selector
+        loan_options = {str(l["id"]): f"{l['borrower']} ({l['loan_num']})" for l in loans}
+        selected_loan_id = st.selectbox(
+            "Select Current Loan:",
+            options=list(loan_options.keys()),
+            format_func=lambda x: loan_options[x],
+            key="current_loan_selector"
+        )
+        if selected_loan_id:
+            st.session_state["current_loan_id"] = int(selected_loan_id)
+            st.rerun()
+
+    return None
+
 def show_dti_calculator_page():
     """DTI Calculator - Debt-to-Income & Closing Cost Calculator."""
     from dti_calculator import DTICalculator
+
+    # Show current loan banner
+    current_loan = show_current_loan_banner()
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
@@ -4747,6 +4752,12 @@ def show_dti_calculator_page():
 
         if st.button("Calculate DTI", type="primary"):
             result = calc.calculate_dti(income, debt, housing, loan_type)
+
+            # Check for errors
+            if "error" in result:
+                st.error(f"❌ Calculation Error: {result['error']}")
+                st.info("💡 Please ensure Monthly Gross Income is greater than $0")
+                return
 
             st.markdown(f"**Front-End DTI:** {result['front_end_dti']:.1f}% (Limit: {result['front_end_limit']}%)")
             st.markdown(f"**Back-End DTI:** {result['back_end_dti']:.1f}% (Limit: {result['back_end_limit']}%)")
@@ -5268,6 +5279,9 @@ def show_underwriting_tracker_page():
 def show_document_classifier_page():
     """Automated Document Classifier - AI-powered document classification and routing."""
     from document_classifier import AutomatedDocumentClassifier
+
+    # Show current loan banner
+    current_loan = show_current_loan_banner()
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
