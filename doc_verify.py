@@ -17,6 +17,12 @@ import io
 from datetime import date, datetime
 
 try:
+    from pygrok import grok as Grok
+    _GROK = True
+except ImportError:
+    _GROK = False
+
+try:
     from pypdf import PdfReader
     _PYPDF = True
 except ImportError:
@@ -99,7 +105,7 @@ def verify(pdf_bytes: bytes, filename: str = "", borrower_hint: str = "") -> dic
     """
     text, page_count = _read_pdf(pdf_bytes)
 
-    doc_type     = _guess_type(text, filename)
+    doc_type     = _guess_type_with_grok(text, filename)
     dates        = _extract_dates(text)
     freshest     = max(dates) if dates else None
     days_old     = (date.today() - freshest).days if freshest else None
@@ -206,6 +212,41 @@ def _guess_type(text: str, filename: str) -> str:
     return "Document"
 
 
+def _guess_type_with_grok(text: str, filename: str) -> str:
+    """
+    Enhanced type detection using Grok patterns for structured document fields.
+    Falls back to keyword matching if Grok is unavailable.
+    """
+    if not _GROK:
+        return _guess_type(text, filename)
+    
+    try:
+        blob = (text + " " + filename).lower()
+        
+        # Try Grok patterns for specific identifiers
+        patterns = {
+            "W-2": r'%{WORD:w}-%{INT:num}.*wage|employer',
+            "1099": r'1099-%{WORD}|nonemployee.?compensation',
+            "Pay Stub": r'pay.?stub|payroll|gross.?pay|net.?pay|earnings.?statement',
+            "Bank Statement": r'account.?statement|beginning.?balance|deposits.?and.?additions',
+            "Appraisal": r'appraisal.*report|comparable.?sales|subject.?property',
+            "Credit Report": r'credit.?report|equifax|experian|transunion|fico',
+        }
+        
+        for doc_type, pattern in patterns.items():
+            try:
+                g = Grok(pattern)
+                if g.match(blob):
+                    return doc_type
+            except Exception:
+                continue
+    except Exception:
+        pass
+    
+    # Fall back to keyword matching
+    return _guess_type(text, filename)
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Date extraction
 # ─────────────────────────────────────────────────────────────────────────────
@@ -215,16 +256,60 @@ def _extract_dates(text: str) -> list[date]:
     cutoff = date(2018, 1, 1)     # ignore dates before 2018
     found  = set()
 
-    # MM/DD/YYYY or M/D/YYYY
-    for m in re.finditer(r'\b(\d{1,2})/(\d{1,2})/(\d{4})\b', text):
+    if _GROK:
         try:
-            d = date(int(m.group(3)), int(m.group(1)), int(m.group(2)))
-            if cutoff <= d <= today:
-                found.add(d)
-        except ValueError:
+            # Grok patterns for standard date formats
+            grok_mdy = Grok(r'%{INT}/%{INT}/%{YEAR}')
+            grok_iso = Grok(r'%{YEAR}-%{MONTHNUM}-%{MONTHDAY}')
+            
+            # MM/DD/YYYY pattern
+            for match in grok_mdy.finditer(text):
+                try:
+                    parts = match['matches']
+                    if len(parts) >= 3:
+                        month, day, year = int(parts[0]), int(parts[1]), int(parts[2])
+                        d = date(year, month, day)
+                        if cutoff <= d <= today:
+                            found.add(d)
+                except (ValueError, TypeError, IndexError):
+                    pass
+            
+            # YYYY-MM-DD pattern
+            for match in grok_iso.finditer(text):
+                try:
+                    parts = match['matches']
+                    if len(parts) >= 3:
+                        year, month, day = int(parts[0]), int(parts[1]), int(parts[2])
+                        d = date(year, month, day)
+                        if cutoff <= d <= today:
+                            found.add(d)
+                except (ValueError, TypeError, IndexError):
+                    pass
+        except Exception:
+            # Fallback to basic regex if Grok fails
             pass
 
-    # Month DD, YYYY  or  DD Month YYYY
+    # Fallback regex if Grok not available or failed
+    if not found:
+        # MM/DD/YYYY or M/D/YYYY
+        for m in re.finditer(r'\b(\d{1,2})/(\d{1,2})/(\d{4})\b', text):
+            try:
+                d = date(int(m.group(3)), int(m.group(1)), int(m.group(2)))
+                if cutoff <= d <= today:
+                    found.add(d)
+            except ValueError:
+                pass
+
+        # YYYY-MM-DD
+        for m in re.finditer(r'\b(\d{4})-(\d{2})-(\d{2})\b', text):
+            try:
+                d = date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+                if cutoff <= d <= today:
+                    found.add(d)
+            except ValueError:
+                pass
+
+    # Month DD, YYYY  or  DD Month YYYY (always use this regardless)
     mth_pat = r'(' + '|'.join(_MONTHS.keys()) + r')'
     for m in re.finditer(
         rf'\b{mth_pat}\.?\s+(\d{{1,2}}),?\s+(\d{{4}})\b',
@@ -233,15 +318,6 @@ def _extract_dates(text: str) -> list[date]:
         try:
             mn = _MONTHS[m.group(1).lower()]
             d  = date(int(m.group(3)), mn, int(m.group(2)))
-            if cutoff <= d <= today:
-                found.add(d)
-        except ValueError:
-            pass
-
-    # YYYY-MM-DD
-    for m in re.finditer(r'\b(\d{4})-(\d{2})-(\d{2})\b', text):
-        try:
-            d = date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
             if cutoff <= d <= today:
                 found.add(d)
         except ValueError:

@@ -470,6 +470,130 @@ def find_matching_clients(name_hint: str) -> list[dict]:
     return results[:5]
 
 
+def clean_filename(filename: str, doc_type: str = None) -> str:
+    """
+    Clean and normalize filename for storage.
+    Removes special chars, fixes spacing, applies smart naming.
+    """
+    import re
+    
+    stem = Path(filename).stem
+    suffix = Path(filename).suffix
+    
+    stem = stem.strip()
+    stem = re.sub(r'[\s\-_]+', ' ', stem)
+    stem = re.sub(r'[^\w\s\-\(\)\.]', '', stem)
+    stem = re.sub(r'\s+', '_', stem)
+    stem = stem.strip('_')
+    
+    if doc_type:
+        type_prefixes = {
+            "pay_stub": "Paystub",
+            "bank_statement": "BankStmt",
+            "tax_return": "TaxReturn",
+            "w-2": "W2",
+            "appraisal": "Appraisal",
+            "title": "Title",
+            "insurance": "HOI",
+            "1003": "1003",
+            "credit_report": "Credit",
+            "approval_letter": "Approval",
+            "closing_disclosure": "CD",
+            "loan_estimate": "LE",
+            "gift_letter": "GiftLetter",
+        }
+        prefix = type_prefixes.get(doc_type.lower(), doc_type)
+        
+        if not any(prefix.lower() in stem.lower() for _ in [1]):
+            stem = f"{prefix}_{stem}"
+    
+    return stem + suffix.lower()
+
+
+def smart_rename(file_path: Path, doc_type: str = None, loan_name: str = None) -> Path:
+    """
+    Smart rename for document storage.
+    Applies smart naming based on doc_type and loan_name.
+    """
+    import re
+    
+    timestamp = datetime.now().strftime("%Y%m%d")
+    
+    stem = file_path.stem
+    suffix = file_path.suffix.lower()
+    
+    clean_stem = clean_filename(stem, doc_type)
+    
+    parts = []
+    if loan_name:
+        parts.append(loan_name.replace(" ", "_"))
+    parts.append(clean_stem)
+    parts.append(timestamp)
+    
+    new_name = "_".join(parts) + suffix
+    
+    parent = file_path.parent
+    new_path = parent / new_name
+    
+    counter = 1
+    while new_path.exists():
+        new_path = parent / f"{new_name[:-len(suffix)]}_{counter}{suffix}"
+        counter += 1
+    
+    if new_path != file_path:
+        try:
+            import shutil
+            shutil.move(str(file_path), str(new_path))
+            log_operation("RENAME", str(new_path), f"Smart renamed from {file_path.name}")
+        except Exception:
+            new_path = file_path
+    
+    return new_path
+
+
+def rename_for_loan(
+    src_path: Path,
+    loan_id: str = None,
+    doc_type: str = None,
+    date: datetime = None
+) -> Path:
+    """
+    Rename file for loan folder with standard naming convention.
+    Format: {loan_id}_{doc_type}_{YYYYMMDD}.pdf
+    """
+    if date is None:
+        date = datetime.now()
+    
+    date_str = date.strftime("%Y%m%d")
+    
+    doc_type_clean = (doc_type or "Doc").replace(" ", "")
+    
+    if loan_id:
+        new_name = f"{loan_id}_{doc_type_clean}_{date_str}.pdf"
+    else:
+        new_name = f"{doc_type_clean}_{date_str}.pdf"
+    
+    new_path = src_path.parent / new_name
+    
+    counter = 1
+    while new_path.exists():
+        if loan_id:
+            new_path = src_path.parent / f"{loan_id}_{doc_type_clean}_{date_str}_{counter}.pdf"
+        else:
+            new_path = src_path.parent / f"{doc_type_clean}_{date_str}_{counter}.pdf"
+        counter += 1
+    
+    if new_path != src_path:
+        try:
+            import shutil
+            shutil.move(str(src_path), str(new_path))
+            log_operation("RENAME", str(new_path), f"Renamed to loan format")
+        except Exception:
+            new_path = src_path
+    
+    return new_path
+
+
 def init():
     """Initialize folder structure. Call on app startup."""
     created = ensure_base_structure()

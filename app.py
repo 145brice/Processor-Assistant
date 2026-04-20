@@ -315,6 +315,7 @@ DEFAULTS = {
     "reader_open_file": None,
     "reader_page": 1,
     "pipeline_add_open": False,
+    "scroll_to": None,
 }
 
 # ── Persist auth across browser refreshes ──────────────────────────────────
@@ -668,6 +669,133 @@ def show_sidebar():
             f'AI · {_ai_lbl}</div>',
             unsafe_allow_html=True,
         )
+
+        # ── Quick Tools ─────────────────────────────────────────────────────
+        st.markdown("---")
+        _tools_label = "⚡ Quick Tools"
+        st.markdown(f'<div style="font-size:10px;color:#9ca3af;margin-bottom:6px;letter-spacing:0.5px;">QUICK TOOLS</div>', unsafe_allow_html=True)
+
+        if st.button("📋 Loan Snapshot", key="nav_snapshot", use_container_width=True, type="secondary"):
+            st.session_state.page = "snapshot"
+            st.session_state["scroll_to"] = "snapshot"
+            _save_session()
+            st.rerun()
+
+        if st.button("⚠️ Report Issue", key="nav_report_issue", use_container_width=True, type="secondary"):
+            st.session_state.page = "report_issue"
+            st.session_state["scroll_to"] = "report_issue"
+            _save_session()
+            st.rerun()
+
+        if st.button("🗂️ Missing Docs", key="nav_missing_docs", use_container_width=True, type="secondary"):
+            st.session_state.page = "missing_docs"
+            st.session_state["scroll_to"] = "missing_docs"
+            _save_session()
+            st.rerun()
+
+        if st.button("📅 Doc Expiry", key="nav_doc_expiry", use_container_width=True, type="secondary"):
+            st.session_state.page = "doc_expiry"
+            st.session_state["scroll_to"] = "doc_expiry"
+            _save_session()
+            st.rerun()
+
+        if st.button("🌎 Spanish Reply", key="nav_spanish", use_container_width=True, type="secondary"):
+            st.session_state.page = "spanish_reply"
+            st.session_state["scroll_to"] = "spanish_reply"
+            _save_session()
+            st.rerun()
+
+        # ── Advanced Tools ─────────────────────────────────────────────────────
+        st.markdown("---")
+        st.markdown(f'<div style="font-size:10px;color:#9ca3af;margin-bottom:6px;letter-spacing:0.5px;">ADVANCED TOOLS</div>', unsafe_allow_html=True)
+
+        if st.button("📊 Income Verifier", key="nav_income_verifier", use_container_width=True, type="secondary"):
+            st.session_state.page = "income_verifier"
+            _save_session()
+            st.rerun()
+
+        if st.button("📝 Auto Data Entry", key="nav_auto_data_entry", use_container_width=True, type="secondary"):
+            st.session_state.page = "auto_data_entry"
+            _save_session()
+            st.rerun()
+
+        if st.button("💳 Credit Summary", key="nav_credit_summary", use_container_width=True, type="secondary"):
+            st.session_state.page = "credit_summary"
+            _save_session()
+            st.rerun()
+
+        if st.button("🧮 DTI Calculator", key="nav_dti_calculator", use_container_width=True, type="secondary"):
+            st.session_state.page = "dti_calculator"
+            _save_session()
+            st.rerun()
+
+        if st.button("✅ Condition Clearer", key="nav_condition_clearer", use_container_width=True, type="secondary"):
+            st.session_state.page = "condition_clearer"
+            _save_session()
+            st.rerun()
+
+        if st.button("⚖️ Compliance Checker", key="nav_compliance_checker", use_container_width=True, type="secondary"):
+            st.session_state.page = "compliance_checker"
+            _save_session()
+            st.rerun()
+
+        # ── Pipeline & Advanced Tools ──────────────────────────────────────────
+        st.markdown("---")
+        st.markdown(f'<div style="font-size:10px;color:#9ca3af;margin-bottom:6px;letter-spacing:0.5px;">PIPELINE & ADVANCED</div>', unsafe_allow_html=True)
+
+        if st.button("📦 Closing Package", key="nav_closing_package", use_container_width=True, type="secondary"):
+            st.session_state.page = "closing_package"
+            _save_session()
+            st.rerun()
+
+        if st.button("📊 Pipeline Dashboard", key="nav_pipeline_dashboard", use_container_width=True, type="secondary"):
+            st.session_state.page = "pipeline_dashboard"
+            _save_session()
+            st.rerun()
+
+        if st.button("📋 Guideline Checker", key="nav_guideline_checker", use_container_width=True, type="secondary"):
+            st.session_state.page = "guideline_checker"
+            _save_session()
+            st.rerun()
+
+        if st.button("🔍 Fraud Detector", key="nav_fraud_detector", use_container_width=True, type="secondary"):
+            st.session_state.page = "fraud_detector"
+            _save_session()
+            st.rerun()
+
+        if st.button("👥 Multi-Borrower", key="nav_multi_borrower", use_container_width=True, type="secondary"):
+            st.session_state.page = "multi_borrower"
+            _save_session()
+            st.rerun()
+
+        if st.button("📤 LOS Export", key="nav_los_export", use_container_width=True, type="secondary"):
+            st.session_state.page = "los_export"
+            _save_session()
+            st.rerun()
+
+        # ── Advanced Automation ───────────────────────────────────────────────
+        st.markdown("---")
+        st.markdown(f'<div style="font-size:10px;color:#9ca3af;margin-bottom:6px;letter-spacing:0.5px;">ADVANCED AUTOMATION</div>', unsafe_allow_html=True)
+
+        if st.button("🔒 Rate Lock Monitor", key="nav_rate_lock_monitor", use_container_width=True, type="secondary"):
+            st.session_state.page = "rate_lock_monitor"
+            _save_session()
+            st.rerun()
+
+        if st.button("📋 Underwriting Tracker", key="nav_underwriting_tracker", use_container_width=True, type="secondary"):
+            st.session_state.page = "underwriting_tracker"
+            _save_session()
+            st.rerun()
+
+        if st.button("🏷️ Document Classifier", key="nav_document_classifier", use_container_width=True, type="secondary"):
+            st.session_state.page = "document_classifier"
+            _save_session()
+            st.rerun()
+
+        if st.button("💰 Escrow Calculator", key="nav_escrow_calculator", use_container_width=True, type="secondary"):
+            st.session_state.page = "escrow_calculator"
+            _save_session()
+            st.rerun()
 
         if st.button("Logout", use_container_width=True):
             _clear_session()
@@ -3995,6 +4123,1158 @@ def show_team_page():
                         unsafe_allow_html=True)
 
 
+# --- Quick Tool Functions ---
+
+def show_snapshot_page():
+    """Loan Snapshot — Complete vs Missing document view."""
+    from loan_snapshot import generate_snapshot, get_missing_docs_email_body
+    from crm import get_all_loans
+    from pathlib import Path
+
+    st.markdown("## Loan Snapshot")
+
+    all_loans = get_all_loans()
+    _DOCS_BASE = os.path.join(os.path.dirname(__file__), "loan_docs")
+
+    # Build selector: {display_label: loan_id or None}
+    loan_options = {f"{l['borrower']} ({l['loan_num']})": l["id"] for l in all_loans}
+    loan_options["Custom Folder"] = None
+
+    col1, _col2 = st.columns([2, 1])
+    with col1:
+        selected_label = st.selectbox("Select Loan", list(loan_options.keys()))
+
+    folder_path = None
+    selected_id = loan_options[selected_label]
+    if selected_id is None:
+        folder_str = st.text_input("Folder path")
+        if folder_str:
+            folder_path = Path(folder_str)
+    else:
+        folder_path = Path(os.path.join(_DOCS_BASE, str(selected_id)))
+
+    if not folder_path:
+        return
+
+    if not folder_path.exists():
+        st.warning("No documents found for this loan yet.")
+        return
+
+    snapshot = generate_snapshot(folder_path)
+    s = snapshot["summary"]
+    miss_ct = s["missing_count"]
+    status_color = "#39FF14" if snapshot["complete_pct"] >= 100 else ("#f59e0b" if miss_ct < 3 else "#ef4444")
+
+    st.markdown("---")
+    st.markdown(
+        f'<div style="background:rgba(255,255,255,0.03);border:1px solid {status_color};'
+        f'border-radius:8px;padding:12px 16px;margin-bottom:16px;">'
+        f'<span style="font-size:18px;font-weight:800;color:{status_color};">{snapshot["status"]}</span>'
+        f'<span style="color:#9ca3af;font-size:13px;margin-left:12px;">'
+        f'{snapshot["complete_pct"]:.0f}% complete</span></div>',
+        unsafe_allow_html=True,
+    )
+
+    sc1, sc2, sc3, sc4 = st.columns(4)
+    with sc1:
+        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#39FF14;">{s["complete_count"]}</div><div class="stat-label">Complete</div></div>', unsafe_allow_html=True)
+    with sc2:
+        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#ef4444;">{s["missing_count"]}</div><div class="stat-label">Missing</div></div>', unsafe_allow_html=True)
+    with sc3:
+        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#f59e0b;">{s["stale_count"]}</div><div class="stat-label">Stale</div></div>', unsafe_allow_html=True)
+    with sc4:
+        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#a78bfa;">{s["partial_count"]}</div><div class="stat-label">Optional</div></div>', unsafe_allow_html=True)
+
+    if snapshot["missing"]:
+        st.markdown('<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 6px;">Missing</div>', unsafe_allow_html=True)
+        for m in snapshot["missing"]:
+            st.markdown(
+                f'<div style="padding:5px 10px;margin:3px 0;background:rgba(239,68,68,0.1);'
+                f'border-left:3px solid #ef4444;border-radius:4px;font-size:12px;color:#ef4444;">'
+                f'{m["document"]}</div>',
+                unsafe_allow_html=True,
+            )
+
+    if snapshot.get("stale"):
+        st.markdown('<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 6px;">Needs Refresh</div>', unsafe_allow_html=True)
+        for sdoc in snapshot["stale"]:
+            st.markdown(
+                f'<div style="padding:5px 10px;margin:3px 0;background:rgba(245,158,11,0.1);'
+                f'border-left:3px solid #f59e0b;border-radius:4px;font-size:12px;color:#f59e0b;">'
+                f'{sdoc["document"]} — {sdoc["age_days"]}d old</div>',
+                unsafe_allow_html=True,
+            )
+
+    if snapshot["missing"]:
+        st.markdown("---")
+        if st.button("Generate Missing Docs Email", key="gen_missing_email", type="secondary"):
+            st.text_area("Email body", value=get_missing_docs_email_body(snapshot), height=180)
+
+
+def show_report_issue_page():
+    """Report Issue — saves locally with SSN/account masking."""
+    from feedback_reporter import save_report
+
+    st.markdown('<div id="report_issue"></div>', unsafe_allow_html=True)
+
+    if st.session_state.get("scroll_to") == "report_issue":
+        st.markdown('<script>document.getElementById("report_issue").scrollIntoView({behavior: "smooth"});</script>', unsafe_allow_html=True)
+        del st.session_state["scroll_to"]
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '⚠️ Report Issue</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        '<div style="background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:8px;padding:12px;margin-bottom:20px;">'
+        '<div style="font-size:13px;color:#ef4444;">'
+        '<b>SSN & Bank Account Masking:</b> Last 4 digits only will be shared (XXX-XX-XXXX, XXXX-XXXX).</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    issue_text = st.text_area("Describe the problem:", height=120, key="report_issue_text")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        loan_id = st.text_input("Loan ID (optional)", key="report_loan_id")
+    with col2:
+        attached_file = st.text_input("Attach file path (optional)", key="report_file")
+
+    if st.button("Submit Report", type="primary", key="report_submit"):
+        if issue_text.strip():
+            result = save_report(
+                issue_text,
+                attached_file if attached_file else None,
+                loan_id if loan_id else None,
+            )
+            if result.get("success"):
+                st.success(f"Report saved: {result.get('report_id')}")
+                st.markdown("**Report saved successfully!** Sensitive data has been masked before sharing.")
+            else:
+                st.error("Failed to save report")
+        else:
+            st.warning("Please describe the issue")
+    with c2:
+        if st.button("Cancel", key="report_cancel"):
+            st.session_state["show_report_issue"] = False
+            st.rerun()
+
+
+def show_missing_docs_page():
+    """Missing Docs Checker."""
+    from loan_snapshot import scan_folder_for_documents, DOCUMENT_REQUIREMENTS
+    from crm import get_all_loans
+    from pathlib import Path
+
+    st.markdown('<div id="missing_docs"></div>', unsafe_allow_html=True)
+
+    if st.session_state.get("scroll_to") == "missing_docs":
+        st.markdown('<script>document.getElementById("missing_docs").scrollIntoView({behavior: "smooth"});</script>', unsafe_allow_html=True)
+        del st.session_state["scroll_to"]
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '🗂️ Missing Documents Checker</div>',
+        unsafe_allow_html=True,
+    )
+
+    _DOCS_BASE = os.path.join(os.path.dirname(__file__), "loan_docs")
+    all_loans = get_all_loans()
+    loan_options = {f"{l['borrower']} ({l['loan_num']})": str(l["id"]) for l in all_loans}
+    loan_options["Custom Folder"] = None
+
+    selected_label = st.selectbox("Select Loan", list(loan_options.keys()), key="missing_loan_select")
+    selected_id = loan_options[selected_label]
+
+    folder = None
+    if selected_id is None:
+        folder_input = st.text_input("Folder path", key="missing_folder_input")
+        if folder_input:
+            folder = Path(folder_input)
+    else:
+        folder = Path(os.path.join(_DOCS_BASE, selected_id))
+
+    if folder and folder.exists():
+        found = scan_folder_for_documents(folder)
+        all_required = [d for d, info in DOCUMENT_REQUIREMENTS.items() if info.get("required")]
+
+        st.markdown('<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 6px;">Required Documents</div>', unsafe_allow_html=True)
+        for doc_type in all_required:
+            if doc_type in found:
+                st.markdown(
+                    f'<div style="padding:5px 10px;margin:3px 0;background:rgba(57,255,20,0.1);'
+                    f'border-left:3px solid #39FF14;border-radius:4px;font-size:12px;color:#39FF14;">'
+                    f'{doc_type}</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    f'<div style="padding:5px 10px;margin:3px 0;background:rgba(239,68,68,0.1);'
+                    f'border-left:3px solid #ef4444;border-radius:4px;font-size:12px;color:#ef4444;">'
+                    f'{doc_type}</div>',
+                    unsafe_allow_html=True,
+                )
+    elif folder:
+        st.warning("No documents folder found for this loan yet.")
+
+    if st.button("Close", key="missing_close", type="secondary"):
+        st.session_state["show_missing_docs"] = False
+        st.rerun()
+
+
+def show_doc_expiry_page():
+    """Document Expiry Tracker."""
+    from doc_expiry_tracker import get_expiry_warnings
+    from crm import get_all_loans
+    from pathlib import Path
+
+    st.markdown('<div id="doc_expiry"></div>', unsafe_allow_html=True)
+
+    if st.session_state.get("scroll_to") == "doc_expiry":
+        st.markdown('<script>document.getElementById("doc_expiry").scrollIntoView({behavior: "smooth"});</script>', unsafe_allow_html=True)
+        del st.session_state["scroll_to"]
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '📅 Document Expiry Tracker</div>',
+        unsafe_allow_html=True,
+    )
+
+    _DOCS_BASE = os.path.join(os.path.dirname(__file__), "loan_docs")
+    all_loans = get_all_loans()
+    loan_options = {f"{l['borrower']} ({l['loan_num']})": str(l["id"]) for l in all_loans}
+    loan_options["Custom Folder"] = None
+
+    selected_label = st.selectbox("Select Loan", list(loan_options.keys()), key="expiry_loan_select")
+    selected_id = loan_options[selected_label]
+
+    folder = None
+    if selected_id is None:
+        folder_input = st.text_input("Folder path", key="expiry_folder_input")
+        if folder_input:
+            folder = Path(folder_input)
+    else:
+        folder = Path(os.path.join(_DOCS_BASE, selected_id))
+
+    if folder and folder.exists():
+        warnings = get_expiry_warnings(folder)
+
+        if warnings["expired"]:
+            st.markdown('<div style="font-size:11px;font-weight:700;color:#ef4444;text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 6px;">Expired</div>', unsafe_allow_html=True)
+            for doc in warnings["expired"]:
+                st.markdown(
+                    f'<div style="padding:5px 10px;margin:3px 0;background:rgba(239,68,68,0.15);'
+                    f'border-left:3px solid #ef4444;border-radius:4px;font-size:12px;color:#ef4444;">'
+                    f'{doc.name}</div>',
+                    unsafe_allow_html=True,
+                )
+
+        if warnings["expiring_soon"]:
+            st.markdown('<div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 6px;">Expiring Soon</div>', unsafe_allow_html=True)
+            for doc in warnings["expiring_soon"]:
+                st.markdown(
+                    f'<div style="padding:5px 10px;margin:3px 0;background:rgba(245,158,11,0.15);'
+                    f'border-left:3px solid #f59e0b;border-radius:4px;font-size:12px;color:#f59e0b;">'
+                    f'{doc.name} — {doc.days_until_expiry}d</div>',
+                    unsafe_allow_html=True,
+                )
+
+        if warnings["okay"]:
+            st.markdown('<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 6px;">OK</div>', unsafe_allow_html=True)
+            for doc in warnings["okay"]:
+                st.markdown(
+                    f'<div style="padding:5px 10px;margin:3px 0;background:rgba(57,255,20,0.1);'
+                    f'border-left:3px solid #39FF14;border-radius:4px;font-size:12px;color:#39FF14;">'
+                    f'{doc.name} — {doc.days_until_expiry}d</div>',
+                    unsafe_allow_html=True,
+                )
+
+        if not any([warnings["expired"], warnings["expiring_soon"], warnings["okay"]]):
+            st.info("No tracked documents found for this loan.")
+    elif folder:
+        st.warning("No documents folder found for this loan yet.")
+
+    if st.button("Close", key="expiry_close", type="secondary"):
+        st.session_state["show_doc_expiry"] = False
+        st.rerun()
+
+
+def show_spanish_reply_page():
+    """Spanish Reply — auto-detect language, translate, draft."""
+    from spanish_reply import detect_language, translate_to_english, translate_to_spanish, get_spanish_template, get_english_template
+
+    st.markdown('<div id="spanish_reply"></div>', unsafe_allow_html=True)
+
+    if st.session_state.get("scroll_to") == "spanish_reply":
+        st.markdown('<script>document.getElementById("spanish_reply").scrollIntoView({behavior: "smooth"});</script>', unsafe_allow_html=True)
+        del st.session_state["scroll_to"]
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:8px;">'
+        '🌎 Spanish Reply Window</div>'
+        '<div style="font-size:13px;color:#9ca3af;margin-bottom:16px;">'
+        'Auto-detects language and helps you reply in the borrower\'s preferred language</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Use sample text if no email data
+    m = st.session_state.get("spanish_reply_data") or {}
+    original_text = (m.get("subject", "") + "\n" + m.get("body", "")).strip()
+
+    # Always show the input area and sample buttons
+    st.markdown("**📧 Enter or paste a borrower email:**")
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🇪🇸 Sample Spanish Email", key="sample_spanish"):
+            sample_text = "Estimado señor, necesitamos los documentos de su préstamo para continuar con el proceso. Por favor envíe sus estados de cuenta y talones de pago."
+            st.session_state["spanish_input_text"] = sample_text
+            st.rerun()
+    with col2:
+        if st.button("🇺🇸 Sample English Email", key="sample_english"):
+            sample_text = "Dear borrower, we need your loan documents to continue processing. Please send your bank statements and pay stubs."
+            st.session_state["spanish_input_text"] = sample_text
+            st.rerun()
+
+    original_text = st.text_area("Email text", height=100, key="spanish_input_text",
+                               placeholder="Paste a borrower email here, or click a sample button above...",
+                               value=original_text if original_text else st.session_state.get("spanish_input_text", ""))
+
+    # Process the text if we have any
+    if original_text and original_text.strip():
+        st.markdown("---")
+
+        detection = detect_language(original_text)
+
+        if detection.is_spanish:
+            st.markdown(
+                f'<div style="padding:7px 12px;margin-bottom:14px;background:rgba(167,139,250,0.15);'
+                f'border-left:3px solid #a78bfa;border-radius:4px;font-size:12px;color:#a78bfa;">'
+                f'🌐 Spanish Email Detected — {detection.confidence:.0%} confidence</div>',
+                unsafe_allow_html=True,
+            )
+
+            with st.spinner("Translating..."):
+                english_translation = translate_to_english(original_text)
+
+            if english_translation and not english_translation.startswith("[Error"):
+                st.success("✅ Translation complete!")
+                st.markdown("**📝 English Translation:**")
+                st.text_area("Translated text", value=english_translation, height=110, key="spanish_translated")
+            else:
+                st.error("❌ Translation failed. Please check your internet connection.")
+                st.markdown("**📝 Original Spanish Text:**")
+                st.text_area("Original text", value=original_text, height=110, key="spanish_original")
+
+            st.markdown("**✍️ Write your reply in English:**")
+            english_reply = st.text_area("Your reply in English", height=90, key="spanish_reply_en",
+                                       placeholder="Type your response in English here... e.g., 'Thank you for your email. We need your bank statements and pay stubs.'")
+
+            if st.button("🔄 Translate to Spanish & Generate Email Draft", key="spanish_translate_btn", type="primary", disabled=not english_reply.strip()):
+                if english_reply.strip():
+                    with st.spinner("Translating to Spanish..."):
+                        spanish_draft = translate_to_spanish(english_reply)
+
+                    if spanish_draft and not spanish_draft.startswith("[Error"):
+                        st.success("✅ Spanish translation complete!")
+                        st.markdown("**📧 Spanish Email Draft (ready to copy to Gmail):**")
+                        st.text_area("Copy this Spanish text to Gmail", value=spanish_draft, height=150, key="spanish_final_draft")
+                        st.info("💡 Copy the text above and paste it into Gmail to send to your Spanish-speaking borrower!")
+                    else:
+                        st.error("❌ Translation failed. Please try again.")
+                else:
+                    st.warning("Please enter a reply first.")
+    else:
+        st.markdown(
+            '<div style="padding:7px 12px;margin-bottom:14px;background:rgba(57,255,20,0.1);'
+            'border-left:3px solid #39FF14;border-radius:4px;font-size:12px;color:#39FF14;">'
+            '📧 English Email Detected — Generate Spanish Reply Templates</div>',
+            unsafe_allow_html=True,
+        )
+
+        st.markdown("**Enter the loan conditions/requirements:**")
+        conditions = st.text_area("Conditions (e.g., '1. Bank statements\\n2. Pay stubs')", height=80, key="spanish_conds",
+                                placeholder="1. Government-issued photo ID\n2. Recent bank statements\n3. Recent pay stubs")
+
+        if st.button("📝 Generate Spanish & English Email Templates", key="spanish_gen_btn", type="primary"):
+            tab_es, tab_en = st.tabs(["🇪🇸 Spanish Draft", "🇺🇸 English Draft"])
+            with tab_es:
+                st.markdown("**Spanish Email Template (ready to send to borrower):**")
+                st.text_area("Spanish version", value=get_spanish_template(conditions), height=220, key="spanish_gen_out")
+            with tab_en:
+                st.markdown("**English Email Template (for reference):**")
+                st.text_area("English version", value=get_english_template(conditions), height=220, key="english_gen_out")
+
+            if conditions.strip():
+                st.info("💡 Copy the Spanish draft and paste into Gmail to send to your Spanish-speaking borrower!")
+            else:
+                st.info("💡 Add conditions above to generate personalized email templates.")
+
+    st.markdown("---")
+    col_close, col_clear = st.columns(2)
+    with col_close:
+        if st.button("❌ Close", key="spanish_close", type="secondary"):
+            st.session_state["spanish_reply_data"] = None
+            st.session_state["spanish_input_text"] = ""
+            for key in ["spanish_translated", "spanish_reply_en", "spanish_final_draft", "spanish_gen_out", "english_gen_out"]:
+                st.session_state.pop(key, None)
+            st.rerun()
+    with col_clear:
+        if st.button("🧹 Clear All", key="spanish_clear", type="secondary"):
+            st.session_state["spanish_input_text"] = ""
+            for key in ["spanish_translated", "spanish_reply_en", "spanish_final_draft", "spanish_gen_out", "english_gen_out"]:
+                st.session_state.pop(key, None)
+            st.rerun()
+
+
+# --- New Advanced Tool Pages ---
+
+def show_income_verifier_page():
+    """Income Verifier - Full Income/Employment Verification + 1003 Comparison."""
+    from income_verifier import IncomeVerifier
+    from crm import get_all_loans
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '📊 Income & Employment Verifier</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Compare extracted document data against 1003 loan application data.")
+
+    # Select loan
+    all_loans = get_all_loans()
+    loan_options = {f"{l['borrower']} ({l['loan_num']})": l for l in all_loans}
+    selected_loan = st.selectbox("Select Loan", list(loan_options.keys()))
+
+    if selected_loan:
+        loan_data = loan_options[selected_loan]
+
+        # Get extracted data (this would come from AI processing)
+        extracted_data = st.session_state.get("scan_results", {}).get("extracted_data", {})
+
+        if extracted_data:
+            verifier = IncomeVerifier()
+            results = verifier.verify_income(extracted_data, loan_data)
+
+            # Display results
+            st.markdown(f"## Status: {results['overall_status']}")
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Income Matches", len(results.get("income_matches", [])))
+            with col2:
+                st.metric("Income Discrepancies", len(results.get("income_discrepancies", [])))
+            with col3:
+                st.metric("Employment Matches", len(results.get("employment_matches", [])))
+
+            if results["income_discrepancies"] or results["employment_discrepancies"]:
+                st.markdown("### Issues Requiring Attention")
+                for disc in results["income_discrepancies"] + results["employment_discrepancies"]:
+                    st.error(f"⚠️ {disc}")
+
+            if results["recommendations"]:
+                st.markdown("### Recommendations")
+                for rec in results["recommendations"]:
+                    st.info(f"💡 {rec}")
+        else:
+            st.warning("No extracted data available. Please scan documents first.")
+
+
+def show_auto_data_entry_page():
+    """Auto Data Entry - Automatically fill forms from extracted document data."""
+    from auto_data_entry import AutoDataEntry
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '📝 Auto Data Entry</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Automatically fill loan application forms using extracted document data.")
+
+    # Sample form template
+    form_template = {
+        "borrower_name": "",
+        "borrower_ssn": "",
+        "borrower_dob": "",
+        "monthly_gross_income": "",
+        "employer_name": "",
+        "account_number": "",
+        "loan_amount": ""
+    }
+
+    # Get extracted data
+    extracted_data = st.session_state.get("scan_results", {}).get("extracted_data", {})
+
+    if extracted_data:
+        data_entry = AutoDataEntry()
+        filled_form = data_entry.fill_form(extracted_data, form_template)
+
+        st.markdown("### Filled Form Fields")
+        for field, value in filled_form.items():
+            if value:
+                st.success(f"✅ {field.replace('_', ' ').title()}: {value}")
+            else:
+                st.warning(f"❌ {field.replace('_', ' ').title()}: Not filled")
+
+        # Show statistics
+        stats = data_entry.get_fill_statistics(form_template, filled_form)
+        st.markdown(f"**Completion: {stats['completion_percentage']:.1f}%** ({stats['filled_fields']}/{stats['total_fields']} fields)")
+
+        # Validation
+        errors = data_entry.validate_filled_form(filled_form)
+        if errors:
+            st.markdown("### Validation Issues")
+            for error in errors:
+                st.error(f"⚠️ {error}")
+    else:
+        st.warning("No extracted data available. Please scan documents first.")
+
+
+def show_credit_summary_page():
+    """Credit Summary - Basic Credit Report Import & Summary."""
+    from credit_summary import CreditSummary
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '💳 Credit Report Summary</div>',
+        unsafe_allow_html=True,
+    )
+
+    credit_text = st.text_area("Paste credit report text here", height=200)
+
+    if credit_text and st.button("Analyze Credit Report", type="primary"):
+        summary = CreditSummary().summarize(credit_text)
+
+        # Main metrics
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Credit Score", summary.get("credit_score", "N/A"))
+        with col2:
+            st.metric("Risk Level", summary.get("risk_level", "Unknown"))
+        with col3:
+            st.metric("Accounts", summary.get("total_accounts", 0))
+
+        # Flags and recommendations
+        if summary.get("flags"):
+            st.markdown("### Red Flags")
+            for flag in summary["flags"]:
+                st.error(flag)
+
+        if summary.get("recommendations"):
+            st.markdown("### Recommendations")
+            for rec in summary["recommendations"]:
+                st.info(f"💡 {rec}")
+
+        st.markdown(f"**Analysis:** {summary.get('analysis', 'No analysis available')}")
+
+
+def show_dti_calculator_page():
+    """DTI Calculator - Debt-to-Income & Closing Cost Calculator."""
+    from dti_calculator import DTICalculator
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '🧮 DTI & Closing Cost Calculator</div>',
+        unsafe_allow_html=True,
+    )
+
+    calc = DTICalculator()
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### DTI Calculation")
+        income = st.number_input("Monthly Gross Income", min_value=0.0)
+        debt = st.number_input("Monthly Debt Payments", min_value=0.0)
+        housing = st.number_input("Proposed Housing Payment", min_value=0.0)
+        loan_type = st.selectbox("Loan Type", ["conventional", "fha", "va"])
+
+        if st.button("Calculate DTI", type="primary"):
+            result = calc.calculate_dti(income, debt, housing, loan_type)
+
+            st.markdown(f"**Front-End DTI:** {result['front_end_dti']:.1f}% (Limit: {result['front_end_limit']}%)")
+            st.markdown(f"**Back-End DTI:** {result['back_end_dti']:.1f}% (Limit: {result['back_end_limit']}%)")
+            st.markdown(f"**Status:** {result['overall_qualified']}")
+
+            if result.get("recommendations"):
+                st.markdown("### Recommendations")
+                for rec in result["recommendations"]:
+                    st.info(rec)
+
+    with col2:
+        st.markdown("### Closing Cost Calculator")
+        loan_amt = st.number_input("Loan Amount", min_value=0.0)
+        property_val = st.number_input("Property Value", min_value=0.0)
+        loan_type_cc = st.selectbox("Transaction Type", ["purchase", "refinance"], key="cc_type")
+
+        if st.button("Calculate Closing Costs", type="primary"):
+            result = calc.calculate_closing_costs(loan_amt, property_val, loan_type_cc)
+
+            st.markdown(f"**Total Closing Costs:** ${result['total_closing_costs']:,.2f}")
+            st.markdown(f"**Total Cash Needed:** ${result['total_cash_needed']:,.2f}")
+            st.markdown(f"**LTV Ratio:** {result['ltv_ratio']:.1f}%")
+
+
+def show_condition_clearer_page():
+    """Condition Clearer - Underwriting Condition Clearing Module."""
+    from condition_clearer import ConditionClearer
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '✅ Underwriting Condition Clearer</div>',
+        unsafe_allow_html=True,
+    )
+
+    condition_text = st.text_area("Enter underwriting condition", height=100,
+                                 placeholder="Example: Provide paystub for the last 30 days")
+
+    # Get uploaded documents
+    uploaded_docs = st.session_state.get("scan_batches", [])
+
+    if condition_text and st.button("Check Condition", type="primary"):
+        clearer = ConditionClearer()
+        result = clearer.clear_condition(condition_text, uploaded_docs)
+
+        st.markdown(f"## Status: {result['status']}")
+        st.markdown(f"**Confidence:** {result['confidence']}%")
+        st.markdown(f"**Reason:** {result['reason']}")
+
+        if result.get("matching_docs"):
+            st.markdown("### Matching Documents")
+            for doc in result["matching_docs"]:
+                st.success(f"📄 {doc['filename']} ({doc['confidence']}% match)")
+
+
+def show_compliance_checker_page():
+    """Compliance Checker - Compliance Checklist + Flagging System."""
+    from compliance_checker import ComplianceChecker
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '⚖️ Compliance Checker</div>',
+        unsafe_allow_html=True,
+    )
+
+    # Sample loan data input
+    st.markdown("### Loan Information")
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        loan_type = st.selectbox("Loan Type", ["conventional", "fha", "va", "usda"])
+        dti = st.number_input("DTI Ratio (%)", min_value=0.0, max_value=100.0)
+
+    with col2:
+        ltv = st.number_input("LTV Ratio (%)", min_value=0.0, max_value=200.0)
+        credit_score = st.number_input("Credit Score", min_value=300, max_value=900)
+
+    with col3:
+        loan_amount = st.number_input("Loan Amount ($)", min_value=0)
+
+    loan_data = {
+        "loan_type": loan_type,
+        "dti_ratio": dti,
+        "ltv_ratio": ltv,
+        "credit_score": credit_score,
+        "loan_amount": loan_amount
+    }
+
+    if st.button("Run Compliance Check", type="primary"):
+        checker = ComplianceChecker()
+        results = checker.check_compliance(loan_data)
+
+        # Overall status
+        st.markdown(f"## Overall Status: {results['overall_status']}")
+        st.markdown(f"**Compliance Score:** {results['compliance_score']}%")
+
+        # Category breakdown
+        for category_name, category_results in results["check_categories"].items():
+            with st.expander(f"{category_name.title()} - {category_results['status']}", expanded=True):
+                st.markdown(f"**Score:** {category_results['score']}%")
+                if category_results.get("flags"):
+                    for flag in category_results["flags"]:
+                        if "❌" in flag:
+                            st.error(flag)
+                        elif "⚠️" in flag:
+                            st.warning(flag)
+                        else:
+                            st.info(flag)
+
+        # Recommendations
+        if results.get("recommendations"):
+            st.markdown("### Recommendations")
+            for rec in results["recommendations"]:
+                st.info(f"💡 {rec}")
+
+
+# --- New Advanced Tool Pages ---
+
+def show_closing_package_page():
+    """Closing Package Generator - Create and organize closing packages."""
+    from closing_package import ClosingPackageGenerator
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '📦 Closing Package Generator</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Generate organized closing packages from loan documents.")
+
+    borrower_name = st.text_input("Borrower Name", key="closing_borrower")
+    loan_folder = st.text_input("Loan Folder Path", key="closing_folder")
+
+    if borrower_name and loan_folder and st.button("Generate Closing Package", type="primary"):
+        generator = ClosingPackageGenerator()
+        result = generator.generate(loan_folder, borrower_name)
+
+        if result.get("success"):
+            st.success("✅ Closing package generated successfully!")
+            st.markdown(f"**Package Location:** {result['package_folder']}")
+            st.markdown(f"**Documents Included:** {result['documents_included']}")
+            st.markdown(f"**Documents Missing:** {len(result.get('missing_documents', []))}")
+
+            if result.get("missing_documents"):
+                st.warning("Missing documents:")
+                for doc in result["missing_documents"]:
+                    st.write(f"• {doc}")
+        else:
+            st.error(f"❌ Failed to generate package: {result.get('error', 'Unknown error')}")
+
+
+def show_pipeline_dashboard_page():
+    """Pipeline Dashboard with Deadline Alerts."""
+    from pipeline_dashboard import PipelineDashboard
+    from crm import get_all_loans
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '📊 Pipeline Dashboard</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Monitor loan pipeline with deadline alerts and status tracking.")
+
+    loans = get_all_loans()
+    dashboard = PipelineDashboard()
+    alerts = dashboard.get_alerts(loans)
+    summary = dashboard.get_pipeline_summary(loans)
+
+    # Show alerts
+    if alerts["total"] > 0:
+        st.markdown("## 🚨 Pipeline Alerts")
+
+        if alerts["urgent"]:
+            st.error("### URGENT (Closing within 3 days)")
+            for alert in alerts["urgent"]:
+                st.write(f"• {alert['message']}")
+
+        if alerts["warning"]:
+            st.warning("### WARNING (Closing within 7 days)")
+            for alert in alerts["warning"]:
+                st.write(f"• {alert['message']}")
+
+        if alerts["notice"]:
+            st.info("### NOTICE (Closing within 14 days)")
+            for alert in alerts["notice"]:
+                st.write(f"• {alert['message']}")
+
+    # Show summary
+    st.markdown("## 📈 Pipeline Summary")
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        st.metric("Total Loans", summary["total_loans"])
+    with col2:
+        st.metric("Closing This Week", summary["closing_this_week"])
+    with col3:
+        st.metric("Closing This Month", summary["closing_this_month"])
+    with col4:
+        st.metric("Avg Days in Pipeline", f"{summary['average_days_in_pipeline']:.1f}")
+
+
+def show_guideline_checker_page():
+    """Investor Guideline Checker."""
+    from guideline_checker import GuidelineChecker
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '📋 Investor Guideline Checker</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Check loans against Fannie Mae and Freddie Mac guidelines.")
+
+    investor = st.selectbox("Investor", ["fannie", "freddie"], format_func=lambda x: x.title() + " Mae")
+    dti = st.number_input("DTI Ratio (%)", min_value=0.0, max_value=100.0)
+    ltv = st.number_input("LTV Ratio (%)", min_value=0.0, max_value=200.0)
+    credit_score = st.number_input("Credit Score", min_value=300, max_value=900)
+    loan_amount = st.number_input("Loan Amount ($)", min_value=0)
+
+    loan_data = {
+        "dti_ratio": dti,
+        "ltv_ratio": ltv,
+        "credit_score": credit_score,
+        "loan_amount": loan_amount
+    }
+
+    if st.button("Check Guidelines", type="primary"):
+        checker = GuidelineChecker(investor)
+        result = checker.check(loan_data)
+
+        st.markdown(f"## {result['status']}")
+
+        if result["flags"]:
+            st.markdown("### Issues Found")
+            for flag in result["flags"]:
+                st.error(flag)
+
+        if result["warnings"]:
+            st.markdown("### Warnings")
+            for warning in result["warnings"]:
+                st.warning(warning)
+
+        if result["passed"]:
+            st.success("✅ Loan meets all guidelines!")
+        else:
+            st.error("❌ Loan does not meet guidelines - review required")
+
+
+def show_fraud_detector_page():
+    """Automated Red Flag / Fraud Detector."""
+    from fraud_detector import FraudDetector
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '🔍 Fraud Detector</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Scan documents for common fraud indicators and red flags.")
+
+    # Sample extracted data input
+    st.markdown("### Document Analysis Results")
+    large_deposit = st.checkbox("Large unexplained deposit detected")
+    income_drop = st.checkbox("Recent income drop")
+    employment_gap = st.checkbox("Employment gap found")
+
+    extracted_data = {
+        "large_deposit": large_deposit,
+        "income_drop": income_drop,
+        "employment_gap": employment_gap,
+        "deposits": [{"amount": 5000, "description": "unexplained deposit"}] if large_deposit else []
+    }
+
+    if st.button("Scan for Fraud", type="primary"):
+        detector = FraudDetector()
+        flags = detector.scan(extracted_data)
+        risk_assessment = detector.get_risk_score(flags)
+
+        st.markdown(f"## Risk Level: {risk_assessment['risk_level']}")
+        st.markdown(f"**Risk Score:** {risk_assessment['score']}")
+
+        if flags:
+            st.markdown("### Red Flags Detected")
+            for flag in flags:
+                severity_color = {"low": "blue", "medium": "orange", "high": "red", "critical": "red"}
+                st.error(f"{flag['description']} - {flag['recommendation']}")
+        else:
+            st.success("✅ No fraud indicators detected")
+
+
+def show_multi_borrower_page():
+    """Multi-Borrower Support."""
+    from multi_borrower import MultiBorrowerHandler
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '👥 Multi-Borrower Support</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Handle loans with primary and co-borrowers.")
+
+    primary_borrower = st.text_input("Primary Borrower Name", key="primary_name")
+    co_borrower = st.text_input("Co-Borrower Name (optional)", key="co_name")
+
+    # Sample file list
+    files = [
+        "/path/to/primary_paystub.pdf",
+        "/path/to/primary_bank_statement.pdf",
+        "/path/to/joint_1003.pdf",
+        "/path/to/co_borrower_paystub.pdf"
+    ]
+
+    st.markdown("### Sample Files to Process")
+    for file in files:
+        st.code(file)
+
+    if primary_borrower and st.button("Process Multi-Borrower Loan", type="primary"):
+        handler = MultiBorrowerHandler()
+        result = handler.process(files, primary_borrower, co_borrower)
+
+        st.success("✅ Multi-borrower processing complete!")
+        st.markdown(f"**Primary Borrower:** {result['primary_borrower']}")
+        if result['co_borrower']:
+            st.markdown(f"**Co-Borrower:** {result['co_borrower']}")
+
+        st.markdown(f"**Documents Assigned:** {len(result['documents_assigned']['primary'])} to primary, {len(result['documents_assigned']['co_borrower'])} to co-borrower")
+
+
+def show_los_export_page():
+    """Basic LOS Export."""
+    from los_export import LOSExport
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '📤 LOS Export</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Export loan data for import into Loan Origination Systems.")
+
+    export_format = st.selectbox("Export Format", ["csv", "json", "pdf"])
+    export_path = st.text_input("Export Directory", value="./exports")
+
+    # Sample loan data
+    loan_data = {
+        "loan_id": "LOAN12345",
+        "borrower_name": "John Doe",
+        "loan_amount": 300000,
+        "loan_type": "conventional",
+        "monthly_income": 8500,
+        "monthly_debt": 2500,
+        "credit_score": 750,
+        "property_value": 400000
+    }
+
+    st.markdown("### Sample Loan Data")
+    st.json(loan_data)
+
+    if st.button("Export to LOS", type="primary"):
+        exporter = LOSExport()
+        result = exporter.export(loan_data, export_path, export_format)
+
+        if result["success"]:
+            st.success("✅ Export successful!")
+            st.markdown("**Files Created:**")
+            for file_path in result["files_created"]:
+                st.code(file_path)
+        else:
+            st.error(f"❌ Export failed: {', '.join(result['errors'])}")
+
+
+# --- New Advanced Automation Pages ---
+
+def show_rate_lock_monitor_page():
+    """Rate Lock Monitor - Track interest rate locks and expiration alerts."""
+    from rate_lock_monitor import RateLockMonitor
+    from crm import get_all_loans
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '🔒 Rate Lock Monitor</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Track interest rate locks, monitor expirations, and get float-down alerts.")
+
+    loans = get_all_loans()
+    monitor = RateLockMonitor()
+
+    # Sample lock data (in real app, this would come from loan records)
+    lock_data = {
+        "lock_date": "2024-12-15",
+        "lock_expiry_date": "2025-01-15",
+        "locked_rate": 6.25,
+        "lock_days": 30,
+        "current_market_rate": 6.0
+    }
+
+    if st.button("Monitor Rate Locks", type="primary"):
+        result = monitor.monitor_lock(lock_data)
+
+        st.markdown(f"## Lock Status: {result['status']}")
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Days Until Expiry", result.get("days_until_expiry", 0))
+        with col2:
+            st.metric("Locked Rate", f"{result.get('locked_rate', 0):.2f}%")
+        with col3:
+            st.metric("Float-Down Available", "Yes" if result.get("float_down_available") else "No")
+
+        if result.get("alerts"):
+            st.markdown("### Alerts")
+            for alert in result["alerts"]:
+                if alert["type"] == "critical":
+                    st.error(f"🚨 {alert['message']}")
+                elif alert["type"] == "warning":
+                    st.warning(f"⚠️ {alert['message']}")
+                else:
+                    st.info(f"💰 {alert['message']}")
+
+        if result.get("recommendations"):
+            st.markdown("### Recommendations")
+            for rec in result["recommendations"]:
+                st.info(rec)
+
+
+def show_underwriting_tracker_page():
+    """Underwriting Condition Tracker - Automate condition clearing and tracking."""
+    from underwriting_tracker import UnderwritingConditionTracker
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '📋 Underwriting Condition Tracker</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Track and automate underwriting condition clearing and monitoring.")
+
+    loan_id = st.text_input("Loan ID", key="tracker_loan_id")
+
+    # Sample conditions
+    conditions = [
+        {"id": "paystub", "description": "Provide paystub for last 30 days", "due_date": "2025-01-15"},
+        {"id": "bank_stmt", "description": "Provide bank statements for last 60 days", "due_date": "2025-01-20"},
+        {"id": "appraisal", "description": "Order and provide appraisal", "due_date": "2025-01-10"}
+    ]
+
+    # Sample submitted documents
+    submitted_docs = [
+        {"filename": "paystub_december.pdf", "doc_type": "paystub", "submitted_date": "2025-01-05"},
+        {"filename": "bank_statement.pdf", "doc_type": "bank_statement", "submitted_date": "2025-01-08"}
+    ]
+
+    if loan_id and st.button("Track Conditions", type="primary"):
+        tracker = UnderwritingConditionTracker()
+        results = tracker.track_conditions(loan_id, conditions, submitted_docs)
+
+        st.markdown(f"## Overall Progress: {results['overall_progress']:.1f}%")
+
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.metric("Total Conditions", results["total_conditions"])
+        with col2:
+            st.metric("Cleared", results["cleared_conditions"])
+        with col3:
+            st.metric("Pending", results["pending_conditions"])
+
+        if results["condition_status"]:
+            st.markdown("### Condition Status")
+            for condition in results["condition_status"]:
+                status_icon = {"cleared": "✅", "pending": "⏳", "overdue": "🚨"}.get(condition["status"], "❓")
+                st.markdown(f"{status_icon} **{condition['description']}** - {condition['status'].title()}")
+
+                if condition.get("recommendations"):
+                    for rec in condition["recommendations"]:
+                        st.caption(f"💡 {rec}")
+
+
+def show_document_classifier_page():
+    """Automated Document Classifier - AI-powered document classification and routing."""
+    from document_classifier import AutomatedDocumentClassifier
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '🏷️ Automated Document Classifier</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Automatically classify and route documents to appropriate loan folders.")
+
+    file_path = st.text_input("Document File Path", key="classifier_file_path")
+
+    if file_path and st.button("Classify Document", type="primary"):
+        classifier = AutomatedDocumentClassifier()
+        result = classifier.classify_document(file_path)
+
+        if result["primary_classification"]:
+            st.success(f"✅ Classified as: **{result['primary_classification'].replace('_', ' ').title()}**")
+            st.markdown(f"**Confidence:** {result['confidence']}%")
+            st.markdown(f"**Routing Folder:** {result['routing_folder'].replace('_', ' ').title()}")
+
+            if result.get("recommendations"):
+                st.markdown("### Recommendations")
+                for rec in result["recommendations"]:
+                    st.info(rec)
+        else:
+            st.error("❌ Document type not recognized")
+
+        if result.get("secondary_classifications"):
+            st.markdown("### Could Also Be")
+            for secondary in result["secondary_classifications"]:
+                st.caption(f"• {secondary.replace('_', ' ').title()}")
+
+
+def show_escrow_calculator_page():
+    """Escrow Calculator - Closing costs and escrow analysis."""
+    from escrow_calculator import EscrowCalculator
+
+    st.markdown(
+        '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
+        '💰 Escrow Calculator</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown("Calculate closing costs, escrow requirements, and cash needed to close.")
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### Loan Information")
+        loan_amount = st.number_input("Loan Amount ($)", min_value=0.0, key="escrow_loan_amt")
+        property_value = st.number_input("Property Value ($)", min_value=0.0, key="escrow_prop_val")
+        loan_type = st.selectbox("Loan Type", ["conventional", "fha", "va"], key="escrow_loan_type")
+        location = st.selectbox("Location", ["standard", "high_cost", "low_cost"], key="escrow_location")
+
+    with col2:
+        st.markdown("### Additional Costs")
+        include_warranty = st.checkbox("Include Home Warranty", key="escrow_warranty")
+        escrow_months = st.slider("Escrow Months", 1, 6, 2, key="escrow_months")
+        annual_tax = st.number_input("Annual Property Tax ($)", min_value=0.0, key="escrow_tax")
+        annual_insurance = st.number_input("Annual Hazard Insurance ($)", min_value=0.0, key="escrow_insurance")
+
+    loan_data = {
+        "loan_amount": loan_amount,
+        "property_value": property_value,
+        "loan_type": loan_type,
+        "location": location,
+        "include_home_warranty": include_warranty,
+        "escrow_months": escrow_months,
+        "annual_property_tax": annual_tax if annual_tax > 0 else None,
+        "annual_hazard_insurance": annual_insurance if annual_insurance > 0 else None
+    }
+
+    if st.button("Calculate Closing Costs", type="primary"):
+        calculator = EscrowCalculator()
+        result = calculator.calculate_closing_costs(loan_data)
+
+        if "error" in result:
+            st.error(result["error"])
+        else:
+            st.success("✅ Calculation Complete!")
+
+            # Main results
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Total Closing Costs", f"${result['total_closing_costs']:,.2f}")
+            with col2:
+                st.metric("Total Cash Needed", f"${result['total_cash_needed']:,.2f}")
+            with col3:
+                st.metric("Cost-to-Loan Ratio", f"{result['cost_to_loan_ratio']:.1f}%")
+
+            # Detailed breakdown
+            st.markdown("### Cost Breakdown")
+            breakdown = result["breakdown"]
+            for cost_type, amount in breakdown.items():
+                display_name = cost_type.replace("_", " ").title()
+                st.write("25")
+
+
 def show_history():
     """Show user's scan history."""
     st.markdown("## My History")
@@ -4302,6 +5582,13 @@ def show_email_watch_page():
                         st.rerun()
                     if st.button("Dismiss", key=f"ew_dismiss_{i}", use_container_width=True):
                         ew.dismiss(i)
+                        st.rerun()
+                    # Spanish Reply button
+                    if st.button("🌎 Spanish Reply", key=f"ew_spanish_{i}", use_container_width=True):
+                        st.session_state["spanish_reply_data"] = m
+                        st.session_state.page = "spanish_reply"
+                        st.session_state["scroll_to"] = "spanish_reply"
+                        _save_session()
                         st.rerun()
 
                 # ── Preview panel (below columns, full width) ──────────
@@ -6046,6 +7333,48 @@ def main():
             show_reader()
         elif page == "loan_detail":
             show_loan_detail()
+        elif page == "snapshot":
+            show_snapshot_page()
+        elif page == "report_issue":
+            show_report_issue_page()
+        elif page == "missing_docs":
+            show_missing_docs_page()
+        elif page == "doc_expiry":
+            show_doc_expiry_page()
+        elif page == "spanish_reply":
+            show_spanish_reply_page()
+        elif page == "income_verifier":
+            show_income_verifier_page()
+        elif page == "auto_data_entry":
+            show_auto_data_entry_page()
+        elif page == "credit_summary":
+            show_credit_summary_page()
+        elif page == "dti_calculator":
+            show_dti_calculator_page()
+        elif page == "condition_clearer":
+            show_condition_clearer_page()
+        elif page == "compliance_checker":
+            show_compliance_checker_page()
+        elif page == "closing_package":
+            show_closing_package_page()
+        elif page == "pipeline_dashboard":
+            show_pipeline_dashboard_page()
+        elif page == "guideline_checker":
+            show_guideline_checker_page()
+        elif page == "fraud_detector":
+            show_fraud_detector_page()
+        elif page == "multi_borrower":
+            show_multi_borrower_page()
+        elif page == "los_export":
+            show_los_export_page()
+        elif page == "rate_lock_monitor":
+            show_rate_lock_monitor_page()
+        elif page == "underwriting_tracker":
+            show_underwriting_tracker_page()
+        elif page == "document_classifier":
+            show_document_classifier_page()
+        elif page == "escrow_calculator":
+            show_escrow_calculator_page()
         else:
             show_dashboard()
 

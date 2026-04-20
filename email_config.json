@@ -1,0 +1,9 @@
+{
+  "email": "145brice@gmail.com",
+  "password": "yqrq iyil ulqr cldc",
+  "provider": "Gmail",
+  "host": "imap.gmail.com",
+  "port": 993,
+  "interval_minutes": 5,
+  "since_hours": 1
+}
