@@ -673,7 +673,7 @@ def show_sidebar():
         # ── Quick Tools ─────────────────────────────────────────────────────
         st.markdown("---")
         _tools_label = "⚡ Quick Tools"
-        st.markdown(f'<div style="font-size:10px;color:#9ca3af;margin-bottom:6px;letter-spacing:0.5px;">QUICK TOOLS</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">QUICK TOOLS</div>', unsafe_allow_html=True)
 
         if st.button("📋 Loan Snapshot", key="nav_snapshot", use_container_width=True, type="secondary"):
             st.session_state.page = "snapshot"
@@ -707,7 +707,7 @@ def show_sidebar():
 
         # ── Advanced Tools ─────────────────────────────────────────────────────
         st.markdown("---")
-        st.markdown(f'<div style="font-size:10px;color:#9ca3af;margin-bottom:6px;letter-spacing:0.5px;">ADVANCED TOOLS</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">ADVANCED TOOLS</div>', unsafe_allow_html=True)
 
         if st.button("📊 Income Verifier", key="nav_income_verifier", use_container_width=True, type="secondary"):
             st.session_state.page = "income_verifier"
@@ -741,7 +741,7 @@ def show_sidebar():
 
         # ── Pipeline & Advanced Tools ──────────────────────────────────────────
         st.markdown("---")
-        st.markdown(f'<div style="font-size:10px;color:#9ca3af;margin-bottom:6px;letter-spacing:0.5px;">PIPELINE & ADVANCED</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">PIPELINE & ADVANCED</div>', unsafe_allow_html=True)
 
         if st.button("📦 Closing Package", key="nav_closing_package", use_container_width=True, type="secondary"):
             st.session_state.page = "closing_package"
@@ -775,7 +775,7 @@ def show_sidebar():
 
         # ── Advanced Automation ───────────────────────────────────────────────
         st.markdown("---")
-        st.markdown(f'<div style="font-size:10px;color:#9ca3af;margin-bottom:6px;letter-spacing:0.5px;">ADVANCED AUTOMATION</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">ADVANCED AUTOMATION</div>', unsafe_allow_html=True)
 
         if st.button("🔒 Rate Lock Monitor", key="nav_rate_lock_monitor", use_container_width=True, type="secondary"):
             st.session_state.page = "rate_lock_monitor"
