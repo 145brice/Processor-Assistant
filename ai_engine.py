@@ -23,13 +23,31 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
         page_text = page.extract_text()
         if page_text:
             text += page_text + "\n"
-        time.sleep(0.5)  # gentle pause per page - no CPU spike
+        time.sleep(0.05)  # gentle pause per page - no CPU spike
     return text.strip()
 
 
 # ---------------------------------------------------------------------------
 # Condition Extraction — reads the ACTUAL lines from the PDF
 # ---------------------------------------------------------------------------
+
+# Pre-compiled regex for junk line detection
+_JUNK_NUMERIC = re.compile(r'^[\$\d\s,\.\-\/\(\)%]+$')
+_JUNK_EMAIL = re.compile(r'^[\w.+-]+@[\w\-]+\.[\w.]+$')
+_JUNK_PHONE = re.compile(r'^[\(\)\d\s\-\.]+$')
+_JUNK_ADDRESS = re.compile(r'^\d+\s+[A-Z][a-z]+\s+(?:Dr|St|Ave|Blvd|Rd|Ln|Ct|Way|Cir|Pl)')
+_JUNK_CITY_STATE = re.compile(r'^[A-Za-z\s]+,\s*[A-Z]{2},?\s*\d{5}')
+_JUNK_NAME = re.compile(r'^[A-Z][a-z]+\s+[A-Z][a-z]+(?:\-[A-Z][a-z]+)?$')
+_JUNK_CORP = re.compile(r'(?i)^(?:NEXA|Orion|American Financial|LLC|Inc|DBA)\b')
+_JUNK_SUMMARY = re.compile(r'(?i)^(?:Purchase Price|Refinance|Estimated|Lender (?:Fee|Credit)|Seller Credit|Other Credit|Subordinate|Loan Amount|Cash (?:from|to)|Total Cost|Last UW|Date.?Time)')
+_JUNK_CODE = re.compile(r'^(?:Underwriter|Jr Underwriter|Closer|Manager|Processor|Sr Underwriter)\s+W[A-Z]{2}\d{2}\s*$')
+_JUNK_RESPONSIBLE = re.compile(r'(?i)^(?:Orion\s*)?Responsible\s*\d')
+_JUNK_TIMESTAMP = re.compile(r'(?i)^(?:Last UW|Date.?Time)\s')
+_JUNK_PRODUCT = re.compile(r'^[A-Z]{3,5}\d{2}\s')
+_JUNK_MORTGAGEE = re.compile(r'(?i)^(?:S\.?A\.?O\.?A|I\.?S\.?A\.?O\.?A)')
+_JUNK_MASKED = re.compile(r'^X{3,}\d+$')
+_JUNK_BOILERPLATE = re.compile(r'(?i)(?:must be received from the broker within|calendar days of the initial|closed for incompleteness)')
+_JUNK_WAIVED = re.compile(r'(?i)^(?:Not Waived|Past Due|contact your|Account Manager)$')
 
 
 def _is_junk_line(text: str) -> bool:
@@ -39,52 +57,52 @@ def _is_junk_line(text: str) -> bool:
     if len(t) < 12:
         return True
     # Pure numbers / dollar amounts / dates
-    if re.match(r'^[\$\d\s,\.\-\/\(\)%]+$', t):
+    if _JUNK_NUMERIC.match(t):
         return True
     # Email addresses
-    if re.match(r'^[\w.+-]+@[\w\-]+\.[\w.]+$', t):
+    if _JUNK_EMAIL.match(t):
         return True
     # Phone numbers only
-    if re.match(r'^[\(\)\d\s\-\.]+$', t):
+    if _JUNK_PHONE.match(t):
         return True
     # Street addresses (number + street name pattern)
-    if re.match(r'^\d+\s+[A-Z][a-z]+\s+(?:Dr|St|Ave|Blvd|Rd|Ln|Ct|Way|Cir|Pl)', t):
+    if _JUNK_ADDRESS.match(t):
         return True
     # City, State, Zip
-    if re.match(r'^[A-Za-z\s]+,\s*[A-Z]{2},?\s*\d{5}', t):
+    if _JUNK_CITY_STATE.match(t):
         return True
     # Just a person's name (2-3 words, all capitalized, no action verbs)
-    if re.match(r'^[A-Z][a-z]+\s+[A-Z][a-z]+(?:\-[A-Z][a-z]+)?$', t):
+    if _JUNK_NAME.match(t):
         return True
     # Company/lender names on their own line
-    if re.match(r'(?i)^(?:NEXA|Orion|American Financial|LLC|Inc|DBA)\b', t):
+    if _JUNK_CORP.match(t):
         return True
     # Closing cost summary labels
-    if re.match(r'(?i)^(?:Purchase Price|Refinance|Estimated|Lender (?:Fee|Credit)|Seller Credit|Other Credit|Subordinate|Loan Amount|Cash (?:from|to)|Total Cost|Last UW|Date.?Time)', t):
+    if _JUNK_SUMMARY.match(t):
         return True
     # Condition code only (no description after it)
-    if re.match(r'^(?:Underwriter|Jr Underwriter|Closer|Manager|Processor|Sr Underwriter)\s+W[A-Z]{2}\d{2}\s*$', t):
+    if _JUNK_CODE.match(t):
         return True
     # "Orion Responsible" / date-only tails
-    if re.match(r'(?i)^(?:Orion\s*)?Responsible\s*\d', t):
+    if _JUNK_RESPONSIBLE.match(t):
         return True
     # Timestamps
-    if re.match(r'(?i)^(?:Last UW|Date.?Time)\s', t):
+    if _JUNK_TIMESTAMP.match(t):
         return True
     # Loan product codes
-    if re.match(r'^[A-Z]{3,5}\d{2}\s', t) and len(t) < 25:
+    if _JUNK_PRODUCT.match(t) and len(t) < 25:
         return True
     # Mortgagee/Loss payee clause (address block, not a condition)
-    if re.match(r'(?i)^(?:S\.?A\.?O\.?A|I\.?S\.?A\.?O\.?A)', t):
+    if _JUNK_MORTGAGEE.match(t):
         return True
     # Masked account numbers
-    if re.match(r'^X{3,}\d+$', t):
+    if _JUNK_MASKED.match(t):
         return True
     # Boilerplate footer lines
-    if re.search(r'(?i)(?:must be received from the broker within|calendar days of the initial|closed for incompleteness)', t):
+    if _JUNK_BOILERPLATE.search(t):
         return True
     # "Not Waived", "Past Due - Please", "contact your", "Account Manager"
-    if re.match(r'(?i)^(?:Not Waived|Past Due|contact your|Account Manager)$', t):
+    if _JUNK_WAIVED.match(t):
         return True
     return False
 
@@ -4126,5 +4144,79 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None) -> dict
         result["extracted_data"] = extract_loan_estimate(text)
     else:
         result["conditions"] = extract_conditions(text, doc_type, user_history)
+
+    # ── Convert extracted data into contacts dictionary ──────────────────────
+    # This allows the UI to suggest borrower names when starting a new loan
+    extracted = result.get("extracted_data", {})
+    contacts = {}
+    
+    if doc_type == "1003 Application" and isinstance(extracted, dict):
+        # Add borrower
+        if extracted.get("borrower_name"):
+            contacts["borrower"] = {
+                "name": extracted["borrower_name"],
+                "phone": extracted.get("phone", ""),
+                "email": extracted.get("email", ""),
+                "dob": extracted.get("dob", ""),
+            }
+        # Add co-borrower
+        if extracted.get("co_borrower_name"):
+            contacts["co_borrower"] = {
+                "name": extracted["co_borrower_name"],
+                "phone": extracted.get("co_phone", ""),
+                "email": extracted.get("co_email", ""),
+            }
+        # Add loan number if found
+        if extracted.get("loan_num"):
+            result["loan_num"] = extracted["loan_num"]
+    
+    elif doc_type == "Purchase Contract" and isinstance(extracted, dict):
+        # Add buyer
+        if extracted.get("buyer", {}).get("name"):
+            contacts["buyer"] = extracted["buyer"]
+        # Add seller
+        if extracted.get("seller", {}).get("name"):
+            contacts["seller"] = extracted["seller"]
+        # Add agents
+        if extracted.get("listing_agent", {}).get("name"):
+            contacts["listing_agent"] = extracted["listing_agent"]
+        if extracted.get("selling_agent", {}).get("name"):
+            contacts["selling_agent"] = extracted["selling_agent"]
+        # Add title company
+        if extracted.get("title", {}).get("name"):
+            contacts["title"] = extracted["title"]
+    
+    elif doc_type == "VA Certificate of Eligibility" and isinstance(extracted, dict):
+        # Add veteran name
+        if extracted.get("veteran_name"):
+            contacts["veteran"] = {
+                "name": extracted["veteran_name"],
+                "service_num": extracted.get("service_num", ""),
+            }
+    
+    elif doc_type == "Government ID" and isinstance(extracted, dict):
+        # Add ID holder name
+        if extracted.get("name"):
+            contacts["id_holder"] = {
+                "name": extracted["name"],
+                "dob": extracted.get("dob", ""),
+            }
+    
+    elif doc_type == "Mortgage Statement" and isinstance(extracted, dict):
+        # Add borrower from mortgage statement
+        if extracted.get("borrower"):
+            contacts["borrower"] = {
+                "name": extracted["borrower"],
+            }
+    
+    elif doc_type == "Credit Report" and isinstance(extracted, dict):
+        # Add consumer name from credit report
+        if extracted.get("consumer_name"):
+            contacts["consumer"] = {
+                "name": extracted["consumer_name"],
+            }
+    
+    if contacts:
+        result["contacts"] = contacts
 
     return result
