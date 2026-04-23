@@ -62,22 +62,28 @@ class PipelineDashboard:
                 alerts["urgent"].append({
                     "loan_id": loan.get("id"),
                     "borrower": loan.get("borrower"),
+                    "borrower_name": loan.get("borrower_name"),
+                    "ssn_last_4": loan.get("ssn_last_4"),
                     "days_remaining": days_to_close,
-                    "message": f"🚨 URGENT: {loan.get('borrower')} closing in {days_to_close} days!"
+                    "message": f"🚨 URGENT: Loan {loan.get('loan_number', 'N/A')} - {loan.get('borrower_name')} (SSN: XXX-XX-{loan.get('ssn_last_4', 'XXXX')}) closing in {days_to_close} days!"
                 })
             elif days_to_close <= self.alert_thresholds["warning"]:
                 alerts["warning"].append({
                     "loan_id": loan.get("id"),
                     "borrower": loan.get("borrower"),
+                    "borrower_name": loan.get("borrower_name"),
+                    "ssn_last_4": loan.get("ssn_last_4"),
                     "days_remaining": days_to_close,
-                    "message": f"⚠️ {loan.get('borrower')} closing in {days_to_close} days"
+                    "message": f"⚠️ Loan {loan.get('loan_number', 'N/A')} - {loan.get('borrower_name')} (SSN: XXX-XX-{loan.get('ssn_last_4', 'XXXX')}) closing in {days_to_close} days"
                 })
             elif days_to_close <= self.alert_thresholds["notice"]:
                 alerts["notice"].append({
                     "loan_id": loan.get("id"),
                     "borrower": loan.get("borrower"),
+                    "borrower_name": loan.get("borrower_name"),
+                    "ssn_last_4": loan.get("ssn_last_4"),
                     "days_remaining": days_to_close,
-                    "message": f"📅 {loan.get('borrower')} closing in {days_to_close} days"
+                    "message": f"📅 Loan {loan.get('loan_number', 'N/A')} - {loan.get('borrower_name')} (SSN: XXX-XX-{loan.get('ssn_last_4', 'XXXX')}) closing in {days_to_close} days"
                 })
 
             # Check for stale loans (no activity)
@@ -90,8 +96,10 @@ class PipelineDashboard:
                         alerts["stale"].append({
                             "loan_id": loan.get("id"),
                             "borrower": loan.get("borrower"),
+                            "borrower_name": loan.get("borrower_name"),
+                            "ssn_last_4": loan.get("ssn_last_4"),
                             "days_inactive": days_inactive,
-                            "message": f"⏰ {loan.get('borrower')} - {days_inactive} days inactive"
+                            "message": f"⏰ Loan {loan.get('loan_number', 'N/A')} - {loan.get('borrower_name')} (SSN: XXX-XX-{loan.get('ssn_last_4', 'XXXX')}) - {days_inactive} days inactive"
                         })
                 except:
                     pass
@@ -106,13 +114,17 @@ class PipelineDashboard:
                         alerts["expired"].append({
                             "loan_id": loan.get("id"),
                             "borrower": loan.get("borrower"),
-                            "message": f"🔒 {loan.get('borrower')} - Rate/lock EXPIRED"
+                            "borrower_name": loan.get("borrower_name"),
+                            "ssn_last_4": loan.get("ssn_last_4"),
+                            "message": f"🔒 Loan {loan.get('loan_number', 'N/A')} - {loan.get('borrower_name')} (SSN: XXX-XX-{loan.get('ssn_last_4', 'XXXX')}) - Rate/lock EXPIRED"
                         })
                     elif days_until_expiry <= 3:
                         alerts["urgent"].append({
                             "loan_id": loan.get("id"),
                             "borrower": loan.get("borrower"),
-                            "message": f"🔒 {loan.get('borrower')} - Rate expires in {days_until_expiry} days!"
+                            "borrower_name": loan.get("borrower_name"),
+                            "ssn_last_4": loan.get("ssn_last_4"),
+                            "message": f"🔒 Loan {loan.get('loan_number', 'N/A')} - {loan.get('borrower_name')} (SSN: XXX-XX-{loan.get('ssn_last_4', 'XXXX')}) - Rate expires in {days_until_expiry} days!"
                         })
                 except:
                     pass
@@ -183,7 +195,10 @@ class PipelineDashboard:
             if stage in staged_loans:
                 staged_loans[stage].append({
                     "loan_id": loan.get("id"),
+                    "loan_number": loan.get("loan_number"), # New field
                     "borrower": loan.get("borrower"),
+                    "borrower_name": loan.get("borrower_name"),
+                    "ssn_last_4": loan.get("ssn_last_4"),
                     "loan_amount": loan.get("loan_amount"),
                     "days_to_close": loan.get("days_to_close", "N/A")
                 })

@@ -401,7 +401,7 @@ class AutomatedDocumentClassifier:
             report.append(f"• Prioritize review of {results['high_priority_count']} high-priority documents")
 
         success_rate = (results["classified_documents"] / results["total_documents"]) * 100 if results["total_documents"] > 0 else 0
-        report.append(".1f")
+        report.append(f"Overall Success Rate: {success_rate:.1f}%")
 
         return "\n".join(report)
 
