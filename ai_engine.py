@@ -2768,19 +2768,22 @@ def extract_purchase_contract(text: str) -> dict:
         r"(?i)Seller\s+Assistance[:\s]+\$?([\d,]+)",
     ])
 
+    # ── Hard-stop helpers (used by Title, Listing/Selling Agent, Brokerage) ───
+    # Names are 2-5 capitalized words; companies are mixed-case with limited punctuation.
+    # Both stop at separators (·•|), next-field markers, phone, email, or end-of-line.
+    _NAME_BODY = r"[A-Z][a-zA-Z'\-]+(?:\s+(?:and\s+)?[A-Z][a-zA-Z'\-\.]+){0,4}"
+    _NAME_STOP = r"(?=\s*(?:[·•|]|Tel|Phone|Email|Fax|Selling|Listing|Title|Brokerage|Broker|License|Agent|Office|Company|of\s|\d{3}[\-\.\s]\d{3}|[\w\.\+\-]+@|$|\n))"
+    _CO_BODY   = r"[A-Z][A-Za-z0-9'&,\-\. ]{3,58}?"
+    _CO_STOP   = r"(?=\s*(?:[·•|]|Tel|Phone|Email|Fax|Selling|Listing|Title|License|Agent|of\s|\d{3}[\-\.\s]\d{3}|[\w\.\+\-]+@|$|\n))"
+
     # ── Title company ─────────────────────────────────────────────────────────
     title_company = _find_company([
-        r"(?:Title\s*Company|Title\s*Co\.?|Escrow\s*Company|Settlement\s*Agent|Title\s*Insurance\s*(?:Company|Co))[:\s]+([^\n_]{3,60})",
-        r"(?:closing\s+(?:at|with|through)|escrow\s+(?:at|with|through))\s+([A-Z][^\n_]{3,60})",
+        r"(?:Title\s*Company|Title\s*Co\.?|Escrow\s*Company|Settlement\s*Agent|Title\s*Insurance\s*(?:Company|Co))[:\s]+(" + _CO_BODY + r")" + _CO_STOP,
+        r"(?:closing\s+(?:at|with|through)|escrow\s+(?:at|with|through))\s+(" + _CO_BODY + r")" + _CO_STOP,
         r"([A-Z][a-zA-Z\s]{1,40}(?:Title|Escrow|Settlement)\s+(?:Company|Co\.?|Corp\.?|Inc\.?|LLC|Services?|Group))",
-        r"(?m)^([A-Z][^\n\d]{2,60}(?:Title|Escrow|Settlement)[^\n]{0,30})\s*$",
-        # All variations: Title Company, Escrow Company, Escrow, Title & Escrow, Settlement Agent, Settlement Company
-        r"(?i)TITLE\s+COMPANY[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)Escrow\s+Company[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)Escrow[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)Title\s+&\s+Escrow[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)Settlement\s+Agent[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)Settlement\s+Company[:\s]+([A-Z][^\n]{3,50})",
+        r"(?m)^([A-Z][^\n\d·•|]{2,60}(?:Title|Escrow|Settlement)[^\n·•|]{0,30})\s*$",
+        r"(?i)Title\s+&\s+Escrow[:\s]+(" + _CO_BODY + r")" + _CO_STOP,
+        r"(?i)Settlement\s+Company[:\s]+(" + _CO_BODY + r")" + _CO_STOP,
     ])
     title_contact = _find([
         r"(?:Title\s*(?:Officer|Agent|Contact|Rep)|Escrow\s*Officer)[:\s]+([A-Z][^\n_]{3,40})",
@@ -2794,44 +2797,21 @@ def extract_purchase_contract(text: str) -> dict:
 
 # ── Listing / Seller's agent ──────────────────────────────────────────────
     listing_agent = _find_name([
-        # Standard labels
-        r"(?:Listing\s*Agent|Seller'?s?\s*Agent|Seller'?s?\s*Broker\s*Agent)\s*(?:Name\s*)?[:\s]+([A-Z][a-zA-Z'\-]+(?:\s+[A-Z][a-zA-Z'\-]+){0,3})\s+of\s+",
-        r"(?:Listing\s*Agent|Seller'?s?\s*Agent|Seller'?s?\s*Broker\s*Agent)\s*(?:Name\s*)?[:\s]+([^\n_]{3,50})",
-        r"(?:L\.?A\.?\s*Name|Listing\s*Broker\s*Name)[:\s]+([^\n_]{3,50})",
-        r"(?:Seller'?s?\s*Licensee)\s*[:\s]+([^\n_]{3,50})",
-        # All variations: Listing Agent, Seller Agent, Seller's Broker, Listing Broker
-        r"(?i)listing\s+agent[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)listing\s+agent\s+name[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)Listing\s+Broker[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)Seller\s+Agent[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)Seller['\s]?\s+Broker[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)Seller['\s]?\s+Representative[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)Listing\s+Representative[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)BUYER'?S\s+AGENT[:\s]+([A-Z][^\n,]{3,50})",
+        # "Agent Name of Brokerage" — capture just the name before "of"
+        r"(?:Listing\s*Agent|Seller'?s?\s*Agent|Seller'?s?\s*Broker\s*Agent)\s*(?:Name\s*)?[:\s]+(" + _NAME_BODY + r")\s+of\s+",
+        # General — hard stop at separators / next field
+        r"(?:Listing\s*Agent|Seller'?s?\s*Agent|Seller'?s?\s*Broker\s*Agent)\s*(?:Name\s*)?[:\s]+(" + _NAME_BODY + r")" + _NAME_STOP,
+        r"(?:L\.?A\.?\s*Name|Listing\s*Broker\s*Name)[:\s]+(" + _NAME_BODY + r")" + _NAME_STOP,
+        r"(?:Seller'?s?\s*Licensee)\s*[:\s]+(" + _NAME_BODY + r")" + _NAME_STOP,
+        r"(?i)Listing\s+Broker[:\s]+(" + _NAME_BODY + r")" + _NAME_STOP,
+        r"(?i)Seller['\s]?\s+Representative[:\s]+(" + _NAME_BODY + r")" + _NAME_STOP,
+        r"(?i)Listing\s+Representative[:\s]+(" + _NAME_BODY + r")" + _NAME_STOP,
     ])
-    
-    # ── Selling / Buyer's agent ───────────────────────────────────────────────
-    selling_agent = _find_name([
-        r"(?:Selling\s*Agent|Buyer'?s?\s*Agent|Cooperating\s*Agent|Co-?op\s*Agent)\s*(?:Name\s*)?[:\s]+([A-Z][a-zA-Z'\-]+(?:\s+[A-Z][a-zA-Z'\-]+){0,3})\s+of\s+",
-        r"(?:Selling\s*Agent|Buyer'?s?\s*Agent|Cooperating\s*Agent|Co-?op\s*Agent)\s*(?:Name\s*)?[:\s]+([^\n_]{3,50})",
-        r"(?:S\.?A\.?\s*Name|Selling\s*Broker\s*Name)[:\s]+([^\n_]{3,50})",
-        r"(?:Buyer'?s?\s*Licensee|Buyer'?s?\s*Broker\s*Agent)\s*[:\s]+([^\n_]{3,50})",
-        r"(?:Buyer\s+will\s+be\s+represented\s+by|Buyer'?s?\s+Broker\s+is)\s+([A-Z][^\n_,]{3,50}?)(?:,|\.|of\s|\(|$)",
-        # All variations: Selling Agent, Buyer Agent, Buyer's Broker, Buyer Representative
-        r"(?i)selling\s+agent[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)selling\s+agent\s+name[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)buyer'?s?\s+agent[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)Selling\s+Agent[:\s]+([A-Z][^\n,]{3,50})",
-        r"(?i)Buyer\s+Agent[:\s]+([A-Z][^\n,]{3,50})",
-        r"(?i)Buyer['\s]?\s+Broker[:\s]+([A-Z][^\n,]{3,50})",
-        r"(?i)Buyer['\s]?\s+Representative[:\s]+([A-Z][^\n,]{3,50})",
-        r"(?i)Selling\s+Broker[:\s]+([A-Z][^\n,]{3,50})",
-        r"(?i)SELLING\s+AGENT[:\s]+([A-Z][^\n,]{3,50})",
-    ])
+
     listing_brokerage = _find_company([
-        r"(?:Listing\s*(?:Broker|Brokerage|Office|Company)|Seller'?s?\s*(?:Broker|Brokerage))\s*(?:Name\s*)?[:\s]+([^\n_]{3,60})",
-        # Extract brokerage from "Agent: Name of [Brokerage]"
-        r"(?:Listing\s*Agent|Seller'?s?\s*Agent)\s*[:\s]+[A-Z][^\n]{1,30}\s+of\s+([^\n_]{3,60})",
+        r"(?:Listing\s*(?:Broker|Brokerage|Office|Company)|Seller'?s?\s*(?:Broker|Brokerage))\s*(?:Name\s*)?[:\s]+(" + _CO_BODY + r")" + _CO_STOP,
+        # "Agent: Name of [Brokerage]"
+        r"(?:Listing\s*Agent|Seller'?s?\s*Agent)\s*[:\s]+" + _NAME_BODY + r"\s+of\s+(" + _CO_BODY + r")" + _CO_STOP,
     ])
     listing_phone = _find([
         r"(?:Listing\s*Agent\s*(?:Phone|Tel)|L\.?A\.?\s*(?:Phone|Tel))[:\s]+([\(\d][\d\s\(\)\-\.]{7,16}\d)",
@@ -2842,25 +2822,18 @@ def extract_purchase_contract(text: str) -> dict:
 
     # ── Selling / Buyer's agent ───────────────────────────────────────────────
     selling_agent = _find_name([
-        # "Selling Agent: Name of Company" — capture just the name before "of"
-        r"(?:Selling\s*Agent|Buyer'?s?\s*Agent|Cooperating\s*Agent|Co-?op\s*Agent)\s*(?:Name\s*)?[:\s]+([A-Z][a-zA-Z'\-]+(?:\s+[A-Z][a-zA-Z'\-]+){0,3})\s+of\s+",
-        r"(?:Selling\s*Agent|Buyer'?s?\s*Agent|Cooperating\s*Agent|Co-?op\s*Agent)\s*(?:Name\s*)?[:\s]+([^\n_]{3,50})",
-        r"(?:S\.?A\.?\s*Name|Selling\s*Broker\s*Name)[:\s]+([^\n_]{3,50})",
-        r"(?:Buyer'?s?\s*Licensee|Buyer'?s?\s*Broker\s*Agent)\s*[:\s]+([^\n_]{3,50})",
-        # "Buyer will be represented by [Name]"
-        r"(?:Buyer\s+will\s+be\s+represented\s+by|Buyer'?s?\s+Broker\s+is)\s+([A-Z][^\n_,]{3,50}?)(?:,|\.|of\s|\(|$)",
-        # More flexible: "Selling Agent:" anywhere
-        r"(?i)selling\s+agent[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)selling\s+agent\s+name[:\s]+([A-Z][^\n]{3,50})",
-        r"(?i)buyer'?s?\s+agent[:\s]+([A-Z][^\n]{3,50})",
-        # Direct from sample: "SELLING AGENT: Sarah Jenkins, (512) 555-2381"
-        r"(?i)SELLING\s+AGENT[:\s]+([A-Z][^\n,]{3,50})",
+        r"(?:Selling\s*Agent|Buyer'?s?\s*Agent|Cooperating\s*Agent|Co-?op\s*Agent)\s*(?:Name\s*)?[:\s]+(" + _NAME_BODY + r")\s+of\s+",
+        r"(?:Selling\s*Agent|Buyer'?s?\s*Agent|Cooperating\s*Agent|Co-?op\s*Agent)\s*(?:Name\s*)?[:\s]+(" + _NAME_BODY + r")" + _NAME_STOP,
+        r"(?:S\.?A\.?\s*Name|Selling\s*Broker\s*Name)[:\s]+(" + _NAME_BODY + r")" + _NAME_STOP,
+        r"(?:Buyer'?s?\s*Licensee|Buyer'?s?\s*Broker\s*Agent)\s*[:\s]+(" + _NAME_BODY + r")" + _NAME_STOP,
+        r"(?:Buyer\s+will\s+be\s+represented\s+by|Buyer'?s?\s+Broker\s+is)\s+(" + _NAME_BODY + r")(?:,|\.|of\s|\(|$)",
+        r"(?i)Selling\s+Broker[:\s]+(" + _NAME_BODY + r")" + _NAME_STOP,
+        r"(?i)Buyer['\s]?\s+Representative[:\s]+(" + _NAME_BODY + r")" + _NAME_STOP,
     ])
     selling_brokerage = _find_company([
-        r"(?:Selling\s*(?:Broker|Brokerage|Office|Company)|Buyer'?s?\s*(?:Broker|Brokerage))\s*(?:Name\s*)?[:\s]+([^\n_]{3,60})",
-        r"(?:Buyer'?s?\s*Brokerage\s*Name|Buyer'?s?\s*Firm)[:\s]+([^\n_]{3,60})",
-        # Extract brokerage from "Agent: Name of [Brokerage]"
-        r"(?:Selling\s*Agent|Buyer'?s?\s*Agent)\s*[:\s]+[A-Z][^\n]{1,30}\s+of\s+([^\n_]{3,60})",
+        r"(?:Selling\s*(?:Broker|Brokerage|Office|Company)|Buyer'?s?\s*(?:Broker|Brokerage))\s*(?:Name\s*)?[:\s]+(" + _CO_BODY + r")" + _CO_STOP,
+        r"(?:Buyer'?s?\s*Brokerage\s*Name|Buyer'?s?\s*Firm)[:\s]+(" + _CO_BODY + r")" + _CO_STOP,
+        r"(?:Selling\s*Agent|Buyer'?s?\s*Agent)\s*[:\s]+" + _NAME_BODY + r"\s+of\s+(" + _CO_BODY + r")" + _CO_STOP,
     ])
     selling_phone = _find([
         r"(?:Selling\s*Agent\s*(?:Phone|Tel)|Buyer'?s?\s*Agent\s*(?:Phone|Tel)|S\.?A\.?\s*(?:Phone|Tel))[:\s]+([\(\d][\d\s\(\)\-\.]{7,16}\d)",
