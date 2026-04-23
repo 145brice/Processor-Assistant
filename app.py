@@ -64,19 +64,18 @@ header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { dis
     min-width: 244px !important;
     width: 244px !important;
 }
-/* Streamlit's native collapse control — keep it usable as the reopen affordance */
-[data-testid="stSidebarCollapsedControl"] {
-    display: flex !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    z-index: 999998 !important;
-}
-[data-testid="stSidebarCollapsedControl"] button {
-    background: rgba(57,255,20,0.12) !important;
-    border: 1px solid rgba(57,255,20,0.4) !important;
-    color: #39FF14 !important;
-    border-radius: 6px !important;
+/* Hide Streamlit's small native collapse/expand arrows — using our own visible buttons */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stSidebarHeader"],
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"],
+[data-testid="stSidebar"] button[kind="headerNoPadding"],
+[data-testid="stSidebar"] [aria-label*="collapse" i],
+[data-testid="stSidebar"] [aria-label*="close sidebar" i] {
+    display: none !important;
+    visibility: hidden !important;
+    width: 0 !important; height: 0 !important;
+    pointer-events: none !important;
+    opacity: 0 !important;
 }
 
 /* Mobile: sidebar covers full width when open; hidden by default via session_state */
@@ -568,11 +567,51 @@ def show_login_page():
 
 
 def show_sidebar():
-    """Sidebar navigation. Hide/show is handled by Streamlit's native arrow control."""
+    """Sidebar navigation with custom hide/unhide arrows."""
+    if "sidebar_hidden" not in st.session_state:
+        st.session_state["sidebar_hidden"] = False
+
+    if st.session_state["sidebar_hidden"]:
+        # Slide sidebar off-screen and show a clearly visible reopen button (▶)
+        st.markdown(
+            """
+            <style>
+            [data-testid="stSidebar"] {
+                transform: translateX(-100%) !important;
+                margin-left: -260px !important;
+                visibility: hidden !important;
+            }
+            .main, .block-container { margin-left: 0 !important; max-width: 100% !important; }
+            /* Make the floating reopen button big and obvious */
+            div[data-testid="stButton"] > button[kind="primary"]#sidebar_show_btn,
+            button[data-testid*="sidebar_show_btn"] {
+                background: #39FF14 !important;
+                color: #000 !important;
+                font-size: 20px !important;
+                font-weight: 800 !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        _co1, _co2 = st.columns([1, 20])
+        with _co1:
+            if st.button("▶ Menu", key="sidebar_show_btn", help="Show menu", type="primary"):
+                st.session_state["sidebar_hidden"] = False
+                st.rerun()
+        return
+
     with st.sidebar:
         user_name = st.session_state.get("user_name", "")
         user_role = st.session_state.get("user_role", "")
         is_sandbox = st.session_state.get("sandbox_mode", False)
+
+        # Hide button at top of sidebar
+        _hc1, _hc2 = st.columns([1, 4])
+        with _hc1:
+            if st.button("◀", key="sidebar_hide_btn", help="Hide menu"):
+                st.session_state["sidebar_hidden"] = True
+                st.rerun()
 
         st.markdown(
             '<div style="padding:0 0 36px 0;margin-top:-4px;">'
