@@ -56,49 +56,41 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 /* Header must stay visible so sidebar reopen arrow is reachable */
 header, [data-testid="stHeader"] { background: transparent !important; visibility: visible !important; display: flex !important; height: auto !important; min-height: 40px !important; z-index: 999999 !important; }
 header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { display: none !important; }
-/* Sidebar is permanent — hide all collapse/expand controls so users can't hide it */
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="stSidebarHeader"],
-[data-testid="stSidebarHeader"] *,
-[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"],
-[data-testid="stSidebar"] button[kind="headerNoPadding"],
-[data-testid="stSidebar"] [data-testid="baseButton-headerNoPadding"],
-[data-testid="stSidebar"] [aria-label*="collapse" i],
-[data-testid="stSidebar"] [aria-label*="close" i],
-[data-testid="stSidebar"] [aria-label*="sidebar" i],
-header button:not([kind]):not([aria-label*="menu" i]):not([aria-label*="theme" i]) {
-    display: none !important;
-    visibility: hidden !important;
-    width: 0 !important; height: 0 !important;
-    pointer-events: none !important;
-    opacity: 0 !important;
-}
-/* Force sidebar to stay open regardless of collapse state */
-[data-testid="stSidebar"],
-[data-testid="stSidebar"][aria-expanded="false"],
-[data-testid="stSidebar"][aria-expanded="true"] {
-    transform: translateX(0) !important;
-    margin-left: 0 !important;
+/* Sidebar — desktop default visible, slides off-screen when hidden via our toggle */
+[data-testid="stSidebar"] {
+    transition: transform 0.25s ease, margin-left 0.25s ease, width 0.25s ease !important;
     visibility: visible !important;
     display: block !important;
     min-width: 244px !important;
     width: 244px !important;
 }
+/* Streamlit's native collapse control — keep it usable as the reopen affordance */
+[data-testid="stSidebarCollapsedControl"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 999998 !important;
+}
+[data-testid="stSidebarCollapsedControl"] button {
+    background: rgba(57,255,20,0.12) !important;
+    border: 1px solid rgba(57,255,20,0.4) !important;
+    color: #39FF14 !important;
+    border-radius: 6px !important;
+}
 
+/* Mobile: sidebar covers full width when open; hidden by default via session_state */
 @media (max-width: 768px) {
-    [data-testid="stSidebar"],
-    [data-testid="stSidebar"][aria-expanded="false"],
-    [data-testid="stSidebar"][aria-expanded="true"] {
+    [data-testid="stSidebar"] {
         min-width: 100% !important;
         width: 100% !important;
         max-width: 100% !important;
-        transform: translateX(0) !important;
-        margin-left: 0 !important;
+        z-index: 999997 !important;
     }
-    /* Adjust main content area to take full width */
-    .main > div {
-        padding-left: 1rem !important; /* Adjust padding as needed */
-        padding-right: 1rem !important;
+    .main > div, .block-container {
+        padding-left: 0.75rem !important;
+        padding-right: 0.75rem !important;
+        max-width: 100% !important;
     }
 }
 .stDeployButton { display: none; }
@@ -576,11 +568,45 @@ def show_login_page():
 
 
 def show_sidebar():
-    """Sidebar navigation."""
+    """Sidebar navigation with hide/unhide toggle."""
+    # ── Sidebar hide/show toggle (persists across reruns) ─────────────────────
+    if "sidebar_hidden" not in st.session_state:
+        st.session_state["sidebar_hidden"] = False
+
+    if st.session_state["sidebar_hidden"]:
+        # Slide sidebar off-screen and show a fixed reopen button (▶) top-left
+        st.markdown(
+            """
+            <style>
+            [data-testid="stSidebar"] {
+                transform: translateX(-100%) !important;
+                margin-left: -260px !important;
+                visibility: hidden !important;
+            }
+            .main, .block-container { margin-left: 0 !important; max-width: 100% !important; }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        # Floating reopen button rendered in the main area
+        _co1, _co2 = st.columns([1, 20])
+        with _co1:
+            if st.button("▶", key="sidebar_show_btn", help="Show menu"):
+                st.session_state["sidebar_hidden"] = False
+                st.rerun()
+        return  # don't render the sidebar contents while hidden
+
     with st.sidebar:
         user_name = st.session_state.get("user_name", "")
         user_role = st.session_state.get("user_role", "")
         is_sandbox = st.session_state.get("sandbox_mode", False)
+
+        # ── Hide button (◀) top of sidebar ────────────────────────────────────
+        _hc1, _hc2 = st.columns([1, 4])
+        with _hc1:
+            if st.button("◀", key="sidebar_hide_btn", help="Hide menu"):
+                st.session_state["sidebar_hidden"] = True
+                st.rerun()
 
         st.markdown(
             '<div style="padding:0 0 36px 0;margin-top:-4px;">'
