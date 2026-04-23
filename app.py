@@ -568,45 +568,11 @@ def show_login_page():
 
 
 def show_sidebar():
-    """Sidebar navigation with hide/unhide toggle."""
-    # ── Sidebar hide/show toggle (persists across reruns) ─────────────────────
-    if "sidebar_hidden" not in st.session_state:
-        st.session_state["sidebar_hidden"] = False
-
-    if st.session_state["sidebar_hidden"]:
-        # Slide sidebar off-screen and show a fixed reopen button (▶) top-left
-        st.markdown(
-            """
-            <style>
-            [data-testid="stSidebar"] {
-                transform: translateX(-100%) !important;
-                margin-left: -260px !important;
-                visibility: hidden !important;
-            }
-            .main, .block-container { margin-left: 0 !important; max-width: 100% !important; }
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
-        # Floating reopen button rendered in the main area
-        _co1, _co2 = st.columns([1, 20])
-        with _co1:
-            if st.button("▶", key="sidebar_show_btn", help="Show menu"):
-                st.session_state["sidebar_hidden"] = False
-                st.rerun()
-        return  # don't render the sidebar contents while hidden
-
+    """Sidebar navigation. Hide/show is handled by Streamlit's native arrow control."""
     with st.sidebar:
         user_name = st.session_state.get("user_name", "")
         user_role = st.session_state.get("user_role", "")
         is_sandbox = st.session_state.get("sandbox_mode", False)
-
-        # ── Hide button (◀) top of sidebar ────────────────────────────────────
-        _hc1, _hc2 = st.columns([1, 4])
-        with _hc1:
-            if st.button("◀", key="sidebar_hide_btn", help="Hide menu"):
-                st.session_state["sidebar_hidden"] = True
-                st.rerun()
 
         st.markdown(
             '<div style="padding:0 0 36px 0;margin-top:-4px;">'
@@ -846,6 +812,15 @@ def show_sidebar():
 
         if st.button("💰 Escrow Calculator", key="nav_escrow_calculator", use_container_width=True, type="secondary"):
             st.session_state.page = "escrow_calculator"
+            _save_session()
+            st.rerun()
+
+        # ── Settings ───────────────────────────────────────────────────────────
+        st.markdown("---")
+        st.markdown(f'<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">SETTINGS</div>', unsafe_allow_html=True)
+
+        if st.button("🤖 AI Settings (Claude / OpenAI / Ollama)", key="nav_ai_settings", use_container_width=True, type="secondary"):
+            st.session_state.page = "ai_settings"
             _save_session()
             st.rerun()
 
@@ -7479,9 +7454,8 @@ def main():
             show_email_watch_page()
         elif page == "email_watch_controls":
             show_email_watch_controls_page()
-        elif page == "ollama":
-            st.session_state.page = "dashboard"
-            st.rerun()
+        elif page == "ollama" or page == "ai_settings":
+            show_ollama_page()
         elif page == "billing":
             show_billing_page()
         elif page == "history":
