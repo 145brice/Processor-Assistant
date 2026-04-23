@@ -94,11 +94,24 @@ def ping(provider: str | None = None, api_key: str | None = None,
             return True, f"Connected · {provider} · {model}"
         return False, "Empty response"
     except urllib.error.HTTPError as e:
+        # Read Anthropic/OpenAI error body so the user sees the actual reason
+        try:
+            _body = e.read().decode("utf-8", errors="replace")
+            _err_msg = ""
+            try:
+                _ej = json.loads(_body)
+                _err_msg = _ej.get("error", {}).get("message", "") or _ej.get("message", "") or _body[:200]
+            except Exception:
+                _err_msg = _body[:200]
+        except Exception:
+            _err_msg = e.reason
         if e.code == 401:
-            return False, "Invalid API key (401 Unauthorized)"
+            return False, f"Invalid API key (401): {_err_msg}"
         if e.code == 429:
-            return False, "Rate limited (429) — try again shortly"
-        return False, f"HTTP {e.code}: {e.reason}"
+            return False, f"Rate limited (429): {_err_msg}"
+        if e.code == 400:
+            return False, f"Bad request (400): {_err_msg}"
+        return False, f"HTTP {e.code}: {_err_msg}"
     except urllib.error.URLError as e:
         return False, f"Cannot reach {provider} API: {e.reason}"
     except Exception as e:
