@@ -84,6 +84,23 @@ header button:not([kind]):not([aria-label*="menu" i]):not([aria-label*="theme" i
     min-width: 244px !important;
     width: 244px !important;
 }
+
+@media (max-width: 768px) {
+    [data-testid="stSidebar"],
+    [data-testid="stSidebar"][aria-expanded="false"],
+    [data-testid="stSidebar"][aria-expanded="true"] {
+        min-width: 100% !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        transform: translateX(0) !important;
+        margin-left: 0 !important;
+    }
+    /* Adjust main content area to take full width */
+    .main > div {
+        padding-left: 1rem !important; /* Adjust padding as needed */
+        padding-right: 1rem !important;
+    }
+}
 .stDeployButton { display: none; }
 /* Keep native sidebar collapse/expand toggle visible so users can reopen the sidebar */
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #222222 0%, #181818 100%) !important; border-right: 1px solid rgba(255,255,255,0.1) !important; }
@@ -5386,7 +5403,7 @@ def show_escrow_calculator_page():
             breakdown = result["breakdown"]
             for cost_type, amount in breakdown.items():
                 display_name = cost_type.replace("_", " ").title()
-                st.write("25")
+                st.write(f"**{display_name}**: ${amount:,.2f}")
 
 
 def show_history():
