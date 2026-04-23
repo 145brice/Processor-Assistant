@@ -2513,6 +2513,58 @@ def show_pipeline():
                     from ai_engine import extract_contacts as _alc
                     import re as _al_re
 
+                    # Check for cloud AI and consent for bulk scan
+                    _al_cloud_enabled = False
+                    try:
+                        import cloud_client as _al_cc
+                        _al_cloud_enabled = _al_cc.is_enabled()
+                    except Exception:
+                        pass
+
+                    # First pass: check if batch contains cloud-supported docs
+                    _al_has_cloud_docs = False
+                    if _al_cloud_enabled:
+                        for _af in _add_bulk_files:
+                            _af_bytes = _af.read()
+                            _af.seek(0)
+                            _det = _ald(_af_bytes)
+                            if _det["doc_type"] in ("Purchase Contract", "Approval Letter"):
+                                _al_has_cloud_docs = True
+                                break
+                            _af.seek(0)
+
+                    # Show consent prompt once for batch if needed
+                    _al_batch_consent_key = "cloud_consent_bulk_batch"
+                    _al_user_approved_cloud = False
+                    if _al_has_cloud_docs:
+                        _al_session_consent = st.session_state.get("cloud_consent_session", None)
+                        if _al_session_consent == "yes":
+                            _al_user_approved_cloud = True
+                        elif _al_session_consent == "no":
+                            _al_user_approved_cloud = False
+                        else:
+                            _al_batch_state = st.session_state.get(_al_batch_consent_key, None)
+                            if _al_batch_state is None:
+                                st.info("This batch contains documents that support cloud AI augmentation.")
+                                _alb1, _alb2, _alb3 = st.columns(3)
+                                with _alb1:
+                                    if st.button("Send to Cloud AI", key="bulk_consent_yes"):
+                                        st.session_state[_al_batch_consent_key] = "yes_once"
+                                        st.rerun()
+                                with _alb2:
+                                    if st.button("Skip AI for batch", key="bulk_consent_no"):
+                                        st.session_state[_al_batch_consent_key] = "no"
+                                        st.rerun()
+                                with _alb3:
+                                    if st.button("Always for session", key="bulk_consent_session"):
+                                        st.session_state["cloud_consent_session"] = "yes"
+                                        st.session_state[_al_batch_consent_key] = "yes_once"
+                                        st.rerun()
+                            elif _al_batch_state == "yes_once":
+                                _al_user_approved_cloud = True
+                            elif _al_batch_state == "no":
+                                _al_user_approved_cloud = False
+
                     _al_progress = st.progress(0, text="Scanning documents...")
                     _al_total = len(_add_bulk_files)
 
@@ -2543,7 +2595,7 @@ def show_pipeline():
                             continue
 
                         # Process
-                        _result = _alp(_af_bytes, _dtype)
+                        _result = _alp(_af_bytes, _dtype, user_approved_cloud=_al_user_approved_cloud)
                         if not _result.get("success"):
                             _al_scanned.append({"name": _af.name, "type": _dtype, "status": "failed"})
                             continue
@@ -6876,12 +6928,55 @@ def show_loan_detail():
             )
 
         _scan_key = f"detail_scan_result_{lid}"
+        _cloud_consent_key = f"cloud_consent_{lid}"
+        _cloud_enabled = False
+        try:
+            import cloud_client as _cc_check
+            _cloud_enabled = _cc_check.is_enabled()
+        except Exception:
+            pass
+
+        # Determine user approval for cloud AI
+        _user_approved_cloud = False
+        _cloud_doc_types = {"Purchase Contract", "Approval Letter"}
+        _requires_cloud_consent = _scan_dtype in _cloud_doc_types and _cloud_enabled
+
+        if _requires_cloud_consent:
+            _session_consent = st.session_state.get("cloud_consent_session", None)
+            if _session_consent == "yes":
+                _user_approved_cloud = True
+            elif _session_consent == "no":
+                _user_approved_cloud = False
+            else:
+                # Show consent prompt
+                _consent_state = st.session_state.get(_cloud_consent_key, None)
+                if _consent_state is None:
+                    st.info("This document type supports cloud AI augmentation for better extraction.")
+                    _c1, _c2, _c3 = st.columns(3)
+                    with _c1:
+                        if st.button("Send to Cloud AI", key=f"consent_yes_{lid}"):
+                            st.session_state[_cloud_consent_key] = "yes_once"
+                            st.rerun()
+                    with _c2:
+                        if st.button("Skip AI for this scan", key=f"consent_no_{lid}"):
+                            st.session_state[_cloud_consent_key] = "no"
+                            st.rerun()
+                    with _c3:
+                        if st.button("Always for session", key=f"consent_session_{lid}"):
+                            st.session_state["cloud_consent_session"] = "yes"
+                            st.session_state[_cloud_consent_key] = "yes_once"
+                            st.rerun()
+                elif _consent_state == "yes_once":
+                    _user_approved_cloud = True
+                elif _consent_state == "no":
+                    _user_approved_cloud = False
+
         if _scan_file and st.button("Scan & Attach", key=f"detail_scan_btn_{lid}",
                                      type="primary", use_container_width=True):
             with st.spinner(f"Scanning {_scan_dtype}..."):
                 from ai_engine import process_document as _proc_doc
                 _pdf_bytes = _scan_file.read()
-                _scan_result = _proc_doc(_pdf_bytes, _scan_dtype)
+                _scan_result = _proc_doc(_pdf_bytes, _scan_dtype, user_approved_cloud=_user_approved_cloud)
 
             if not _scan_result.get("success"):
                 st.error(_scan_result.get("error", "Scan failed — could not extract text from this PDF."))
@@ -7096,13 +7191,54 @@ def show_loan_detail():
             key=f"af_upload_{lid}", label_visibility="collapsed",
         )
 
+        # Check cloud AI support for Approval Letter
+        _af_cloud_enabled = False
+        try:
+            import cloud_client as _af_cc
+            _af_cloud_enabled = _af_cc.is_enabled()
+        except Exception:
+            pass
+
+        # Determine user approval for cloud AI on Approval Letter
+        _af_user_approved_cloud = False
+        _af_cloud_consent_key = f"af_cloud_consent_{lid}"
+        if _af_cloud_enabled:
+            _af_session_consent = st.session_state.get("cloud_consent_session", None)
+            if _af_session_consent == "yes":
+                _af_user_approved_cloud = True
+            elif _af_session_consent == "no":
+                _af_user_approved_cloud = False
+            else:
+                # Show consent prompt
+                _af_consent_state = st.session_state.get(_af_cloud_consent_key, None)
+                if _af_consent_state is None:
+                    st.info("This document type supports cloud AI augmentation for better extraction.")
+                    _afc1, _afc2, _afc3 = st.columns(3)
+                    with _afc1:
+                        if st.button("Send to Cloud AI", key=f"af_consent_yes_{lid}"):
+                            st.session_state[_af_cloud_consent_key] = "yes_once"
+                            st.rerun()
+                    with _afc2:
+                        if st.button("Skip AI for this scan", key=f"af_consent_no_{lid}"):
+                            st.session_state[_af_cloud_consent_key] = "no"
+                            st.rerun()
+                    with _afc3:
+                        if st.button("Always for session", key=f"af_consent_session_{lid}"):
+                            st.session_state["cloud_consent_session"] = "yes"
+                            st.session_state[_af_cloud_consent_key] = "yes_once"
+                            st.rerun()
+                elif _af_consent_state == "yes_once":
+                    _af_user_approved_cloud = True
+                elif _af_consent_state == "no":
+                    _af_user_approved_cloud = False
+
         if _af_file and st.button("Scan Approval Letter", key=f"af_scan_btn_{lid}",
                                    type="primary", use_container_width=True):
             with st.spinner("Extracting conditions from approval letter..."):
                 from ai_engine import process_document as _af_proc, extract_contacts as _af_contacts
                 from pypdf import PdfReader as _AF_PR
                 _af_bytes = _af_file.read()
-                _af_result = _af_proc(_af_bytes, "Approval Letter")
+                _af_result = _af_proc(_af_bytes, "Approval Letter", user_approved_cloud=_af_user_approved_cloud)
 
                 # Also extract borrower name from the raw text
                 import io as _af_io

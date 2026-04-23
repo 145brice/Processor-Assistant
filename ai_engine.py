@@ -4526,10 +4526,16 @@ def _merge_pc_data(regex_data: dict, ai_data: dict) -> dict:
 # Main Processing Function
 # ---------------------------------------------------------------------------
 
-def process_document(pdf_bytes: bytes, doc_type: str, user_history=None) -> dict:
+def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_approved_cloud: bool = False) -> dict:
     """
     Main processing function. Takes PDF bytes, returns structured results.
     100% offline - no API calls. PDF is ONLY in memory.
+
+    Args:
+        pdf_bytes: PDF content as bytes
+        doc_type: Document type string (e.g., "Purchase Contract")
+        user_history: Optional user history for context
+        user_approved_cloud: If True, allows cloud AI augmentation for cloud-enabled doc types
     """
     text = extract_text_from_pdf(pdf_bytes)
 
@@ -4602,18 +4608,37 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None) -> dict
         result["raw_text"] = text[:12000]  # retained for optional AI re-extraction
 
         # ── Cloud AI augmentation (only fills fields regex missed) ───────
-        # Runs only if user has enabled cloud + provided their own API key.
+        # Runs only if user has enabled cloud + provided their own API key + user approved.
         # Their key, their data, their cost — we never see any of it.
-        try:
-            import cloud_client as _cc
-            if _cc.is_enabled():
-                ai_data, ai_log = _cc.extract_purchase_contract_ai(text)
-                if ai_data:
-                    result["extracted_data"] = _merge_pc_data(regex_data, ai_data)
-                    result["ai_log"] = ai_log
-        except Exception as _e:
-            # Never let cloud failure block local extraction
-            result["ai_log"] = f"Cloud augmentation skipped: {str(_e)[:80]}"
+        if user_approved_cloud:
+            try:
+                import cloud_client as _cc
+                if _cc.is_enabled():
+                    ai_data, ai_log = _cc.extract_purchase_contract_ai(text)
+                    if ai_data:
+                        result["extracted_data"] = _merge_pc_data(regex_data, ai_data)
+                        result["ai_log"] = ai_log
+            except Exception as _e:
+                # Never let cloud failure block local extraction
+                result["ai_log"] = f"Cloud augmentation skipped: {str(_e)[:80]}"
+    elif doc_type == "Approval Letter":
+        result["conditions"] = ""
+        result["extracted_data"] = {}
+        result["raw_text"] = text[:12000]  # retained for optional AI re-extraction
+
+        # ── Cloud AI augmentation for Approval Letter ──────────────────
+        # Same as Purchase Contract — cloud call is permissive enough to handle both
+        if user_approved_cloud:
+            try:
+                import cloud_client as _cc
+                if _cc.is_enabled():
+                    ai_data, ai_log = _cc.extract_purchase_contract_ai(text)
+                    if ai_data:
+                        result["extracted_data"] = ai_data
+                        result["ai_log"] = ai_log
+            except Exception as _e:
+                # Never let cloud failure block local extraction
+                result["ai_log"] = f"Cloud augmentation skipped: {str(_e)[:80]}"
     elif doc_type in ("Loan Estimate (LE)", "Loan Estimate"):
         result["conditions"] = ""
         result["extracted_data"] = extract_loan_estimate(text)
