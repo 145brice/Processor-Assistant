@@ -2419,6 +2419,12 @@ def extract_purchase_contract(text: str) -> dict:
         # Too short to be meaningful
         if len(val) < 3:
             return ""
+        # Reject placeholder patterns like "- Agent Name" or "- Office Name"
+        if re.match(r'^-\s+[A-Z][a-z]+\s+[A-Z][a-z]+', val):
+            return ""
+        # Reject "- Name" single-word placeholder
+        if re.match(r'^-\s*[A-Z][a-z]+$', val):
+            return ""
         # Template junk phrases
         val_lower = val.lower()
         for phrase in _JUNK_PHRASES:
@@ -2452,6 +2458,10 @@ def extract_purchase_contract(text: str) -> dict:
             "and seller", "and buyer", "named below", "whose address",
             "as specified", "as described", "as indicated",
             "see attached", "see exhibit",
+            "- agent name", "agent name", "buyers agent", "sellers agent",
+            "- office name", "office name", "brokerage name",
+            "- contact name", "contact name",
+            "financing-buyer", "financing buyer", "buyer financing",
         ]
         for p in patterns:
             try:
@@ -2564,6 +2574,9 @@ def extract_purchase_contract(text: str) -> dict:
                     # Reject values that start with a verb (residual after label match)
                     if re.match(r'^(?:shall|will|to|is|has|for|handle|at|the)\b', val, re.IGNORECASE):
                         continue
+                    # Reject section headers like "Selling Brokerage:" or "Listing Brokerage:"
+                    if re.match(r'^(?:selling|listing|buyer|seller)\s*(?:brokerage|office|agent|name)?:', val, flags=re.IGNORECASE):
+                        continue
                     if len(val) < 4:
                         continue
                     return val
@@ -2573,35 +2586,46 @@ def extract_purchase_contract(text: str) -> dict:
 
     # ── Parties ──────────────────────────────────────────────────────────────
     buyer_name = _find_name([
-        # "BUYER(S): John Smith" or "Buyer: John Smith"
+        # Standard labels
         r"BUYER[S]?\s*[:\(]\s*([A-Z][a-zA-Z'\-]+(?:\s+(?:and\s+)?[A-Z][a-zA-Z'\-]+){1,5})",
         r"^BUYER[S]?\s*[:\|]\s*(.{4,60})$",
         r"Purchaser[s]?\s*:\s*([A-Z][a-zA-Z'\-]+(?:\s+[A-Z][a-zA-Z'\-]+){1,4})",
-        # "1. BUYER: John Smith" (numbered party section)
         r"\d\.\s*BUYER[S]?\s*[:\|]\s*([^\n,]{4,60})",
-        # MN/WI format: "Buyer(s): John Smith and Mary Smith"
         r"Buyer\(s\)\s*:\s*([A-Z][a-zA-Z'\-]+(?:\s+(?:and\s+)?[A-Z][a-zA-Z'\-]+){1,5})",
-        # CA CAR: "OFFER FROM Thomas Anderson and Sarah Anderson ("Buyer")"
+        # Quoted names
         r'(?:OFFER\s+FROM|offer\s+from)\s+([A-Z][a-zA-Z\'\-]+(?:\s+(?:and\s+)?[A-Z][a-zA-Z\'\-]+){1,5})\s*\(',
-        # "Name and Name ("Buyer")" or 'Name ("Buyer")'
         r'([A-Z][a-zA-Z\'\-]+(?:\s+(?:and\s+)?[A-Z][a-zA-Z\'\-]+){1,5})\s*\(\s*["\u201c]Buyer',
-        # "hereinafter "Buyer", John Smith"
         r'["\u201c\u201d]Buyer["\u201c\u201d][,\s]+([A-Z][a-zA-Z\'\-]+(?:\s+[A-Z][a-zA-Z\'\-]+){1,4})',
-        # Signature line: "Buyer: _______John Smith_______"
         r'Buyer\s*[:\|/]\s*[_\s]*([A-Z][a-zA-Z\s\'\-]{3,40}?)(?:\s+Date|$)',
-        # Dotloop Ohio: buyer name on its own line immediately followed by a street address
-        r'(?m)^([A-Z][a-z]+(?:\s+[A-Z][a-zA-Z\'\-]+){1,4})\s*\n\s*\d{1,5}\s+[A-Z]',
+        # All variations: Buyer, Purchaser, Property Owner, Owner
+        r'(?i)buyer\s*:\s*([A-Z][a-zA-Z\'\-]+(?:\s+[A-Z][a-zA-Z\'\-]+){1,4})',
+        r'(?i)^buyer\s*:\s*\n\s*([A-Z][^\n]{3,50})',
+        r"(?i)BUYER:\s*([A-Z][a-zA-Z'\.][^\n]{3,50})",
+        r"(?i)Purchaser['\s]?:\s*([A-Z][^\n]{3,50})",
+        r"(?i)Purchaser:\s*([A-Z][^\n]{3,50})",
+        r"(?i)Buyer:\s*([A-Z][^\n]{3,50})",
+        r"(?i)Property\s+Owner:\s*([A-Z][^\n]{3,50})",
+        r"(?i)Owner:\s*([A-Z][^\n]{3,50})",
+        # Vermont dotloop signatures
+        r"(?m)^([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+)\.?\s*$)",
     ])
 
     seller_name = _find_name([
+        # Standard labels
         r"SELLER[S]?\s*[:\(]\s*([A-Z][a-zA-Z'\-]+(?:\s+(?:and\s+)?[A-Z][a-zA-Z'\-]+){1,5})",
         r"^SELLER[S]?\s*[:\|]\s*(.{4,60})$",
         r"\d\.\s*SELLER[S]?\s*[:\|]\s*([^\n,]{4,60})",
         r"Seller\(s\)\s*:\s*([A-Z][a-zA-Z'\-]+(?:\s+(?:and\s+)?[A-Z][a-zA-Z'\-]+){1,5})",
-        # CA CAR: 'Name and Name ("Seller")' anywhere in text
         r'([A-Z][a-zA-Z\'\-]+(?:\s+(?:and\s+)?[A-Z][a-zA-Z\'\-]+){1,5})\s*\(\s*["\u201c]Seller',
         r'["\u201c\u201d]Seller["\u201c\u201d][,\s]+([A-Z][a-zA-Z\'\-]+(?:\s+[A-Z][a-zA-Z\'\-]+){1,4})',
         r'Seller\s*[:\|/]\s*[_\s]*([A-Z][a-zA-Z\s\'\-]{3,40}?)(?:\s+Date|$)',
+        # All variations: Seller, Vendor, Property Owner
+        r'(?i)seller\s*:\s*([A-Z][a-zA-Z\'\-]+(?:\s+[A-Z][a-zA-Z\'\-]+){1,4})',
+        r'(?i)^seller\s*:\s*\n\s*([A-Z][^\n]{3,50})',
+        r"(?i)SELLER:\s*([A-Z][a-zA-Z][^\n]{3,50})",
+        r"(?i)Seller:\s*([A-Z][^\n]{3,50})",
+        r"(?i)Vendor:\s*([A-Z][^\n]{3,50})",
+        r"(?i)Property\s+Owner:\s*([A-Z][^\n]{3,50})",
     ])
 
     buyer_phone = _find([
@@ -2620,16 +2644,18 @@ def extract_purchase_contract(text: str) -> dict:
 
     # ── Property ─────────────────────────────────────────────────────────────
     property_address = _find_address([
-        # Direct label match
+        # Standard labels
         r"(?:Property\s*Address|Subject\s*Property\s*Address)[:\s]+(\d[^\n]{5,100})",
-        # "real property located at 123 Main St"
         r"(?:real\s*property\s*(?:known\s*as|located\s*at|described\s*as|situate[d]?\s*at))[:\s,]+(\d[^\n]{5,100})",
         r"(?:located\s+at|property\s+at)[:\s]+(\d[^\n]{5,80})",
-        # MN: "Common address (if known): 123 Main"
         r"(?:Common\s*[Aa]ddress|Street\s*[Aa]ddress)[:\s]+(\d[^\n]{5,80})",
-        # WI: "Address of Real Estate: 123 Main"
         r"(?:Address\s+of\s+Real\s+Estate|Property\s+Location)[:\s]+(\d[^\n]{5,80})",
-        # Look for a standalone address line: digit + word(s) + City, ST XXXXX
+        # All variations: Property Address, Subject Property, Property Location, Real Property
+        r"(?i)Property\s+Address[:\s]+([^\n]{5,100})",
+        r"(?i)Subject\s+Property[:\s]+([^\n]{5,100})",
+        r"(?i)Property\s+Location[:\s]+([^\n]{5,100})",
+        r"(?i)Real\s+Property[:\s]+([^\n]{5,100})",
+        # Standalone address pattern
         r"\b(\d{1,6}\s+[A-Z][a-zA-Z\s]{3,40},\s+[A-Za-z\s]{2,20},\s+[A-Z]{2}\s+\d{5})",
         r"\b(\d{1,6}\s+[A-Z][a-zA-Z\s\.]{3,40}(?:St|Ave|Blvd|Dr|Rd|Ln|Ct|Way|Pl|Circle|Cir)\b[^\n]{0,40})",
     ])
@@ -2637,18 +2663,22 @@ def extract_purchase_contract(text: str) -> dict:
     # ── Transaction ──────────────────────────────────────────────────────────
     purchase_price = _find_price([
         r"(?:Purchase\s*Price|Sales?\s*Price|Contract\s*Price|Offer\s*Price|Total\s*Purchase\s*Price)[:\s]+\$?\s*([\d,]+(?:\.\d{1,2})?)",
-        # "$255,000 (Two Hundred..." — dollar written out in parens
         r"\$\s*([\d,]+(?:\.\d{2})?)\s*\([A-Za-z\s]+[Dd]ollars",
-        # "sum of $255,000"
         r"sum\s+of\s+\$\s*([\d,]+)",
-        # "price of $255,000" or "price is $255,000"
         r"price\s+(?:of|is)\s+\$\s*([\d,]+)",
-        # WI: "agrees to buy...for the sum of $..."
         r"agrees?\s+to\s+(?:buy|purchase).*?for.*?\$\s*([\d,]+)",
-        # Generic: large dollar amount with $ prefix
         r"\$\s*([\d]{2,3},\d{3}(?:\.\d{2})?)\b",
-        # Dotloop Ohio: price appears as standalone "180,000" (no $ prefix) on its own line
         r"(?m)^([\d]{2,3},\d{3}(?:\.\d{2})?)\s*$",
+        # All case variations - Money
+        r"(?i)PURCHASE\s+PRICE[:\s]+\$?([\d,]+)",
+        r"(?i)SALES\s+PRICE[:\s]+\$?([\d,]+)",
+        r"(?i)TOTAL\s+CONSIDERATION[:\s]+\$?([\d,]+)",
+        r"(?i)Contract\s+Price[:\s]+\$?([\d,]+)",
+        r"(?i)Purchase\s+Amount[:\s]+\$?([\d,]+)",
+        r"(?i)Total\s+Purchase\s+Price[:\s]+\$?([\d,]+)",
+        r"(?i)Agreed\s+Purchase\s+Price[:\s]+\$?([\d,]+)",
+        # Vermont dotloop
+        r"\$([\d]{3,6},\d{3})",
     ], min_val=50000)  # purchase price must be ≥ $50,000 to avoid earnest money confusion
 
     closing_date = _find([
@@ -2668,38 +2698,74 @@ def extract_purchase_contract(text: str) -> dict:
         r"(?:close\s+of\s+escrow|escrow)\s+shall\s+(?:be\s+)?(?:on|by)\s+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{4})",
         # Dotloop Ohio: two identical dates on same line = escrow date + title transfer date
         r"(\d{1,2}/\d{1,2}/\d{4})\s+\d{1,2}/\d{1,2}/\d{4}",
+        # All case-insensitive variations - Closing Date
+        r"(?i)CLOSING\s+DATE[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4})",
+        r"(?i)CLOSE\s+ON[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4})",
+        r"(?i)CLOSING\s+ON[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4})",
+        r"(?i)SETTLEMENT\s+DATE[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4})",
+        r"(?i)Estimated\s+Closing[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4})",
+        r"(?i)Date\s+of\s+Closing[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4})",
+        # Vermont dotloop: directly find MM/DD/YYYY or YYYY-MM-DD dates
+        r"(\d{1,2}/\d{1,2}/20\d{2})",
+        r"(20\d{2}-\d{2}-\d{2})",
+        # Contract Date variations
+        r"(?i)Contract\s+Date[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?i)Date\s+of\s+Contract[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?i)Execution\s+Date[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?i)Signed\s+Date[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?i)Effective\s+Date[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
+        r"(?i)Agreement\s+Date[:\s]+([A-Za-z]+\s+\d{1,2},?\s+\d{4}|\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})",
     ])
 
     earnest_money = _find_price([
+        # Standard labels
         r"(?:Earnest\s*Money\s*(?:Deposit)?|EMD|Initial\s*(?:Earnest\s*Money\s*)?Deposit|Good\s*Faith\s*Deposit)[:\s]+\$?\s*([\d,]+(?:\.\d{1,2})?)",
         r"earnest\s+money\s+of\s+\$?\s*([\d,]+)",
         r"deposit\s+of\s+\$?\s*([\d,]+)\s+(?:as\s+earnest|with\s+offer)",
-        # "deposit $25,000 as earnest money" or "shall deposit $X as earnest"
         r"deposit\s+\$?\s*([\d,]+)\s+as\s+earnest",
-        # Dotloop Ohio: earnest money appears as standalone decimal amount like "1,800.00"
         r"(?m)^(\d{1,3},\d{3}\.\d{2})\s*$",
-    ], min_val=100)  # EMD can be any amount — don't require $10k minimum
+        # All variations: Earnest Money, Earnest Deposit, Initial Deposit, Good Faith Deposit, Deposit, EMD
+        r"(?i)Earnest\s+Money[:\s]+\$?([\d,]+)",
+        r"(?i)Earnest\s+Deposit[:\s]+\$?([\d,]+)",
+        r"(?i)Initial\s+Deposit[:\s]+\$?([\d,]+)",
+        r"(?i)Good\s+Faith\s+Deposit[:\s]+\$?([\d,]+)",
+        r"(?i)Deposit[:\s]+\$?([\d,]+)",
+        r"(?i)EMD[:\s]+\$?([\d,]+)",
+    ], min_val=100)
 
     down_payment = _find_price([
         r"(?:Down\s*Payment|Cash\s*Down\s*Payment|Buyer'?s?\s*Down)[:\s]+\$?\s*([\d,]+(?:\.\d{1,2})?)",
         r"down\s+payment\s+of\s+\$?\s*([\d,]+)",
+        # All variations
+        r"(?i)Down\s+Payment[:\s]+\$?([\d,]+)",
+        r"(?i)Downpayment[:\s]+\$?([\d,]+)",
     ])
 
     seller_concessions = _find([
         r"(?:Seller\s*(?:Concession|Credit|Contribution)[s]?|Seller\s*(?:to\s*)?(?:Pay|Contribute)[s]?\s*Closing)[:\s]+\$?\s*([\d,]+[^\n]{0,60})",
         r"(?:closing\s+cost\s+(?:credit|contribution)|seller\s+to\s+pay\s+(?:up\s+to\s+)?\$?\s*[\d,]+)[^\n]{0,50}",
         r"Seller\s+(?:agrees\s+to\s+)?(?:pay|contribute|credit)\s+(?:up\s+to\s+)?\$\s*([\d,]+[^\n]{0,40})",
+        # All variations
+        r"(?i)SELLER\s+CONCESSIONS[:\s]+\$?([\d,]+)",
+        r"(?i)SELLER\s+CREDIT[:\s]+\$?([\d,]+)",
+        r"(?i)SELLER\s+CONTRIBUTION[:\s]+\$?([\d,]+)",
+        r"(?i)Seller\s+Paid\s+Costs[:\s]+\$?([\d,]+)",
+        r"(?i)Seller\s+Assistance[:\s]+\$?([\d,]+)",
     ])
 
     # ── Title company ─────────────────────────────────────────────────────────
     title_company = _find_company([
-        # Labeled: "Title Company: First American"
         r"(?:Title\s*Company|Title\s*Co\.?|Escrow\s*Company|Settlement\s*Agent|Title\s*Insurance\s*(?:Company|Co))[:\s]+([^\n_]{3,60})",
         r"(?:closing\s+(?:at|with|through)|escrow\s+(?:at|with|through))\s+([A-Z][^\n_]{3,60})",
-        # "Name Title Company" as a complete entity (e.g. "Pacific Title Company shall handle...")
         r"([A-Z][a-zA-Z\s]{1,40}(?:Title|Escrow|Settlement)\s+(?:Company|Co\.?|Corp\.?|Inc\.?|LLC|Services?|Group))",
-        # Dotloop Ohio: title company name on its own line (contains "Title" or "Escrow")
         r"(?m)^([A-Z][^\n\d]{2,60}(?:Title|Escrow|Settlement)[^\n]{0,30})\s*$",
+        # All variations: Title Company, Escrow Company, Escrow, Title & Escrow, Settlement Agent, Settlement Company
+        r"(?i)TITLE\s+COMPANY[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)Escrow\s+Company[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)Escrow[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)Title\s+&\s+Escrow[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)Settlement\s+Agent[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)Settlement\s+Company[:\s]+([A-Z][^\n]{3,50})",
     ])
     title_contact = _find([
         r"(?:Title\s*(?:Officer|Agent|Contact|Rep)|Escrow\s*Officer)[:\s]+([A-Z][^\n_]{3,40})",
@@ -2711,13 +2777,41 @@ def extract_purchase_contract(text: str) -> dict:
         r"(?:Title|Escrow)\s*(?:Company)?\s*(?:E-?mail|Email)[:\s]+([\w\.\+\-]+@[\w\.\-]+\.\w{2,})",
     ])
 
-    # ── Listing / Seller's agent ──────────────────────────────────────────────
+# ── Listing / Seller's agent ──────────────────────────────────────────────
     listing_agent = _find_name([
-        # "Listing Agent: Name of Company" — capture just the name before "of"
+        # Standard labels
         r"(?:Listing\s*Agent|Seller'?s?\s*Agent|Seller'?s?\s*Broker\s*Agent)\s*(?:Name\s*)?[:\s]+([A-Z][a-zA-Z'\-]+(?:\s+[A-Z][a-zA-Z'\-]+){0,3})\s+of\s+",
         r"(?:Listing\s*Agent|Seller'?s?\s*Agent|Seller'?s?\s*Broker\s*Agent)\s*(?:Name\s*)?[:\s]+([^\n_]{3,50})",
         r"(?:L\.?A\.?\s*Name|Listing\s*Broker\s*Name)[:\s]+([^\n_]{3,50})",
         r"(?:Seller'?s?\s*Licensee)\s*[:\s]+([^\n_]{3,50})",
+        # All variations: Listing Agent, Seller Agent, Seller's Broker, Listing Broker
+        r"(?i)listing\s+agent[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)listing\s+agent\s+name[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)Listing\s+Broker[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)Seller\s+Agent[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)Seller['\s]?\s+Broker[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)Seller['\s]?\s+Representative[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)Listing\s+Representative[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)BUYER'?S\s+AGENT[:\s]+([A-Z][^\n,]{3,50})",
+    ])
+    
+    # ── Selling / Buyer's agent ───────────────────────────────────────────────
+    selling_agent = _find_name([
+        r"(?:Selling\s*Agent|Buyer'?s?\s*Agent|Cooperating\s*Agent|Co-?op\s*Agent)\s*(?:Name\s*)?[:\s]+([A-Z][a-zA-Z'\-]+(?:\s+[A-Z][a-zA-Z'\-]+){0,3})\s+of\s+",
+        r"(?:Selling\s*Agent|Buyer'?s?\s*Agent|Cooperating\s*Agent|Co-?op\s*Agent)\s*(?:Name\s*)?[:\s]+([^\n_]{3,50})",
+        r"(?:S\.?A\.?\s*Name|Selling\s*Broker\s*Name)[:\s]+([^\n_]{3,50})",
+        r"(?:Buyer'?s?\s*Licensee|Buyer'?s?\s*Broker\s*Agent)\s*[:\s]+([^\n_]{3,50})",
+        r"(?:Buyer\s+will\s+be\s+represented\s+by|Buyer'?s?\s+Broker\s+is)\s+([A-Z][^\n_,]{3,50}?)(?:,|\.|of\s|\(|$)",
+        # All variations: Selling Agent, Buyer Agent, Buyer's Broker, Buyer Representative
+        r"(?i)selling\s+agent[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)selling\s+agent\s+name[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)buyer'?s?\s+agent[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)Selling\s+Agent[:\s]+([A-Z][^\n,]{3,50})",
+        r"(?i)Buyer\s+Agent[:\s]+([A-Z][^\n,]{3,50})",
+        r"(?i)Buyer['\s]?\s+Broker[:\s]+([A-Z][^\n,]{3,50})",
+        r"(?i)Buyer['\s]?\s+Representative[:\s]+([A-Z][^\n,]{3,50})",
+        r"(?i)Selling\s+Broker[:\s]+([A-Z][^\n,]{3,50})",
+        r"(?i)SELLING\s+AGENT[:\s]+([A-Z][^\n,]{3,50})",
     ])
     listing_brokerage = _find_company([
         r"(?:Listing\s*(?:Broker|Brokerage|Office|Company)|Seller'?s?\s*(?:Broker|Brokerage))\s*(?:Name\s*)?[:\s]+([^\n_]{3,60})",
@@ -2740,6 +2834,12 @@ def extract_purchase_contract(text: str) -> dict:
         r"(?:Buyer'?s?\s*Licensee|Buyer'?s?\s*Broker\s*Agent)\s*[:\s]+([^\n_]{3,50})",
         # "Buyer will be represented by [Name]"
         r"(?:Buyer\s+will\s+be\s+represented\s+by|Buyer'?s?\s+Broker\s+is)\s+([A-Z][^\n_,]{3,50}?)(?:,|\.|of\s|\(|$)",
+        # More flexible: "Selling Agent:" anywhere
+        r"(?i)selling\s+agent[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)selling\s+agent\s+name[:\s]+([A-Z][^\n]{3,50})",
+        r"(?i)buyer'?s?\s+agent[:\s]+([A-Z][^\n]{3,50})",
+        # Direct from sample: "SELLING AGENT: Sarah Jenkins, (512) 555-2381"
+        r"(?i)SELLING\s+AGENT[:\s]+([A-Z][^\n,]{3,50})",
     ])
     selling_brokerage = _find_company([
         r"(?:Selling\s*(?:Broker|Brokerage|Office|Company)|Buyer'?s?\s*(?:Broker|Brokerage))\s*(?:Name\s*)?[:\s]+([^\n_]{3,60})",
@@ -2772,59 +2872,336 @@ def extract_purchase_contract(text: str) -> dict:
                     and not _s_candidate.startswith('(')):
                 seller_name = _s_candidate
 
-    # ── Dotloop MLS block extraction (Ohio REALTORS form and similar) ─────────
-    # In dotloop PDFs the MLS section at the end has template labels in parens
-    # followed by the actual data as a flat block. Parse it if individual
-    # patterns didn't find agents/brokerages.
-    _mls_m = re.search(
-        r'\(Selling\s+Brokerage\s+License\s+Number\)\s*\n+\s*\d+\s*\n+'
-        r'([^\n]+)\n([^\n]+)\n([^\n]+)\n([^\n]+)\n([^\n]+)',
+    # ── Keyword-value extraction (works for any contract format) ─────────────
+    # Strategy: scan EVERY line for known keywords, then pull the value that
+    # immediately follows on the same line or the next non-blank line.
+    # Also handles dotloop MLS blocks where labels appear in parentheses.
+
+    def _is_template_line(s: str) -> bool:
+        """Return True if a line is clearly form template text, not a filled value."""
+        s = s.strip()
+        if not s:
+            return True
+        # All underscores or dashes (blank form field)
+        if re.match(r'^[\s_\-\.]{3,}$', s):
+            return True
+        # Mostly underscores
+        if len(s) > 4 and s.count('_') / len(s) > 0.25:
+            return True
+        # Ends with a line number (form template line)
+        if re.search(r'\s+\d{1,3}\s*$', s) and len(s) > 20:
+            return True
+        # dotloop metadata
+        if re.match(r'^dotloop', s, re.IGNORECASE):
+            return True
+        if re.match(r'^dtlp\.us/', s):
+            return True
+        # Timestamp like "02/14/22 9:53 AM EST"
+        if re.match(r'^\d{1,2}/\d{1,2}/\d{2}\s+\d{1,2}:\d{2}', s):
+            return True
+        # Pure template placeholder in parens
+        if s.startswith('(') and s.endswith(')'):
+            return True
+        return False
+
+    def _kv_next(keyword_pattern: str) -> str:
+        """
+        Find keyword in text and return the value on the same line after it,
+        or on the very next non-blank non-template line.
+        Strips dotloop metadata, license numbers, and boilerplate.
+        """
+        m = re.search(keyword_pattern, text, re.IGNORECASE)
+        if not m:
+            return ""
+        rest = text[m.end():]
+        same_line = rest.split('\n')[0].strip()
+        same_line = re.sub(r'^[\s:·\-]+', '', same_line).strip()
+
+        if same_line and not _is_template_line(same_line) and len(same_line) >= 2:
+            val = same_line
+        else:
+            # Take first non-template line after keyword
+            val = ""
+            for _ln in rest.split('\n')[1:]:
+                _ln = _ln.strip()
+                if not _ln or _is_template_line(_ln):
+                    continue
+                val = _ln
+                break
+        if not val:
+            return ""
+        # Remove dotloop verification suffix
+        val = re.split(r'dotloop\s+(?:signature|verified)', val, flags=re.IGNORECASE)[0].strip()
+        # Remove trailing license numbers (4+ digits, optional "and NNN")
+        val = re.sub(r'\s+\d{4,}\s*(?:and\s+\d+)?\s*$', '', val).strip()
+        if val.startswith('(') and val.endswith(')'):
+            return ""
+        return val
+
+    def _kv_phone(line: str) -> str:
+        m = re.search(r'(\d{3}[\-\.\s]\d{3}[\-\.\s]\d{4})', line)
+        return m.group(1) if m else ""
+
+    def _kv_email(line: str) -> str:
+        m = re.search(r'([\w\.\+\-]+@[\w\.\-]+\.\w{2,})', line)
+        return m.group(1) if m else ""
+
+    def _kv_name_only(raw: str) -> str:
+        """Strip phone/email/license from a raw value, return just the name part."""
+        if not raw:
+            return ""
+        s = re.split(r'\s+\d{3}[\-\.\s]\d{3}[\-\.\s]\d{4}', raw)[0]  # stop before phone
+        s = re.split(r'\s+[\w\.\+\-]+@\S+', s)[0]                      # stop before email
+        s = re.sub(r'\s+\d{4,}\s*(?:and\s+\d+)?\s*$', '', s).strip()  # strip license
+        return s.strip()
+
+    # ── Keyword → field mapping ───────────────────────────────────────────────
+    # Each keyword pattern finds a label in the contract text; the value
+    # immediately after it (same line or next line) is the real data.
+
+    _LISTING_AGENT_KEYWORDS = [
+        r'\(Listing\s+Agent\s+Name\)',
+        r'Listing\s+Agent\s*(?:Name)?\s*:',
+        r'Seller[\'s]?\s*Agent\s*(?:Name)?\s*:',
+        r'L\.?A\.?\s*Name\s*:',
+    ]
+    _LISTING_BROKERAGE_KEYWORDS = [
+        r'\(Listing\s+Brokerage\s+Name\)',
+        r'Listing\s+Brokerage\s*(?:Name)?\s*:',
+        r'Listing\s+Office\s*(?:Name)?\s*:',
+        r'Seller[\'s]?\s*(?:Broker(?:age)?|Brokerage)\s*(?:Name)?\s*:',
+    ]
+    _SELLING_AGENT_KEYWORDS = [
+        r'\(Selling\s+Agent\s+Name\)',
+        r'Selling\s+Agent\s*(?:Name)?\s*:',
+        r'Buyer[\'s]?\s*Agent\s*(?:Name)?\s*:',
+        r'Cooperating\s+Agent\s*(?:Name)?\s*:',
+        r'S\.?A\.?\s*Name\s*:',
+    ]
+    _SELLING_BROKERAGE_KEYWORDS = [
+        r'\(Selling\s+Brokerage\s+Name\)',
+        r'Selling\s+Brokerage\s*(?:Name)?\s*:',
+        r'Selling\s+Office\s*(?:Name)?\s*:',
+        r'Buyer[\'s]?\s*(?:Broker(?:age)?|Brokerage)\s*(?:Name)?\s*:',
+    ]
+    _TITLE_KEYWORDS = [
+        r'(?:Title\s+Company|Escrow\s+(?:Company|Agent)|Settlement\s+Agent)\s*:',
+        r'(?:closing|escrow)\s+(?:at|with|through)\s+([A-Z])',
+        r'Escrow\s+Agent[^.]{0,5}:\s',
+    ]
+    _BUYER_KEYWORDS = [
+        r'(?m)^BUYER["“”]?\s*\)',   # dotloop: ___ ("BUYER")
+        r'Buyer\s*(?:Name)?\s*:',
+        r'Purchaser\s*(?:Name)?\s*:',
+    ]
+    _SELLER_KEYWORDS = [
+        r'SELLER["“”]?\s*\)',        # dotloop: ___ ("SELLER")
+        r'Seller\s*(?:Name)?\s*:',
+        r'Vendor\s*(?:Name)?\s*:',
+    ]
+    _CLOSING_DATE_KEYWORDS = [
+        r'Closing\s+Date\s*:',
+        r'Close\s+of\s+Escrow\s*(?:Date)?\s*:',
+        r'Settlement\s+Date\s*:',
+        r'title\s+shall\s+transfer\s+(?:from\s+SELLER\s+to\s+BUYER\s+)?on\s+or\s+about',
+    ]
+    _EARNEST_KEYWORDS = [
+        r'Earnest\s+Money\s*(?:Deposit|Amount|EMD)?\s*:',
+        r'EMD\s*:',
+        r'Initial\s+(?:Earnest\s+)?Deposit\s*:',
+    ]
+    _PRICE_KEYWORDS = [
+        r'PRICE\s*:\s*BUYER\s+shall\s+pay\s+the\s+following\s+sum\s+of',
+        r'Purchase\s+Price\s*:',
+        r'Sales?\s+Price\s*:',
+        r'sum\s+of\s+\$',
+    ]
+
+    def _strip_boilerplate(val: str) -> str:
+        """Return empty string if value is obviously form boilerplate."""
+        if not val:
+            return ""
+        vl = val.lower().strip()
+        # Blank form line
+        if re.match(r'^_+$', val):
+            return ""
+        # Template placeholder
+        if vl in ('buyer', 'seller', 'agent', 'broker', 'n/a', 'none', 'tbd', 'set',
+                  'insert initials here', 'earnest money deposit receipt',
+                  'real estate purchase contract'):
+            return ""
+        # Section numbers / form text
+        if re.match(r'^\d+\.\d+\s', val):
+            return ""
+        # Form paragraph text (long sentence starting with paragraph-like words)
+        if re.match(r'^(?:buyer\s+will\s+pay|paragraph|the\s+parties|made\s+by)', vl):
+            return ""
+        return val
+
+    # ── MLS block extraction: Ohio dotloop and similar forms ──────────────────
+    # In these PDFs the MLS section has labels in parens like (Listing Agent Name)
+    # followed by the actual data as a block after the last template line number.
+    # Strategy: find the MLS label sequence, then grab the data lines that follow
+    # the last line number in the section.
+
+    def _strip_license(s: str) -> str:
+        return re.sub(r'\s+\d{4,}\s*(?:and\s+\d+)?\s*$', '', s).strip()
+
+    # Find the MLS section (identified by any of these anchors)
+    _mls_section_m = re.search(
+        r'(?:Multiple\s+Listing\s+(?:Service\s+)?Information'
+        r'|\(Listing\s+Agent\s+Name\)'
+        r'|\(Selling\s+Agent\s+Name\))',
         text, re.IGNORECASE
     )
-    if _mls_m:
-        def _strip_license(s):
-            """Remove trailing license numbers like '2020000791 and 386648' or '9291'."""
-            s = re.sub(r'\s+\d{4,}\s*(?:and\s+\d+)?\s*$', '', s).strip()
-            return s
+    if _mls_section_m:
+        _mls_block = text[_mls_section_m.start():]
+        # Find the last template line number in the MLS block
+        # (template lines end with " NNN" where NNN is 3 digits)
+        _last_tmpl_m = None
+        for _tm in re.finditer(r'\s+(\d{3})\s*\n', _mls_block):
+            _last_tmpl_m = _tm
+        if _last_tmpl_m:
+            _data_block = _mls_block[_last_tmpl_m.end():]
+        else:
+            # No template line found — take everything after the section header
+            _data_block = _mls_block[200:]  # skip header text
 
-        _mls1 = _mls_m.group(1)  # listing agent + phone + email(s)
-        _mls3 = _mls_m.group(3)  # listing brokerage + license
-        _mls4 = _mls_m.group(4)  # selling agent + license
-        _mls5 = _mls_m.group(5)  # selling brokerage + license
+        # Split data block into clean lines
+        _data_lines = []
+        for _dl in _data_block.split('\n'):
+            _dl = _dl.strip()
+            if not _dl or _is_template_line(_dl):
+                continue
+            # Strip dotloop verification suffix
+            _dl = re.split(r'dotloop\s+(?:signature|verified)', _dl, flags=re.IGNORECASE)[0].strip()
+            if _dl:
+                _data_lines.append(_dl)
 
-        if not listing_agent:
-            _agent_part = re.split(r'\s{2,}|\s+\d{3}[\-\.]\d{3}', _mls1)[0].strip()
-            _candidate = _strip_license(_agent_part)
-            if _candidate and not _candidate.startswith('(') and '$' not in _candidate:
-                listing_agent = _candidate
+        # The Ohio REALTORS dotloop MLS data block order is:
+        # Line 0: listing agent name + phone + email(s)
+        # Line 1: listing agent name + license number(s)  [sometimes same as line 0]
+        # Line 2: listing brokerage + license
+        # Line 3: selling agent + license
+        # Line 4: selling brokerage + license
+        if len(_data_lines) >= 1:
+            _mls0 = _data_lines[0]
+            if not listing_agent:
+                _nm = _kv_name_only(_mls0)
+                _nm = _strip_boilerplate(_nm)
+                if _nm and len(_nm) > 2 and '$' not in _nm and not _nm.startswith('('):
+                    listing_agent = _nm
+            if not listing_phone:
+                listing_phone = _kv_phone(_mls0)
+            if not listing_email:
+                listing_email = _kv_email(_mls0)
 
+        # Find where brokerage/selling agent data starts
+        # (skip lines that repeat the listing agent name or are license-only)
+        _mls_remaining = _data_lines[1:] if len(_data_lines) > 1 else []
+        # Skip lines that are just a repeat of listing agent name + license
+        _brokerage_lines = []
+        for _rl in _mls_remaining:
+            _rl_clean = _strip_license(_rl)
+            # If line is only digits/license-like, skip
+            if re.match(r'^[\d\s]+(?:and\s+\d+)?$', _rl_clean):
+                continue
+            # If nearly identical to listing agent (same person repeat), skip
+            if listing_agent and _rl_clean.lower().startswith(listing_agent.lower()[:10]):
+                continue
+            _brokerage_lines.append(_rl)
+
+        if len(_brokerage_lines) >= 1 and not listing_brokerage:
+            _co = _strip_boilerplate(_strip_license(_brokerage_lines[0]))
+            if _co and len(_co) > 3 and '$' not in _co and not _co.startswith('('):
+                listing_brokerage = _co
+
+        if len(_brokerage_lines) >= 2 and not selling_agent:
+            _nm = _kv_name_only(_brokerage_lines[1])
+            _nm = _strip_boilerplate(_nm)
+            if _nm and len(_nm) > 2 and '$' not in _nm and not _nm.startswith('('):
+                selling_agent = _nm
+
+        if len(_brokerage_lines) >= 3 and not selling_brokerage:
+            _co = _strip_boilerplate(_strip_license(_brokerage_lines[2]))
+            if _co and len(_co) > 3 and '$' not in _co and not _co.startswith('('):
+                # Strip any appended dotloop text
+                _co = re.split(r'dotloop\s+signature', _co, flags=re.IGNORECASE)[0].strip()
+                if _co:
+                    selling_brokerage = _co
+
+    # ── Keyword extraction: inline-labeled contracts (non-dotloop / other states) ─
+    # For any fields still missing, scan for explicit "Keyword: Value" patterns.
+    # Only runs if MLS block extraction above didn't already fill the field.
+
+    _KW_FIELDS = [
+        # (keyword_patterns, field_getter)
+        (_LISTING_AGENT_KEYWORDS,    'listing_agent'),
+        (_LISTING_BROKERAGE_KEYWORDS,'listing_brokerage'),
+        (_SELLING_AGENT_KEYWORDS,    'selling_agent'),
+        (_SELLING_BROKERAGE_KEYWORDS,'selling_brokerage'),
+        (_TITLE_KEYWORDS,            'title_company'),
+        (_BUYER_KEYWORDS,            'buyer_name'),
+        (_SELLER_KEYWORDS,           'seller_name'),
+    ]
+
+    _locals = locals()
+
+    for _kws, _fname in _KW_FIELDS:
+        if _locals.get(_fname):
+            continue  # already filled
+        for _kw in _kws:
+            _raw = _kv_next(_kw)
+            if not _raw:
+                continue
+            if _fname in ('listing_agent', 'selling_agent', 'buyer_name', 'seller_name'):
+                _nm = _strip_boilerplate(_kv_name_only(_raw))
+                if _nm and len(_nm) > 2 and '$' not in _nm:
+                    _locals[_fname] = _nm
+                    # Also try to capture phone/email from same raw line
+                    if _fname == 'listing_agent':
+                        if not listing_phone: listing_phone = _kv_phone(_raw)
+                        if not listing_email: listing_email = _kv_email(_raw)
+                    elif _fname == 'selling_agent':
+                        if not selling_phone: selling_phone = _kv_phone(_raw)
+                        if not selling_email: selling_email = _kv_email(_raw)
+                    break
+            else:
+                _co = _strip_boilerplate(_kv_name_only(_raw))
+                if _co and len(_co) > 3 and '$' not in _co:
+                    _locals[_fname] = _co
+                    break
+
+    # Re-read locals that may have been updated
+    listing_agent    = _locals.get('listing_agent', listing_agent)
+    listing_brokerage= _locals.get('listing_brokerage', listing_brokerage)
+    selling_agent    = _locals.get('selling_agent', selling_agent)
+    selling_brokerage= _locals.get('selling_brokerage', selling_brokerage)
+    title_company    = _locals.get('title_company', title_company)
+    buyer_name       = _locals.get('buyer_name', buyer_name)
+    seller_name      = _locals.get('seller_name', seller_name)
+
+    # ── Inline Tel/Email for agents ───────────────────────────────────────────
+    # "Listing Agent: ___ Tel.: NNN-NNN-NNNN Email: xxx@yyy.com" (filled by dotloop)
+    _la_line_m = re.search(
+        r'Listing\s+Agent.*?Tel\.?[:\s]+([\d\-\.\s\(\)]{10,20})\s+Email[:\s]+([\w\.\+\-]+@\S+)',
+        text, re.IGNORECASE | re.DOTALL
+    )
+    if _la_line_m:
         if not listing_phone:
-            _ph = re.search(r'(\d{3}[\-\.\s]\d{3}[\-\.\s]\d{4})', _mls1)
-            if _ph:
-                listing_phone = _ph.group(1)
-
+            listing_phone = _la_line_m.group(1).strip()
         if not listing_email:
-            _em = re.search(r'([\w\.\+\-]+@[\w\.\-]+\.\w{2,})', _mls1)
-            if _em:
-                listing_email = _em.group(1)
+            listing_email = _la_line_m.group(2).strip()
 
-        if not listing_brokerage:
-            _candidate = _strip_license(_mls3)
-            if _candidate and not _candidate.startswith('(') and '$' not in _candidate and len(_candidate) > 3:
-                listing_brokerage = _candidate
-
-        if not selling_agent:
-            _candidate = _strip_license(_mls4)
-            if _candidate and not _candidate.startswith('(') and '$' not in _candidate:
-                selling_agent = _candidate
-
-        if not selling_brokerage:
-            _candidate = _strip_license(_mls5)
-            if _candidate and not _candidate.startswith('(') and '$' not in _candidate and len(_candidate) > 3:
-                # Strip dotloop signature verification if attached
-                _candidate = re.split(r'dotloop\s+signature', _candidate, flags=re.IGNORECASE)[0].strip()
-                if _candidate:
-                    selling_brokerage = _candidate
+    _sa_line_m = re.search(
+        r'Selling\s+Agent.*?Tel\.?[:\s]+([\d\-\.\s\(\)]{10,20})\s+Email[:\s]+([\w\.\+\-]+@\S+)',
+        text, re.IGNORECASE | re.DOTALL
+    )
+    if _sa_line_m:
+        if not selling_phone:
+            selling_phone = _sa_line_m.group(1).strip()
+        if not selling_email:
+            selling_email = _sa_line_m.group(2).strip()
 
     # ── Key Dates ─────────────────────────────────────────────────────────────
     date_signed = _find([
@@ -3005,6 +3382,9 @@ def extract_purchase_contract(text: str) -> dict:
         if any(kw in _bl_lower for kw in _COMPANY_WORDS):
             # Strip trailing license numbers
             _co = re.sub(r'\s+\d{4,}\s*(?:and\s+\d+)?\s*$', '', _bl_clean).strip()
+            # Reject section headers like "Selling Brokerage:" or "Listing Brokerage:"
+            if re.match(r'^(?:selling|listing|buyer|seller)\s*(?:brokerage|office|agent|name)?:', _bl_lower):
+                continue
             if _co and len(_co) > 3:
                 _blob_companies.append(_co)
             continue
@@ -3067,11 +3447,9 @@ def extract_purchase_contract(text: str) -> dict:
     if not title_company and _blob_companies:
         for _co in _blob_companies:
             _cl = _co.lower()
-            if 'title' in _cl or 'escrow' in _cl or 'settlement' in _cl or 'closing' in _cl:
+            if 'title' in _cl or 'escrow' in _cl or 'settlement' in _cl:
                 title_company = _co
                 break
-        if not title_company:
-            title_company = _blob_companies[0]
 
     # Agent / brokerage from blob names + companies (if MLS block didn't find them)
     # Agents are typically the 3rd+ names in the blob (after buyer + seller)
@@ -3214,12 +3592,19 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
         ]),
         # Purchase Contract
         ("Purchase Contract", [
-            (r'(?:purchase\s*(?:and\s*sale\s*)?(?:agreement|contract))', 40),
-            (r'(?:buyer|purchaser)\s*(?:and|&)\s*(?:seller|vendor)', 25),
-            (r'earnest\s*money', 25),
-            (r'(?:real\s*estate|property)\s*(?:contract|agreement)', 20),
-            (r'(?:closing\s*date|settlement\s*date).*(?:escrow|title)', 15),
-            (r'inspection\s*(?:period|contingency)', 12),
+            (r'(?:purchase\s*(?:and\s*sale\s*)?(?:agreement|contract))', 60),
+            (r'(?:buyer|purchaser)\s*(?:and|&)\s*(?:seller|vendor)', 50),
+            (r'(?:seller|vendor)\s*(?:and|&)\s*(?:buyer|purchaser)', 50),
+            (r'earnest\s*money', 50),
+            (r'(?:real\s*estate|property)\s*(?:contract|agreement|purchase)', 40),
+            (r'(?:closing\s*date|settlement\s*date).*(?:escrow|title)', 35),
+            (r'inspection\s*(?:period|contingency)', 40),
+            (r'financing\s*(?:period|contingency)', 40),
+            (r'seller\s*concession', 40),
+            (r'purchase\s*price', 45),
+            (r'mls\s*number', 30),
+            (r'(?:title\s*company|escrow\s*company)', 35),
+            (r'(?:listing\s*agent|selling\s*agent)', 40),
         ]),
         # Approval / Commitment Letter (merged — includes AUS findings)
         ("Approval Letter", [
@@ -3374,7 +3759,7 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
             (r'(?:government[\s-]issued\s*id)', 50),
             (r'(?:expir(?:es?|ation\s*date))', 20),
             (r'(?:date\s*of\s*birth|dob\b)', 15),
-            (r'(?:license\s*(?:number|no\.?|class))', 20),
+            (r'(?:license\s*(?:number|no\.?|class))', 15),
         ]),
         # Hazard / Homeowner's Insurance — boosted standalone
         ("Hazard Insurance", [
@@ -3478,9 +3863,14 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
         ],
         "Purchase Contract": [
             r'purchase\s*(?:and\s*sale\s*)?(?:agreement|contract)',
-            r'earnest\s*money.{0,100}(?:\$|dollar)',
-            r'closing\s*date', r'(?:inspection|financing)\s*contingency',
-            r'(?:buyer|purchaser).{0,200}(?:seller|vendor)',
+            r'earnest\s*money',
+            r'closing\s*date',
+            r'inspection\s*contingency',
+            r'financing\s*contingency',
+            r'(?:buyer|purchaser)',
+            r'(?:seller|vendor)',
+            r'real\s*estate',
+            r'property\s*address',
         ],
         "Closing Disclosure (CD)": [
             r'closing\s*disclosure', r'projected\s*payments',
@@ -3499,6 +3889,13 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
             r'\bform\s*1003\b', r'section\s*[1-9][a-z]?\.\s*',
             r'demographic\s*information\s*(?:addendum|section)',
             r'(?:declarations\s*section|acknowledgments\s*and\s*agreements)',
+        ],
+        "Government ID": [
+            r'driver.?s?\s*licen[sc]e',
+            r'state\s*id\s*number',
+            r'date\s*of\s*birth',
+            r'expir(?:es?|ation)\s*date',
+            r'sex\s*:|eye\s*color\s*:|hair\s*color\s*:',
         ],
     }
 

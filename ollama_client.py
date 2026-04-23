@@ -15,6 +15,7 @@ Every call logs which processing mode was used (script / ollama / ollama+script)
 
 import json
 import os
+import re
 import urllib.request
 import urllib.error
 from datetime import datetime
@@ -388,6 +389,49 @@ _PC_JSON_TEMPLATE = """{
 }"""
 
 
+def _clean_extracted_contract_data(data: dict) -> dict:
+    """
+    Post-process extracted data to remove boilerplate and template text that made it through.
+    """
+    boilerplate_patterns = [
+        r"^(REAL ESTATE )?PURCHASE.*CONTRACT",
+        r"^paragraph\s+\d",
+        r"^\d+\.\d+(\s|$)",  # section numbers like "3.1"
+        r"^(as|will|shall|does)\s+(be\s+)?(specified|described|determined|represented)",
+        r"insert.*herein?",
+        r"^\[.*\]$",  # bracketed placeholders
+        r"^__+$",  # blank lines
+        r"^($|\s+)$",  # empty/whitespace only
+        r"(?i)^set$",  # "set" or "Set" placeholder
+        r"earnest.*money.*deposit",  # form label only
+        r"REAL ESTATE PURCHASE CONTRACT",  # form title
+        r"^endorsement as of",  # closing protection letter text
+        r"^made by the lender",  # more boilerplate
+        r"seller\s*signature",  # just a label
+        r"closing\s+protection\s+letter",  # form header
+    ]
+
+    def is_boilerplate(text: str) -> bool:
+        if not text or not text.strip():
+            return True
+        t = text.strip().lower()
+        return any(re.match(pat, t, re.IGNORECASE) for pat in boilerplate_patterns)
+
+    def clean_field(val):
+        if isinstance(val, str):
+            if is_boilerplate(val):
+                return ""
+            return val.strip()
+        return val
+
+    def clean_dict(d: dict) -> dict:
+        if not isinstance(d, dict):
+            return d
+        return {k: clean_dict(v) if isinstance(v, dict) else clean_field(v) for k, v in d.items()}
+
+    return clean_dict(data)
+
+
 def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
     """
     Use Ollama to extract purchase contract fields from any state form.
@@ -401,20 +445,35 @@ def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
     if not ok:
         return {}, _log("SCRIPT", "pc_extract", f"offline — {msg}")
 
-    prompt = f"""Extract fields from this purchase contract. Return ONLY a JSON object matching this exact structure (leave fields as empty string if not found):
+    prompt = f"""Extract ONLY genuine contract values from this purchase contract. Return ONLY a JSON object matching this exact structure:
 
 {_PC_JSON_TEMPLATE}
 
-Rules:
-- purchase_price and earnest_money: digits and commas only (e.g. "485,000")
-- closing_date: YYYY-MM-DD if possible, otherwise as written
-- addendums: list of short strings
-- Do NOT include template boilerplate or blank underscore lines
+CRITICAL RULES:
+- Return empty string "" if a field is truly not present
+- NEVER extract form instructions, labels, or boilerplate
+- For amounts: digits and commas only (e.g. "485000" or "100,000"), NOT "$__________"
+- For closing_date: actual dates only, NOT "to be determined" or "set"
+- For names: 2-4 words max, all proper case. NOT form headers like "REAL ESTATE PURCHASE CONTRACT"
+- For agents/title: Extract NAME and PHONE/EMAIL as separate fields. NEVER combine them.
+  If you see "Agent Name · 555-1234 · email@example.com", extract:
+    * name: "Agent Name" (only the name)
+    * phone: "555-1234" (only the digits)
+    * email: "email@example.com" (only the email)
+
+BOILERPLATE TO IGNORE:
+- Section numbers (3.1, 3.2, Paragraph 3.1)
+- Form headers (REAL ESTATE PURCHASE CONTRACT, Earnest Money Deposit Receipt)
+- Signature labels (Seller Signature, Buyer · insert initials here)
+- Endorsement text (endorsement as of 8:00)
+- Legal boilerplate (made by the lender and title insurance agent...)
+- Lines with "____" or "___________" (placeholders)
+- Form instructions like "as described below", "will be represented by"
 
 CONTRACT TEXT:
 {raw_text[:5000]}
 
-Return only the JSON object. No explanation."""
+Return only the JSON object. No explanation, no markdown."""
 
     try:
         response = _generate(prompt, model=cfg.get("model"))
@@ -425,6 +484,10 @@ Return only the JSON object. No explanation."""
                 response = response[4:]
         import json as _json
         data = _json.loads(response.strip())
+
+        # Post-process: filter out any boilerplate that made it through
+        data = _clean_extracted_contract_data(data)
+
         log = _log("OLLAMA", "pc_extract", cfg.get("model", ""))
         return data, log
     except Exception as e:

@@ -13,6 +13,7 @@ Logs every call mode to cloud_log.txt alongside the Ollama log.
 
 import json
 import os
+import re
 import urllib.request
 import urllib.error
 from datetime import datetime
@@ -408,18 +409,79 @@ _PC_JSON_TEMPLATE = """{
 
 def _smart_sample(raw_text: str, max_chars: int = 12000) -> str:
     """
-    For purchase contracts, important data is scattered across the document:
-      - Buyer/seller/price near the top (pages 1-3)
-      - Title company, closing date in the middle (pages 4-5)
-      - Agent names, MLS info, signatures at the end (last 2 pages)
-    Send the first third + last third so the AI sees everything.
+    For purchase contracts, important data is scattered:
+      - Buyer/seller/price/property at top (pages 1-3)
+      - Title company, closing date in middle-late (pages 4-7)
+      - Agent names, MLS, signatures at end (last 3 pages)
+    For long documents, take top 30% + middle section with "Title" + bottom 40%.
+    For short documents, return as-is.
     """
     if len(raw_text) <= max_chars:
         return raw_text
-    half = max_chars // 2
-    top = raw_text[:half]
-    bottom = raw_text[-half:]
-    return top + "\n\n[...middle of document omitted...]\n\n" + bottom
+
+    # Strategy: top 30% + middle section with title company + bottom 40%
+    third = len(raw_text) // 3
+    top = raw_text[:third]
+
+    # Find title company section in middle
+    middle = raw_text[third : 2 * third]
+    title_match = re.search(
+        r"(title\s+(?:company|agent)|escrow|settlement|closing\s+agent).*?(?=\n\n|\Z)",
+        middle,
+        re.IGNORECASE | re.DOTALL
+    )
+    title_section = title_match.group(0) if title_match else ""
+
+    bottom = raw_text[-int(len(raw_text) * 0.4) :]
+
+    sampled = top + "\n\n[...document excerpt...]\n\n" + title_section + "\n\n[...document excerpt...]\n\n" + bottom
+    if len(sampled) > max_chars:
+        # Still too long, trim from middle
+        sampled = sampled[:max_chars]
+    return sampled
+
+
+def _clean_extracted_contract_data(data: dict) -> dict:
+    """
+    Post-process extracted data to remove boilerplate and template text that made it through.
+    """
+    boilerplate_patterns = [
+        r"^(REAL ESTATE )?PURCHASE.*CONTRACT",
+        r"^paragraph\s+\d",
+        r"^\d+\.\d+(\s|$)",  # section numbers like "3.1"
+        r"^(as|will|shall|does)\s+(be\s+)?(specified|described|determined|represented)",
+        r"insert.*herein?",
+        r"^\[.*\]$",  # bracketed placeholders
+        r"^__+$",  # blank lines
+        r"^($|\s+)$",  # empty/whitespace only
+        r"(?i)^set$",  # "set" or "Set" placeholder
+        r"earnest.*money.*deposit",  # form label only
+        r"REAL ESTATE PURCHASE CONTRACT",  # form title
+        r"^endorsement as of",  # closing protection letter text
+        r"^made by the lender",  # more boilerplate
+        r"seller\s*signature",  # just a label
+        r"closing\s+protection\s+letter",  # form header
+    ]
+
+    def is_boilerplate(text: str) -> bool:
+        if not text or not text.strip():
+            return True
+        t = text.strip().lower()
+        return any(re.match(pat, t, re.IGNORECASE) for pat in boilerplate_patterns)
+
+    def clean_field(val):
+        if isinstance(val, str):
+            if is_boilerplate(val):
+                return ""
+            return val.strip()
+        return val
+
+    def clean_dict(d: dict) -> dict:
+        if not isinstance(d, dict):
+            return d
+        return {k: clean_dict(v) if isinstance(v, dict) else clean_field(v) for k, v in d.items()}
+
+    return clean_dict(data)
 
 
 def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
@@ -434,41 +496,72 @@ def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
     sampled = _smart_sample(raw_text)
 
     system = (
-        "You are a senior mortgage loan processor. You read residential purchase "
-        "contracts every day — Ohio REALTORS, CA CAR, TX TREC, MN STAR, WI WB, "
-        "FL FAR, and custom forms. You know that in digitally-signed PDFs (dotloop, "
-        "DocuSign, Skyslope), the filled-in values often appear as a block at the "
-        "bottom of each page, separate from the form template text. You always look "
-        "at the ENTIRE document including the signature pages and MLS section to find "
-        "agent names and brokerage info. Return only valid JSON — no markdown fences, "
-        "no explanation, no extra text."
+        "You are a senior mortgage loan processor who must extract ONLY genuine contract "
+        "values, never template boilerplate. You read residential purchase contracts every "
+        "day — Ohio REALTORS, CA CAR, TX TREC, MN STAR, WI WB, FL FAR, and custom forms. "
+        "You know that digitally-signed PDFs (dotloop, DocuSign, Skyslope) have filled values "
+        "often appearing as a block at the bottom of pages, separate from template text. "
+        "You carefully distinguish between form instructions/labels and actual filled-in values. "
+        "Return only valid JSON — no markdown fences, no explanation, no extra text."
     )
-    prompt = f"""Read this purchase contract carefully and extract every field you can find.
-Return ONLY a JSON object matching this exact structure. Leave fields as empty string "" if truly not present.
+    prompt = f"""Extract purchase contract data. CRITICAL: Return ONLY genuine contract values.
+Do NOT extract form instructions, template text, or boilerplate. Return empty string "" if not found.
 
 {_PC_JSON_TEMPLATE}
 
 FIELD DEFINITIONS:
-- buyer.name: The person(s) purchasing the property. Look for "BUYER", "Purchaser", or the name on signature lines.
-- seller.name: The person(s) selling the property. Look for "SELLER", "LANDLORD", or the counter-signature. Often appears right after the buyer name or on the acceptance/signature page.
-- property.address: Full street address including city, state, zip if available.
-- transaction.purchase_price: The total purchase price. Digits and commas only (e.g. "180,000"). Look for "PRICE:", "Purchase Price:", "sum of $", or a standalone large dollar amount.
-- transaction.closing_date: When the deal closes. Use the format as written (e.g. "03/25/2022" or "March 25, 2022"). Look for "on or before", "title shall transfer", "Closing Date:", or date fields in the closing section.
-- transaction.earnest_money: Earnest money deposit amount. Digits and commas only.
-- transaction.down_payment: Down payment amount or description (e.g. "5%" or "25,000").
-- transaction.seller_concessions: Any seller credits, concessions, or closing cost contributions.
-- listing_agent: The SELLER's agent. Check the MLS section at the end of the document, signature blocks, or "Listing Agent:" labels.
-- selling_agent: The BUYER's agent (also called "Selling Agent" or "Cooperating Agent"). Check MLS section.
-- title.company: Title company, escrow company, or settlement agent handling the closing.
-- contingencies: Inspection period, appraisal contingency, financing contingency — include timeframes if stated.
-- addendums: List of addendum/rider names attached to the contract.
+- buyer.name: The actual purchaser name (not "Buyer", "Purchaser name here", or form instructions).
+- seller.name: The actual seller name (not "Seller", "Seller name here", or blank placeholder text).
+- property.address: Complete street address, city, state, zip. Not form instructions like "as described below".
+- transaction.purchase_price: The actual dollar amount (digits only, e.g. "180000"). Not "$__________" or instructions.
+- transaction.closing_date: Actual closing date. Not "on or before _____" or "to be determined".
+- transaction.earnest_money: Actual EMD amount in digits only.
+- transaction.down_payment: Actual down payment percentage or amount.
+- transaction.seller_concessions: Only real concession amounts, not "seller will credit" template language.
+- listing_agent: Seller's agent actual name & brokerage. Not "Listing Agent: ___________" placeholder.
+- selling_agent: Buyer's agent actual name & brokerage (may be called "Selling Agent" or "Cooperating Agent").
+- title.company: Actual title/escrow company name. Not blank placeholder or form header.
+- contingencies: Only REAL contingency details with timeframes (e.g. "7 days for inspection"). Skip template language.
+- addendums: Only actual addendum titles (e.g. "Inspection Addendum", "HOA Addendum"), not just "Addendums:" header.
 
-IMPORTANT:
-- IGNORE blank underscore lines (________), template placeholder text ("as specified below", "will be represented by"), and page numbers.
-- In dotloop/DocuSign PDFs, look for filled values at the BOTTOM of pages after the form template text.
-- The MLS section near the end often has: (Listing Agent Name) then actual name, (Listing Brokerage Name) then actual brokerage, etc.
-- Buyer and seller names often appear together on the Agency Disclosure page (address → buyer → seller on consecutive lines).
-- Dotloop signatures show as "Name\\ndotloop verified\\ndate" — these ARE the real party names.
+RED FLAGS TO IGNORE (BOILERPLATE):
+- "________" (blank lines) or "___________" (placeholders)
+- "as described below", "as specified herein", "to be determined", "will be represented"
+- "insert [field]", "[borrower name]", "[property address]" (bracketed placeholders)
+- Form header text like "REAL ESTATE PURCHASE CONTRACT", section numbers like "3.1", "3.2"
+- "Paragraph 3.1", "Paragraph 3.2" — these are form sections, NOT field values
+- Repeated form instructions on multiple pages
+- Page footer text, signature labels, notary stamps, headers
+- Form disclaimer text or legal boilerplate from Closing Protection Letter
+- Contract template language from the standard form (focus on FILLED VALUES only)
+- MLS section headers without actual agent names
+- CRITICAL: "Listing Agent: REAL ESTATE PURCHASE CONTRACT" is junk — the label got concatenated with the form title
+- Lines that are pure labels ending with ":" plus form text are not real values
+- "Earnest Money Deposit Receipt" is a header, not a real name/value
+- Text like "made by the lender and title insurance agent during..." is legal boilerplate from the contract
+- "endorsement as of 8:00" is a closing protection letter clause, not a title company name
+- "Seller Signature" is just a label, not the actual name
+
+EXTRACTION STRATEGY:
+1. Look for ACTUAL names (capitalized real names, not form headers)
+2. For amounts: only digits and commas, formatted like "$100,000" or "100000"
+3. For dates: actual dates in MM/DD/YYYY, Month DD, YYYY, or similar format
+4. For agent/title: Separate the NAME from the PHONE/EMAIL/BROKERAGE. Never combine them.
+   - If you see "Agent Name · 555-1234 · email@example.com", extract:
+     * name: "Agent Name" (ONLY the name part)
+     * phone: "555-1234" (ONLY the digits)
+     * email: "email@example.com" (ONLY the email)
+   - Do NOT extract the entire line as the name
+5. Agent names typically appear in signature blocks, MLS section at document end, and closing section
+6. In dotloop/DocuSign, the signature page shows "Agent Name", "dotloop verified", date — extract "Agent Name"
+7. For title company: Extract ONLY the company name (e.g., "First American", "Fidelity"), never endorsement clauses
+
+EXTRACT CONTACT FIELDS CAREFULLY:
+- When you see a line like "Listing Agent: NAME · PHONE · EMAIL", extract each field separately
+- Never put phone numbers in the name field
+- Never put form text (like section numbers) in name/company fields
+- Names should be 2-4 words max, all proper case, representing actual people or companies
+- If a "name" field contains punctuation like "·" or "—", you likely grabbed multiple fields together — STOP
 
 CONTRACT TEXT:
 {sampled}"""
@@ -483,6 +576,10 @@ CONTRACT TEXT:
                 response = response[4:]
         import json as _json
         data = _json.loads(response.strip())
+
+        # Post-process: filter out obvious boilerplate in extracted values
+        data = _clean_extracted_contract_data(data)
+
         log = _log("CLOUD", "pc_extract", f"{provider} · {cfg.get('model')}")
         return data, log
     except Exception as e:
