@@ -858,6 +858,34 @@ def show_sidebar():
         st.markdown("---")
         st.markdown(f'<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">SETTINGS</div>', unsafe_allow_html=True)
 
+        # Quick Cloud AI status + toggle (no full-page navigation needed)
+        try:
+            import cloud_client as _sb_cc
+            _sb_cfg = _sb_cc.get_config()
+            _sb_has_key = bool(_sb_cfg.get("api_key"))
+            _sb_on = bool(_sb_cfg.get("enabled")) and _sb_has_key
+            if _sb_has_key:
+                _sb_label = f"🤖 Cloud AI: {'ON' if _sb_on else 'OFF'} · {_sb_cfg.get('provider','claude').title()}"
+                _sb_color = "#39FF14" if _sb_on else "#9ca3af"
+                st.markdown(
+                    f'<div style="font-size:11px;color:{_sb_color};margin:4px 0 6px 4px;font-weight:600;">'
+                    f'{_sb_label}</div>',
+                    unsafe_allow_html=True,
+                )
+                _sb_btn_label = "Turn Cloud AI OFF" if _sb_on else "Turn Cloud AI ON"
+                if st.button(_sb_btn_label, key="sb_cc_toggle", use_container_width=True, type="secondary"):
+                    _sb_cc.save_config(not _sb_on, _sb_cfg.get("provider","claude"),
+                                       _sb_cfg.get("api_key",""), _sb_cfg.get("model",""))
+                    st.rerun()
+            else:
+                st.markdown(
+                    '<div style="font-size:11px;color:#9ca3af;margin:4px 0 6px 4px;">'
+                    '🤖 Cloud AI: no key set</div>',
+                    unsafe_allow_html=True,
+                )
+        except Exception:
+            pass
+
         if st.button("🤖 AI Settings (Claude / OpenAI / Ollama)", key="nav_ai_settings", use_container_width=True, type="secondary"):
             st.session_state.page = "ai_settings"
             _save_session()
@@ -6866,6 +6894,25 @@ def show_loan_detail():
             _sr = st.session_state[_scan_key]
             _sr_dtype = _sr.get("doc_type", "")
             _merged_something = False
+
+            # ── AI usage indicator (cloud vs regex-only) ─────────────────
+            _ai_log = _sr.get("ai_log", "")
+            if _ai_log and "CLOUD" in _ai_log.upper():
+                st.markdown(
+                    f'<div style="display:inline-block;padding:3px 10px;margin:4px 0 8px 0;'
+                    f'background:rgba(57,255,20,0.12);border:1px solid rgba(57,255,20,0.4);'
+                    f'border-radius:12px;font-size:11px;color:#39FF14;font-weight:600;">'
+                    f'🤖 Cloud AI augmented · {_ai_log}</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    f'<div style="display:inline-block;padding:3px 10px;margin:4px 0 8px 0;'
+                    f'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);'
+                    f'border-radius:12px;font-size:11px;color:#9ca3af;">'
+                    f'📋 Regex extraction only (Cloud AI off)</div>',
+                    unsafe_allow_html=True,
+                )
 
             # ── Purchase Contract → merge contacts + show extracted data ──
             if _sr_dtype == "Purchase Contract" and _sr.get("extracted_data"):
