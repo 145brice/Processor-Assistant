@@ -4487,6 +4487,42 @@ def extract_loan_estimate(text: str) -> dict:
 
 
 # ---------------------------------------------------------------------------
+# Cloud AI augmentation merge helper
+# ---------------------------------------------------------------------------
+
+def _merge_pc_data(regex_data: dict, ai_data: dict) -> dict:
+    """
+    Merge cloud AI extraction into regex extraction.
+    AI fills empty fields only — never overwrites a regex hit.
+    Walks nested dicts (buyer, seller, listing_agent, selling_agent, title, transaction).
+    """
+    if not isinstance(regex_data, dict):
+        return ai_data if isinstance(ai_data, dict) else {}
+    if not isinstance(ai_data, dict):
+        return regex_data
+
+    merged = dict(regex_data)
+    for key, ai_val in ai_data.items():
+        regex_val = merged.get(key)
+
+        # Nested dict: recurse
+        if isinstance(ai_val, dict) and isinstance(regex_val, dict):
+            merged[key] = _merge_pc_data(regex_val, ai_val)
+        # Nested dict but regex had nothing
+        elif isinstance(ai_val, dict) and not regex_val:
+            merged[key] = ai_val
+        # Lists: prefer the longer / non-empty one
+        elif isinstance(ai_val, list):
+            if not regex_val:
+                merged[key] = ai_val
+        # Scalars: only fill if regex was empty
+        else:
+            if regex_val in (None, "", 0) and ai_val not in (None, "", 0):
+                merged[key] = ai_val
+    return merged
+
+
+# ---------------------------------------------------------------------------
 # Main Processing Function
 # ---------------------------------------------------------------------------
 
@@ -4561,8 +4597,23 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None) -> dict
         result["extracted_data"] = extract_government_id(text)
     elif doc_type == "Purchase Contract":
         result["conditions"] = ""
-        result["extracted_data"] = extract_purchase_contract(text)
+        regex_data = extract_purchase_contract(text)
+        result["extracted_data"] = regex_data
         result["raw_text"] = text[:12000]  # retained for optional AI re-extraction
+
+        # ── Cloud AI augmentation (only fills fields regex missed) ───────
+        # Runs only if user has enabled cloud + provided their own API key.
+        # Their key, their data, their cost — we never see any of it.
+        try:
+            import cloud_client as _cc
+            if _cc.is_enabled():
+                ai_data, ai_log = _cc.extract_purchase_contract_ai(text)
+                if ai_data:
+                    result["extracted_data"] = _merge_pc_data(regex_data, ai_data)
+                    result["ai_log"] = ai_log
+        except Exception as _e:
+            # Never let cloud failure block local extraction
+            result["ai_log"] = f"Cloud augmentation skipped: {str(_e)[:80]}"
     elif doc_type in ("Loan Estimate (LE)", "Loan Estimate"):
         result["conditions"] = ""
         result["extracted_data"] = extract_loan_estimate(text)
