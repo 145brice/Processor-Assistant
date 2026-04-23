@@ -2430,6 +2430,18 @@ def extract_purchase_contract(text: str) -> dict:
         for phrase in _JUNK_PHRASES:
             if val_lower.startswith(phrase) or val_lower == phrase:
                 return ""
+        # All-caps multi-word form title (e.g. "REAL ESTATE PURCHASE CONTRACT")
+        if val.isupper() and len(val) > 8 and ' ' in val and not re.search(r'\d', val):
+            return ""
+        # Contains signature/initials — signature line, not a name
+        if re.search(r'\b(?:signature|initials?)\b', val_lower):
+            return ""
+        return val
+
+    def _truncate_at_separator(val: str) -> str:
+        """Truncate value at middle-dot (·) or pipe (|) separators used by some PDFs."""
+        # Middle dot (U+00B7) and bullet (•) are used as field separators in some PDFs
+        val = re.split(r'\s*[·•|]\s*', val)[0].strip()
         return val
 
     def _find(patterns, default=""):
@@ -2439,6 +2451,7 @@ def extract_purchase_contract(text: str) -> dict:
                 m = re.search(p, text, re.IGNORECASE | re.MULTILINE)
                 if m:
                     val = (m.group(1) if m.lastindex else m.group(0)).strip()
+                    val = _truncate_at_separator(val)
                     val = re.sub(r'\s+', ' ', val)
                     val = _clean(val)
                     if val:
@@ -2468,6 +2481,7 @@ def extract_purchase_contract(text: str) -> dict:
                 m = re.search(p, text, re.IGNORECASE | re.MULTILINE)
                 if m:
                     val = (m.group(1) if m.lastindex else m.group(0)).strip()
+                    val = _truncate_at_separator(val)
                     val = re.sub(r'\s+', ' ', val)
                     val = _clean(val)
                     if not val:
@@ -2553,6 +2567,7 @@ def extract_purchase_contract(text: str) -> dict:
                 m = re.search(p, text, re.IGNORECASE | re.MULTILINE)
                 if m:
                     val = (m.group(1) if m.lastindex else m.group(0)).strip()
+                    val = _truncate_at_separator(val)
                     val = re.sub(r'\s+', ' ', val)
                     val = _clean(val)
                     if not val:
@@ -2877,6 +2892,28 @@ def extract_purchase_contract(text: str) -> dict:
     # immediately follows on the same line or the next non-blank line.
     # Also handles dotloop MLS blocks where labels appear in parentheses.
 
+    # Known form title/header strings that appear in the data block but are not values
+    _FORM_TITLES = {
+        'real estate purchase contract',
+        'purchase agreement',
+        'residential purchase contract',
+        'multiple listing service information',
+        'earnest money deposit receipt',
+        'insert initials here',
+        'seller signature',
+        'buyer signature',
+        'seller initials',
+        'buyer initials',
+        'ohio realtors',
+        'realtors',
+        'mls information',
+        'agency disclosure',
+        'addendum',
+        'counter offer',
+        'lead-based paint',
+        'home inspection',
+    }
+
     def _is_template_line(s: str) -> bool:
         """Return True if a line is clearly form template text, not a filled value."""
         s = s.strip()
@@ -2901,6 +2938,12 @@ def extract_purchase_contract(text: str) -> dict:
             return True
         # Pure template placeholder in parens
         if s.startswith('(') and s.endswith(')'):
+            return True
+        # Known form title strings
+        if s.lower() in _FORM_TITLES:
+            return True
+        # All-caps short heading with no digits (form section header like "MLS INFORMATION")
+        if s.isupper() and len(s) > 5 and not re.search(r'\d', s) and ' ' in s:
             return True
         return False
 
@@ -2930,6 +2973,8 @@ def extract_purchase_contract(text: str) -> dict:
                 break
         if not val:
             return ""
+        # Truncate at middle-dot / bullet separators
+        val = _truncate_at_separator(val)
         # Remove dotloop verification suffix
         val = re.split(r'dotloop\s+(?:signature|verified)', val, flags=re.IGNORECASE)[0].strip()
         # Remove trailing license numbers (4+ digits, optional "and NNN")
@@ -3025,16 +3070,25 @@ def extract_purchase_contract(text: str) -> dict:
         # Blank form line
         if re.match(r'^_+$', val):
             return ""
-        # Template placeholder
-        if vl in ('buyer', 'seller', 'agent', 'broker', 'n/a', 'none', 'tbd', 'set',
-                  'insert initials here', 'earnest money deposit receipt',
-                  'real estate purchase contract'):
+        # Known form titles / role labels
+        if vl in _FORM_TITLES or vl in ('buyer', 'seller', 'agent', 'broker', 'n/a', 'none',
+                                          'tbd', 'set', 'date', 'name', 'signature'):
             return ""
-        # Section numbers / form text
+        # Any value containing "signature" or "initials" is a signature line, not a name
+        if re.search(r'\b(?:signature|initials?)\b', vl):
+            return ""
+        # Section numbers / form text like "3.1 Buyer will pay..."
         if re.match(r'^\d+\.\d+\s', val):
             return ""
         # Form paragraph text (long sentence starting with paragraph-like words)
-        if re.match(r'^(?:buyer\s+will\s+pay|paragraph|the\s+parties|made\s+by)', vl):
+        if re.match(r'^(?:buyer\s+will\s+pay|paragraph|the\s+parties|made\s+by|'
+                    r'endorsement\s+as|subject\s+to|this\s+contract|pursuant\s+to)', vl):
+            return ""
+        # All-caps multi-word form header (e.g. "REAL ESTATE PURCHASE CONTRACT")
+        if val.isupper() and len(val) > 8 and ' ' in val and not re.search(r'\d', val):
+            return ""
+        # Long run-on sentence fragments (clearly body text, not a name/company)
+        if len(val) > 80 and re.search(r'\b(?:shall|will|the|and|to|of|in|for|is|are|was|were)\b', vl):
             return ""
         return val
 
