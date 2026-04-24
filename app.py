@@ -6096,11 +6096,11 @@ def show_ollama_page():
         st.caption("💳 Paid — requires billing enabled at platform.openai.com.")
 
     _default_models = {
-        "gemini": ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-pro"],
+        "gemini": ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"],
         "claude": ["claude-haiku-4-5-20251001", "claude-sonnet-4-6", "claude-opus-4-7"],
         "openai": ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
     }
-    _model_options = _default_models.get(cc_provider, ["gemini-2.0-flash"])
+    _model_options = _default_models.get(cc_provider, ["gemini-2.5-flash"])
     _saved_model   = cc_cfg.get("model", "")
     _model_idx     = _model_options.index(_saved_model) if _saved_model in _model_options else 0
     cc_model = st.selectbox(
