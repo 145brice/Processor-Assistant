@@ -1400,7 +1400,11 @@ def show_dashboard():
 
         # ── Scan button ────────────────────────────────────────────
         _checked_visible = [_vi for _vi in _visible if st.session_state.get(f"dash_sel_{_vi}", True)]
-        if st.button(f"Scan ({len(_checked_visible)} selected)", key="dash_scan", type="primary", disabled=len(_checked_visible) == 0):
+        # The scan flow re-enters either when the user clicks Scan OR when they're returning
+        # from the consent prompt (which set "cloud_consent_dash_batch" via rerun).
+        _scan_clicked = st.button(f"Scan ({len(_checked_visible)} selected)", key="dash_scan", type="primary", disabled=len(_checked_visible) == 0)
+        _consent_returning = st.session_state.get("cloud_consent_dash_batch") in ("yes_once", "no")
+        if _scan_clicked or _consent_returning:
             # Build the actual list of (bytes, name, type) to scan,
             # merging groups where the user said yes
             _scan_queue = []  # list of (pdf_bytes, display_name, doc_type)
