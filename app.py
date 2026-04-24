@@ -1404,13 +1404,6 @@ def show_dashboard():
         # from the consent prompt (which set "cloud_consent_dash_batch" via rerun).
         _scan_clicked = st.button(f"Scan ({len(_checked_visible)} selected)", key="dash_scan", type="primary", disabled=len(_checked_visible) == 0)
         _consent_returning = st.session_state.get("cloud_consent_dash_batch") in ("yes_once", "no")
-        # DEBUG STRIPE — shows session state so we can see what's happening
-        st.caption(
-            f"DEBUG · scan_clicked={_scan_clicked} · consent_returning={_consent_returning} · "
-            f"batch={st.session_state.get('cloud_consent_dash_batch')!r} · "
-            f"session={st.session_state.get('cloud_consent_session')!r} · "
-            f"checked={_checked_visible}"
-        )
         if _scan_clicked or _consent_returning:
             # Build the actual list of (bytes, name, type) to scan,
             # merging groups where the user said yes
@@ -1635,6 +1628,26 @@ def show_dashboard():
                     expanded=(_cond_count > 0)
                 )
             with _exp:
+                # ── AI usage badge ─────────────────────────────────────
+                _r_ai_log = _r.get("ai_log", "")
+                if _r_ai_log:
+                    if "CLOUD" in _r_ai_log.upper():
+                        st.markdown(
+                            f'<div style="display:inline-block;padding:3px 10px;margin:4px 0 8px 0;'
+                            f'background:rgba(57,255,20,0.12);border:1px solid rgba(57,255,20,0.4);'
+                            f'border-radius:12px;font-size:11px;color:#39FF14;font-weight:600;">'
+                            f'🤖 Cloud AI · {_r_ai_log}</div>',
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.markdown(
+                            f'<div style="display:inline-block;padding:3px 10px;margin:4px 0 8px 0;'
+                            f'background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);'
+                            f'border-radius:12px;font-size:11px;color:#f59e0b;font-weight:600;">'
+                            f'⚠ {_r_ai_log}</div>',
+                            unsafe_allow_html=True,
+                        )
+
                 # ── Loan match action row ──────────────────────────────
                 if _lm_suggestion == "match":
                     st.markdown(

@@ -4607,20 +4607,27 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         result["extracted_data"] = regex_data
         result["raw_text"] = text[:12000]  # retained for optional AI re-extraction
 
-        # ── Cloud AI augmentation (only fills fields regex missed) ───────
-        # Runs only if user has enabled cloud + provided their own API key + user approved.
-        # Their key, their data, their cost — we never see any of it.
+        # ── Cloud AI extraction ────────────────────────────────────────────
+        # When the user explicitly approves cloud AI for this scan, AI WINS
+        # over regex — because the user opted into AI specifically to get
+        # better results than regex. Only fall back to a regex value if AI
+        # returned an empty string for that field.
         if user_approved_cloud:
             try:
                 import cloud_client as _cc
                 if _cc.is_enabled():
                     ai_data, ai_log = _cc.extract_purchase_contract_ai(text)
                     if ai_data:
-                        result["extracted_data"] = _merge_pc_data(regex_data, ai_data)
+                        # AI takes priority — pass AI first so its values win
+                        result["extracted_data"] = _merge_pc_data(ai_data, regex_data)
                         result["ai_log"] = ai_log
+                    else:
+                        result["ai_log"] = ai_log or "Cloud returned no data"
+                else:
+                    result["ai_log"] = "Cloud not enabled (sidebar toggle)"
             except Exception as _e:
                 # Never let cloud failure block local extraction
-                result["ai_log"] = f"Cloud augmentation skipped: {str(_e)[:80]}"
+                result["ai_log"] = f"Cloud augmentation FAILED: {type(_e).__name__}: {str(_e)[:120]}"
     elif doc_type == "Approval Letter":
         result["conditions"] = ""
         result["extracted_data"] = {}
