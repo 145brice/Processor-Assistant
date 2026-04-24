@@ -1439,6 +1439,50 @@ def show_dashboard():
                 _bf_type = _overrides.get(_bi, _detections[_bi]["detected_type"])
                 _scan_queue.append((_file_bytes_cache[_bi], _bf.name, _bf_type))
 
+            # ── Cloud AI consent for batch (only if cloud-supported docs present) ─
+            _dash_cloud_enabled = False
+            try:
+                import cloud_client as _dash_cc
+                _dash_cloud_enabled = _dash_cc.is_enabled()
+            except Exception:
+                pass
+
+            _dash_cloud_doc_types = {"Purchase Contract", "Approval Letter"}
+            _dash_has_cloud_docs = _dash_cloud_enabled and any(
+                _t in _dash_cloud_doc_types for (_, _, _t) in _scan_queue
+            )
+            _dash_user_approved_cloud = False
+
+            if _dash_has_cloud_docs:
+                _dash_session_consent = st.session_state.get("cloud_consent_session", None)
+                if _dash_session_consent == "yes":
+                    _dash_user_approved_cloud = True
+                elif _dash_session_consent == "no":
+                    _dash_user_approved_cloud = False
+                else:
+                    _dash_batch_state = st.session_state.get("cloud_consent_dash_batch", None)
+                    if _dash_batch_state is None:
+                        st.info("This batch contains a Purchase Contract / Approval Letter. Send to Cloud AI?")
+                        _db1, _db2, _db3 = st.columns(3)
+                        with _db1:
+                            if st.button("Send to Cloud AI", key="dash_consent_yes"):
+                                st.session_state["cloud_consent_dash_batch"] = "yes_once"
+                                st.rerun()
+                        with _db2:
+                            if st.button("Skip AI for batch", key="dash_consent_no"):
+                                st.session_state["cloud_consent_dash_batch"] = "no"
+                                st.rerun()
+                        with _db3:
+                            if st.button("Always for session", key="dash_consent_session"):
+                                st.session_state["cloud_consent_session"] = "yes"
+                                st.session_state["cloud_consent_dash_batch"] = "yes_once"
+                                st.rerun()
+                        st.stop()  # Don't proceed with scan until user picks
+                    elif _dash_batch_state == "yes_once":
+                        _dash_user_approved_cloud = True
+                    elif _dash_batch_state == "no":
+                        _dash_user_approved_cloud = False
+
             # Run scans
             from doc_verify import _match_borrower as _mb
             _sq_total = len(_scan_queue)
@@ -1451,7 +1495,9 @@ def show_dashboard():
                 if _sq_type == "Unknown":
                     st.warning(f"{_sq_name}: Unknown type — override the dropdown to scan")
                     continue
-                _result = _proc(_sq_bytes, _sq_type)
+                # Only pass user_approved_cloud for cloud-eligible doc types
+                _sq_approved = _dash_user_approved_cloud if _sq_type in _dash_cloud_doc_types else False
+                _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
                 if _result.get("success"):
                     # Auto-match to a pipeline loan
                     _raw_text = _result.get("raw_text", "") or _result.get("bank_raw_text", "") or ""
@@ -1481,6 +1527,8 @@ def show_dashboard():
                 else:
                     st.error(f"{_sq_name}: {_result.get('error', 'Failed')}")
             _sq_progress.progress(100, text=f"Done — {_sq_total} document(s) scanned")
+            # Reset per-batch consent so the next upload re-prompts (session-wide stays sticky)
+            st.session_state.pop("cloud_consent_dash_batch", None)
 
     # ── Show completed scan results ───────────────────────────────────
     if st.session_state.scan_batches:
