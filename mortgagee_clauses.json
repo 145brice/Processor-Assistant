@@ -1,0 +1,8 @@
+{
+  "_comment": "lender_key -> mortgagee clause text. Edit or add via the AI Settings → Lenders page (TODO) or directly here. Upload your lender docs and have Claude/Gemini parse them into entries.",
+  "lenders": {
+    "UWM": "United Wholesale Mortgage, LLC ISAOA/ATIMA\n585 South Boulevard E\nPontiac, MI 48341\nLoan #: {LOAN_NUMBER}",
+    "Rocket Mortgage": "Rocket Mortgage, LLC ISAOA/ATIMA\n1050 Woodward Avenue\nDetroit, MI 48226\nLoan #: {LOAN_NUMBER}",
+    "Newrez": "Newrez LLC ISAOA/ATIMA\n601 Office Center Drive, Suite 100\nFort Washington, PA 19034\nLoan #: {LOAN_NUMBER}"
+  }
+}

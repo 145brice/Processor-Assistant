@@ -7,6 +7,32 @@ from docx import Document
 
 TEMPLATES_DIR = r"c:\Users\user\OneDrive\Desktop\Templates"
 OUTPUT_ROOT = r"c:\Users\user\OneDrive\Desktop\processor-traien\Processor-Assistant\generated_docs"
+_CLAUSES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mortgagee_clauses.json")
+
+
+def load_lender_clauses() -> dict:
+    """Returns {lender_key: clause_text}. Empty dict if file missing/malformed."""
+    try:
+        with open(_CLAUSES_FILE, "r", encoding="utf-8") as f:
+            return (json.load(f) or {}).get("lenders", {}) or {}
+    except Exception:
+        return {}
+
+
+def get_lender_names() -> list[str]:
+    return sorted(load_lender_clauses().keys())
+
+
+def get_mortgagee_clause(lender: str, loan_number: str = "") -> str:
+    """Return the clause text for the given lender, with {LOAN_NUMBER} substituted.
+    Returns the placeholder text if lender is unknown/empty."""
+    if not lender:
+        return "[MORTGAGEE CLAUSE — fill in per lender]"
+    clauses = load_lender_clauses()
+    text = clauses.get(lender, "")
+    if not text:
+        return "[MORTGAGEE CLAUSE — fill in per lender]"
+    return text.replace("{LOAN_NUMBER}", str(loan_number or ""))
 
 TEMPLATE_FIELDS = {
     "HOI Request.docx": {
@@ -78,6 +104,7 @@ def build_context(loan: dict) -> dict:
     def pick(key: str, placeholder: str) -> str:
         return loan.get(key) or from_docs.get(key) or placeholder
 
+    lender = loan.get("lender", "") or ""
     return {
         "borrower_name": name or "[BORROWER NAME]",
         "property_address": pick("property_address", "[PROPERTY ADDRESS]"),
@@ -88,6 +115,8 @@ def build_context(loan: dict) -> dict:
         "loan_type": pick("loan_type", "[PURCHASE/REFI]"),
         "loan_officer": pick("loan_officer", "[LOAN OFFICER]"),
         "loan_processor": loan.get("loan_processor") or "Brice Leasure",
+        "lender": lender,
+        "mortgagee_clause": get_mortgagee_clause(lender, loan.get("loan_num", "")),
     }
 
 
@@ -122,14 +151,23 @@ def fill_template(template_name: str, context: dict, output_path: str):
                 break
 
     mortgagee_idx = MORTGAGEE_PARAGRAPH_INDEX[template_name]
+    clause_text = context.get("mortgagee_clause") or "[MORTGAGEE CLAUSE — fill in per lender]"
     if mortgagee_idx < len(doc.paragraphs):
         p = doc.paragraphs[mortgagee_idx]
         for run in p.runs:
             run.text = ""
+        # Multi-line clauses: use line breaks (docx requires \n inside a run via add_break)
+        lines = clause_text.split("\n")
         if p.runs:
-            p.runs[0].text = "[MORTGAGEE CLAUSE — fill in per lender]"
+            p.runs[0].text = lines[0]
+            for extra in lines[1:]:
+                p.runs[0].add_break()
+                p.add_run(extra)
         else:
-            p.add_run("[MORTGAGEE CLAUSE — fill in per lender]")
+            r = p.add_run(lines[0])
+            for extra in lines[1:]:
+                r.add_break()
+                p.add_run(extra)
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     doc.save(output_path)

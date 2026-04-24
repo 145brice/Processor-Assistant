@@ -6503,12 +6503,44 @@ def show_loan_detail():
             unsafe_allow_html=True,
         )
 
+    # ── Lender (drives mortgagee clause on generated templates) ──────────────
+    from template_filler import get_lender_names as _get_lenders
+    _lender_options = ["(none)"] + _get_lenders()
+    _cur_lender = loan.get("lender", "") or "(none)"
+    _lender_idx = _lender_options.index(_cur_lender) if _cur_lender in _lender_options else 0
+    st.markdown(
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Lender</span>',
+        unsafe_allow_html=True,
+    )
+    _new_lender = st.selectbox(
+        "Lender", _lender_options, index=_lender_idx,
+        key=f"detail_lender_{lid}", label_visibility="collapsed",
+        help="Drives the mortgagee clause used when generating HOI / Title requests.",
+    )
+    _lender_val = "" if _new_lender == "(none)" else _new_lender
+    if _lender_val != loan.get("lender", ""):
+        update_loan(lid, lender=_lender_val)
+        log_activity(lid, "update", f"Lender set to {_new_lender}", user=my_name)
+        st.rerun()
+
     # ── Generate Templates (HOI + Title Request) ────────────────────────────
     st.markdown(
         '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Generate Documents</span>',
         unsafe_allow_html=True,
     )
+
+    def _build_gmail_compose_url(to: str, subject: str, body: str) -> str:
+        """Compose URL that opens Gmail in the browser pre-filled."""
+        from urllib.parse import quote
+        return (
+            f"https://mail.google.com/mail/?view=cm&fs=1"
+            f"&to={quote(to or '')}"
+            f"&su={quote(subject)}"
+            f"&body={quote(body)}"
+        )
+
     _gen_c1, _gen_c2 = st.columns(2)
     with _gen_c1:
         if st.button("📄 Generate HOI Request", key=f"gen_hoi_{lid}", use_container_width=True):
@@ -6521,6 +6553,25 @@ def show_loan_detail():
                 fill_template("HOI Request.docx", _ctx, _out)
                 log_activity(lid, "generated", f"HOI Request generated", user=my_name)
                 st.session_state[f"_gen_hoi_path_{lid}"] = _out
+                # Build pre-filled Gmail compose URL targeted at the HOI/Insurance contact
+                _ins = (loan.get("contacts", {}) or {}).get("insurance", {}) or {}
+                _to = _ins.get("email", "")
+                _subject = f"HOI / Evidence of Insurance Request — Loan {_ctx['loan_num']} — {_ctx['borrower_name']}"
+                _body = (
+                    f"Hi {_ins.get('contact') or _ins.get('name') or 'there'},\n\n"
+                    f"Please provide Evidence of Insurance for the following loan. "
+                    f"The full request form is attached.\n\n"
+                    f"Borrower(s): {_ctx['borrower_name']}\n"
+                    f"Property: {_ctx['property_address']}\n"
+                    f"Estimated Funding: {_ctx['funding_date']}\n"
+                    f"Loan Number: {_ctx['loan_num']}\n"
+                    f"Loan Amount: {_ctx['loan_amount']}\n\n"
+                    f"Mortgagee Clause:\n{_ctx['mortgagee_clause']}\n\n"
+                    f"Please provide an invoice with balance due (or paid-in-full invoice) "
+                    f"and cover the full loan amount OR provide the RCE.\n\n"
+                    f"Thank you,\n{_ctx['loan_processor']}"
+                )
+                st.session_state[f"_gen_hoi_email_{lid}"] = _build_gmail_compose_url(_to, _subject, _body)
                 st.toast("HOI Request generated", icon="✅")
                 st.rerun()
             except Exception as _e:
@@ -6536,15 +6587,42 @@ def show_loan_detail():
                 fill_template("Title Request copy.docx", _ctx, _out)
                 log_activity(lid, "generated", f"Title Request generated", user=my_name)
                 st.session_state[f"_gen_title_path_{lid}"] = _out
+                _ttl = (loan.get("contacts", {}) or {}).get("title", {}) or {}
+                _to = _ttl.get("email", "")
+                _subject = f"Title Work Request — Loan {_ctx['loan_num']} — {_ctx['borrower_name']}"
+                _body = (
+                    f"Hi {_ttl.get('contact') or _ttl.get('name') or 'there'},\n\n"
+                    f"Please provide tax pro-rations and title docs as soon as available. "
+                    f"The full request form is attached. Summary below:\n\n"
+                    f"Borrower(s): {_ctx['borrower_name']}\n"
+                    f"Property: {_ctx['property_address']}\n"
+                    f"Estimated Funding: {_ctx['funding_date']}\n"
+                    f"Loan Number: {_ctx['loan_num']}\n"
+                    f"Loan Amount: {_ctx['loan_amount']}\n\n"
+                    f"Mortgagee Information:\n{_ctx['mortgagee_clause']}\n\n"
+                    f"Items needed: Prelim Title + 24 mo chain, Title Fees in CD format, "
+                    f"Payoff (refi only), CPL/ICPL, Wire Instructions, EMD receipt (purchase), "
+                    f"Plat Map, Survey (TX/FL), Title E&O, CC&Rs (if applicable), Tax Cert, "
+                    f"License # for settlement agent and company.\n\n"
+                    f"Thank you,\n{_ctx['loan_processor']}"
+                )
+                st.session_state[f"_gen_title_email_{lid}"] = _build_gmail_compose_url(_to, _subject, _body)
                 st.toast("Title Request generated", icon="✅")
                 st.rerun()
             except Exception as _e:
                 st.error(f"Generation failed: {_e}")
 
-    # Download buttons for freshly generated docs
-    for _lbl, _skey in [("HOI Request", f"_gen_hoi_path_{lid}"), ("Title Request", f"_gen_title_path_{lid}")]:
+    # Download + Gmail compose buttons for freshly generated docs
+    for _lbl, _skey, _ekey in [
+        ("HOI Request",   f"_gen_hoi_path_{lid}",   f"_gen_hoi_email_{lid}"),
+        ("Title Request", f"_gen_title_path_{lid}", f"_gen_title_email_{lid}"),
+    ]:
         _p = st.session_state.get(_skey)
-        if _p:
+        _e = st.session_state.get(_ekey)
+        if not _p:
+            continue
+        _dl_c1, _dl_c2 = st.columns([2, 1])
+        with _dl_c1:
             try:
                 with open(_p, "rb") as _fh:
                     st.download_button(
@@ -6557,6 +6635,9 @@ def show_loan_detail():
                     )
             except FileNotFoundError:
                 pass
+        with _dl_c2:
+            if _e:
+                st.link_button("📧 Open in Gmail", _e, use_container_width=True)
 
     # ── Quick-copy Title & HOI contacts ─────────────────────────────────────
     _qc_contacts = loan.get("contacts", {}) or {}
