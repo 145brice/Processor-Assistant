@@ -6070,8 +6070,24 @@ def show_ollama_page():
 
     cc_cfg = _cc.get_config()
 
+    # ── Enable toggle saves immediately on change (matches sidebar button) ──
+    cc_enabled_now = st.toggle(
+        "Enable Cloud AI",
+        value=bool(cc_cfg.get("enabled")),
+        key="cc_enabled_live",
+        help="Saves instantly when you click. Requires API key set below.",
+    )
+    if cc_enabled_now != bool(cc_cfg.get("enabled")):
+        _cc.save_config(
+            cc_enabled_now,
+            cc_cfg.get("provider", "claude"),
+            cc_cfg.get("api_key", ""),
+            cc_cfg.get("model", ""),
+        )
+        st.rerun()
+
+    # ── Provider/model/key still saved together (so a half-typed key doesn't auto-save) ──
     with st.form("cloud_settings_form"):
-        cc_enabled  = st.toggle("Enable Cloud AI", value=bool(cc_cfg.get("enabled")), key="cc_enabled")
         cc_provider = st.selectbox(
             "Provider",
             ["claude", "openai"],
@@ -6080,13 +6096,17 @@ def show_ollama_page():
             key="cc_provider",
         )
         _default_models = {
-            "claude": ["claude-sonnet-4-6", "claude-haiku-4-5-20251001", "claude-opus-4-6"],
+            "claude": ["claude-haiku-4-5-20251001", "claude-sonnet-4-6", "claude-opus-4-7"],
             "openai": ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
         }
+        # Default to the previously-saved model if it's in the list, else first option
+        _model_options = _default_models.get(cc_provider, ["claude-haiku-4-5-20251001"])
+        _saved_model = cc_cfg.get("model", "")
+        _model_idx = _model_options.index(_saved_model) if _saved_model in _model_options else 0
         cc_model = st.selectbox(
             "Model",
-            _default_models.get(cc_provider, ["claude-sonnet-4-6"]),
-            index=0,
+            _model_options,
+            index=_model_idx,
             key="cc_model",
         )
         cc_key = st.text_input(
@@ -6096,10 +6116,10 @@ def show_ollama_page():
             key="cc_key",
             help="Claude: get from console.anthropic.com · OpenAI: platform.openai.com/api-keys",
         )
-        cc_save = st.form_submit_button("Save Cloud Settings", type="primary")
+        cc_save = st.form_submit_button("Save Provider / Model / Key", type="primary")
 
     if cc_save:
-        _cc.save_config(cc_enabled, cc_provider, cc_key, cc_model)
+        _cc.save_config(cc_enabled_now, cc_provider, cc_key, cc_model)
         st.success("Cloud AI settings saved.")
         st.rerun()
 
