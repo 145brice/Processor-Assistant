@@ -6070,46 +6070,48 @@ def show_ollama_page():
         )
         st.rerun()
 
-    # ── Provider/model/key still saved together (so a half-typed key doesn't auto-save) ──
+    # ── Provider selector (outside the form so model options update live) ──
+    _provider_options = ["gemini", "claude", "openai"]
+    _provider_labels  = {
+        "gemini": "Google Gemini Flash (free tier)",
+        "claude": "Anthropic Claude",
+        "openai": "OpenAI (GPT)",
+    }
+    _saved_provider = cc_cfg.get("provider", "claude")
+    _provider_idx   = _provider_options.index(_saved_provider) if _saved_provider in _provider_options else 1
+    cc_provider = st.selectbox(
+        "Provider",
+        _provider_options,
+        index=_provider_idx,
+        format_func=lambda x: _provider_labels.get(x, x),
+        key="cc_provider",
+    )
+
+    # Pricing note under provider selector
+    if cc_provider == "gemini":
+        st.caption("✅ Free tier — up to 1,500 requests/day at no cost. Requires a Google AI API key.")
+    elif cc_provider == "claude":
+        st.caption("💳 Paid — requires a $5 minimum deposit at console.anthropic.com to get started. ~$0.15–0.25 per document.")
+    else:
+        st.caption("💳 Paid — requires billing enabled at platform.openai.com.")
+
+    _default_models = {
+        "gemini": ["gemini-2.0-flash", "gemini-2.5-flash", "gemini-2.5-pro"],
+        "claude": ["claude-haiku-4-5-20251001", "claude-sonnet-4-6", "claude-opus-4-7"],
+        "openai": ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
+    }
+    _model_options = _default_models.get(cc_provider, ["gemini-2.0-flash"])
+    _saved_model   = cc_cfg.get("model", "")
+    _model_idx     = _model_options.index(_saved_model) if _saved_model in _model_options else 0
+    cc_model = st.selectbox(
+        "Model",
+        _model_options,
+        index=_model_idx,
+        key="cc_model",
+    )
+
+    # Key + Save inside a form so a half-typed key doesn't auto-save
     with st.form("cloud_settings_form"):
-        _provider_options = ["gemini", "claude", "openai"]
-        _provider_labels  = {
-            "gemini": "Google Gemini Flash (free tier)",
-            "claude": "Anthropic Claude",
-            "openai": "OpenAI (GPT)",
-        }
-        _saved_provider = cc_cfg.get("provider", "claude")
-        _provider_idx   = _provider_options.index(_saved_provider) if _saved_provider in _provider_options else 1
-        cc_provider = st.selectbox(
-            "Provider",
-            _provider_options,
-            index=_provider_idx,
-            format_func=lambda x: _provider_labels.get(x, x),
-            key="cc_provider",
-        )
-
-        # Pricing note under provider selector
-        if cc_provider == "gemini":
-            st.caption("✅ Free tier — up to 1,500 requests/day at no cost. Requires a Google AI API key.")
-        elif cc_provider == "claude":
-            st.caption("💳 Paid — requires a $5 minimum deposit at console.anthropic.com to get started. ~$0.15–0.25 per document.")
-        else:
-            st.caption("💳 Paid — requires billing enabled at platform.openai.com.")
-
-        _default_models = {
-            "gemini": ["gemini-1.5-flash", "gemini-1.5-pro"],
-            "claude": ["claude-haiku-4-5-20251001", "claude-sonnet-4-6", "claude-opus-4-7"],
-            "openai": ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
-        }
-        _model_options = _default_models.get(cc_provider, ["gemini-1.5-flash"])
-        _saved_model   = cc_cfg.get("model", "")
-        _model_idx     = _model_options.index(_saved_model) if _saved_model in _model_options else 0
-        cc_model = st.selectbox(
-            "Model",
-            _model_options,
-            index=_model_idx,
-            key="cc_model",
-        )
         _key_help = {
             "gemini": "Get free key at aistudio.google.com/app/apikey",
             "claude": "Get key at console.anthropic.com (requires $5 deposit)",

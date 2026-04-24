@@ -26,7 +26,7 @@ _LOG_FILE = os.path.join(_APP_DIR, "cloud_log.txt")
 DEFAULT_PROVIDER = "claude"
 DEFAULT_MODELS = {
     "claude": "claude-sonnet-4-6",
-    "gemini": "gemini-1.5-flash",
+    "gemini": "gemini-2.0-flash",
     "openai": "gpt-4o-mini",
 }
 
