@@ -1628,8 +1628,9 @@ def show_dashboard():
                     expanded=(_cond_count > 0)
                 )
             with _exp:
-                # ── AI usage badge ─────────────────────────────────────
+                # ── AI usage badge + raw AI dump (debugging) ───────────
                 _r_ai_log = _r.get("ai_log", "")
+                _r_ai_raw = _r.get("ai_raw")
                 if _r_ai_log:
                     if "CLOUD" in _r_ai_log.upper():
                         st.markdown(
@@ -1647,6 +1648,10 @@ def show_dashboard():
                             f'⚠ {_r_ai_log}</div>',
                             unsafe_allow_html=True,
                         )
+                    # Dump raw AI response so we can see what Claude actually returned
+                    if _r_ai_raw is not None:
+                        with st.expander("🔍 Raw AI response (debug)", expanded=False):
+                            st.json(_r_ai_raw)
 
                 # ── Loan match action row ──────────────────────────────
                 if _lm_suggestion == "match":

@@ -4617,6 +4617,8 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
                 import cloud_client as _cc
                 if _cc.is_enabled():
                     ai_data, ai_log = _cc.extract_purchase_contract_ai(text)
+                    # Store raw AI response for debugging
+                    result["ai_raw"] = ai_data
                     if ai_data:
                         # AI takes priority — pass AI first so its values win
                         result["extracted_data"] = _merge_pc_data(ai_data, regex_data)
