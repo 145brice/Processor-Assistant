@@ -511,23 +511,32 @@ def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
     full_text = raw_text if len(raw_text) <= 80000 else raw_text[:80000]
 
     system = (
-        "You are an experienced mortgage loan processor extracting structured data "
-        "from a residential purchase contract PDF. Return only valid JSON — no markdown "
-        "fences, no commentary."
+        "You analyze residential purchase contracts and return a structured JSON "
+        "object. Output only valid JSON — no markdown fences, no commentary."
     )
-    prompt = f"""Read this purchase contract and extract the fields below into JSON.
+    # User's chat prompt that worked perfectly, wrapped to return JSON instead of prose.
+    prompt = f"""Please analyze this purchase contract and extract the following information:
 
-For each field: write the actual value found in the document. If a field is genuinely
-blank or not present, write an empty string "". Do not guess. Do not include form
-labels like "Buyer:" or "_____" in the values — only the filled-in answer.
+- Purchase Price
+- Property Address
+- Closing Date
+- Listing Agent Name (separate the name, brokerage, phone, email)
+- Selling Agent Name (separate the name, brokerage, phone, email)
+- Title Company
+- Buyer Name(s)
+- Seller Name(s)
+- Earnest Money Deposit
+- Down Payment Amount
+- Loan Amount
+- Any special conditions or contingencies
 
-For agent fields: separate name, brokerage, phone, and email into their own subfields.
-For amounts: digits only (no $ or commas), e.g. "474500".
-For dates: keep the format you find them in (MM/DD/YYYY is fine).
-
-Return JSON in EXACTLY this shape:
+Return the results as valid JSON in EXACTLY this shape (use empty string "" for any
+field genuinely not present in the document):
 
 {_PC_JSON_TEMPLATE}
+
+For amounts use digits only ("474500"). For dates keep the format you find ("MM/DD/YYYY"
+or "Month DD, YYYY"). Never put a phone number or email in a name field.
 
 CONTRACT TEXT:
 {full_text}"""
