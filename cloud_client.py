@@ -1,10 +1,11 @@
 """
 Cloud AI Integration — Processor Assistant
-Optional cloud AI backend. Supports Anthropic Claude and OpenAI.
+Optional cloud AI backend. Supports Anthropic Claude, Google Gemini, and OpenAI.
 Requires an internet connection and a valid API key.
 
 Providers:
   claude  → Anthropic Claude API  (claude-sonnet-4-6, claude-haiku-4-5, etc.)
+  gemini  → Google Gemini API     (gemini-1.5-flash — free tier available)
   openai  → OpenAI API            (gpt-4o, gpt-4o-mini, etc.)
 
 Falls back silently to script-only if unavailable or key is missing.
@@ -25,11 +26,13 @@ _LOG_FILE = os.path.join(_APP_DIR, "cloud_log.txt")
 DEFAULT_PROVIDER = "claude"
 DEFAULT_MODELS = {
     "claude": "claude-sonnet-4-6",
+    "gemini": "gemini-1.5-flash",
     "openai": "gpt-4o-mini",
 }
 
-CLAUDE_ENDPOINT = "https://api.anthropic.com/v1/messages"
-OPENAI_ENDPOINT = "https://api.openai.com/v1/chat/completions"
+CLAUDE_ENDPOINT  = "https://api.anthropic.com/v1/messages"
+OPENAI_ENDPOINT  = "https://api.openai.com/v1/chat/completions"
+GEMINI_ENDPOINT  = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -126,6 +129,8 @@ def _generate(prompt: str, system: str, provider: str, api_key: str,
               model: str, timeout: int = 60) -> str:
     if provider == "claude":
         return _generate_claude(prompt, system, model, api_key, timeout)
+    elif provider == "gemini":
+        return _generate_gemini(prompt, system, model, api_key, timeout)
     elif provider == "openai":
         return _generate_openai(prompt, system, model, api_key, timeout)
     else:
@@ -154,6 +159,24 @@ def _generate_claude(prompt: str, system: str, model: str,
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         data = json.loads(resp.read().decode("utf-8"))
         return data["content"][0]["text"].strip()
+
+
+def _generate_gemini(prompt: str, system: str, model: str,
+                     api_key: str, timeout: int) -> str:
+    full_prompt = f"{system}\n\n{prompt}" if system else prompt
+    payload = json.dumps({
+        "contents": [{"parts": [{"text": full_prompt}]}],
+        "generationConfig": {"maxOutputTokens": 2048, "temperature": 0.15},
+    }).encode("utf-8")
+    url = GEMINI_ENDPOINT.format(model=model, key=api_key)
+    req = urllib.request.Request(
+        url, data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=timeout) as resp:
+        data = json.loads(resp.read().decode("utf-8"))
+        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
 
 def _generate_openai(prompt: str, system: str, model: str,
@@ -530,6 +553,29 @@ def chat(messages: list[dict], system: str = "") -> str:
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode("utf-8"))
             return data["content"][0]["text"].strip()
+
+    elif provider == "gemini":
+        # Gemini doesn't have a system role — prepend to first user message
+        _gem_contents = []
+        for i, m in enumerate(messages):
+            role = "user" if m["role"] == "user" else "model"
+            text = m["content"]
+            if i == 0 and system:
+                text = f"{system}\n\n{text}"
+            _gem_contents.append({"role": role, "parts": [{"text": text}]})
+        payload = json.dumps({
+            "contents": _gem_contents,
+            "generationConfig": {"maxOutputTokens": 1024, "temperature": 0.3},
+        }).encode("utf-8")
+        url = GEMINI_ENDPOINT.format(model=model, key=api_key)
+        req = urllib.request.Request(
+            url, data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
 
     elif provider == "openai":
         _msgs = []

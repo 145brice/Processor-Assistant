@@ -886,7 +886,7 @@ def show_sidebar():
         except Exception:
             pass
 
-        if st.button("🤖 AI Settings (Claude / OpenAI / Ollama)", key="nav_ai_settings", use_container_width=True, type="secondary"):
+        if st.button("🤖 AI Settings (Claude / Gemini / OpenAI)", key="nav_ai_settings", use_container_width=True, type="secondary"):
             st.session_state.page = "ai_settings"
             _save_session()
             st.rerun()
@@ -6047,11 +6047,10 @@ def show_ollama_page():
     import cloud_client  as _cc
 
     st.title("AI Settings")
-    st.caption("Cloud AI (Claude / OpenAI) for enhanced document extraction. Other backends hidden for now.")
+    st.caption("Cloud AI for enhanced document extraction — choose your provider below.")
 
     # ── Cloud AI settings ─────────────────────────────────────────────────────
-    st.markdown("### Cloud️ Cloud AI (Claude / OpenAI)")
-    st.caption("Requires an internet connection and API key. More powerful than local models.")
+    st.markdown("### Cloud AI")
 
     cc_cfg = _cc.get_config()
 
@@ -6073,33 +6072,55 @@ def show_ollama_page():
 
     # ── Provider/model/key still saved together (so a half-typed key doesn't auto-save) ──
     with st.form("cloud_settings_form"):
+        _provider_options = ["gemini", "claude", "openai"]
+        _provider_labels  = {
+            "gemini": "Google Gemini Flash (free tier)",
+            "claude": "Anthropic Claude",
+            "openai": "OpenAI (GPT)",
+        }
+        _saved_provider = cc_cfg.get("provider", "claude")
+        _provider_idx   = _provider_options.index(_saved_provider) if _saved_provider in _provider_options else 1
         cc_provider = st.selectbox(
             "Provider",
-            ["claude", "openai"],
-            index=0 if cc_cfg.get("provider", "claude") == "claude" else 1,
-            format_func=lambda x: "Anthropic Claude" if x == "claude" else "OpenAI (GPT)",
+            _provider_options,
+            index=_provider_idx,
+            format_func=lambda x: _provider_labels.get(x, x),
             key="cc_provider",
         )
+
+        # Pricing note under provider selector
+        if cc_provider == "gemini":
+            st.caption("✅ Free tier — up to 1,500 requests/day at no cost. Requires a Google AI API key.")
+        elif cc_provider == "claude":
+            st.caption("💳 Paid — requires a $5 minimum deposit at console.anthropic.com to get started. ~$0.15–0.25 per document.")
+        else:
+            st.caption("💳 Paid — requires billing enabled at platform.openai.com.")
+
         _default_models = {
+            "gemini": ["gemini-1.5-flash", "gemini-1.5-pro"],
             "claude": ["claude-haiku-4-5-20251001", "claude-sonnet-4-6", "claude-opus-4-7"],
             "openai": ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
         }
-        # Default to the previously-saved model if it's in the list, else first option
-        _model_options = _default_models.get(cc_provider, ["claude-haiku-4-5-20251001"])
-        _saved_model = cc_cfg.get("model", "")
-        _model_idx = _model_options.index(_saved_model) if _saved_model in _model_options else 0
+        _model_options = _default_models.get(cc_provider, ["gemini-1.5-flash"])
+        _saved_model   = cc_cfg.get("model", "")
+        _model_idx     = _model_options.index(_saved_model) if _saved_model in _model_options else 0
         cc_model = st.selectbox(
             "Model",
             _model_options,
             index=_model_idx,
             key="cc_model",
         )
+        _key_help = {
+            "gemini": "Get free key at aistudio.google.com/app/apikey",
+            "claude": "Get key at console.anthropic.com (requires $5 deposit)",
+            "openai": "Get key at platform.openai.com/api-keys",
+        }
         cc_key = st.text_input(
             "API Key",
             value=cc_cfg.get("api_key", ""),
             type="password",
             key="cc_key",
-            help="Claude: get from console.anthropic.com · OpenAI: platform.openai.com/api-keys",
+            help=_key_help.get(cc_provider, ""),
         )
         cc_save = st.form_submit_button("Save Provider / Model / Key", type="primary")
 
@@ -6119,20 +6140,26 @@ def show_ollama_page():
             else:
                 st.error(f"✗ {msg}")
 
-    with st.expander("Guide Getting an API key"):
+    with st.expander("How to get an API key"):
         st.markdown("""
-**Anthropic Claude** (recommended — same AI powering this assistant)
+**Google Gemini Flash** — Free tier (recommended to start)
+1. Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
+2. Sign in with a Google account → Create API key
+3. Paste above — no credit card required
+- Free: 1,500 requests/day, 1 million tokens/min
+- Cost: $0 for most users
+
+**Anthropic Claude** — Paid
 1. Go to [console.anthropic.com](https://console.anthropic.com)
-2. Create an account → API Keys → Create Key
-3. Paste the key above and select a Claude model
+2. Create account → Billing → Add $5 minimum deposit
+3. Go to API Keys → Create Key → paste above
+- Cost: ~$0.15–$0.25 per document scan (Sonnet)
+- `claude-haiku-4-5-20251001` is cheaper for lighter tasks
 
-**OpenAI (GPT)**
+**OpenAI (GPT)** — Paid
 1. Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-2. Create a key and paste it above
-
-**Cost:** Claude Sonnet runs about $0.003 per document analysis.
-`claude-haiku-4-5-20251001` is even cheaper for lighter tasks.
-`gpt-4o-mini` is the most affordable OpenAI option.
+2. Enable billing → create key → paste above
+- `gpt-4o-mini` is the most affordable option
         """)
 
     # ── Processing log ────────────────────────────────────────────────────────
