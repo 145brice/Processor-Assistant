@@ -506,78 +506,31 @@ def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
     if not cfg.get("enabled") or not cfg.get("api_key"):
         return {}, _log("SCRIPT", "pc_extract", "Cloud disabled")
 
-    sampled = _smart_sample(raw_text)
+    # Send the full document — modern Claude handles 100k+ tokens easily.
+    # Truncate only if absurdly large (> 80k chars ≈ 20k tokens).
+    full_text = raw_text if len(raw_text) <= 80000 else raw_text[:80000]
 
     system = (
-        "You are a senior mortgage loan processor who must extract ONLY genuine contract "
-        "values, never template boilerplate. You read residential purchase contracts every "
-        "day — Ohio REALTORS, CA CAR, TX TREC, MN STAR, WI WB, FL FAR, and custom forms. "
-        "You know that digitally-signed PDFs (dotloop, DocuSign, Skyslope) have filled values "
-        "often appearing as a block at the bottom of pages, separate from template text. "
-        "You carefully distinguish between form instructions/labels and actual filled-in values. "
-        "Return only valid JSON — no markdown fences, no explanation, no extra text."
+        "You are an experienced mortgage loan processor extracting structured data "
+        "from a residential purchase contract PDF. Return only valid JSON — no markdown "
+        "fences, no commentary."
     )
-    prompt = f"""Extract purchase contract data. CRITICAL: Return ONLY genuine contract values.
-Do NOT extract form instructions, template text, or boilerplate. Return empty string "" if not found.
+    prompt = f"""Read this purchase contract and extract the fields below into JSON.
+
+For each field: write the actual value found in the document. If a field is genuinely
+blank or not present, write an empty string "". Do not guess. Do not include form
+labels like "Buyer:" or "_____" in the values — only the filled-in answer.
+
+For agent fields: separate name, brokerage, phone, and email into their own subfields.
+For amounts: digits only (no $ or commas), e.g. "474500".
+For dates: keep the format you find them in (MM/DD/YYYY is fine).
+
+Return JSON in EXACTLY this shape:
 
 {_PC_JSON_TEMPLATE}
 
-FIELD DEFINITIONS:
-- buyer.name: The actual purchaser name (not "Buyer", "Purchaser name here", or form instructions).
-- seller.name: The actual seller name (not "Seller", "Seller name here", or blank placeholder text).
-- property.address: Complete street address, city, state, zip. Not form instructions like "as described below".
-- transaction.purchase_price: The actual dollar amount (digits only, e.g. "180000"). Not "$__________" or instructions.
-- transaction.closing_date: Actual closing date. Not "on or before _____" or "to be determined".
-- transaction.earnest_money: Actual EMD amount in digits only.
-- transaction.down_payment: Actual down payment percentage or amount.
-- transaction.seller_concessions: Only real concession amounts, not "seller will credit" template language.
-- listing_agent: Seller's agent actual name & brokerage. Not "Listing Agent: ___________" placeholder.
-- selling_agent: Buyer's agent actual name & brokerage (may be called "Selling Agent" or "Cooperating Agent").
-- title.company: Actual title/escrow company name. Not blank placeholder or form header.
-- contingencies: Only REAL contingency details with timeframes (e.g. "7 days for inspection"). Skip template language.
-- addendums: Only actual addendum titles (e.g. "Inspection Addendum", "HOA Addendum"), not just "Addendums:" header.
-
-RED FLAGS TO IGNORE (BOILERPLATE):
-- "________" (blank lines) or "___________" (placeholders)
-- "as described below", "as specified herein", "to be determined", "will be represented"
-- "insert [field]", "[borrower name]", "[property address]" (bracketed placeholders)
-- Form header text like "REAL ESTATE PURCHASE CONTRACT", section numbers like "3.1", "3.2"
-- "Paragraph 3.1", "Paragraph 3.2" — these are form sections, NOT field values
-- Repeated form instructions on multiple pages
-- Page footer text, signature labels, notary stamps, headers
-- Form disclaimer text or legal boilerplate from Closing Protection Letter
-- Contract template language from the standard form (focus on FILLED VALUES only)
-- MLS section headers without actual agent names
-- CRITICAL: "Listing Agent: REAL ESTATE PURCHASE CONTRACT" is junk — the label got concatenated with the form title
-- Lines that are pure labels ending with ":" plus form text are not real values
-- "Earnest Money Deposit Receipt" is a header, not a real name/value
-- Text like "made by the lender and title insurance agent during..." is legal boilerplate from the contract
-- "endorsement as of 8:00" is a closing protection letter clause, not a title company name
-- "Seller Signature" is just a label, not the actual name
-
-EXTRACTION STRATEGY:
-1. Look for ACTUAL names (capitalized real names, not form headers)
-2. For amounts: only digits and commas, formatted like "$100,000" or "100000"
-3. For dates: actual dates in MM/DD/YYYY, Month DD, YYYY, or similar format
-4. For agent/title: Separate the NAME from the PHONE/EMAIL/BROKERAGE. Never combine them.
-   - If you see "Agent Name · 555-1234 · email@example.com", extract:
-     * name: "Agent Name" (ONLY the name part)
-     * phone: "555-1234" (ONLY the digits)
-     * email: "email@example.com" (ONLY the email)
-   - Do NOT extract the entire line as the name
-5. Agent names typically appear in signature blocks, MLS section at document end, and closing section
-6. In dotloop/DocuSign, the signature page shows "Agent Name", "dotloop verified", date — extract "Agent Name"
-7. For title company: Extract ONLY the company name (e.g., "First American", "Fidelity"), never endorsement clauses
-
-EXTRACT CONTACT FIELDS CAREFULLY:
-- When you see a line like "Listing Agent: NAME · PHONE · EMAIL", extract each field separately
-- Never put phone numbers in the name field
-- Never put form text (like section numbers) in name/company fields
-- Names should be 2-4 words max, all proper case, representing actual people or companies
-- If a "name" field contains punctuation like "·" or "—", you likely grabbed multiple fields together — STOP
-
 CONTRACT TEXT:
-{sampled}"""
+{full_text}"""
 
     try:
         provider = cfg.get("provider", DEFAULT_PROVIDER)
