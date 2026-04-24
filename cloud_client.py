@@ -35,6 +35,49 @@ OPENAI_ENDPOINT  = "https://api.openai.com/v1/chat/completions"
 GEMINI_ENDPOINT  = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
 
 
+def _parse_ai_json(text: str) -> dict:
+    """Strip markdown fences / prose and extract the first valid JSON object.
+    Gemini in particular often wraps responses in ```json ... ``` or adds preamble."""
+    s = (text or "").strip()
+    # Remove markdown code fences
+    if s.startswith("```"):
+        s = re.sub(r'^```(?:json|JSON)?\s*\n?', '', s)
+        s = re.sub(r'\n?```\s*$', '', s)
+        s = s.strip()
+    # Try direct parse first
+    try:
+        return json.loads(s)
+    except Exception:
+        pass
+    # Fallback: find the largest balanced {...} block
+    start = s.find('{')
+    if start == -1:
+        raise ValueError("No JSON object found in AI response")
+    depth = 0
+    in_str = False
+    esc = False
+    for i in range(start, len(s)):
+        c = s[i]
+        if esc:
+            esc = False
+            continue
+        if c == '\\' and in_str:
+            esc = True
+            continue
+        if c == '"':
+            in_str = not in_str
+            continue
+        if in_str:
+            continue
+        if c == '{':
+            depth += 1
+        elif c == '}':
+            depth -= 1
+            if depth == 0:
+                return json.loads(s[start:i+1])
+    raise ValueError("Unbalanced JSON in AI response")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Config
 # ─────────────────────────────────────────────────────────────────────────────
@@ -164,9 +207,13 @@ def _generate_claude(prompt: str, system: str, model: str,
 def _generate_gemini(prompt: str, system: str, model: str,
                      api_key: str, timeout: int) -> str:
     full_prompt = f"{system}\n\n{prompt}" if system else prompt
+    # If the system prompt asks for JSON, force JSON mode so Gemini doesn't wrap output
+    _gen_cfg = {"maxOutputTokens": 8192, "temperature": 0.15}
+    if system and "json" in system.lower():
+        _gen_cfg["responseMimeType"] = "application/json"
     payload = json.dumps({
         "contents": [{"parts": [{"text": full_prompt}]}],
-        "generationConfig": {"maxOutputTokens": 2048, "temperature": 0.15},
+        "generationConfig": _gen_cfg,
     }).encode("utf-8")
     url = GEMINI_ENDPOINT.format(model=model, key=api_key)
     req = urllib.request.Request(
@@ -652,13 +699,8 @@ CONTRACT TEXT:
     try:
         provider = cfg.get("provider", DEFAULT_PROVIDER)
         response = _generate(prompt, system, provider, cfg["api_key"], cfg["model"])
-        response = response.strip()
-        if response.startswith("```"):
-            response = response.split("```")[1]
-            if response.startswith("json"):
-                response = response[4:]
         import json as _json
-        data = _json.loads(response.strip())
+        data = _parse_ai_json(response)
 
         # Post-process: filter out obvious boilerplate in extracted values
         data = _clean_extracted_contract_data(data)

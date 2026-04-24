@@ -1454,11 +1454,15 @@ def show_dashboard():
             from doc_verify import _match_borrower as _mb
             _sq_total = len(_scan_queue)
             _sq_progress = st.progress(0, text="Starting scan...")
+            _provider_name = "AI"
+            try:
+                _provider_name = _dash_cc.get_config().get("provider", "AI").title()
+            except Exception:
+                pass
             for _sq_i, (_sq_bytes, _sq_name, _sq_type) in enumerate(_scan_queue):
-                # Status text changes when a cloud call is about to fire
                 _sq_will_use_cloud = (_sq_type in _dash_cloud_doc_types and _dash_user_approved_cloud)
                 _sq_status = (
-                    f"🤖 Calling Claude for {_sq_name}... (2-5 sec)"
+                    f"🤖 Calling {_provider_name} for {_sq_name}... (2-5 sec)"
                     if _sq_will_use_cloud
                     else f"Scanning {_sq_i + 1} of {_sq_total}: {_sq_name}..."
                 )
@@ -1470,9 +1474,8 @@ def show_dashboard():
                     st.warning(f"{_sq_name}: Unknown type — override the dropdown to scan")
                     continue
                 _sq_approved = _dash_user_approved_cloud if _sq_type in _dash_cloud_doc_types else False
-                # Wrap in a spinner so it's obvious something is happening during the API call
                 if _sq_will_use_cloud:
-                    with st.spinner(f"🤖 Sending {_sq_name} to Claude for AI extraction..."):
+                    with st.spinner(f"🤖 Sending {_sq_name} to {_provider_name} for AI extraction..."):
                         _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
                 else:
                     _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
@@ -6916,8 +6919,13 @@ def show_loan_detail():
         )
         if _scan_file and st.button(_scan_btn_label, key=f"detail_scan_btn_{lid}",
                                      type="primary", use_container_width=True):
+            _ld_provider = "AI"
+            try:
+                _ld_provider = _cc_check.get_config().get("provider", "AI").title()
+            except Exception:
+                pass
             _spinner_label = (
-                f"🤖 Sending {_scan_dtype} to Claude... (2-5 sec)"
+                f"🤖 Sending {_scan_dtype} to {_ld_provider}... (2-5 sec)"
                 if _user_approved_cloud
                 else f"Scanning {_scan_dtype}..."
             )
@@ -7182,8 +7190,13 @@ def show_loan_detail():
 
         if _af_file and st.button("Scan Approval Letter", key=f"af_scan_btn_{lid}",
                                    type="primary", use_container_width=True):
+            _af_provider = "AI"
+            try:
+                _af_provider = _af_cc.get_config().get("provider", "AI").title()
+            except Exception:
+                pass
             _af_spinner = (
-                "🤖 Sending Approval Letter to Claude... (2-5 sec)"
+                f"🤖 Sending Approval Letter to {_af_provider}... (2-5 sec)"
                 if _af_user_approved_cloud
                 else "Extracting conditions from approval letter..."
             )
