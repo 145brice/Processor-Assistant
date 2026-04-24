@@ -497,6 +497,68 @@ def _clean_extracted_contract_data(data: dict) -> dict:
     return clean_dict(data)
 
 
+def chat(messages: list[dict], system: str = "") -> str:
+    """
+    Multi-turn chat call. `messages` is a list of {"role": "user"/"assistant", "content": "..."}.
+    Returns the assistant reply as a string, or raises on error.
+    """
+    cfg = get_config()
+    if not cfg.get("enabled") or not cfg.get("api_key"):
+        raise RuntimeError("Cloud AI not enabled — add your API key in AI Settings")
+
+    provider = cfg.get("provider", DEFAULT_PROVIDER)
+    api_key  = cfg["api_key"]
+    model    = cfg.get("model", DEFAULT_MODELS.get(provider, ""))
+
+    if provider == "claude":
+        payload = json.dumps({
+            "model":      model,
+            "max_tokens": 1024,
+            "system":     system,
+            "messages":   messages,
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            CLAUDE_ENDPOINT,
+            data=payload,
+            headers={
+                "Content-Type":      "application/json",
+                "x-api-key":         api_key,
+                "anthropic-version": "2023-06-01",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data["content"][0]["text"].strip()
+
+    elif provider == "openai":
+        _msgs = []
+        if system:
+            _msgs.append({"role": "system", "content": system})
+        _msgs.extend(messages)
+        payload = json.dumps({
+            "model":       model,
+            "messages":    _msgs,
+            "max_tokens":  1024,
+            "temperature": 0.3,
+        }).encode("utf-8")
+        req = urllib.request.Request(
+            OPENAI_ENDPOINT,
+            data=payload,
+            headers={
+                "Content-Type":  "application/json",
+                "Authorization": f"Bearer {api_key}",
+            },
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=30) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+            return data["choices"][0]["message"]["content"].strip()
+
+    else:
+        raise ValueError(f"Unknown provider: {provider}")
+
+
 def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
     """
     Use cloud AI to extract purchase contract fields from any state form.

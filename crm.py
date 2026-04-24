@@ -157,30 +157,21 @@ def update_loan(loan_id: int, **kwargs):
     _save(loans)
 
 
-def attach_document(loan_id: int, filename: str, doc_type: str, pdf_bytes: bytes,
+def attach_document(loan_id: int, filename: str, doc_type: str,
+                    pdf_bytes: bytes | None = None,
                     extracted: dict | None = None) -> dict:
-    """Save a PDF to disk and record it in the loan's documents list. Returns the doc record.
+    """Record a scanned document in the loan's documents list. Returns the doc record.
 
-    If `extracted` is provided, key fields (property_address, purchase_price,
-    loan_amount, loan_type, loan_officer) are promoted to the loan record so
-    template generation can pull them without re-parsing the PDF.
+    PDF bytes are NOT stored — we only keep extracted metadata. If `extracted`
+    is provided, key fields are promoted to the loan record for template generation.
     """
-    os.makedirs(_DOCS_DIR, exist_ok=True)
-    loan_dir = os.path.join(_DOCS_DIR, str(loan_id))
-    os.makedirs(loan_dir, exist_ok=True)
-    # Sanitize filename
     safe_name = "".join(c for c in filename if c.isalnum() or c in "._- ").strip()
     if not safe_name:
         safe_name = f"{doc_type}.pdf"
-    filepath = os.path.join(loan_dir, safe_name)
-    with open(filepath, "wb") as f:
-        f.write(pdf_bytes)
     doc_record = {
         "filename": safe_name,
         "doc_type": doc_type,
-        "path": filepath,
         "attached": datetime.now().isoformat()[:16],
-        "size_kb": round(len(pdf_bytes) / 1024, 1),
     }
     if extracted:
         doc_record["extracted_data"] = extracted

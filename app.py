@@ -1399,21 +1399,24 @@ def show_dashboard():
                 st.markdown(f'<div style="font-size:11px;color:var(--slate-500);padding-top:8px;">{_det["confidence"]}</div>', unsafe_allow_html=True)
 
         # ── Scan button ────────────────────────────────────────────
+        _try_cloud = False
+        try:
+            import cloud_client as _dash_cc
+            _try_cloud = _dash_cc.is_enabled()
+        except Exception:
+            pass
+
         _checked_visible = [_vi for _vi in _visible if st.session_state.get(f"dash_sel_{_vi}", True)]
-        # The scan flow re-enters either when the user clicks Scan OR when they're returning
-        # from the consent prompt (which set "cloud_consent_dash_batch" via rerun).
-        _scan_clicked = st.button(f"Scan ({len(_checked_visible)} selected)", key="dash_scan", type="primary", disabled=len(_checked_visible) == 0)
-        _consent_returning = st.session_state.get("cloud_consent_dash_batch") in ("yes_once", "no")
-        if _scan_clicked or _consent_returning:
-            # Build the actual list of (bytes, name, type) to scan,
-            # merging groups where the user said yes
+        _scan_clicked = st.button(f"Scan with AI ({len(_checked_visible)} selected)" if _try_cloud else f"Scan ({len(_checked_visible)} selected)",
+                                  key="dash_scan", type="primary", disabled=len(_checked_visible) == 0)
+        if _scan_clicked:
+            # Build the actual list of (bytes, name, type) to scan
             _scan_queue = []  # list of (pdf_bytes, display_name, doc_type)
 
             _merged_indices = set()
             for _gi, _grp in enumerate(_groups):
                 _selected = _merge_selections.get(_gi, set())
                 if len(_selected) >= 2:
-                    # Merge selected files in page order
                     _sorted_grp = sorted(
                         _selected,
                         key=lambda i: _fingerprints[i]["page_num"] or 999
@@ -1432,65 +1435,20 @@ def show_dashboard():
                     _merged_name = " + ".join(new_files[i].name for i in _sorted_grp)
                     _grp_type = _overrides.get(_sorted_grp[0], _detections[_sorted_grp[0]]["detected_type"])
                     _scan_queue.append((_merged_bytes, _merged_name, _grp_type))
-                    _merged_indices.update(_selected)  # only mark selected as merged, not whole group
+                    _merged_indices.update(_selected)
 
             # Add remaining non-merged non-dupe checked files
             for _bi, _bf in enumerate(new_files):
                 if _bi in _merged_indices or _bi in _dupes:
                     continue
                 if not st.session_state.get(f"dash_sel_{_bi}", True):
-                    continue  # skip unchecked files
+                    continue
                 _bf_type = _overrides.get(_bi, _detections[_bi]["detected_type"])
                 _scan_queue.append((_file_bytes_cache[_bi], _bf.name, _bf_type))
 
-            # ── Cloud AI consent for batch (only if cloud-supported docs present) ─
-            _dash_cloud_enabled = False
-            try:
-                import cloud_client as _dash_cc
-                _dash_cloud_enabled = _dash_cc.is_enabled()
-            except Exception:
-                pass
-
+            # ── Cloud AI: auto-enable when cloud is on — no consent prompt needed ─
             _dash_cloud_doc_types = {"Purchase Contract", "Approval Letter"}
-            _dash_has_cloud_docs = _dash_cloud_enabled and any(
-                _t in _dash_cloud_doc_types for (_, _, _t) in _scan_queue
-            )
-            _dash_user_approved_cloud = False
-
-            if _dash_has_cloud_docs:
-                _dash_session_consent = st.session_state.get("cloud_consent_session", None)
-                if _dash_session_consent == "yes":
-                    _dash_user_approved_cloud = True
-                elif _dash_session_consent == "no":
-                    _dash_user_approved_cloud = False
-                else:
-                    _dash_batch_state = st.session_state.get("cloud_consent_dash_batch", None)
-                    if _dash_batch_state is None:
-                        st.info("This batch contains a Purchase Contract / Approval Letter. Send to Cloud AI?")
-                        # Callbacks fire BEFORE the next rerun, so state is set
-                        # reliably even when the button is rendered inside a nested block.
-                        def _consent_yes():
-                            st.session_state["cloud_consent_dash_batch"] = "yes_once"
-                        def _consent_no():
-                            st.session_state["cloud_consent_dash_batch"] = "no"
-                        def _consent_session():
-                            st.session_state["cloud_consent_session"] = "yes"
-                            st.session_state["cloud_consent_dash_batch"] = "yes_once"
-                        _db1, _db2, _db3 = st.columns(3)
-                        with _db1:
-                            st.button("Send to Cloud AI", key="dash_consent_yes",
-                                      on_click=_consent_yes, type="primary")
-                        with _db2:
-                            st.button("Skip AI for batch", key="dash_consent_no",
-                                      on_click=_consent_no)
-                        with _db3:
-                            st.button("Always for session", key="dash_consent_session",
-                                      on_click=_consent_session)
-                        st.stop()  # Don't proceed with scan until user picks
-                    elif _dash_batch_state == "yes_once":
-                        _dash_user_approved_cloud = True
-                    elif _dash_batch_state == "no":
-                        _dash_user_approved_cloud = False
+            _dash_user_approved_cloud = _try_cloud
 
             # Run scans
             from doc_verify import _match_borrower as _mb
@@ -1537,8 +1495,6 @@ def show_dashboard():
                         "result": _result,
                         "loan_match": _loan_match,
                     })
-                    # Store PDF bytes keyed by batch index for later attachment
-                    st.session_state[f"_scan_bytes_{_new_bidx}"] = _sq_bytes
                     st.session_state.scan_batches = _batch
                     if _result.get("image_only"):
                         st.warning(f"{_sq_name}: {_sq_type} — scanned image, logged without extraction")
@@ -1547,8 +1503,6 @@ def show_dashboard():
                 else:
                     st.error(f"{_sq_name}: {_result.get('error', 'Failed')}")
             _sq_progress.progress(100, text=f"Done — {_sq_total} document(s) scanned")
-            # Reset per-batch consent so the next upload re-prompts (session-wide stays sticky)
-            st.session_state.pop("cloud_consent_dash_batch", None)
 
     # ── Show completed scan results ───────────────────────────────────
     if st.session_state.scan_batches:
@@ -1705,11 +1659,9 @@ def show_dashboard():
                                 else:
                                     _msg = f"{_batch['type']} scanned — {_added} condition(s) merged"
                                 _ul(_lm_loan_id, **_upd)
-                                # Attach the PDF file to the loan
-                                _pdf_bytes_for_attach = st.session_state.get(f"_scan_bytes_{_bidx}")
-                                if _pdf_bytes_for_attach:
-                                    _attach_doc(_lm_loan_id, _batch["file"], _batch["type"], _pdf_bytes_for_attach,
-                                                extracted=_r.get("extracted_data"))
+                                # Record the scan (metadata only — no PDF stored)
+                                _attach_doc(_lm_loan_id, _batch["file"], _batch["type"],
+                                            extracted=_r.get("extracted_data"))
                                 _la(_lm_loan_id, "upload", _msg, user=st.session_state.get("user_name", ""))
                                 _toast_msg = f"Purchase Contract merged into Loan {_lm_loan_num}" if _batch["type"] == "Purchase Contract" else f"{_added} condition(s) merged into Loan {_lm_loan_num}"
                                 st.toast(_toast_msg, icon="✅")
@@ -6919,7 +6871,6 @@ def show_loan_detail():
             )
 
         _scan_key = f"detail_scan_result_{lid}"
-        _cloud_consent_key = f"cloud_consent_{lid}"
         _cloud_enabled = False
         try:
             import cloud_client as _cc_check
@@ -6927,42 +6878,14 @@ def show_loan_detail():
         except Exception:
             pass
 
-        # Determine user approval for cloud AI
-        _user_approved_cloud = False
+        # Auto-approve cloud when enabled — user configured their key intentionally
         _cloud_doc_types = {"Purchase Contract", "Approval Letter"}
-        _requires_cloud_consent = _scan_dtype in _cloud_doc_types and _cloud_enabled
+        _user_approved_cloud = _cloud_enabled and _scan_dtype in _cloud_doc_types
 
-        if _requires_cloud_consent:
-            _session_consent = st.session_state.get("cloud_consent_session", None)
-            if _session_consent == "yes":
-                _user_approved_cloud = True
-            elif _session_consent == "no":
-                _user_approved_cloud = False
-            else:
-                # Show consent prompt
-                _consent_state = st.session_state.get(_cloud_consent_key, None)
-                if _consent_state is None:
-                    st.info("This document type supports cloud AI augmentation for better extraction.")
-                    _c1, _c2, _c3 = st.columns(3)
-                    with _c1:
-                        if st.button("Send to Cloud AI", key=f"consent_yes_{lid}"):
-                            st.session_state[_cloud_consent_key] = "yes_once"
-                            st.rerun()
-                    with _c2:
-                        if st.button("Skip AI for this scan", key=f"consent_no_{lid}"):
-                            st.session_state[_cloud_consent_key] = "no"
-                            st.rerun()
-                    with _c3:
-                        if st.button("Always for session", key=f"consent_session_{lid}"):
-                            st.session_state["cloud_consent_session"] = "yes"
-                            st.session_state[_cloud_consent_key] = "yes_once"
-                            st.rerun()
-                elif _consent_state == "yes_once":
-                    _user_approved_cloud = True
-                elif _consent_state == "no":
-                    _user_approved_cloud = False
-
-        if _scan_file and st.button("Scan & Attach", key=f"detail_scan_btn_{lid}",
+        _scan_btn_label = (
+            f"Scan with AI" if _user_approved_cloud else "Scan"
+        )
+        if _scan_file and st.button(_scan_btn_label, key=f"detail_scan_btn_{lid}",
                                      type="primary", use_container_width=True):
             _spinner_label = (
                 f"🤖 Sending {_scan_dtype} to Claude... (2-5 sec)"
@@ -7615,6 +7538,118 @@ def show_loan_detail():
             update_loan(lid, assigned_to=_new_a_val)
             log_activity(lid, "reassign", f"Reassigned to {_new_a}", user=my_name)
             st.rerun()
+
+    # ── Team Visibility ──────────────────────────────────────────────────
+    _ld_docs = loan.get("documents", [])
+    _ld_doc_count = len(_ld_docs)
+    _ld_borrower_email = ""
+    _ld_contacts = loan.get("contacts", {}) or {}
+    for _ld_ck in ("borrower", "co_borrower"):
+        _ld_ce = (_ld_contacts.get(_ld_ck) or {}).get("email", "")
+        if _ld_ce:
+            _ld_borrower_email = _ld_ce
+            break
+
+    st.markdown(
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        'letter-spacing:0.5px;margin-top:16px;display:inline-block;">Documents</span>',
+        unsafe_allow_html=True,
+    )
+    _td1, _td2 = st.columns([2, 1])
+    with _td1:
+        st.markdown(
+            f'<div style="font-size:14px;color:#d1d5db;padding-top:6px;">'
+            f'<b style="color:#39FF14;">{_ld_doc_count}</b> document(s) added to this loan</div>',
+            unsafe_allow_html=True,
+        )
+    with _td2:
+        _loan_num_str = loan.get("loan_num", str(lid))
+        _borrower_str = loan.get("borrower", "")
+        _mailto_subject = f"Loan {_loan_num_str} — {_borrower_str} — Document Request"
+        _mailto_body = (
+            f"Hello,%0A%0A"
+            f"Please find below the document checklist for Loan #{_loan_num_str} — {_borrower_str}.%0A%0A"
+            f"Documents received: {_ld_doc_count}%0A%0A"
+            f"Please upload or email any outstanding documents at your earliest convenience.%0A%0A"
+            f"Thank you"
+        )
+        _mailto_to = _ld_borrower_email or ""
+        _mailto_link = f"mailto:{_mailto_to}?subject={_mailto_subject}&body={_mailto_body}"
+        st.link_button("Email Documents", _mailto_link, use_container_width=True)
+
+    # ── Ask AI Assistant ──────────────────────────────────────────────────
+    st.markdown(
+        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        'letter-spacing:0.5px;margin-top:16px;display:inline-block;">Ask AI Assistant</span>',
+        unsafe_allow_html=True,
+    )
+    _ai_chat_enabled = False
+    try:
+        import cloud_client as _ld_cc
+        _ai_chat_enabled = _ld_cc.is_enabled()
+    except Exception:
+        pass
+
+    if not _ai_chat_enabled:
+        st.markdown(
+            '<div style="font-size:12px;color:#9ca3af;padding:6px 0;">Add your Claude API key in AI Settings to enable the loan assistant.</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        _chat_key = f"loan_chat_{lid}"
+        if _chat_key not in st.session_state:
+            st.session_state[_chat_key] = []
+
+        # Render existing messages
+        for _cm in st.session_state[_chat_key]:
+            with st.chat_message(_cm["role"]):
+                st.markdown(_cm["content"])
+
+        _user_q = st.chat_input("Ask anything about this loan...", key=f"loan_chat_input_{lid}")
+        if _user_q:
+            st.session_state[_chat_key].append({"role": "user", "content": _user_q})
+            with st.chat_message("user"):
+                st.markdown(_user_q)
+
+            # Build loan context summary
+            _lc_parts = [
+                f"Loan #{loan.get('loan_num','—')} — {loan.get('borrower','—')}",
+                f"Status: {loan.get('status','—')}",
+                f"Property: {loan.get('property_address', '—')}",
+                f"Purchase Price: {loan.get('purchase_price','—')}",
+                f"Loan Amount: {loan.get('loan_amount','—')}",
+                f"Closing Date: {loan.get('closing_date','—')}",
+                f"Lock Expiry: {loan.get('lock_expiry','—')}",
+            ]
+            _conds = loan.get("conditions", [])
+            if _conds:
+                _open_conds = [c.get("desc","") for c in _conds if c.get("status") not in ("Cleared","Ready to Clear")]
+                if _open_conds:
+                    _lc_parts.append(f"Open conditions ({len(_open_conds)}): " + "; ".join(_open_conds[:8]))
+            _loan_ctx = "\n".join(_lc_parts)
+
+            _system_prompt = (
+                f"You are a mortgage loan assistant. Here is the loan file context:\n\n{_loan_ctx}\n\n"
+                f"Answer questions clearly and concisely. If asked about something not in the loan context, say so."
+            )
+
+            try:
+                import cloud_client as _ld_cc2
+                _chat_history = st.session_state[_chat_key][:-1]  # exclude the just-added user msg
+                _messages = [{"role": m["role"], "content": m["content"]} for m in _chat_history]
+                _messages.append({"role": "user", "content": _user_q})
+                _ai_reply = _ld_cc2.chat(_messages, system=_system_prompt)
+            except Exception as _ce:
+                _ai_reply = f"Error: {_ce}"
+
+            st.session_state[_chat_key].append({"role": "assistant", "content": _ai_reply})
+            with st.chat_message("assistant"):
+                st.markdown(_ai_reply)
+
+        if st.session_state[_chat_key]:
+            if st.button("Clear chat", key=f"loan_chat_clear_{lid}", use_container_width=False):
+                st.session_state[_chat_key] = []
+                st.rerun()
 
     # ── Activity Log ──────────────────────────────────────────────────────
     st.markdown(

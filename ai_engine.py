@@ -4526,6 +4526,22 @@ def _merge_pc_data(regex_data: dict, ai_data: dict) -> dict:
 # Main Processing Function
 # ---------------------------------------------------------------------------
 
+_SENSITIVE_BLOCK_TYPES = {
+    "Bank Statement",
+    "1003 Application",
+}
+_SENSITIVE_KEYWORDS = [
+    r'\bssn\b', r'social\s+security\s+number', r'\d{3}[-\s]\d{2}[-\s]\d{4}',
+    r'\bdob\b', r'date\s+of\s+birth',
+    r'account\s+number', r'routing\s+number', r'routing\s+transit',
+]
+_SENSITIVE_RE = re.compile("|".join(_SENSITIVE_KEYWORDS), re.IGNORECASE)
+
+
+def _has_sensitive_content(text: str) -> bool:
+    return bool(_SENSITIVE_RE.search(text))
+
+
 def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_approved_cloud: bool = False) -> dict:
     """
     Main processing function. Takes PDF bytes, returns structured results.
@@ -4612,6 +4628,9 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         # over regex — because the user opted into AI specifically to get
         # better results than regex. Only fall back to a regex value if AI
         # returned an empty string for that field.
+        if user_approved_cloud and _has_sensitive_content(text):
+            result["ai_log"] = "Cloud AI blocked — document contains sensitive identifiers (SSN/DOB/Account/Routing)"
+            user_approved_cloud = False
         if user_approved_cloud:
             try:
                 import cloud_client as _cc
@@ -4636,7 +4655,9 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         result["raw_text"] = text[:12000]  # retained for optional AI re-extraction
 
         # ── Cloud AI augmentation for Approval Letter ──────────────────
-        # Same as Purchase Contract — cloud call is permissive enough to handle both
+        if user_approved_cloud and _has_sensitive_content(text):
+            result["ai_log"] = "Cloud AI blocked — document contains sensitive identifiers (SSN/DOB/Account/Routing)"
+            user_approved_cloud = False
         if user_approved_cloud:
             try:
                 import cloud_client as _cc
