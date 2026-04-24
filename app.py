@@ -1404,6 +1404,13 @@ def show_dashboard():
         # from the consent prompt (which set "cloud_consent_dash_batch" via rerun).
         _scan_clicked = st.button(f"Scan ({len(_checked_visible)} selected)", key="dash_scan", type="primary", disabled=len(_checked_visible) == 0)
         _consent_returning = st.session_state.get("cloud_consent_dash_batch") in ("yes_once", "no")
+        # DEBUG STRIPE — shows session state so we can see what's happening
+        st.caption(
+            f"DEBUG · scan_clicked={_scan_clicked} · consent_returning={_consent_returning} · "
+            f"batch={st.session_state.get('cloud_consent_dash_batch')!r} · "
+            f"session={st.session_state.get('cloud_consent_session')!r} · "
+            f"checked={_checked_visible}"
+        )
         if _scan_clicked or _consent_returning:
             # Build the actual list of (bytes, name, type) to scan,
             # merging groups where the user said yes
@@ -1467,20 +1474,25 @@ def show_dashboard():
                     _dash_batch_state = st.session_state.get("cloud_consent_dash_batch", None)
                     if _dash_batch_state is None:
                         st.info("This batch contains a Purchase Contract / Approval Letter. Send to Cloud AI?")
+                        # Callbacks fire BEFORE the next rerun, so state is set
+                        # reliably even when the button is rendered inside a nested block.
+                        def _consent_yes():
+                            st.session_state["cloud_consent_dash_batch"] = "yes_once"
+                        def _consent_no():
+                            st.session_state["cloud_consent_dash_batch"] = "no"
+                        def _consent_session():
+                            st.session_state["cloud_consent_session"] = "yes"
+                            st.session_state["cloud_consent_dash_batch"] = "yes_once"
                         _db1, _db2, _db3 = st.columns(3)
                         with _db1:
-                            if st.button("Send to Cloud AI", key="dash_consent_yes"):
-                                st.session_state["cloud_consent_dash_batch"] = "yes_once"
-                                st.rerun()
+                            st.button("Send to Cloud AI", key="dash_consent_yes",
+                                      on_click=_consent_yes, type="primary")
                         with _db2:
-                            if st.button("Skip AI for batch", key="dash_consent_no"):
-                                st.session_state["cloud_consent_dash_batch"] = "no"
-                                st.rerun()
+                            st.button("Skip AI for batch", key="dash_consent_no",
+                                      on_click=_consent_no)
                         with _db3:
-                            if st.button("Always for session", key="dash_consent_session"):
-                                st.session_state["cloud_consent_session"] = "yes"
-                                st.session_state["cloud_consent_dash_batch"] = "yes_once"
-                                st.rerun()
+                            st.button("Always for session", key="dash_consent_session",
+                                      on_click=_consent_session)
                         st.stop()  # Don't proceed with scan until user picks
                     elif _dash_batch_state == "yes_once":
                         _dash_user_approved_cloud = True
