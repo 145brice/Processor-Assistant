@@ -1492,16 +1492,27 @@ def show_dashboard():
             _sq_total = len(_scan_queue)
             _sq_progress = st.progress(0, text="Starting scan...")
             for _sq_i, (_sq_bytes, _sq_name, _sq_type) in enumerate(_scan_queue):
+                # Status text changes when a cloud call is about to fire
+                _sq_will_use_cloud = (_sq_type in _dash_cloud_doc_types and _dash_user_approved_cloud)
+                _sq_status = (
+                    f"🤖 Calling Claude for {_sq_name}... (2-5 sec)"
+                    if _sq_will_use_cloud
+                    else f"Scanning {_sq_i + 1} of {_sq_total}: {_sq_name}..."
+                )
                 _sq_progress.progress(
                     int((_sq_i / _sq_total) * 100),
-                    text=f"Scanning {_sq_i + 1} of {_sq_total}: {_sq_name}..."
+                    text=_sq_status,
                 )
                 if _sq_type == "Unknown":
                     st.warning(f"{_sq_name}: Unknown type — override the dropdown to scan")
                     continue
-                # Only pass user_approved_cloud for cloud-eligible doc types
                 _sq_approved = _dash_user_approved_cloud if _sq_type in _dash_cloud_doc_types else False
-                _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
+                # Wrap in a spinner so it's obvious something is happening during the API call
+                if _sq_will_use_cloud:
+                    with st.spinner(f"🤖 Sending {_sq_name} to Claude for AI extraction..."):
+                        _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
+                else:
+                    _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
                 if _result.get("success"):
                     # Auto-match to a pipeline loan
                     _raw_text = _result.get("raw_text", "") or _result.get("bank_raw_text", "") or ""
@@ -6923,7 +6934,12 @@ def show_loan_detail():
 
         if _scan_file and st.button("Scan & Attach", key=f"detail_scan_btn_{lid}",
                                      type="primary", use_container_width=True):
-            with st.spinner(f"Scanning {_scan_dtype}..."):
+            _spinner_label = (
+                f"🤖 Sending {_scan_dtype} to Claude... (2-5 sec)"
+                if _user_approved_cloud
+                else f"Scanning {_scan_dtype}..."
+            )
+            with st.spinner(_spinner_label):
                 from ai_engine import process_document as _proc_doc
                 _pdf_bytes = _scan_file.read()
                 _scan_result = _proc_doc(_pdf_bytes, _scan_dtype, user_approved_cloud=_user_approved_cloud)
@@ -7184,7 +7200,12 @@ def show_loan_detail():
 
         if _af_file and st.button("Scan Approval Letter", key=f"af_scan_btn_{lid}",
                                    type="primary", use_container_width=True):
-            with st.spinner("Extracting conditions from approval letter..."):
+            _af_spinner = (
+                "🤖 Sending Approval Letter to Claude... (2-5 sec)"
+                if _af_user_approved_cloud
+                else "Extracting conditions from approval letter..."
+            )
+            with st.spinner(_af_spinner):
                 from ai_engine import process_document as _af_proc, extract_contacts as _af_contacts
                 from pypdf import PdfReader as _AF_PR
                 _af_bytes = _af_file.read()
