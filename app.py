@@ -630,7 +630,7 @@ def show_sidebar():
         st.session_state["sidebar_hidden"] = False
 
     if st.session_state["sidebar_hidden"]:
-        # Slide sidebar off-screen and pin the reopen button to a fixed corner
+        # Slide sidebar off-screen
         st.markdown(
             """
             <style>
@@ -644,22 +644,8 @@ def show_sidebar():
                 max-width: 100% !important;
                 padding-top: 56px !important;
             }
-            /* Wrap the unhide button div in a fixed-position container.
-               We use the FIRST stButton in the main content (which IS the unhide button
-               because it's rendered before any other button on the page when sidebar is hidden). */
-            section[data-testid="stMain"] [data-testid="stMainBlockContainer"]
-              > div[data-testid="stVerticalBlock"]
-              > div:first-child div[data-testid="stButton"]:has(button[kind="primary"]) {
-                position: fixed !important;
-                top: 8px !important;
-                left: 8px !important;
-                z-index: 999999 !important;
-                width: auto !important;
-                margin: 0 !important;
-            }
-            section[data-testid="stMain"] [data-testid="stMainBlockContainer"]
-              > div[data-testid="stVerticalBlock"]
-              > div:first-child div[data-testid="stButton"]:has(button[kind="primary"]) button {
+            /* Style for the moved button after JS pins it */
+            #pinned-show-menu button {
                 background: #39FF14 !important;
                 color: #000 !important;
                 font-size: 15px !important;
@@ -670,6 +656,13 @@ def show_sidebar():
                 padding: 0 16px !important;
                 box-shadow: 0 2px 12px rgba(57,255,20,0.5) !important;
                 border-radius: 8px !important;
+                border: none !important;
+                cursor: pointer !important;
+            }
+            #pinned-show-menu button p {
+                color: #000 !important;
+                font-weight: 800 !important;
+                margin: 0 !important;
             }
             </style>
             """,
@@ -678,6 +671,40 @@ def show_sidebar():
         if st.button("▶ Menu", key="sidebar_show_btn", help="Show menu", type="primary"):
             st.session_state["sidebar_hidden"] = False
             st.rerun()
+
+        # Pin the rendered button into a fixed-position anchor via JS
+        # (Pure CSS can't reliably target this button across Streamlit's wrapper variations)
+        st.markdown(
+            """
+            <div id="pinned-show-menu" style="position:fixed;top:8px;left:8px;z-index:999999;"></div>
+            <script>
+            (function(){
+                const pin = () => {
+                    const anchor = window.parent.document.getElementById('pinned-show-menu');
+                    if (!anchor) return false;
+                    // Find the ▶ Menu button by its visible text
+                    const btns = window.parent.document.querySelectorAll('button[kind="primary"]');
+                    for (const btn of btns) {
+                        if (btn.textContent && btn.textContent.includes('Menu')) {
+                            const wrapper = btn.closest('div[data-testid="stButton"]') || btn;
+                            if (!anchor.contains(wrapper)) {
+                                anchor.appendChild(wrapper);
+                            }
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+                // Try a few times because Streamlit re-renders
+                let tries = 0;
+                const interval = setInterval(() => {
+                    if (pin() || ++tries > 20) clearInterval(interval);
+                }, 100);
+            })();
+            </script>
+            """,
+            unsafe_allow_html=True,
+        )
         return
 
     with st.sidebar:
@@ -685,38 +712,26 @@ def show_sidebar():
         user_role = st.session_state.get("user_role", "")
         is_sandbox = st.session_state.get("sandbox_mode", False)
 
-        # Pin the hide button to a fixed corner of the sidebar so it stays put while scrolling nav
+        # Render hide button + JS that pins it inside the sidebar
         st.markdown(
             """
             <style>
-            /* Make the sidebar a positioning context */
-            [data-testid="stSidebar"] > div:first-child {
-                position: relative !important;
-            }
-            /* The FIRST stButton inside the sidebar is the hide button — pin it. */
-            [data-testid="stSidebar"] [data-testid="stSidebarUserContent"]
-              > div[data-testid="stVerticalBlock"]
-              > div:first-child div[data-testid="stButton"]:first-child {
-                position: sticky !important;
-                top: 0 !important;
-                z-index: 999996 !important;
-                background: linear-gradient(180deg, #222 0%, #1a1a1a 100%);
-                padding: 4px 0;
-                margin: 0 0 6px 0 !important;
-                border-bottom: 1px solid rgba(255,255,255,0.08);
-            }
-            [data-testid="stSidebar"] [data-testid="stSidebarUserContent"]
-              > div[data-testid="stVerticalBlock"]
-              > div:first-child div[data-testid="stButton"]:first-child button {
+            #pinned-hide-btn button {
                 width: auto !important;
-                min-width: 80px !important;
-                max-width: 100px !important;
-                height: 32px !important;
+                min-width: 70px !important;
+                max-width: 90px !important;
+                height: 30px !important;
                 padding: 0 10px !important;
-                font-size: 13px !important;
+                font-size: 12px !important;
                 background: rgba(57,255,20,0.10) !important;
                 color: #39FF14 !important;
                 border: 1px solid rgba(57,255,20,0.4) !important;
+                cursor: pointer !important;
+            }
+            #pinned-hide-btn button p {
+                color: #39FF14 !important;
+                font-weight: 600 !important;
+                margin: 0 !important;
             }
             </style>
             """,
@@ -725,6 +740,40 @@ def show_sidebar():
         if st.button("◀ Hide", key="sidebar_hide_btn", help="Hide menu"):
             st.session_state["sidebar_hidden"] = True
             st.rerun()
+        st.markdown(
+            """
+            <div id="pinned-hide-btn" style="position:sticky;top:0;z-index:999996;
+                 background:linear-gradient(180deg,#222 0%,#1a1a1a 100%);
+                 padding:4px 0;margin:-12px 0 6px 0;
+                 border-bottom:1px solid rgba(255,255,255,0.08);"></div>
+            <script>
+            (function(){
+                const pin = () => {
+                    const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
+                    if (!sidebar) return false;
+                    const anchor = sidebar.querySelector('#pinned-hide-btn');
+                    if (!anchor) return false;
+                    const btns = sidebar.querySelectorAll('button');
+                    for (const btn of btns) {
+                        if (btn.textContent && btn.textContent.includes('Hide')) {
+                            const wrapper = btn.closest('div[data-testid="stButton"]') || btn;
+                            if (!anchor.contains(wrapper)) {
+                                anchor.appendChild(wrapper);
+                            }
+                            return true;
+                        }
+                    }
+                    return false;
+                };
+                let tries = 0;
+                const interval = setInterval(() => {
+                    if (pin() || ++tries > 20) clearInterval(interval);
+                }, 100);
+            })();
+            </script>
+            """,
+            unsafe_allow_html=True,
+        )
 
         st.markdown(
             '<div style="padding:0 0 36px 0;margin-top:-4px;">'
