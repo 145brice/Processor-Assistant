@@ -66,15 +66,24 @@ def _hash_password(password: str) -> str:
 def signup(email: str, password: str, display_name: str = "", role: str = "Processor") -> dict:
     try:
         conn = _get_conn()
+        pw_hash = _hash_password(password)
         conn.execute(
             "INSERT INTO users (email, password_hash, display_name, role) VALUES (?, ?, ?, ?)",
-            (email, _hash_password(password), display_name.strip(), role),
+            (email, pw_hash, display_name.strip(), role),
         )
         conn.commit()
         row = conn.execute(
             "SELECT id FROM users WHERE email = ?", (email,)
         ).fetchone()
         conn.close()
+        try:
+            import supabase_sync
+            supabase_sync.mirror_user({
+                "id": str(row["id"]), "email": email, "password_hash": pw_hash,
+                "display_name": display_name, "role": role,
+            })
+        except Exception:
+            pass
         return {"success": True, "user_id": str(row["id"]), "email": email,
                 "display_name": display_name, "role": role}
     except sqlite3.IntegrityError:

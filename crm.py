@@ -75,9 +75,14 @@ def _load() -> list:
 
 
 def _save(loans: list):
-    """Save pipeline to JSON."""
+    """Save pipeline to JSON, then mirror to Supabase backup (queued, non-blocking)."""
     with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
         json.dump(loans, f, indent=2, ensure_ascii=False)
+    try:
+        import supabase_sync
+        supabase_sync.mirror_loans_bulk(loans)
+    except Exception:
+        pass
 
 
 def get_all_loans() -> list:
@@ -443,6 +448,11 @@ def log_activity(loan_id: int, action: str, detail: str = "", user: str = ""):
     })
     with open(path, "w", encoding="utf-8") as f:
         json.dump(entries, f, indent=2, ensure_ascii=False)
+    try:
+        import supabase_sync
+        supabase_sync.mirror_activity(loan_id, action, detail, user)
+    except Exception:
+        pass
 
 
 def get_activity(loan_id: int) -> list:

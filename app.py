@@ -6204,6 +6204,76 @@ def show_ollama_page():
     else:
         st.info("No processing log yet — scan a Purchase Contract or Approval Letter to see entries here.")
 
+    # ── Cloud Backup (Supabase) ──────────────────────────────────────────
+    st.markdown("---")
+    st.markdown("### Cloud Backup (Supabase)")
+    st.caption("Local SQLite is the primary store. Supabase is a backup mirror — batched every 60s, "
+               "scanned PDFs and sensitive fields (SSN, DOB, account #s) are never uploaded.")
+
+    try:
+        import supabase_sync as _sb
+        sb_status = _sb.get_status()
+
+        sc1, sc2, sc3 = st.columns(3)
+        with sc1:
+            if sb_status["enabled"]:
+                st.success("● Connected")
+            elif sb_status["paused"]:
+                st.warning("⏸ Paused")
+            elif sb_status["configured"]:
+                st.error("⚠ Config error")
+            else:
+                st.info("○ Not configured (set SUPABASE_URL + SUPABASE_KEY env vars)")
+        with sc2:
+            st.metric("Calls (last hour)", f"{sb_status['calls_last_hour']} / {sb_status['hourly_cap']}")
+        with sc3:
+            st.metric("Pending in queue", sb_status["queue_size"])
+
+        if sb_status.get("last_flush"):
+            st.caption(f"Last sync: {sb_status['last_flush']}")
+        if sb_status.get("last_error"):
+            st.caption(f"⚠ Last error: {sb_status['last_error']}")
+
+        bc1, bc2, bc3 = st.columns(3)
+        with bc1:
+            if st.button("Sync now", key="sb_sync_now", use_container_width=True,
+                         disabled=not sb_status["configured"]):
+                result = _sb.force_flush()
+                if result.get("ok"):
+                    st.success(f"Synced {result.get('synced', 0)} records")
+                else:
+                    st.error(f"Sync failed: {result.get('reason') or result.get('errors')}")
+                st.rerun()
+        with bc2:
+            pause_label = "Resume sync" if sb_status["paused"] else "Pause sync"
+            if st.button(pause_label, key="sb_toggle_pause", use_container_width=True):
+                _sb.set_paused(not sb_status["paused"])
+                st.rerun()
+        with bc3:
+            if st.button("Restore from backup", key="sb_restore", use_container_width=True,
+                         disabled=not sb_status["configured"]):
+                st.session_state["sb_show_restore_confirm"] = True
+
+        if st.session_state.get("sb_show_restore_confirm"):
+            st.warning("⚠ This will OVERWRITE your local pipeline.json with cloud data. "
+                       "A backup will be saved as pipeline.json.pre_restore_backup. Continue?")
+            rc1, rc2 = st.columns(2)
+            with rc1:
+                if st.button("Yes, restore now", key="sb_restore_confirm", type="primary", use_container_width=True):
+                    result = _sb.restore_from_cloud()
+                    if result.get("ok"):
+                        st.success(f"Restored {result.get('restored_loans', 0)} loans. "
+                                   f"Old data backed up to {result.get('backup_path')}")
+                    else:
+                        st.error(f"Restore failed: {result.get('reason')}")
+                    st.session_state["sb_show_restore_confirm"] = False
+            with rc2:
+                if st.button("Cancel", key="sb_restore_cancel", use_container_width=True):
+                    st.session_state["sb_show_restore_confirm"] = False
+                    st.rerun()
+    except Exception as _e:
+        st.caption(f"Backup module not available: {_e}")
+
 
 # --- Billing & Usage Page ---
 def show_billing_page():

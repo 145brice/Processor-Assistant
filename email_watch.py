@@ -80,6 +80,12 @@ def save_config(email_addr: str, password: str, provider: str,
     }
     with open(_CFG_FILE, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=2)
+    try:
+        import supabase_sync
+        cfg_safe = {k: v for k, v in cfg.items() if k != "password"}
+        supabase_sync.mirror_setting("email_config", cfg_safe)
+    except Exception:
+        pass
     return cfg
 
 
