@@ -69,21 +69,42 @@ header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { dis
 [data-testid="stSidebarCollapsedControl"] {
     z-index: 999999 !important;
     background: #39FF14 !important;
-    border-radius: 8px !important;
-    padding: 4px !important;
-    box-shadow: 0 2px 12px rgba(57,255,20,0.5) !important;
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+    box-shadow: 0 0 18px 4px rgba(57,255,20,0.75), 0 2px 8px rgba(0,0,0,0.5) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 2px !important;
+}
+[data-testid="stSidebarCollapsedControl"]::after {
+    content: "MENU" !important;
+    display: block !important;
+    font-size: 9px !important;
+    font-weight: 900 !important;
+    color: #000 !important;
+    letter-spacing: 1px !important;
+    line-height: 1 !important;
 }
 [data-testid="stSidebarCollapsedControl"] button,
 [data-testid="stSidebarCollapsedControl"] svg {
     color: #000 !important;
     fill: #000 !important;
-    width: 28px !important;
-    height: 28px !important;
+    width: 36px !important;
+    height: 36px !important;
 }
-/* Also style the in-sidebar collapse arrow (when sidebar is open) so it stays subtle but visible */
+/* Also style the in-sidebar collapse arrow big and obvious */
 [data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {
-    background: rgba(57,255,20,0.10) !important;
-    border-radius: 4px !important;
+    background: #39FF14 !important;
+    border-radius: 6px !important;
+    padding: 6px !important;
+    box-shadow: 0 0 10px 2px rgba(57,255,20,0.6) !important;
+}
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] svg {
+    width: 24px !important;
+    height: 24px !important;
+    fill: #000 !important;
+    color: #000 !important;
 }
 
 /* ─────────────── Mobile responsiveness ─────────────── */
