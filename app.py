@@ -53,10 +53,11 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 }
 [data-testid="stAppViewContainer"] > div:first-child { background: transparent !important; }
 #MainMenu, footer { visibility: hidden; height: 0; }
-/* Hide all sidebar collapse/expand controls — sidebar is always visible */
+/* Hide ONLY the sidebar collapse/expand toggle controls — keep nav buttons visible */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="stExpandSidebarButton"],
-[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {
+[data-testid="stSidebarHeader"] [data-testid="stBaseButton-headerNoPadding"],
+[data-testid="stSidebarCollapseButton"] {
     display: none !important;
 }
 /* Sidebar fixed width — let Streamlit handle internal layout */
