@@ -64,58 +64,23 @@ header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { dis
     min-width: 244px !important;
     width: 244px !important;
 }
-/* Unhide button (shown when sidebar is collapsed) — BIG and unmissable */
-[data-testid="stSidebarCollapsedControl"] {
-    position: fixed !important;
-    top: 12px !important;
-    left: 12px !important;
-    z-index: 999999 !important;
-    background: #39FF14 !important;
-    border: 3px solid #000 !important;
-    border-radius: 12px !important;
-    padding: 10px 14px !important;
-    box-shadow: 0 0 24px 6px rgba(57,255,20,0.85), 0 4px 12px rgba(0,0,0,0.6) !important;
-    display: flex !important;
-    flex-direction: column !important;
-    align-items: center !important;
-    gap: 3px !important;
-    min-width: 56px !important;
-}
-[data-testid="stSidebarCollapsedControl"]::after {
-    content: "MENU" !important;
-    display: block !important;
-    font-size: 10px !important;
-    font-weight: 900 !important;
-    color: #000 !important;
-    letter-spacing: 1.5px !important;
-    line-height: 1 !important;
-}
-[data-testid="stSidebarCollapsedControl"] button {
-    background: transparent !important;
-    border: none !important;
-    padding: 0 !important;
-    width: 40px !important;
-    height: 40px !important;
-    cursor: pointer !important;
-}
-[data-testid="stSidebarCollapsedControl"] svg {
-    color: #000 !important;
-    fill: #000 !important;
-    width: 40px !important;
-    height: 40px !important;
-}
-/* Also style the in-sidebar collapse arrow big and obvious */
+/* Sidebar buttons — unhide (collapsed) and hide (in sidebar) identical styling */
+[data-testid="stSidebarCollapsedControl"],
 [data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {
     background: #39FF14 !important;
     border-radius: 6px !important;
     padding: 6px !important;
     box-shadow: 0 0 10px 2px rgba(57,255,20,0.6) !important;
 }
+[data-testid="stSidebarCollapsedControl"] svg,
 [data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] svg {
     width: 24px !important;
     height: 24px !important;
     fill: #000 !important;
     color: #000 !important;
+}
+[data-testid="stSidebarCollapsedControl"] {
+    z-index: 999999 !important;
 }
 
 /* ─────────────── Mobile responsiveness ─────────────── */
