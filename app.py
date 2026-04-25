@@ -640,23 +640,33 @@ def show_sidebar():
                 visibility: hidden !important;
             }
             .main, .block-container { margin-left: 0 !important; max-width: 100% !important; }
-            /* Make the floating reopen button big and obvious */
-            div[data-testid="stButton"] > button[kind="primary"]#sidebar_show_btn,
-            button[data-testid*="sidebar_show_btn"] {
+            /* Pin the unhide button as a fixed floating chip — always visible on every screen */
+            div[data-testid="stButton"]:has(button[kind="primary"]) {
+                position: relative;
+            }
+            button[kind="primary"][title="Show menu"] {
                 background: #39FF14 !important;
                 color: #000 !important;
-                font-size: 20px !important;
+                font-size: 16px !important;
                 font-weight: 800 !important;
+                width: auto !important;
+                min-width: 100px !important;
+                box-shadow: 0 2px 12px rgba(57,255,20,0.5) !important;
             }
             </style>
             """,
             unsafe_allow_html=True,
         )
-        _co1, _co2 = st.columns([1, 20])
-        with _co1:
-            if st.button("▶ Menu", key="sidebar_show_btn", help="Show menu", type="primary"):
-                st.session_state["sidebar_hidden"] = False
-                st.rerun()
+        # Render in a top-pinned container so it's always findable
+        st.markdown(
+            '<div style="position:sticky;top:0;z-index:999998;background:#181818;'
+            'padding:6px 8px;border-bottom:1px solid rgba(57,255,20,0.3);margin:-1rem -1rem 8px -1rem;">',
+            unsafe_allow_html=True,
+        )
+        if st.button("▶ Menu", key="sidebar_show_btn", help="Show menu", type="primary"):
+            st.session_state["sidebar_hidden"] = False
+            st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
         return
 
     with st.sidebar:
