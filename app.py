@@ -672,18 +672,23 @@ def show_sidebar():
             st.session_state["sidebar_hidden"] = False
             st.rerun()
 
-        # Pin the rendered button into a fixed-position anchor via JS
-        # (Pure CSS can't reliably target this button across Streamlit's wrapper variations)
-        st.markdown(
+        # Pin the rendered button into a fixed-position anchor via JS.
+        # st.markdown sanitizes <script> tags away — must use components.html for JS to run.
+        from streamlit.components.v1 import html as _components_html
+        _components_html(
             """
-            <div id="pinned-show-menu" style="position:fixed;top:8px;left:8px;z-index:999999;"></div>
             <script>
             (function(){
+                const doc = window.parent.document;
+                let anchor = doc.getElementById('pinned-show-menu');
+                if (!anchor) {
+                    anchor = doc.createElement('div');
+                    anchor.id = 'pinned-show-menu';
+                    anchor.style.cssText = 'position:fixed;top:8px;left:8px;z-index:999999;';
+                    doc.body.appendChild(anchor);
+                }
                 const pin = () => {
-                    const anchor = window.parent.document.getElementById('pinned-show-menu');
-                    if (!anchor) return false;
-                    // Find the ▶ Menu button by its visible text
-                    const btns = window.parent.document.querySelectorAll('button[kind="primary"]');
+                    const btns = doc.querySelectorAll('button[kind="primary"]');
                     for (const btn of btns) {
                         if (btn.textContent && btn.textContent.includes('Menu')) {
                             const wrapper = btn.closest('div[data-testid="stButton"]') || btn;
@@ -695,15 +700,14 @@ def show_sidebar():
                     }
                     return false;
                 };
-                // Try a few times because Streamlit re-renders
                 let tries = 0;
                 const interval = setInterval(() => {
-                    if (pin() || ++tries > 20) clearInterval(interval);
+                    if (pin() || ++tries > 30) clearInterval(interval);
                 }, 100);
             })();
             </script>
             """,
-            unsafe_allow_html=True,
+            height=0,
         )
         return
 
@@ -740,19 +744,26 @@ def show_sidebar():
         if st.button("◀ Hide", key="sidebar_hide_btn", help="Hide menu"):
             st.session_state["sidebar_hidden"] = True
             st.rerun()
-        st.markdown(
+        from streamlit.components.v1 import html as _components_html
+        _components_html(
             """
-            <div id="pinned-hide-btn" style="position:sticky;top:0;z-index:999996;
-                 background:linear-gradient(180deg,#222 0%,#1a1a1a 100%);
-                 padding:4px 0;margin:-12px 0 6px 0;
-                 border-bottom:1px solid rgba(255,255,255,0.08);"></div>
             <script>
             (function(){
+                const doc = window.parent.document;
+                const sidebar = doc.querySelector('[data-testid="stSidebar"]');
+                if (!sidebar) return;
+                const sidebarContent = sidebar.querySelector('[data-testid="stSidebarUserContent"]') || sidebar;
+                let anchor = sidebar.querySelector('#pinned-hide-btn');
+                if (!anchor) {
+                    anchor = doc.createElement('div');
+                    anchor.id = 'pinned-hide-btn';
+                    anchor.style.cssText = 'position:sticky;top:0;z-index:999996;'
+                        + 'background:linear-gradient(180deg,#222 0%,#1a1a1a 100%);'
+                        + 'padding:4px 0;margin:0 0 6px 0;'
+                        + 'border-bottom:1px solid rgba(255,255,255,0.08);';
+                    sidebarContent.insertBefore(anchor, sidebarContent.firstChild);
+                }
                 const pin = () => {
-                    const sidebar = window.parent.document.querySelector('[data-testid="stSidebar"]');
-                    if (!sidebar) return false;
-                    const anchor = sidebar.querySelector('#pinned-hide-btn');
-                    if (!anchor) return false;
                     const btns = sidebar.querySelectorAll('button');
                     for (const btn of btns) {
                         if (btn.textContent && btn.textContent.includes('Hide')) {
@@ -767,12 +778,12 @@ def show_sidebar():
                 };
                 let tries = 0;
                 const interval = setInterval(() => {
-                    if (pin() || ++tries > 20) clearInterval(interval);
+                    if (pin() || ++tries > 30) clearInterval(interval);
                 }, 100);
             })();
             </script>
             """,
-            unsafe_allow_html=True,
+            height=0,
         )
 
         st.markdown(
