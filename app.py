@@ -53,7 +53,10 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 }
 [data-testid="stAppViewContainer"] > div:first-child { background: transparent !important; }
 #MainMenu, footer { visibility: hidden; height: 0; }
-/* Header must stay visible so sidebar reopen arrow is reachable */
+/* Hide Streamlit's native sidebar collapse arrow — we use our own toggle button */
+[data-testid="stSidebarCollapsedControl"] { display: none !important; }
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] { display: none !important; }
+/* Header */
 header, [data-testid="stHeader"] { background: transparent !important; visibility: visible !important; display: flex !important; height: auto !important; min-height: 40px !important; z-index: 999999 !important; }
 header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { display: none !important; }
 /* Sidebar — desktop default visible, slides off-screen when hidden via our toggle */
@@ -64,23 +67,21 @@ header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { dis
     min-width: 244px !important;
     width: 244px !important;
 }
-/* Sidebar buttons — unhide (collapsed) and hide (in sidebar) identical styling */
-[data-testid="stSidebarCollapsedControl"],
-[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {
+/* Sidebar toggle button (☰ / ✕) — always visible, same green style open or closed */
+[data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"]:first-of-type {
     background: #39FF14 !important;
     border-radius: 6px !important;
+    color: #000 !important;
+    font-size: 18px !important;
+    font-weight: 900 !important;
     padding: 6px !important;
     box-shadow: 0 0 10px 2px rgba(57,255,20,0.6) !important;
+    width: 100% !important;
 }
-[data-testid="stSidebarCollapsedControl"] svg,
-[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] svg {
-    width: 24px !important;
-    height: 24px !important;
-    fill: #000 !important;
+[data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"]:first-of-type p,
+[data-testid="stSidebar"] button[data-testid="stBaseButton-secondary"]:first-of-type span {
     color: #000 !important;
-}
-[data-testid="stSidebarCollapsedControl"] {
-    z-index: 999999 !important;
+    font-weight: 900 !important;
 }
 
 /* ─────────────── Mobile responsiveness ─────────────── */
@@ -630,9 +631,46 @@ def show_login_page():
 
 
 def show_sidebar():
-    """Sidebar navigation. Hide/show is handled by Streamlit's native collapse control
-    (the chevron arrow in the sidebar header) — pinned automatically, no JS needed."""
+    """Sidebar navigation with custom open/close toggle."""
+    if "sidebar_open" not in st.session_state:
+        st.session_state.sidebar_open = True
+
+    _open = st.session_state.sidebar_open
+
+    # Inject CSS that collapses sidebar to 60px strip when closed
+    _sidebar_width = "244px" if _open else "60px"
+    st.markdown(f"""
+    <style>
+    [data-testid="stSidebar"] {{
+        min-width: {_sidebar_width} !important;
+        max-width: {_sidebar_width} !important;
+        width: {_sidebar_width} !important;
+        overflow: hidden !important;
+        transition: min-width 0.2s ease, max-width 0.2s ease, width 0.2s ease !important;
+    }}
+    {"" if _open else """
+    [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] > div > div:not(:first-child) {
+        display: none !important;
+    }
+    [data-testid="stSidebar"] .block-container > div > div > div:not(:first-child) {
+        visibility: hidden !important;
+        height: 0 !important;
+        overflow: hidden !important;
+    }
+    """}
+    </style>
+    """, unsafe_allow_html=True)
+
     with st.sidebar:
+        # Toggle button — always visible, same green style whether open or closed
+        if st.button("☰" if not _open else "✕", key="sidebar_toggle",
+                     help="Toggle menu", use_container_width=True):
+            st.session_state.sidebar_open = not _open
+            st.rerun()
+
+        if not _open:
+            return  # Don't render nav content when collapsed
+
         user_name = st.session_state.get("user_name", "")
         user_role = st.session_state.get("user_role", "")
         is_sandbox = st.session_state.get("sandbox_mode", False)
