@@ -78,7 +78,9 @@ header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { dis
     opacity: 0 !important;
 }
 
-/* Mobile: sidebar covers full width when open; hidden by default via session_state */
+/* ─────────────── Mobile responsiveness ─────────────── */
+
+/* Tablet & phone: sidebar covers full width; tighter container padding */
 @media (max-width: 768px) {
     [data-testid="stSidebar"] {
         min-width: 100% !important;
@@ -87,9 +89,65 @@ header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { dis
         z-index: 999997 !important;
     }
     .main > div, .block-container {
-        padding-left: 0.75rem !important;
-        padding-right: 0.75rem !important;
+        padding: 0.75rem !important;
         max-width: 100% !important;
+    }
+    /* Make st.columns stack instead of squeezing into narrow strips */
+    [data-testid="stHorizontalBlock"] {
+        flex-direction: column !important;
+        gap: 0.5rem !important;
+    }
+    [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        width: 100% !important;
+        flex: 1 1 100% !important;
+        min-width: 0 !important;
+    }
+    /* Tables: horizontal scroll instead of overflow */
+    [data-testid="stMarkdownContainer"] table {
+        display: block !important;
+        overflow-x: auto !important;
+        white-space: nowrap !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+    /* Buttons full-width on mobile so they don't get cramped */
+    .stButton > button, .stDownloadButton > button, .stLinkButton > a {
+        width: 100% !important;
+    }
+    /* Hero h2 too big on phones */
+    h2, [data-testid="stMarkdownContainer"] h2, .main h2, .block-container h2 {
+        font-size: 28px !important;
+        padding: 6px 0 6px 10px !important;
+    }
+    h1 { font-size: 20px !important; }
+}
+
+/* Phone-only: even tighter — kill 3+ column rows entirely, smaller buttons */
+@media (max-width: 480px) {
+    .block-container {
+        padding: 0.5rem !important;
+    }
+    /* Date inputs and selectboxes — full width, taller for touch */
+    [data-testid="stDateInput"], [data-testid="stSelectbox"],
+    [data-testid="stTextInput"], [data-testid="stTextArea"],
+    [data-testid="stNumberInput"], [data-testid="stMultiSelect"] {
+        width: 100% !important;
+    }
+    [data-testid="stDateInput"] input, [data-testid="stSelectbox"] > div > div,
+    [data-testid="stTextInput"] input {
+        min-height: 40px !important;  /* finger-friendly tap target */
+        font-size: 14px !important;
+    }
+    /* Stat cards: stack vertically with breathing room */
+    .stat-card { padding: 12px 14px !important; margin-bottom: 6px !important; }
+    .stat-num { font-size: 22px !important; }
+    /* Loan cards on pipeline: more vertical breathing room */
+    .loan-card { padding: 10px 12px !important; }
+    /* Hide the progress nav step labels, keep just the numbers */
+    .pn-step { font-size: 9px !important; padding: 4px !important; min-width: 40px !important; }
+    /* Custom sidebar toggle arrows — easier to hit */
+    button[kind="secondary"], button[kind="primary"] {
+        min-height: 40px !important;
+        font-size: 13px !important;
     }
 }
 .stDeployButton { display: none; }
