@@ -64,26 +64,22 @@ header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { dis
     min-width: 244px !important;
     width: 244px !important;
 }
-/* Make Streamlit's native sidebar collapse/expand control BIG and obvious.
-   It's pinned by Streamlit itself — no JS needed. */
+/* Sidebar collapse/expand buttons — both same faint green tint with green arrow */
 [data-testid="stSidebarCollapsedControl"] {
     z-index: 999999 !important;
-    background: #39FF14 !important;
-    border-radius: 8px !important;
-    padding: 4px !important;
-    box-shadow: 0 2px 12px rgba(57,255,20,0.5) !important;
 }
 [data-testid="stSidebarCollapsedControl"] button,
-[data-testid="stSidebarCollapsedControl"] svg {
-    color: #000 !important;
-    fill: #000 !important;
-    width: 28px !important;
-    height: 28px !important;
-}
-/* Also style the in-sidebar collapse arrow (when sidebar is open) so it stays subtle but visible */
+[data-testid="stSidebarCollapsedControl"] [data-testid="stBaseButton-headerNoPadding"],
 [data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {
     background: rgba(57,255,20,0.10) !important;
     border-radius: 4px !important;
+    border: 1px solid rgba(57,255,20,0.35) !important;
+}
+[data-testid="stSidebarCollapsedControl"] button svg,
+[data-testid="stSidebarCollapsedControl"] [data-testid="stBaseButton-headerNoPadding"] svg,
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] svg {
+    color: #39FF14 !important;
+    fill: #39FF14 !important;
 }
 
 /* ─────────────── Mobile responsiveness ─────────────── */
