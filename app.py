@@ -672,8 +672,8 @@ def show_sidebar():
             st.session_state["sidebar_hidden"] = False
             st.rerun()
 
-        # Pin the rendered button into a fixed-position anchor via JS.
-        # st.markdown sanitizes <script> tags away — must use components.html for JS to run.
+        # Pin a clone of the button into a fixed anchor. The clone forwards clicks
+        # to the real (hidden) Streamlit button so React's event handler still fires.
         from streamlit.components.v1 import html as _components_html
         _components_html(
             """
@@ -687,22 +687,35 @@ def show_sidebar():
                     anchor.style.cssText = 'position:fixed;top:8px;left:8px;z-index:999999;';
                     doc.body.appendChild(anchor);
                 }
-                const pin = () => {
+                const sync = () => {
                     const btns = doc.querySelectorAll('button[kind="primary"]');
+                    let realBtn = null;
                     for (const btn of btns) {
-                        if (btn.textContent && btn.textContent.includes('Menu')) {
-                            const wrapper = btn.closest('div[data-testid="stButton"]') || btn;
-                            if (!anchor.contains(wrapper)) {
-                                anchor.appendChild(wrapper);
-                            }
-                            return true;
+                        if (btn.textContent && btn.textContent.includes('Menu') && !btn.closest('#pinned-show-menu')) {
+                            realBtn = btn;
+                            break;
                         }
                     }
-                    return false;
+                    if (!realBtn) return false;
+                    // Hide the real button (but keep it in DOM so React still owns it)
+                    const realWrapper = realBtn.closest('div[data-testid="stButton"]');
+                    if (realWrapper) realWrapper.style.display = 'none';
+                    // Build a visual clone that forwards clicks
+                    if (!anchor.querySelector('button.proxy-show-menu')) {
+                        anchor.innerHTML = '<button class="proxy-show-menu" '
+                            + 'style="background:#39FF14;color:#000;font-size:15px;'
+                            + 'font-weight:800;min-width:110px;height:40px;padding:0 16px;'
+                            + 'box-shadow:0 2px 12px rgba(57,255,20,0.5);border-radius:8px;'
+                            + 'border:none;cursor:pointer;">▶ Menu</button>';
+                        anchor.querySelector('button.proxy-show-menu').addEventListener('click', () => {
+                            realBtn.click();
+                        });
+                    }
+                    return true;
                 };
                 let tries = 0;
                 const interval = setInterval(() => {
-                    if (pin() || ++tries > 30) clearInterval(interval);
+                    if (sync() || ++tries > 30) clearInterval(interval);
                 }, 100);
             })();
             </script>
@@ -763,22 +776,33 @@ def show_sidebar():
                         + 'border-bottom:1px solid rgba(255,255,255,0.08);';
                     sidebarContent.insertBefore(anchor, sidebarContent.firstChild);
                 }
-                const pin = () => {
+                const sync = () => {
                     const btns = sidebar.querySelectorAll('button');
+                    let realBtn = null;
                     for (const btn of btns) {
-                        if (btn.textContent && btn.textContent.includes('Hide')) {
-                            const wrapper = btn.closest('div[data-testid="stButton"]') || btn;
-                            if (!anchor.contains(wrapper)) {
-                                anchor.appendChild(wrapper);
-                            }
-                            return true;
+                        if (btn.textContent && btn.textContent.includes('Hide') && !btn.closest('#pinned-hide-btn')) {
+                            realBtn = btn;
+                            break;
                         }
                     }
-                    return false;
+                    if (!realBtn) return false;
+                    const realWrapper = realBtn.closest('div[data-testid="stButton"]');
+                    if (realWrapper) realWrapper.style.display = 'none';
+                    if (!anchor.querySelector('button.proxy-hide-btn')) {
+                        anchor.innerHTML = '<button class="proxy-hide-btn" '
+                            + 'style="min-width:70px;max-width:90px;height:30px;padding:0 10px;'
+                            + 'font-size:12px;background:rgba(57,255,20,0.10);color:#39FF14;'
+                            + 'border:1px solid rgba(57,255,20,0.4);border-radius:4px;'
+                            + 'cursor:pointer;font-weight:600;">◀ Hide</button>';
+                        anchor.querySelector('button.proxy-hide-btn').addEventListener('click', () => {
+                            realBtn.click();
+                        });
+                    }
+                    return true;
                 };
                 let tries = 0;
                 const interval = setInterval(() => {
-                    if (pin() || ++tries > 30) clearInterval(interval);
+                    if (sync() || ++tries > 30) clearInterval(interval);
                 }, 100);
             })();
             </script>
