@@ -67,19 +67,20 @@ header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { dis
 /* Sidebar collapse/expand buttons — both same faint green tint with green arrow */
 [data-testid="stSidebarCollapsedControl"] {
     z-index: 999999 !important;
-}
-[data-testid="stSidebarCollapsedControl"] button,
-[data-testid="stSidebarCollapsedControl"] [data-testid="stBaseButton-headerNoPadding"],
-[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {
     background: rgba(57,255,20,0.10) !important;
     border-radius: 4px !important;
     border: 1px solid rgba(57,255,20,0.35) !important;
 }
-[data-testid="stSidebarCollapsedControl"] button svg,
-[data-testid="stSidebarCollapsedControl"] [data-testid="stBaseButton-headerNoPadding"] svg,
-[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] svg {
+[data-testid="stSidebarCollapsedControl"] *,
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] * {
     color: #39FF14 !important;
     fill: #39FF14 !important;
+    stroke: #39FF14 !important;
+}
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {
+    background: rgba(57,255,20,0.10) !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(57,255,20,0.35) !important;
 }
 
 /* ─────────────── Mobile responsiveness ─────────────── */
