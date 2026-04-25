@@ -67,8 +67,16 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 
 /* ─────────────── Mobile responsiveness ─────────────── */
 
-/* Tablet & phone: let Streamlit handle sidebar natively (overlay), tighter content padding */
+/* Tablet & phone: narrower always-visible sidebar so content has room */
 @media (max-width: 768px) {
+    [data-testid="stSidebar"] {
+        min-width: 140px !important;
+        width: 140px !important;
+    }
+    [data-testid="stSidebar"] button {
+        font-size: 12px !important;
+        padding: 6px 8px !important;
+    }
     .main > div, .block-container {
         padding: 0.75rem !important;
         max-width: 100% !important;
@@ -102,8 +110,16 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
     h1 { font-size: 20px !important; }
 }
 
-/* Phone-only: even tighter — kill 3+ column rows entirely, smaller buttons */
+/* Phone-only: even tighter — narrower sidebar, smaller buttons */
 @media (max-width: 480px) {
+    [data-testid="stSidebar"] {
+        min-width: 110px !important;
+        width: 110px !important;
+    }
+    [data-testid="stSidebar"] button {
+        font-size: 11px !important;
+        padding: 5px 6px !important;
+    }
     .block-container {
         padding: 0.5rem !important;
     }
