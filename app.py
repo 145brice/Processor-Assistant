@@ -65,22 +65,18 @@ header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { dis
     width: 244px !important;
 }
 /* Sidebar collapse/expand buttons — both same faint green tint with green arrow */
-[data-testid="stSidebarCollapsedControl"] {
-    z-index: 999999 !important;
-    background: rgba(57,255,20,0.10) !important;
-    border-radius: 4px !important;
-    border: 1px solid rgba(57,255,20,0.35) !important;
-}
-[data-testid="stSidebarCollapsedControl"] *,
-[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] * {
-    color: #39FF14 !important;
-    fill: #39FF14 !important;
-    stroke: #39FF14 !important;
-}
+[data-testid="stExpandSidebarButton"],
 [data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {
     background: rgba(57,255,20,0.10) !important;
     border-radius: 4px !important;
     border: 1px solid rgba(57,255,20,0.35) !important;
+    z-index: 999999 !important;
+}
+[data-testid="stExpandSidebarButton"] *,
+[data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"],
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] * {
+    color: #39FF14 !important;
+    fill: #39FF14 !important;
 }
 
 /* ─────────────── Mobile responsiveness ─────────────── */
