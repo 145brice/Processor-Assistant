@@ -68,14 +68,16 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
     margin-left: 0 !important;
     visibility: visible !important;
 }
-[data-testid="stSidebar"] [data-testid="stSidebarContent"],
-[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
-[data-testid="stSidebar"] [data-testid="stSidebarHeader"] {
-    display: flex !important;
+/* Force just the user-content visible — leave header/content default so scrolling works */
+[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
     visibility: visible !important;
     opacity: 1 !important;
-    width: auto !important;
-    height: auto !important;
+}
+/* Hide the empty header bar that creates the white strip */
+[data-testid="stSidebarHeader"] {
+    background: transparent !important;
+    min-height: 0 !important;
+    padding: 0 !important;
 }
 
 /* ─────────────── Mobile responsiveness ─────────────── */
