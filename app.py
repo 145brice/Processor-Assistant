@@ -60,10 +60,22 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 [data-testid="stSidebarCollapseButton"] {
     display: none !important;
 }
-/* Sidebar fixed width — let Streamlit handle internal layout */
+/* Sidebar always rendered as expanded — override Streamlit's aria-expanded="false" hiding */
 [data-testid="stSidebar"] {
     min-width: 244px !important;
     width: 244px !important;
+    transform: none !important;
+    margin-left: 0 !important;
+    visibility: visible !important;
+}
+[data-testid="stSidebar"] [data-testid="stSidebarContent"],
+[data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
+[data-testid="stSidebar"] [data-testid="stSidebarHeader"] {
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    width: auto !important;
+    height: auto !important;
 }
 
 /* ─────────────── Mobile responsiveness ─────────────── */
