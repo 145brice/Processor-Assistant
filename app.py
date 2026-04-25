@@ -680,46 +680,68 @@ def show_sidebar():
             <script>
             (function(){
                 const doc = window.parent.document;
-                // Find-real-button helper that always queries fresh (Streamlit re-renders nuke nodes)
-                const findRealBtn = (label) => {
-                    const btns = doc.querySelectorAll('button[kind="primary"]');
+                // Remove any leftover hide-button anchor from previous page state
+                const oldHide = doc.querySelector('#pinned-hide-btn');
+                if (oldHide) oldHide.remove();
+
+                const findRealBtn = () => {
+                    // Look in the MAIN content area only (sidebar is hidden right now)
+                    const main = doc.querySelector('section[data-testid="stMain"]') || doc;
+                    const btns = main.querySelectorAll('button[kind="primary"]');
                     for (const btn of btns) {
-                        if (btn.textContent && btn.textContent.includes(label) && !btn.closest('#pinned-show-menu')) {
+                        const txt = (btn.textContent || '').trim();
+                        if (txt === '▶ Menu' || txt === 'Menu' || txt.endsWith('Menu')) {
                             return btn;
                         }
                     }
                     return null;
                 };
-                // Build the pinned anchor + proxy button ONCE per page load
+
                 let anchor = doc.getElementById('pinned-show-menu');
                 if (!anchor) {
                     anchor = doc.createElement('div');
                     anchor.id = 'pinned-show-menu';
                     anchor.style.cssText = 'position:fixed;top:8px;left:8px;z-index:999999;';
-                    anchor.innerHTML = '<button class="proxy-show-menu" '
-                        + 'style="background:#39FF14;color:#000;font-size:15px;'
+                    const proxyBtn = doc.createElement('button');
+                    proxyBtn.textContent = '▶ Menu';
+                    proxyBtn.style.cssText = 'background:#39FF14;color:#000;font-size:15px;'
                         + 'font-weight:800;min-width:110px;height:40px;padding:0 16px;'
                         + 'box-shadow:0 2px 12px rgba(57,255,20,0.5);border-radius:8px;'
-                        + 'border:none;cursor:pointer;">▶ Menu</button>';
+                        + 'border:none;cursor:pointer;';
+                    anchor.appendChild(proxyBtn);
                     doc.body.appendChild(anchor);
-                    // Click handler re-resolves the real button each time
-                    anchor.querySelector('button.proxy-show-menu').addEventListener('click', () => {
-                        const realBtn = findRealBtn('Menu');
-                        if (realBtn) realBtn.click();
+                    proxyBtn.addEventListener('click', (ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        const realBtn = findRealBtn();
+                        if (realBtn) {
+                            // Make sure it's clickable even if hidden
+                            const w = realBtn.closest('div[data-testid="stButton"]');
+                            if (w) w.style.display = '';
+                            realBtn.click();
+                        }
                     });
                 }
-                // Hide the real Streamlit button — re-apply after every re-render via observer
+
+                // Hide the duplicate real button visually (but keep clickable)
                 const hideReal = () => {
-                    const realBtn = findRealBtn('Menu');
+                    const realBtn = findRealBtn();
                     if (realBtn) {
                         const wrapper = realBtn.closest('div[data-testid="stButton"]');
-                        if (wrapper) wrapper.style.display = 'none';
+                        if (wrapper) {
+                            wrapper.style.position = 'absolute';
+                            wrapper.style.left = '-9999px';
+                            wrapper.style.top = '-9999px';
+                            wrapper.style.width = '1px';
+                            wrapper.style.height = '1px';
+                            wrapper.style.overflow = 'hidden';
+                        }
                     }
                 };
                 hideReal();
-                // Observe DOM changes so re-rendered Streamlit buttons get hidden again
-                if (!doc.body.dataset.showMenuObserved) {
-                    doc.body.dataset.showMenuObserved = '1';
+                // Re-hide on any DOM change
+                if (!doc.body.dataset.showMenuObs) {
+                    doc.body.dataset.showMenuObs = '1';
                     new MutationObserver(hideReal).observe(doc.body, {childList: true, subtree: true});
                 }
             })();
@@ -768,13 +790,18 @@ def show_sidebar():
             <script>
             (function(){
                 const doc = window.parent.document;
+                // Remove any leftover unhide anchor from previous page state
+                const oldShow = doc.querySelector('#pinned-show-menu');
+                if (oldShow) oldShow.remove();
+
                 const findSidebar = () => doc.querySelector('[data-testid="stSidebar"]');
                 const findRealBtn = () => {
                     const sb = findSidebar();
                     if (!sb) return null;
                     const btns = sb.querySelectorAll('button');
                     for (const btn of btns) {
-                        if (btn.textContent && btn.textContent.includes('Hide') && !btn.closest('#pinned-hide-btn')) {
+                        const txt = (btn.textContent || '').trim();
+                        if ((txt === '◀ Hide' || txt === 'Hide') && !btn.closest('#pinned-hide-btn')) {
                             return btn;
                         }
                     }
@@ -792,15 +819,24 @@ def show_sidebar():
                         + 'background:linear-gradient(180deg,#222 0%,#1a1a1a 100%);'
                         + 'padding:4px 0;margin:0 0 6px 0;'
                         + 'border-bottom:1px solid rgba(255,255,255,0.08);';
-                    anchor.innerHTML = '<button class="proxy-hide-btn" '
-                        + 'style="min-width:70px;max-width:90px;height:30px;padding:0 10px;'
+                    const proxyBtn = doc.createElement('button');
+                    proxyBtn.className = 'proxy-hide-btn';
+                    proxyBtn.textContent = '◀ Hide';
+                    proxyBtn.style.cssText = 'min-width:70px;max-width:90px;height:30px;padding:0 10px;'
                         + 'font-size:12px;background:rgba(57,255,20,0.10);color:#39FF14;'
                         + 'border:1px solid rgba(57,255,20,0.4);border-radius:4px;'
-                        + 'cursor:pointer;font-weight:600;">◀ Hide</button>';
+                        + 'cursor:pointer;font-weight:600;';
+                    anchor.appendChild(proxyBtn);
                     sidebarContent.insertBefore(anchor, sidebarContent.firstChild);
-                    anchor.querySelector('button.proxy-hide-btn').addEventListener('click', () => {
+                    proxyBtn.addEventListener('click', (ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
                         const realBtn = findRealBtn();
-                        if (realBtn) realBtn.click();
+                        if (realBtn) {
+                            const w = realBtn.closest('div[data-testid="stButton"]');
+                            if (w) w.style.display = '';
+                            realBtn.click();
+                        }
                     });
                     return anchor;
                 };
@@ -808,13 +844,20 @@ def show_sidebar():
                     const realBtn = findRealBtn();
                     if (realBtn) {
                         const wrapper = realBtn.closest('div[data-testid="stButton"]');
-                        if (wrapper) wrapper.style.display = 'none';
+                        if (wrapper) {
+                            wrapper.style.position = 'absolute';
+                            wrapper.style.left = '-9999px';
+                            wrapper.style.top = '-9999px';
+                            wrapper.style.width = '1px';
+                            wrapper.style.height = '1px';
+                            wrapper.style.overflow = 'hidden';
+                        }
                     }
                 };
                 ensureAnchor();
                 hideReal();
-                if (!doc.body.dataset.hideBtnObserved) {
-                    doc.body.dataset.hideBtnObserved = '1';
+                if (!doc.body.dataset.hideBtnObs) {
+                    doc.body.dataset.hideBtnObs = '1';
                     new MutationObserver(() => { ensureAnchor(); hideReal(); })
                       .observe(doc.body, {childList: true, subtree: true});
                 }
