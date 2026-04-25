@@ -630,7 +630,7 @@ def show_sidebar():
         st.session_state["sidebar_hidden"] = False
 
     if st.session_state["sidebar_hidden"]:
-        # Slide sidebar off-screen and show a clearly visible reopen button (▶)
+        # Slide sidebar off-screen and show a fixed floating reopen button (▶)
         st.markdown(
             """
             <style>
@@ -639,34 +639,42 @@ def show_sidebar():
                 margin-left: -260px !important;
                 visibility: hidden !important;
             }
-            .main, .block-container { margin-left: 0 !important; max-width: 100% !important; }
-            /* Pin the unhide button as a fixed floating chip — always visible on every screen */
-            div[data-testid="stButton"]:has(button[kind="primary"]) {
-                position: relative;
-            }
-            button[kind="primary"][title="Show menu"] {
+            .main, .block-container { margin-left: 0 !important; max-width: 100% !important; padding-top: 56px !important; }
+            /* Float the unhide button (▶ Menu) at fixed top-left so it stays put while scrolling */
+            #floating-menu-btn { position: fixed !important; top: 8px !important; left: 8px !important;
+                z-index: 999999 !important; }
+            #floating-menu-btn button[kind="primary"] {
                 background: #39FF14 !important;
                 color: #000 !important;
-                font-size: 16px !important;
+                font-size: 15px !important;
                 font-weight: 800 !important;
                 width: auto !important;
                 min-width: 100px !important;
+                height: 38px !important;
                 box-shadow: 0 2px 12px rgba(57,255,20,0.5) !important;
             }
             </style>
+            <div id="floating-menu-btn"></div>
+            <script>
+            // Move the next-rendered button into the floating anchor so it sticks
+            (function(){
+                const tryMove = () => {
+                    const anchor = document.getElementById('floating-menu-btn');
+                    const btn = document.querySelector('button[data-testid="baseButton-primary"]');
+                    if (anchor && btn && !anchor.contains(btn)) {
+                        anchor.appendChild(btn.closest('div[data-testid="stButton"]') || btn);
+                    }
+                };
+                setTimeout(tryMove, 50);
+                setTimeout(tryMove, 250);
+            })();
+            </script>
             """,
-            unsafe_allow_html=True,
-        )
-        # Render in a top-pinned container so it's always findable
-        st.markdown(
-            '<div style="position:sticky;top:0;z-index:999998;background:#181818;'
-            'padding:6px 8px;border-bottom:1px solid rgba(57,255,20,0.3);margin:-1rem -1rem 8px -1rem;">',
             unsafe_allow_html=True,
         )
         if st.button("▶ Menu", key="sidebar_show_btn", help="Show menu", type="primary"):
             st.session_state["sidebar_hidden"] = False
             st.rerun()
-        st.markdown("</div>", unsafe_allow_html=True)
         return
 
     with st.sidebar:
@@ -674,12 +682,34 @@ def show_sidebar():
         user_role = st.session_state.get("user_role", "")
         is_sandbox = st.session_state.get("sandbox_mode", False)
 
-        # Hide button at top of sidebar
-        _hc1, _hc2 = st.columns([1, 4])
-        with _hc1:
-            if st.button("◀", key="sidebar_hide_btn", help="Hide menu"):
-                st.session_state["sidebar_hidden"] = True
-                st.rerun()
+        # Sticky hide button — stays visible at the top of the sidebar even while scrolling nav
+        st.markdown(
+            """
+            <style>
+            /* The first stButton inside the sidebar = the hide button. Pin it to the top. */
+            [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] > div:first-child {
+                position: sticky !important;
+                top: 0 !important;
+                z-index: 999996 !important;
+                background: linear-gradient(180deg, #222222 0%, #1a1a1a 100%) !important;
+                padding: 6px 0 8px 0 !important;
+                margin-bottom: 6px !important;
+                border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+            }
+            [data-testid="stSidebar"] button[key="sidebar_hide_btn"] {
+                width: 38px !important;
+                min-width: 38px !important;
+                height: 32px !important;
+                padding: 0 !important;
+                font-size: 14px !important;
+            }
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
+        if st.button("◀ Hide", key="sidebar_hide_btn", help="Hide menu"):
+            st.session_state["sidebar_hidden"] = True
+            st.rerun()
 
         st.markdown(
             '<div style="padding:0 0 36px 0;margin-top:-4px;">'
