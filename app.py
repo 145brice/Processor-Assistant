@@ -123,34 +123,31 @@ body.pa-sidebar-hidden [data-testid="stSidebar"] {
     transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease !important;
 }
 @media (max-width: 768px) {
-    #pa-sidebar-toggle { left: 138px !important; }
+    #pa-sidebar-toggle { left: 208px !important; }
     body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
 }
 @media (max-width: 480px) {
-    #pa-sidebar-toggle { left: 118px !important; }
+    #pa-sidebar-toggle { left: 188px !important; }
     body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
 }
 
 /* ─────────────── Mobile responsiveness ─────────────── */
 
-/* Tablet & phone: narrower always-visible sidebar so content has room */
+/* Tablet & phone: wider sidebar so nav text isn't cramped — collapse via toggle for content room */
 @media (max-width: 768px) {
     [data-testid="stSidebar"] {
-        min-width: 130px !important;
-        width: 130px !important;
-        max-width: 130px !important;
+        min-width: 200px !important;
+        width: 200px !important;
+        max-width: 200px !important;
         flex-shrink: 0 !important;
     }
     [data-testid="stSidebar"] button {
-        font-size: 11px !important;
-        padding: 5px 6px !important;
+        font-size: 12px !important;
+        padding: 6px 8px !important;
         word-break: break-word !important;
     }
-    /* Main content takes the rest, no overflow off-screen */
     [data-testid="stAppViewContainer"] > .main,
     [data-testid="stAppViewContainer"] section.main {
-        width: calc(100vw - 130px) !important;
-        max-width: calc(100vw - 130px) !important;
         overflow-x: hidden !important;
     }
     .main > div, .block-container {
@@ -189,18 +186,13 @@ body.pa-sidebar-hidden [data-testid="stSidebar"] {
 /* Phone-only: even tighter — narrower sidebar, smaller buttons */
 @media (max-width: 480px) {
     [data-testid="stSidebar"] {
-        min-width: 100px !important;
-        width: 100px !important;
-        max-width: 100px !important;
+        min-width: 180px !important;
+        width: 180px !important;
+        max-width: 180px !important;
     }
     [data-testid="stSidebar"] button {
-        font-size: 10px !important;
-        padding: 4px 5px !important;
-    }
-    [data-testid="stAppViewContainer"] > .main,
-    [data-testid="stAppViewContainer"] section.main {
-        width: calc(100vw - 100px) !important;
-        max-width: calc(100vw - 100px) !important;
+        font-size: 11px !important;
+        padding: 5px 6px !important;
     }
     .block-container {
         padding: 0.5rem !important;
@@ -460,7 +452,17 @@ _components.html("""
     if (btn) btn.textContent = hidden ? '☰' : '✕';
   }
 
+  function sidebarExists() {
+    return !!doc.querySelector('[data-testid="stSidebar"]');
+  }
+
+  function removeBtn() {
+    const existing = doc.getElementById(BTN_ID);
+    if (existing) existing.remove();
+  }
+
   function inject() {
+    if (!sidebarExists()) { removeBtn(); return; }
     if (doc.getElementById(BTN_ID)) { applyState(); return; }
     const btn = doc.createElement('button');
     btn.id = BTN_ID;
@@ -478,11 +480,12 @@ _components.html("""
   }
 
   inject();
-  // Re-inject if Streamlit ever wipes our button (defensive)
+  // Re-check on DOM mutations: add button if sidebar appeared, remove if it disappeared
   const obs = new MutationObserver(() => {
-    if (!doc.getElementById(BTN_ID)) inject();
+    if (sidebarExists() && !doc.getElementById(BTN_ID)) inject();
+    else if (!sidebarExists() && doc.getElementById(BTN_ID)) removeBtn();
   });
-  obs.observe(doc.body, { childList: true, subtree: false });
+  obs.observe(doc.body, { childList: true, subtree: true });
 })();
 </script>
 """, height=0)
