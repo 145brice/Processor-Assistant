@@ -79,6 +79,14 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
     min-height: 0 !important;
     padding: 0 !important;
 }
+/* Hide Streamlit's top white app header bar entirely */
+header[data-testid="stHeader"], [data-testid="stHeader"], .stAppHeader {
+    background: transparent !important;
+    height: 0 !important;
+    min-height: 0 !important;
+    visibility: hidden !important;
+    display: none !important;
+}
 
 /* ─────────────── Mobile responsiveness ─────────────── */
 
