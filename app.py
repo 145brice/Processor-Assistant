@@ -53,42 +53,24 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 }
 [data-testid="stAppViewContainer"] > div:first-child { background: transparent !important; }
 #MainMenu, footer { visibility: hidden; height: 0; }
-/* Header must stay visible so sidebar reopen arrow is reachable */
-header, [data-testid="stHeader"] { background: transparent !important; visibility: visible !important; display: flex !important; height: auto !important; min-height: 40px !important; z-index: 999999 !important; }
-header [data-testid="stDecoration"], header [data-testid="stStatusWidget"] { display: none !important; }
-/* Sidebar — desktop default visible, slides off-screen when hidden via our toggle */
+/* Hide all sidebar collapse/expand controls — sidebar is always visible */
+[data-testid="stSidebarCollapsedControl"],
+[data-testid="stExpandSidebarButton"],
+[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {
+    display: none !important;
+}
+/* Sidebar always open */
 [data-testid="stSidebar"] {
-    transition: transform 0.25s ease, margin-left 0.25s ease, width 0.25s ease !important;
     visibility: visible !important;
     display: block !important;
     min-width: 244px !important;
     width: 244px !important;
 }
-/* Sidebar collapse/expand buttons — both same faint green tint with green arrow */
-[data-testid="stExpandSidebarButton"],
-[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {
-    background: rgba(57,255,20,0.10) !important;
-    border-radius: 4px !important;
-    border: 1px solid rgba(57,255,20,0.35) !important;
-    z-index: 999999 !important;
-}
-[data-testid="stExpandSidebarButton"] *,
-[data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"],
-[data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] * {
-    color: #39FF14 !important;
-    fill: #39FF14 !important;
-}
 
 /* ─────────────── Mobile responsiveness ─────────────── */
 
-/* Tablet & phone: sidebar covers full width; tighter container padding */
+/* Tablet & phone: let Streamlit handle sidebar natively (overlay), tighter content padding */
 @media (max-width: 768px) {
-    [data-testid="stSidebar"] {
-        min-width: 100% !important;
-        width: 100% !important;
-        max-width: 100% !important;
-        z-index: 999997 !important;
-    }
     .main > div, .block-container {
         padding: 0.75rem !important;
         max-width: 100% !important;
