@@ -630,7 +630,7 @@ def show_sidebar():
         st.session_state["sidebar_hidden"] = False
 
     if st.session_state["sidebar_hidden"]:
-        # Slide sidebar off-screen and show a fixed floating reopen button (▶)
+        # Slide sidebar off-screen and pin the reopen button to a fixed corner
         st.markdown(
             """
             <style>
@@ -639,36 +639,39 @@ def show_sidebar():
                 margin-left: -260px !important;
                 visibility: hidden !important;
             }
-            .main, .block-container { margin-left: 0 !important; max-width: 100% !important; padding-top: 56px !important; }
-            /* Float the unhide button (▶ Menu) at fixed top-left so it stays put while scrolling */
-            #floating-menu-btn { position: fixed !important; top: 8px !important; left: 8px !important;
-                z-index: 999999 !important; }
-            #floating-menu-btn button[kind="primary"] {
+            .main, .block-container {
+                margin-left: 0 !important;
+                max-width: 100% !important;
+                padding-top: 56px !important;
+            }
+            /* Wrap the unhide button div in a fixed-position container.
+               We use the FIRST stButton in the main content (which IS the unhide button
+               because it's rendered before any other button on the page when sidebar is hidden). */
+            section[data-testid="stMain"] [data-testid="stMainBlockContainer"]
+              > div[data-testid="stVerticalBlock"]
+              > div:first-child div[data-testid="stButton"]:has(button[kind="primary"]) {
+                position: fixed !important;
+                top: 8px !important;
+                left: 8px !important;
+                z-index: 999999 !important;
+                width: auto !important;
+                margin: 0 !important;
+            }
+            section[data-testid="stMain"] [data-testid="stMainBlockContainer"]
+              > div[data-testid="stVerticalBlock"]
+              > div:first-child div[data-testid="stButton"]:has(button[kind="primary"]) button {
                 background: #39FF14 !important;
                 color: #000 !important;
                 font-size: 15px !important;
                 font-weight: 800 !important;
                 width: auto !important;
-                min-width: 100px !important;
-                height: 38px !important;
+                min-width: 110px !important;
+                height: 40px !important;
+                padding: 0 16px !important;
                 box-shadow: 0 2px 12px rgba(57,255,20,0.5) !important;
+                border-radius: 8px !important;
             }
             </style>
-            <div id="floating-menu-btn"></div>
-            <script>
-            // Move the next-rendered button into the floating anchor so it sticks
-            (function(){
-                const tryMove = () => {
-                    const anchor = document.getElementById('floating-menu-btn');
-                    const btn = document.querySelector('button[data-testid="baseButton-primary"]');
-                    if (anchor && btn && !anchor.contains(btn)) {
-                        anchor.appendChild(btn.closest('div[data-testid="stButton"]') || btn);
-                    }
-                };
-                setTimeout(tryMove, 50);
-                setTimeout(tryMove, 250);
-            })();
-            </script>
             """,
             unsafe_allow_html=True,
         )
@@ -682,26 +685,38 @@ def show_sidebar():
         user_role = st.session_state.get("user_role", "")
         is_sandbox = st.session_state.get("sandbox_mode", False)
 
-        # Sticky hide button — stays visible at the top of the sidebar even while scrolling nav
+        # Pin the hide button to a fixed corner of the sidebar so it stays put while scrolling nav
         st.markdown(
             """
             <style>
-            /* The first stButton inside the sidebar = the hide button. Pin it to the top. */
-            [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] > div:first-child {
+            /* Make the sidebar a positioning context */
+            [data-testid="stSidebar"] > div:first-child {
+                position: relative !important;
+            }
+            /* The FIRST stButton inside the sidebar is the hide button — pin it. */
+            [data-testid="stSidebar"] [data-testid="stSidebarUserContent"]
+              > div[data-testid="stVerticalBlock"]
+              > div:first-child div[data-testid="stButton"]:first-child {
                 position: sticky !important;
                 top: 0 !important;
                 z-index: 999996 !important;
-                background: linear-gradient(180deg, #222222 0%, #1a1a1a 100%) !important;
-                padding: 6px 0 8px 0 !important;
-                margin-bottom: 6px !important;
-                border-bottom: 1px solid rgba(255,255,255,0.08) !important;
+                background: linear-gradient(180deg, #222 0%, #1a1a1a 100%);
+                padding: 4px 0;
+                margin: 0 0 6px 0 !important;
+                border-bottom: 1px solid rgba(255,255,255,0.08);
             }
-            [data-testid="stSidebar"] button[key="sidebar_hide_btn"] {
-                width: 38px !important;
-                min-width: 38px !important;
+            [data-testid="stSidebar"] [data-testid="stSidebarUserContent"]
+              > div[data-testid="stVerticalBlock"]
+              > div:first-child div[data-testid="stButton"]:first-child button {
+                width: auto !important;
+                min-width: 80px !important;
+                max-width: 100px !important;
                 height: 32px !important;
-                padding: 0 !important;
-                font-size: 14px !important;
+                padding: 0 10px !important;
+                font-size: 13px !important;
+                background: rgba(57,255,20,0.10) !important;
+                color: #39FF14 !important;
+                border: 1px solid rgba(57,255,20,0.4) !important;
             }
             </style>
             """,
