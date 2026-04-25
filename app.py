@@ -59,10 +59,8 @@ html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
 [data-testid="stSidebar"] [data-testid="stBaseButton-headerNoPadding"] {
     display: none !important;
 }
-/* Sidebar always open */
+/* Sidebar fixed width — let Streamlit handle internal layout */
 [data-testid="stSidebar"] {
-    visibility: visible !important;
-    display: block !important;
     min-width: 244px !important;
     width: 244px !important;
 }
