@@ -680,43 +680,48 @@ def show_sidebar():
             <script>
             (function(){
                 const doc = window.parent.document;
+                // Find-real-button helper that always queries fresh (Streamlit re-renders nuke nodes)
+                const findRealBtn = (label) => {
+                    const btns = doc.querySelectorAll('button[kind="primary"]');
+                    for (const btn of btns) {
+                        if (btn.textContent && btn.textContent.includes(label) && !btn.closest('#pinned-show-menu')) {
+                            return btn;
+                        }
+                    }
+                    return null;
+                };
+                // Build the pinned anchor + proxy button ONCE per page load
                 let anchor = doc.getElementById('pinned-show-menu');
                 if (!anchor) {
                     anchor = doc.createElement('div');
                     anchor.id = 'pinned-show-menu';
                     anchor.style.cssText = 'position:fixed;top:8px;left:8px;z-index:999999;';
+                    anchor.innerHTML = '<button class="proxy-show-menu" '
+                        + 'style="background:#39FF14;color:#000;font-size:15px;'
+                        + 'font-weight:800;min-width:110px;height:40px;padding:0 16px;'
+                        + 'box-shadow:0 2px 12px rgba(57,255,20,0.5);border-radius:8px;'
+                        + 'border:none;cursor:pointer;">▶ Menu</button>';
                     doc.body.appendChild(anchor);
+                    // Click handler re-resolves the real button each time
+                    anchor.querySelector('button.proxy-show-menu').addEventListener('click', () => {
+                        const realBtn = findRealBtn('Menu');
+                        if (realBtn) realBtn.click();
+                    });
                 }
-                const sync = () => {
-                    const btns = doc.querySelectorAll('button[kind="primary"]');
-                    let realBtn = null;
-                    for (const btn of btns) {
-                        if (btn.textContent && btn.textContent.includes('Menu') && !btn.closest('#pinned-show-menu')) {
-                            realBtn = btn;
-                            break;
-                        }
+                // Hide the real Streamlit button — re-apply after every re-render via observer
+                const hideReal = () => {
+                    const realBtn = findRealBtn('Menu');
+                    if (realBtn) {
+                        const wrapper = realBtn.closest('div[data-testid="stButton"]');
+                        if (wrapper) wrapper.style.display = 'none';
                     }
-                    if (!realBtn) return false;
-                    // Hide the real button (but keep it in DOM so React still owns it)
-                    const realWrapper = realBtn.closest('div[data-testid="stButton"]');
-                    if (realWrapper) realWrapper.style.display = 'none';
-                    // Build a visual clone that forwards clicks
-                    if (!anchor.querySelector('button.proxy-show-menu')) {
-                        anchor.innerHTML = '<button class="proxy-show-menu" '
-                            + 'style="background:#39FF14;color:#000;font-size:15px;'
-                            + 'font-weight:800;min-width:110px;height:40px;padding:0 16px;'
-                            + 'box-shadow:0 2px 12px rgba(57,255,20,0.5);border-radius:8px;'
-                            + 'border:none;cursor:pointer;">▶ Menu</button>';
-                        anchor.querySelector('button.proxy-show-menu').addEventListener('click', () => {
-                            realBtn.click();
-                        });
-                    }
-                    return true;
                 };
-                let tries = 0;
-                const interval = setInterval(() => {
-                    if (sync() || ++tries > 30) clearInterval(interval);
-                }, 100);
+                hideReal();
+                // Observe DOM changes so re-rendered Streamlit buttons get hidden again
+                if (!doc.body.dataset.showMenuObserved) {
+                    doc.body.dataset.showMenuObserved = '1';
+                    new MutationObserver(hideReal).observe(doc.body, {childList: true, subtree: true});
+                }
             })();
             </script>
             """,
@@ -763,47 +768,56 @@ def show_sidebar():
             <script>
             (function(){
                 const doc = window.parent.document;
-                const sidebar = doc.querySelector('[data-testid="stSidebar"]');
-                if (!sidebar) return;
-                const sidebarContent = sidebar.querySelector('[data-testid="stSidebarUserContent"]') || sidebar;
-                let anchor = sidebar.querySelector('#pinned-hide-btn');
-                if (!anchor) {
+                const findSidebar = () => doc.querySelector('[data-testid="stSidebar"]');
+                const findRealBtn = () => {
+                    const sb = findSidebar();
+                    if (!sb) return null;
+                    const btns = sb.querySelectorAll('button');
+                    for (const btn of btns) {
+                        if (btn.textContent && btn.textContent.includes('Hide') && !btn.closest('#pinned-hide-btn')) {
+                            return btn;
+                        }
+                    }
+                    return null;
+                };
+                const ensureAnchor = () => {
+                    const sb = findSidebar();
+                    if (!sb) return null;
+                    let anchor = sb.querySelector('#pinned-hide-btn');
+                    if (anchor) return anchor;
+                    const sidebarContent = sb.querySelector('[data-testid="stSidebarUserContent"]') || sb;
                     anchor = doc.createElement('div');
                     anchor.id = 'pinned-hide-btn';
                     anchor.style.cssText = 'position:sticky;top:0;z-index:999996;'
                         + 'background:linear-gradient(180deg,#222 0%,#1a1a1a 100%);'
                         + 'padding:4px 0;margin:0 0 6px 0;'
                         + 'border-bottom:1px solid rgba(255,255,255,0.08);';
+                    anchor.innerHTML = '<button class="proxy-hide-btn" '
+                        + 'style="min-width:70px;max-width:90px;height:30px;padding:0 10px;'
+                        + 'font-size:12px;background:rgba(57,255,20,0.10);color:#39FF14;'
+                        + 'border:1px solid rgba(57,255,20,0.4);border-radius:4px;'
+                        + 'cursor:pointer;font-weight:600;">◀ Hide</button>';
                     sidebarContent.insertBefore(anchor, sidebarContent.firstChild);
-                }
-                const sync = () => {
-                    const btns = sidebar.querySelectorAll('button');
-                    let realBtn = null;
-                    for (const btn of btns) {
-                        if (btn.textContent && btn.textContent.includes('Hide') && !btn.closest('#pinned-hide-btn')) {
-                            realBtn = btn;
-                            break;
-                        }
-                    }
-                    if (!realBtn) return false;
-                    const realWrapper = realBtn.closest('div[data-testid="stButton"]');
-                    if (realWrapper) realWrapper.style.display = 'none';
-                    if (!anchor.querySelector('button.proxy-hide-btn')) {
-                        anchor.innerHTML = '<button class="proxy-hide-btn" '
-                            + 'style="min-width:70px;max-width:90px;height:30px;padding:0 10px;'
-                            + 'font-size:12px;background:rgba(57,255,20,0.10);color:#39FF14;'
-                            + 'border:1px solid rgba(57,255,20,0.4);border-radius:4px;'
-                            + 'cursor:pointer;font-weight:600;">◀ Hide</button>';
-                        anchor.querySelector('button.proxy-hide-btn').addEventListener('click', () => {
-                            realBtn.click();
-                        });
-                    }
-                    return true;
+                    anchor.querySelector('button.proxy-hide-btn').addEventListener('click', () => {
+                        const realBtn = findRealBtn();
+                        if (realBtn) realBtn.click();
+                    });
+                    return anchor;
                 };
-                let tries = 0;
-                const interval = setInterval(() => {
-                    if (sync() || ++tries > 30) clearInterval(interval);
-                }, 100);
+                const hideReal = () => {
+                    const realBtn = findRealBtn();
+                    if (realBtn) {
+                        const wrapper = realBtn.closest('div[data-testid="stButton"]');
+                        if (wrapper) wrapper.style.display = 'none';
+                    }
+                };
+                ensureAnchor();
+                hideReal();
+                if (!doc.body.dataset.hideBtnObserved) {
+                    doc.body.dataset.hideBtnObserved = '1';
+                    new MutationObserver(() => { ensureAnchor(); hideReal(); })
+                      .observe(doc.body, {childList: true, subtree: true});
+                }
             })();
             </script>
             """,
