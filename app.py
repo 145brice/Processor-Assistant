@@ -87,18 +87,71 @@ header[data-testid="stHeader"], [data-testid="stHeader"], .stAppHeader {
     visibility: hidden !important;
     display: none !important;
 }
+/* ─── Custom sidebar toggle (DOM-injected button + body class) ─── */
+#pa-sidebar-toggle {
+    position: fixed !important;
+    top: 12px !important;
+    left: 252px !important;
+    z-index: 999999 !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 8px !important;
+    background: #39FF14 !important;
+    color: #000 !important;
+    border: 2px solid #000 !important;
+    font-size: 18px !important;
+    font-weight: 900 !important;
+    cursor: pointer !important;
+    box-shadow: 0 0 14px rgba(57,255,20,0.7), 0 2px 6px rgba(0,0,0,0.4) !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    transition: left 0.25s ease !important;
+    padding: 0 !important;
+    line-height: 1 !important;
+}
+#pa-sidebar-toggle:hover { background: #5fff3a !important; }
+body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
+body.pa-sidebar-hidden [data-testid="stSidebar"] {
+    width: 0 !important;
+    min-width: 0 !important;
+    max-width: 0 !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
+}
+[data-testid="stSidebar"] {
+    transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease !important;
+}
+@media (max-width: 768px) {
+    #pa-sidebar-toggle { left: 138px !important; }
+    body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
+}
+@media (max-width: 480px) {
+    #pa-sidebar-toggle { left: 118px !important; }
+    body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
+}
 
 /* ─────────────── Mobile responsiveness ─────────────── */
 
 /* Tablet & phone: narrower always-visible sidebar so content has room */
 @media (max-width: 768px) {
     [data-testid="stSidebar"] {
-        min-width: 140px !important;
-        width: 140px !important;
+        min-width: 130px !important;
+        width: 130px !important;
+        max-width: 130px !important;
+        flex-shrink: 0 !important;
     }
     [data-testid="stSidebar"] button {
-        font-size: 12px !important;
-        padding: 6px 8px !important;
+        font-size: 11px !important;
+        padding: 5px 6px !important;
+        word-break: break-word !important;
+    }
+    /* Main content takes the rest, no overflow off-screen */
+    [data-testid="stAppViewContainer"] > .main,
+    [data-testid="stAppViewContainer"] section.main {
+        width: calc(100vw - 130px) !important;
+        max-width: calc(100vw - 130px) !important;
+        overflow-x: hidden !important;
     }
     .main > div, .block-container {
         padding: 0.75rem !important;
@@ -136,12 +189,18 @@ header[data-testid="stHeader"], [data-testid="stHeader"], .stAppHeader {
 /* Phone-only: even tighter — narrower sidebar, smaller buttons */
 @media (max-width: 480px) {
     [data-testid="stSidebar"] {
-        min-width: 110px !important;
-        width: 110px !important;
+        min-width: 100px !important;
+        width: 100px !important;
+        max-width: 100px !important;
     }
     [data-testid="stSidebar"] button {
-        font-size: 11px !important;
-        padding: 5px 6px !important;
+        font-size: 10px !important;
+        padding: 4px 5px !important;
+    }
+    [data-testid="stAppViewContainer"] > .main,
+    [data-testid="stAppViewContainer"] section.main {
+        width: calc(100vw - 100px) !important;
+        max-width: calc(100vw - 100px) !important;
     }
     .block-container {
         padding: 0.5rem !important;
@@ -383,6 +442,50 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 
 """, unsafe_allow_html=True)
 
+
+# --- Custom sidebar toggle button (injected into parent DOM, survives reruns) ---
+import streamlit.components.v1 as _components
+_components.html("""
+<script>
+(function() {
+  const doc = window.parent.document;
+  const BTN_ID = 'pa-sidebar-toggle';
+  const BODY_CLASS = 'pa-sidebar-hidden';
+  const STORAGE_KEY = 'pa_sidebar_hidden';
+
+  function applyState() {
+    const hidden = localStorage.getItem(STORAGE_KEY) === '1';
+    doc.body.classList.toggle(BODY_CLASS, hidden);
+    const btn = doc.getElementById(BTN_ID);
+    if (btn) btn.textContent = hidden ? '☰' : '✕';
+  }
+
+  function inject() {
+    if (doc.getElementById(BTN_ID)) { applyState(); return; }
+    const btn = doc.createElement('button');
+    btn.id = BTN_ID;
+    btn.type = 'button';
+    btn.title = 'Toggle sidebar';
+    btn.onclick = function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      const nowHidden = !doc.body.classList.contains(BODY_CLASS);
+      localStorage.setItem(STORAGE_KEY, nowHidden ? '1' : '0');
+      applyState();
+    };
+    doc.body.appendChild(btn);
+    applyState();
+  }
+
+  inject();
+  // Re-inject if Streamlit ever wipes our button (defensive)
+  const obs = new MutationObserver(() => {
+    if (!doc.getElementById(BTN_ID)) inject();
+  });
+  obs.observe(doc.body, { childList: true, subtree: false });
+})();
+</script>
+""", height=0)
 
 
 # --- Session State Defaults ---
