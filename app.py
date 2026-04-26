@@ -430,6 +430,30 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .scan-scroll .cond-num { color:#39FF14; font-weight:800; font-size:11px; min-width:22px; }
 .scan-scroll .cond-desc { color:#e5e7eb; font-size:12px; line-height:1.35; flex:1; }
 .scan-scroll .pa-section { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.6px; margin:6px 0 2px 0; }
+/* Sidebar section collapse toggle buttons — green label style */
+[data-testid="stSidebar"] [data-testid="stElementContainer"]:has(hr) + [data-testid="stElementContainer"] button,
+[data-testid="stSidebar"] hr + * button,
+[data-testid="stSidebar"] .pa-sec-btn button {
+    background: transparent !important;
+    border: none !important;
+    border-bottom: 1px solid rgba(57,255,20,0.2) !important;
+    border-radius: 0 !important;
+    color: #39FF14 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 1px !important;
+    padding: 4px 2px !important;
+    margin-bottom: 4px !important;
+    box-shadow: none !important;
+    min-height: 28px !important;
+    height: 28px !important;
+}
+[data-testid="stSidebar"] [data-testid="stElementContainer"]:has(hr) + [data-testid="stElementContainer"] button p,
+[data-testid="stSidebar"] .pa-sec-btn button p {
+    color: #39FF14 !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+}
 </style>
 
 """, unsafe_allow_html=True)
@@ -954,170 +978,178 @@ def show_sidebar():
             unsafe_allow_html=True,
         )
 
+        # ── Collapsible section helper ────────────────────────────────────────
+        def _section_header(label, state_key, default_open=True):
+            if state_key not in st.session_state:
+                st.session_state[state_key] = default_open
+            st.markdown("---")
+            is_open = st.session_state[state_key]
+            chev = "▾" if is_open else "▸"
+            if st.button(
+                f"{chev} {label.upper()}",
+                key=f"_sec_{state_key}",
+                use_container_width=True,
+                help=f"Click to {'collapse' if is_open else 'expand'}",
+            ):
+                st.session_state[state_key] = not is_open
+                st.rerun()
+            return st.session_state[state_key]
+
         # ── Quick Tools ─────────────────────────────────────────────────────
-        st.markdown("---")
-        _tools_label = "⚡ Quick Tools"
-        st.markdown(f'<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">QUICK TOOLS</div>', unsafe_allow_html=True)
+        if _section_header("Quick Tools", "_sec_open_quick", default_open=True):
+            if st.button("📋 Loan Snapshot", key="nav_snapshot", use_container_width=True, type="secondary"):
+                st.session_state.page = "snapshot"
+                st.session_state["scroll_to"] = "snapshot"
+                _save_session()
+                st.rerun()
 
-        if st.button("📋 Loan Snapshot", key="nav_snapshot", use_container_width=True, type="secondary"):
-            st.session_state.page = "snapshot"
-            st.session_state["scroll_to"] = "snapshot"
-            _save_session()
-            st.rerun()
+            if st.button("⚠️ Report Issue", key="nav_report_issue", use_container_width=True, type="secondary"):
+                st.session_state.page = "report_issue"
+                st.session_state["scroll_to"] = "report_issue"
+                _save_session()
+                st.rerun()
 
-        if st.button("⚠️ Report Issue", key="nav_report_issue", use_container_width=True, type="secondary"):
-            st.session_state.page = "report_issue"
-            st.session_state["scroll_to"] = "report_issue"
-            _save_session()
-            st.rerun()
+            if st.button("🗂️ Missing Docs", key="nav_missing_docs", use_container_width=True, type="secondary"):
+                st.session_state.page = "missing_docs"
+                st.session_state["scroll_to"] = "missing_docs"
+                _save_session()
+                st.rerun()
 
-        if st.button("🗂️ Missing Docs", key="nav_missing_docs", use_container_width=True, type="secondary"):
-            st.session_state.page = "missing_docs"
-            st.session_state["scroll_to"] = "missing_docs"
-            _save_session()
-            st.rerun()
+            if st.button("📅 Doc Expiry", key="nav_doc_expiry", use_container_width=True, type="secondary"):
+                st.session_state.page = "doc_expiry"
+                st.session_state["scroll_to"] = "doc_expiry"
+                _save_session()
+                st.rerun()
 
-        if st.button("📅 Doc Expiry", key="nav_doc_expiry", use_container_width=True, type="secondary"):
-            st.session_state.page = "doc_expiry"
-            st.session_state["scroll_to"] = "doc_expiry"
-            _save_session()
-            st.rerun()
-
-        if st.button("🌎 Spanish Reply", key="nav_spanish", use_container_width=True, type="secondary"):
-            st.session_state.page = "spanish_reply"
-            st.session_state["scroll_to"] = "spanish_reply"
-            _save_session()
-            st.rerun()
+            if st.button("🌎 Spanish Reply", key="nav_spanish", use_container_width=True, type="secondary"):
+                st.session_state.page = "spanish_reply"
+                st.session_state["scroll_to"] = "spanish_reply"
+                _save_session()
+                st.rerun()
 
         # ── Advanced Tools ─────────────────────────────────────────────────────
-        st.markdown("---")
-        st.markdown(f'<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">ADVANCED TOOLS</div>', unsafe_allow_html=True)
+        if _section_header("Advanced Tools", "_sec_open_advanced", default_open=True):
+            if st.button("📊 Income Verifier", key="nav_income_verifier", use_container_width=True, type="secondary"):
+                st.session_state.page = "income_verifier"
+                _save_session()
+                st.rerun()
 
-        if st.button("📊 Income Verifier", key="nav_income_verifier", use_container_width=True, type="secondary"):
-            st.session_state.page = "income_verifier"
-            _save_session()
-            st.rerun()
+            if st.button("📝 Auto Data Entry", key="nav_auto_data_entry", use_container_width=True, type="secondary"):
+                st.session_state.page = "auto_data_entry"
+                _save_session()
+                st.rerun()
 
-        if st.button("📝 Auto Data Entry", key="nav_auto_data_entry", use_container_width=True, type="secondary"):
-            st.session_state.page = "auto_data_entry"
-            _save_session()
-            st.rerun()
+            if st.button("💳 Credit Summary", key="nav_credit_summary", use_container_width=True, type="secondary"):
+                st.session_state.page = "credit_summary"
+                _save_session()
+                st.rerun()
 
-        if st.button("💳 Credit Summary", key="nav_credit_summary", use_container_width=True, type="secondary"):
-            st.session_state.page = "credit_summary"
-            _save_session()
-            st.rerun()
+            if st.button("🧮 DTI Calculator", key="nav_dti_calculator", use_container_width=True, type="secondary"):
+                st.session_state.page = "dti_calculator"
+                _save_session()
+                st.rerun()
 
-        if st.button("🧮 DTI Calculator", key="nav_dti_calculator", use_container_width=True, type="secondary"):
-            st.session_state.page = "dti_calculator"
-            _save_session()
-            st.rerun()
+            if st.button("✅ Condition Clearer", key="nav_condition_clearer", use_container_width=True, type="secondary"):
+                st.session_state.page = "condition_clearer"
+                _save_session()
+                st.rerun()
 
-        if st.button("✅ Condition Clearer", key="nav_condition_clearer", use_container_width=True, type="secondary"):
-            st.session_state.page = "condition_clearer"
-            _save_session()
-            st.rerun()
-
-        if st.button("⚖️ Compliance Checker", key="nav_compliance_checker", use_container_width=True, type="secondary"):
-            st.session_state.page = "compliance_checker"
-            _save_session()
-            st.rerun()
+            if st.button("⚖️ Compliance Checker", key="nav_compliance_checker", use_container_width=True, type="secondary"):
+                st.session_state.page = "compliance_checker"
+                _save_session()
+                st.rerun()
 
         # ── Pipeline & Advanced Tools ──────────────────────────────────────────
-        st.markdown("---")
-        st.markdown(f'<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">PIPELINE & ADVANCED</div>', unsafe_allow_html=True)
+        if _section_header("Pipeline & Advanced", "_sec_open_pipeline", default_open=True):
+            if st.button("📦 Closing Package", key="nav_closing_package", use_container_width=True, type="secondary"):
+                st.session_state.page = "closing_package"
+                _save_session()
+                st.rerun()
 
-        if st.button("📦 Closing Package", key="nav_closing_package", use_container_width=True, type="secondary"):
-            st.session_state.page = "closing_package"
-            _save_session()
-            st.rerun()
+            if st.button("📊 Pipeline Dashboard", key="nav_pipeline_dashboard", use_container_width=True, type="secondary"):
+                st.session_state.page = "pipeline_dashboard"
+                _save_session()
+                st.rerun()
 
-        if st.button("📊 Pipeline Dashboard", key="nav_pipeline_dashboard", use_container_width=True, type="secondary"):
-            st.session_state.page = "pipeline_dashboard"
-            _save_session()
-            st.rerun()
+            if st.button("📋 Guideline Checker", key="nav_guideline_checker", use_container_width=True, type="secondary"):
+                st.session_state.page = "guideline_checker"
+                _save_session()
+                st.rerun()
 
-        if st.button("📋 Guideline Checker", key="nav_guideline_checker", use_container_width=True, type="secondary"):
-            st.session_state.page = "guideline_checker"
-            _save_session()
-            st.rerun()
+            if st.button("🔍 Fraud Detector", key="nav_fraud_detector", use_container_width=True, type="secondary"):
+                st.session_state.page = "fraud_detector"
+                _save_session()
+                st.rerun()
 
-        if st.button("🔍 Fraud Detector", key="nav_fraud_detector", use_container_width=True, type="secondary"):
-            st.session_state.page = "fraud_detector"
-            _save_session()
-            st.rerun()
+            if st.button("👥 Multi-Borrower", key="nav_multi_borrower", use_container_width=True, type="secondary"):
+                st.session_state.page = "multi_borrower"
+                _save_session()
+                st.rerun()
 
-        if st.button("👥 Multi-Borrower", key="nav_multi_borrower", use_container_width=True, type="secondary"):
-            st.session_state.page = "multi_borrower"
-            _save_session()
-            st.rerun()
-
-        if st.button("📤 LOS Export", key="nav_los_export", use_container_width=True, type="secondary"):
-            st.session_state.page = "los_export"
-            _save_session()
-            st.rerun()
+            if st.button("📤 LOS Export", key="nav_los_export", use_container_width=True, type="secondary"):
+                st.session_state.page = "los_export"
+                _save_session()
+                st.rerun()
 
         # ── Advanced Automation ───────────────────────────────────────────────
-        st.markdown("---")
-        st.markdown(f'<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">ADVANCED AUTOMATION</div>', unsafe_allow_html=True)
+        if _section_header("Advanced Automation", "_sec_open_automation", default_open=True):
+            if st.button("🔒 Rate Lock Monitor", key="nav_rate_lock_monitor", use_container_width=True, type="secondary"):
+                st.session_state.page = "rate_lock_monitor"
+                _save_session()
+                st.rerun()
 
-        if st.button("🔒 Rate Lock Monitor", key="nav_rate_lock_monitor", use_container_width=True, type="secondary"):
-            st.session_state.page = "rate_lock_monitor"
-            _save_session()
-            st.rerun()
+            if st.button("📋 Underwriting Tracker", key="nav_underwriting_tracker", use_container_width=True, type="secondary"):
+                st.session_state.page = "underwriting_tracker"
+                _save_session()
+                st.rerun()
 
-        if st.button("📋 Underwriting Tracker", key="nav_underwriting_tracker", use_container_width=True, type="secondary"):
-            st.session_state.page = "underwriting_tracker"
-            _save_session()
-            st.rerun()
+            if st.button("🏷️ Document Classifier", key="nav_document_classifier", use_container_width=True, type="secondary"):
+                st.session_state.page = "document_classifier"
+                _save_session()
+                st.rerun()
 
-        if st.button("🏷️ Document Classifier", key="nav_document_classifier", use_container_width=True, type="secondary"):
-            st.session_state.page = "document_classifier"
-            _save_session()
-            st.rerun()
-
-        if st.button("💰 Escrow Calculator", key="nav_escrow_calculator", use_container_width=True, type="secondary"):
-            st.session_state.page = "escrow_calculator"
-            _save_session()
-            st.rerun()
+            if st.button("💰 Escrow Calculator", key="nav_escrow_calculator", use_container_width=True, type="secondary"):
+                st.session_state.page = "escrow_calculator"
+                _save_session()
+                st.rerun()
 
         # ── Settings ───────────────────────────────────────────────────────────
+        if _section_header("Settings", "_sec_open_settings", default_open=True):
+            # Quick Cloud AI status + toggle (no full-page navigation needed)
+            try:
+                import cloud_client as _sb_cc
+                _sb_cfg = _sb_cc.get_config()
+                _sb_has_key = bool(_sb_cfg.get("api_key"))
+                _sb_on = bool(_sb_cfg.get("enabled")) and _sb_has_key
+                if _sb_has_key:
+                    _sb_label = f"🤖 Cloud AI: {'ON' if _sb_on else 'OFF'} · {_sb_cfg.get('provider','claude').title()}"
+                    _sb_color = "#39FF14" if _sb_on else "#9ca3af"
+                    st.markdown(
+                        f'<div style="font-size:11px;color:{_sb_color};margin:4px 0 6px 4px;font-weight:600;">'
+                        f'{_sb_label}</div>',
+                        unsafe_allow_html=True,
+                    )
+                    _sb_btn_label = "Turn Cloud AI OFF" if _sb_on else "Turn Cloud AI ON"
+                    if st.button(_sb_btn_label, key="sb_cc_toggle", use_container_width=True, type="secondary"):
+                        _sb_cc.save_config(not _sb_on, _sb_cfg.get("provider","claude"),
+                                           _sb_cfg.get("api_key",""), _sb_cfg.get("model",""))
+                        st.rerun()
+                else:
+                    st.markdown(
+                        '<div style="font-size:11px;color:#9ca3af;margin:4px 0 6px 4px;">'
+                        '🤖 Cloud AI: no key set</div>',
+                        unsafe_allow_html=True,
+                    )
+            except Exception:
+                pass
+
+            if st.button("🤖 AI Settings (Claude / Gemini / OpenAI)", key="nav_ai_settings", use_container_width=True, type="secondary"):
+                st.session_state.page = "ai_settings"
+                _save_session()
+                st.rerun()
+
+        # Logout always visible
         st.markdown("---")
-        st.markdown(f'<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">SETTINGS</div>', unsafe_allow_html=True)
-
-        # Quick Cloud AI status + toggle (no full-page navigation needed)
-        try:
-            import cloud_client as _sb_cc
-            _sb_cfg = _sb_cc.get_config()
-            _sb_has_key = bool(_sb_cfg.get("api_key"))
-            _sb_on = bool(_sb_cfg.get("enabled")) and _sb_has_key
-            if _sb_has_key:
-                _sb_label = f"🤖 Cloud AI: {'ON' if _sb_on else 'OFF'} · {_sb_cfg.get('provider','claude').title()}"
-                _sb_color = "#39FF14" if _sb_on else "#9ca3af"
-                st.markdown(
-                    f'<div style="font-size:11px;color:{_sb_color};margin:4px 0 6px 4px;font-weight:600;">'
-                    f'{_sb_label}</div>',
-                    unsafe_allow_html=True,
-                )
-                _sb_btn_label = "Turn Cloud AI OFF" if _sb_on else "Turn Cloud AI ON"
-                if st.button(_sb_btn_label, key="sb_cc_toggle", use_container_width=True, type="secondary"):
-                    _sb_cc.save_config(not _sb_on, _sb_cfg.get("provider","claude"),
-                                       _sb_cfg.get("api_key",""), _sb_cfg.get("model",""))
-                    st.rerun()
-            else:
-                st.markdown(
-                    '<div style="font-size:11px;color:#9ca3af;margin:4px 0 6px 4px;">'
-                    '🤖 Cloud AI: no key set</div>',
-                    unsafe_allow_html=True,
-                )
-        except Exception:
-            pass
-
-        if st.button("🤖 AI Settings (Claude / Gemini / OpenAI)", key="nav_ai_settings", use_container_width=True, type="secondary"):
-            st.session_state.page = "ai_settings"
-            _save_session()
-            st.rerun()
-
         if st.button("Logout", use_container_width=True):
             _clear_session()
             for key in DEFAULTS:
