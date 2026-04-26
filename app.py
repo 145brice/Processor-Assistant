@@ -487,6 +487,74 @@ _components.html("""
   });
   obs.observe(doc.body, { childList: true, subtree: true });
 })();
+
+// ── Collapsible green H2 sections ────────────────────────────────────────
+(function() {
+  const doc = window.parent.document;
+  const STORAGE_PREFIX = 'pa_h2_collapsed_';
+  const MARKED_ATTR = 'data-pa-h2-toggle';
+
+  function elementContainer(h2) {
+    let el = h2;
+    while (el && el !== doc.body) {
+      if (el.getAttribute && el.getAttribute('data-testid') === 'stElementContainer') return el;
+      el = el.parentElement;
+    }
+    return h2.parentElement;
+  }
+
+  function siblingsUntilNextH2(container) {
+    const out = [];
+    let next = container.nextElementSibling;
+    while (next) {
+      if (next.querySelector && next.querySelector('h2')) break;
+      out.push(next);
+      next = next.nextElementSibling;
+    }
+    return out;
+  }
+
+  function applyState(h2, container, collapsed) {
+    const sibs = siblingsUntilNextH2(container);
+    sibs.forEach(s => { s.style.display = collapsed ? 'none' : ''; });
+    let chev = h2.querySelector('.pa-h2-chev');
+    if (!chev) {
+      chev = doc.createElement('span');
+      chev.className = 'pa-h2-chev';
+      chev.style.cssText = 'display:inline-block;margin-right:10px;font-size:0.7em;opacity:0.7;user-select:none;';
+      h2.insertBefore(chev, h2.firstChild);
+    }
+    chev.textContent = collapsed ? '▸' : '▾';
+  }
+
+  function wireH2(h2) {
+    if (h2.getAttribute(MARKED_ATTR)) return;
+    h2.setAttribute(MARKED_ATTR, '1');
+    h2.style.cursor = 'pointer';
+    const container = elementContainer(h2);
+    const text = (h2.textContent || '').trim().slice(0, 80);
+    const key = STORAGE_PREFIX + text;
+    const collapsed = localStorage.getItem(key) === '1';
+    applyState(h2, container, collapsed);
+    h2.addEventListener('click', function(e) {
+      e.preventDefault();
+      const isNow = localStorage.getItem(key) === '1';
+      const next = !isNow;
+      if (next) localStorage.setItem(key, '1');
+      else localStorage.removeItem(key);
+      applyState(h2, container, next);
+    });
+  }
+
+  function scan() {
+    const h2s = doc.querySelectorAll('.main h2, .block-container h2, [data-testid="stMarkdownContainer"] h2');
+    h2s.forEach(wireH2);
+  }
+
+  scan();
+  const obs2 = new MutationObserver(() => scan());
+  obs2.observe(doc.body, { childList: true, subtree: true });
+})();
 </script>
 """, height=0)
 
