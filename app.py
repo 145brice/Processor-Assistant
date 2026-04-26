@@ -492,67 +492,81 @@ _components.html("""
 (function() {
   const doc = window.parent.document;
   const STORAGE_PREFIX = 'pa_h2_collapsed_';
-  const MARKED_ATTR = 'data-pa-h2-toggle';
 
-  function elementContainer(h2) {
-    let el = h2;
+  // Walk up from h2 to find the stElementContainer ancestor
+  function getContainer(h2) {
+    let el = h2.parentElement;
     while (el && el !== doc.body) {
-      if (el.getAttribute && el.getAttribute('data-testid') === 'stElementContainer') return el;
+      if (el.dataset && el.dataset.testid === 'stElementContainer') return el;
       el = el.parentElement;
     }
-    return h2.parentElement;
+    return h2.closest('[data-testid="stVerticalBlock"] > *') || h2.parentElement;
   }
 
-  function siblingsUntilNextH2(container) {
+  // Collect all sibling containers after `startEl` until the next one containing an h2
+  function collectSiblings(startEl) {
     const out = [];
-    let next = container.nextElementSibling;
+    let next = startEl.nextElementSibling;
     while (next) {
-      if (next.querySelector && next.querySelector('h2')) break;
+      if (next.querySelector('h2')) break;
       out.push(next);
       next = next.nextElementSibling;
     }
     return out;
   }
 
-  function applyState(h2, container, collapsed) {
-    const sibs = siblingsUntilNextH2(container);
+  function applyCollapse(h2, container, collapsed) {
+    const sibs = collectSiblings(container);
     sibs.forEach(s => { s.style.display = collapsed ? 'none' : ''; });
+
+    // Add/update chevron
     let chev = h2.querySelector('.pa-h2-chev');
     if (!chev) {
       chev = doc.createElement('span');
       chev.className = 'pa-h2-chev';
-      chev.style.cssText = 'display:inline-block;margin-right:10px;font-size:0.7em;opacity:0.7;user-select:none;';
+      chev.style.cssText = 'display:inline-block;margin-right:8px;font-size:0.65em;vertical-align:middle;user-select:none;transition:transform 0.2s;';
       h2.insertBefore(chev, h2.firstChild);
     }
     chev.textContent = collapsed ? '▸' : '▾';
   }
 
   function wireH2(h2) {
-    if (h2.getAttribute(MARKED_ATTR)) return;
-    h2.setAttribute(MARKED_ATTR, '1');
+    if (h2._paWired) return;
+    h2._paWired = true;
     h2.style.cursor = 'pointer';
-    const container = elementContainer(h2);
-    const text = (h2.textContent || '').trim().slice(0, 80);
-    const key = STORAGE_PREFIX + text;
+    h2.title = 'Click to collapse/expand section';
+
+    const container = getContainer(h2);
+    const key = STORAGE_PREFIX + (h2.textContent || '').replace(/[▸▾]/g, '').trim().slice(0, 80);
     const collapsed = localStorage.getItem(key) === '1';
-    applyState(h2, container, collapsed);
+    applyCollapse(h2, container, collapsed);
+
     h2.addEventListener('click', function(e) {
-      e.preventDefault();
-      const isNow = localStorage.getItem(key) === '1';
-      const next = !isNow;
+      e.stopPropagation();
+      const next = localStorage.getItem(key) !== '1';
       if (next) localStorage.setItem(key, '1');
       else localStorage.removeItem(key);
-      applyState(h2, container, next);
+      applyCollapse(h2, container, next);
     });
   }
 
   function scan() {
-    const h2s = doc.querySelectorAll('.main h2, .block-container h2, [data-testid="stMarkdownContainer"] h2');
+    // Only target h2s in the MAIN content area, not sidebar
+    const h2s = doc.querySelectorAll(
+      '[data-testid="stAppViewContainer"] h2, [data-testid="stMain"] h2'
+    );
     h2s.forEach(wireH2);
   }
 
+  // Debounce MutationObserver to avoid thrashing
+  let _scanTimer = null;
+  function debouncedScan() {
+    clearTimeout(_scanTimer);
+    _scanTimer = setTimeout(scan, 300);
+  }
+
   scan();
-  const obs2 = new MutationObserver(() => scan());
+  const obs2 = new MutationObserver(debouncedScan);
   obs2.observe(doc.body, { childList: true, subtree: true });
 })();
 </script>
