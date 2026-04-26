@@ -795,8 +795,18 @@ def show_sidebar():
         _ew_dot     = "●" if _ew_running else "○"
         _ew_badge   = f" ({_ew_pending})" if _ew_pending else ""
 
-        # ── Top-level always-visible: Scanner + Pipeline ─────────────────────
-        for _nav_label, _nav_page in [("Scanner", "dashboard"), ("Pipeline", "pipeline")]:
+        _nav_items = [
+            ("Scanner",  "dashboard", "⬡"),
+            ("Pipeline", "pipeline",  "⬡"),
+            ("Reader",   "reader",    "⬡"),
+            ("Team",     "team",      "⬡"),
+            # ("AI", "ollama", "⬡"),  # HIDDEN — re-enable when ready to offer AI upsell/Ollama page
+            ("Billing",  "billing",   "⬡"),
+        ]
+        if not is_sandbox:
+            _nav_items.append(("History", "history", "⬡"))
+
+        for _nav_label, _nav_page, _nav_icon in _nav_items:
             _active = _current_page == _nav_page
             _btn_label = ("● " + _nav_label) if _active else _nav_label
             if st.button(_btn_label, key=f"nav_{_nav_page}", use_container_width=True,
@@ -805,49 +815,38 @@ def show_sidebar():
                 _save_session()
                 st.rerun()
 
-        # ── Helper: render a collapsible nav group ───────────────────────────
-        def _nav_group(group_key: str, group_label: str, items: list, default_open: bool = False):
-            """items = list of (label, page) tuples. Group auto-opens if any item is active."""
-            state_key = f"nav_group_{group_key}"
-            any_active = any(p == _current_page for _, p in items)
-            if state_key not in st.session_state:
-                st.session_state[state_key] = default_open or any_active
-            is_open = st.session_state[state_key] or any_active
-            arrow = "▾" if is_open else "▸"
-            if st.button(f"{arrow} {group_label}", key=f"nav_group_btn_{group_key}",
-                         use_container_width=True, type="secondary"):
-                st.session_state[state_key] = not st.session_state[state_key]
+        # ── Email Watch — top-level + sub-nav ────────────────────────────────
+        _ew_pages   = ("email_watch", "email_watch_controls")
+        _ew_active  = _current_page in _ew_pages
+        _ew_top_lbl = f"{_ew_dot} Email Watch{_ew_badge}"
+        if _ew_active:
+            _ew_top_lbl = "● " + _ew_top_lbl
+        if st.button(_ew_top_lbl, key="nav_email_watch_top", use_container_width=True,
+                     type=("primary" if _ew_active else "secondary")):
+            if _ew_active:
+                st.session_state["ew_nav_open"] = not st.session_state.get("ew_nav_open", True)
+            else:
+                st.session_state["ew_nav_open"] = True
+                st.session_state.page = "email_watch_controls"
+                _save_session()
                 st.rerun()
-            if is_open:
-                for _sub_lbl, _sub_page in items:
-                    _sub_active = _current_page == _sub_page
-                    _c_gutter, _c_btn = st.columns([1, 8])
-                    with _c_btn:
-                        _btn_lbl = ("● " + _sub_lbl) if _sub_active else _sub_lbl
-                        if st.button(_btn_lbl, key=f"nav_{_sub_page}", use_container_width=True,
-                                     type=("primary" if _sub_active else "secondary")):
-                            st.session_state.page = _sub_page
-                            st.session_state[state_key] = True
-                            _save_session()
-                            st.rerun()
-
-        # ── Workspace ────────────────────────────────────────────────────────
-        _workspace_items = [("Reader", "reader"), ("Team", "team")]
-        if not is_sandbox:
-            _workspace_items.append(("History", "history"))
-        _nav_group("workspace", "Workspace", _workspace_items)
-
-        # ── Communications (Email Watch sub-pages) ───────────────────────────
-        _ew_label = f"Email Watch{_ew_badge}"
-        _comms_items = [
-            (f"{_ew_dot} {_ew_label} · Controls", "email_watch_controls"),
-            (f"{_ew_dot} {_ew_label} · Results",  "email_watch"),
-        ]
-        _nav_group("comms", "Communications", _comms_items)
-
-        # ── Account ──────────────────────────────────────────────────────────
-        _account_items = [("Billing", "billing"), ("AI Settings", "ai_settings")]
-        _nav_group("account", "Account", _account_items)
+        _ew_open = _ew_active or st.session_state.get("ew_nav_open", False)
+        if _ew_open:
+            _ew_sub = [
+                ("Controls", "email_watch_controls"),
+                ("Results",  "email_watch"),
+            ]
+            for _sub_lbl, _sub_page in _ew_sub:
+                _sub_active = _current_page == _sub_page
+                _suffix = f"  ({_ew_pending})" if (_sub_page == "email_watch" and _ew_pending) else ""
+                _c_gutter, _c_btn = st.columns([1, 8])
+                with _c_btn:
+                    if st.button(_sub_lbl + _suffix, key=f"nav_{_sub_page}", use_container_width=True,
+                                 type=("primary" if _sub_active else "secondary")):
+                        st.session_state.page = _sub_page
+                        st.session_state["ew_nav_open"] = True
+                        _save_session()
+                        st.rerun()
 
         st.markdown("---")
 
@@ -1031,6 +1030,11 @@ def show_sidebar():
                 )
         except Exception:
             pass
+
+        if st.button("🤖 AI Settings (Claude / Gemini / OpenAI)", key="nav_ai_settings", use_container_width=True, type="secondary"):
+            st.session_state.page = "ai_settings"
+            _save_session()
+            st.rerun()
 
         if st.button("Logout", use_container_width=True):
             _clear_session()
