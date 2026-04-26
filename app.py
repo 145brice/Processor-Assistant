@@ -996,7 +996,7 @@ def show_sidebar():
             return st.session_state[state_key]
 
         # ── Quick Tools ─────────────────────────────────────────────────────
-        if _section_header("Quick Tools", "_sec_open_quick", default_open=True):
+        if _section_header("Quick Tools", "_sec_open_quick", default_open=False):
             if st.button("📋 Loan Snapshot", key="nav_snapshot", use_container_width=True, type="secondary"):
                 st.session_state.page = "snapshot"
                 st.session_state["scroll_to"] = "snapshot"
@@ -1028,7 +1028,7 @@ def show_sidebar():
                 st.rerun()
 
         # ── Advanced Tools ─────────────────────────────────────────────────────
-        if _section_header("Advanced Tools", "_sec_open_advanced", default_open=True):
+        if _section_header("Advanced Tools", "_sec_open_advanced", default_open=False):
             if st.button("📊 Income Verifier", key="nav_income_verifier", use_container_width=True, type="secondary"):
                 st.session_state.page = "income_verifier"
                 _save_session()
@@ -1060,7 +1060,7 @@ def show_sidebar():
                 st.rerun()
 
         # ── Pipeline & Advanced Tools ──────────────────────────────────────────
-        if _section_header("Pipeline & Advanced", "_sec_open_pipeline", default_open=True):
+        if _section_header("Pipeline & Advanced", "_sec_open_pipeline", default_open=False):
             if st.button("📦 Closing Package", key="nav_closing_package", use_container_width=True, type="secondary"):
                 st.session_state.page = "closing_package"
                 _save_session()
@@ -1092,7 +1092,7 @@ def show_sidebar():
                 st.rerun()
 
         # ── Advanced Automation ───────────────────────────────────────────────
-        if _section_header("Advanced Automation", "_sec_open_automation", default_open=True):
+        if _section_header("Advanced Automation", "_sec_open_automation", default_open=False):
             if st.button("🔒 Rate Lock Monitor", key="nav_rate_lock_monitor", use_container_width=True, type="secondary"):
                 st.session_state.page = "rate_lock_monitor"
                 _save_session()
@@ -1114,7 +1114,7 @@ def show_sidebar():
                 st.rerun()
 
         # ── Settings ───────────────────────────────────────────────────────────
-        if _section_header("Settings", "_sec_open_settings", default_open=True):
+        if _section_header("Settings", "_sec_open_settings", default_open=False):
             # Quick Cloud AI status + toggle (no full-page navigation needed)
             try:
                 import cloud_client as _sb_cc
