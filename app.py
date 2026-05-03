@@ -1078,18 +1078,19 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 
 
 .pipeline-scroll [data-testid="stVerticalBlockBorderWrapper"] {
-    padding: 3px 8px !important;
+    padding: 2px 6px !important;
     margin-bottom: 2px !important;
     min-height: 0 !important;
-    max-height: 64px !important;
-    overflow: hidden !important;
-    line-height: 1.15 !important;
+    max-height: none !important;
+    overflow: visible !important;
+    line-height: 1.1 !important;
+    border-radius: 0 !important;
 }
-.pipeline-scroll [data-testid="stVerticalBlock"] { gap: 1px !important; }
+.pipeline-scroll [data-testid="stVerticalBlock"] { gap: 4px !important; }
 .pipeline-scroll [data-testid="stHorizontalBlock"] {
     gap: 4px !important;
     margin-bottom: 0 !important;
-    align-items: center !important;
+    align-items: stretch !important;
 }
 .pipeline-scroll [data-testid="stMarkdownContainer"] p,
 .pipeline-scroll [data-testid="stMarkdownContainer"] div {
@@ -1098,22 +1099,24 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     line-height: 1.2 !important;
 }
 .pipeline-scroll button {
-    height: 14px !important;
-    min-height: 14px !important;
-    font-size: 8px !important;
-    padding: 0 4px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    font-size: 10px !important;
+    padding: 0 6px !important;
     line-height: 1 !important;
+    border-radius: 0 !important;
 }
 .pipeline-scroll button p {
-    font-size: 8px !important;
+    font-size: 10px !important;
     line-height: 1 !important;
     margin: 0 !important;
 }
 .pipeline-scroll [data-testid="stSelectbox"] > div > div {
-    min-height: 16px !important;
-    height: 16px !important;
-    font-size: 8px !important;
-    padding: 0 4px !important;
+    min-height: 24px !important;
+    height: 24px !important;
+    font-size: 10px !important;
+    padding: 0 6px !important;
+    border-radius: 0 !important;
 }
 .pipeline-scroll [data-testid="stExpander"] summary {
     padding: 2px 8px !important;
@@ -1122,9 +1125,10 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 }
 .pipeline-scroll .pa-loan-grid {
     grid-template-columns: 90px 1fr 80px 130px 110px 50px 30px 20px !important;
-    gap: 6px !important;
-    font-size: 11px !important;
-    line-height: 1.2 !important;
+    gap: 4px !important;
+    font-size: 10px !important;
+    line-height: 1.1 !important;
+    margin-bottom: 2px !important;
 }
 .pipeline-scroll .loan-num,
 .pipeline-scroll .loan-name { font-size: 11px !important; line-height: 1.2 !important; }
@@ -1146,6 +1150,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     padding: 0 6px !important;
     line-height: 1 !important;
     box-shadow: none !important;
+    border-radius: 0 !important;
 }
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) button p {
     font-size: 10px !important;
@@ -1157,10 +1162,11 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     min-height: 24px !important;
     font-size: 10px !important;
     padding: 0 6px !important;
+    border-radius: 0 !important;
 }
 /* Zero gap everywhere — rows touch */
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stVerticalBlock"] {
-    gap: 0 !important;
+    gap: 2px !important;
 }
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stHorizontalBlock"] {
     gap: 4px !important;
@@ -1183,7 +1189,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 }
 /* Shrink column padding inside loan cards */
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stColumn"] {
-    padding: 0 2px !important;
+    padding: 0 1px !important;
 }
 
 </style>
@@ -4293,24 +4299,24 @@ def show_pipeline():
 
         # ── Single compact row ───────────────────────────────────────
         st.markdown(
-            f'<div class="pa-loan-grid" style="border-left:3px solid {_status_clr};background:#161b2b;padding:3px 8px 2px 8px;margin-bottom:1px;">'
+            f'<div class="pa-loan-grid" style="border-left:3px solid {_status_clr};background:#161b2b;padding:2px 6px;margin-bottom:0;">'
             # Line 1: loan# | borrower | status | badges | bar | % | x
-            f'<div style="display:flex;align-items:center;gap:8px;min-height:18px;">'
-            f'<span style="width:88px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">#{_loan_num}</span>'
-            f'<span style="width:140px;font-size:11px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{_borrower}</span>'
-            f'<span style="font-size:10px;color:{_status_clr};font-weight:600;white-space:nowrap;flex-shrink:0;">{emoji}{status}</span>'
-            f'<span style="flex:1;overflow:hidden;white-space:nowrap;">{_inline_badges}</span>'
+            f'<div style="display:flex;align-items:center;gap:6px;min-height:20px;">'
+            f'<span style="width:96px;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">#{_loan_num}</span>'
+            f'<span style="width:170px;font-size:10px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{_borrower}</span>'
+            f'<span style="width:88px;font-size:10px;color:{_status_clr};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{emoji}{status}</span>'
+            f'<span style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{_inline_badges}</span>'
             f'<div style="width:60px;flex-shrink:0;background:rgba(255,255,255,0.1);height:4px;border-radius:2px;">'
             f'<div style="background:{_bar_color};width:{_pct}%;height:100%;border-radius:2px;"></div></div>'
-            f'<span style="width:32px;font-size:10px;color:{_bar_color};font-weight:700;text-align:right;flex-shrink:0;">{_pct}%</span>'
+            f'<span style="width:34px;font-size:10px;color:{_bar_color};font-weight:700;text-align:right;flex-shrink:0;">{_pct}%</span>'
             f'<span style="width:16px;flex-shrink:0;text-align:right;">{_remove_html}</span>'
             f'</div>'
             # Line 2: Close and Lock on their own line
-            f'<div style="display:flex;gap:20px;padding:2px 0 0 0;">'
+            f'<div style="display:flex;gap:16px;min-height:14px;padding:1px 0 0 0;">'
             f'<span style="font-size:10px;color:#6b7280;">Close: <span style="color:#9ca3af;">{_closing_dt}</span></span>'
             f'<span style="font-size:10px;color:#6b7280;">Lock: <span style="color:#9ca3af;">{_lock_dt if _lock_dt else "—"}</span></span>'
             f'</div>'
-            + (f'<div style="font-size:9px;color:#9ca3af;padding:2px 0 0 0;">{_contacts_line}</div>' if _contacts_line else '')
+            + (f'<div style="font-size:9px;color:#9ca3af;padding:1px 0 0 0;">{_contacts_line}</div>' if _contacts_line else '')
             + f'</div>',
             unsafe_allow_html=True,
         )
