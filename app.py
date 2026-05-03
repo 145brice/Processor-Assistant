@@ -364,11 +364,10 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .pipeline-scroll [data-testid="stExpander"] summary { padding: 4px 10px !important; font-size: 11px !important; }
 .pipeline-scroll [data-testid="stVerticalBlockBorderWrapper"] { padding: 4px 8px !important; margin-bottom: 4px !important; }
 /* Tabbed alignment for loan rows — every field lines up across all rows */
+/* Marker class for loan rows — used by :has() selectors below.
+   No display:grid here — the row uses inline flexbox. */
 .pa-loan-grid {
-    display: grid;
-    grid-template-columns: 90px 140px 80px 1fr 60px 32px 18px;
-    gap: 6px;
-    align-items: center;
+    display: block;
     width: 100%;
 }
 /* My loans toggle — styled to match top control row */
