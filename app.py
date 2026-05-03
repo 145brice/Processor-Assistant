@@ -91,7 +91,7 @@ header[data-testid="stHeader"], [data-testid="stHeader"], .stAppHeader {
 /* ─── Custom sidebar toggle (DOM-injected button + body class) ─── */
 #pa-sidebar-toggle {
     position: fixed !important;
-    top: 44px !important;
+    top: 12px !important;
     left: 252px !important;
     z-index: 999999 !important;
     width: 36px !important;
@@ -8652,26 +8652,23 @@ def show_persistent_header():
     st.markdown(
         f"""
         <style>
-          /* Frozen KPI bar — fixed at viewport top, like Excel frozen row */
+          /* Frozen KPI bar — sticky at top of MAIN content area only */
           .pa-bi-bar {{
-            position:fixed;top:0;left:0;right:0;z-index:9999;
+            position:sticky;top:0;z-index:9000;
             background:#0f1419;
             border-bottom:1px solid #1e293b;
-            padding:4px 14px 4px 14px;
-            box-shadow:0 2px 8px rgba(0,0,0,0.5);
+            padding:4px 14px;
+            margin:-1.5rem -2rem 12px -2rem;
+            box-shadow:0 2px 6px rgba(0,0,0,0.4);
             display:flex;align-items:center;gap:6px;
             overflow-x:auto;white-space:nowrap;
             height:36px;
           }}
-          /* Push main content + sidebar down to clear the frozen bar */
-          [data-testid="stAppViewContainer"] {{ padding-top:36px !important; }}
-          [data-testid="stSidebar"] {{ padding-top:36px !important; }}
-          /* Pull sidebar header padding off so it aligns with main content top */
+          /* Strip sidebar's top empty space so it aligns with main content */
           [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
             padding-top:0 !important; margin-top:0 !important;
           }}
-          [data-testid="stSidebar"] .block-container {{ padding-top:0 !important; }}
-          .block-container {{ padding-top:0.5rem !important; }}
+          [data-testid="stSidebar"] .block-container {{ padding-top:0.5rem !important; }}
 
           .pa-bi-tag {{
             font-size:9px;font-weight:700;color:#3b82f6;
