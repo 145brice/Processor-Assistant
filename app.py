@@ -1611,7 +1611,7 @@ def show_sidebar():
 def show_dashboard():
     """Compact document scanning page — always auto-detect, additive scanning."""
     _BULK_DOC_TYPES = [
-        "Approval Letter", "Closing Disclosure (CD)", "Loan Estimate (LE)",
+        "Approval Letter", "Loan Estimate (LE)",
         "1003 Application", "Purchase Contract", "Credit Report",
         "Bank Statement", "Change of Circumstance (COC)", "Broker Package (BP)",
         "Pay Stub", "W-2", "1099", "Tax Return", "Appraisal",
@@ -4956,7 +4956,7 @@ def show_team_page():
 
 def show_snapshot_page():
     """Loan Snapshot - Complete vs Missing document view."""
-    from loan_snapshot import generate_snapshot, get_missing_docs_email_body
+    from loan_snapshot import generate_snapshot, get_missing_docs_email_body, DOCUMENT_REQUIREMENTS
     from crm import get_all_loans
     from pathlib import Path
 
@@ -4967,7 +4967,39 @@ def show_snapshot_page():
         st.warning("Please select a loan to view its snapshot.")
         return
 
-    snapshot = generate_snapshot(Path(current_loan["folder_path"]))
+    # Try filesystem-based snapshot if folder exists; fall back to loan.documents list
+    folder_path = current_loan.get("folder_path", "")
+    if folder_path and Path(folder_path).exists():
+        snapshot = generate_snapshot(Path(folder_path))
+    else:
+        # Synthesize snapshot from loan.documents / missing_docs
+        docs = current_loan.get("documents", []) or []
+        present_types = set()
+        for d in docs:
+            t = (d.get("doc_type") or d.get("type") or "").lower()
+            for req_type, info in DOCUMENT_REQUIREMENTS.items():
+                aliases = [a.lower() for a in info.get("aliases", [])] + [req_type.lower()]
+                if any(a in t for a in aliases):
+                    present_types.add(req_type)
+
+        complete, missing = [], []
+        for req_type, info in DOCUMENT_REQUIREMENTS.items():
+            if req_type in present_types:
+                complete.append({"document": req_type, "files": []})
+            elif info.get("required"):
+                missing.append({"document": req_type, "required": True})
+
+        snapshot = {
+            "loan_folder": current_loan.get("borrower", "—"),
+            "complete": complete,
+            "missing": missing,
+            "stale": [],
+            "partial": [],
+            "complete_count": len(complete),
+            "missing_count": len(missing),
+            "stale_count": 0,
+            "partial_count": 0,
+        }
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
@@ -7672,7 +7704,7 @@ def show_loan_detail():
     )
     with st.expander("Upload a document to scan and populate loan data", expanded=False):
         _scan_doc_types = [
-            "Approval Letter", "Closing Disclosure (CD)", "Loan Estimate (LE)",
+            "Approval Letter", "Loan Estimate (LE)",
             "1003 Application", "Purchase Contract", "Credit Report",
             "Bank Statement", "Change of Circumstance (COC)", "Broker Package (BP)",
         ]

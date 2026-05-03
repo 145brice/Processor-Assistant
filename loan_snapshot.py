@@ -51,10 +51,6 @@ DOCUMENT_REQUIREMENTS = {
         "required": True,
         "aliases": ["insurance", "hazard insurance", "hoi", "homeowner"],
     },
-    "Closing Disclosure": {
-        "required": True,
-        "aliases": ["cd", "closing disclosure", "cd signed"],
-    },
     "Loan Estimate": {
         "required": False,
         "aliases": ["le", "loan estimate"],
