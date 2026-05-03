@@ -1042,25 +1042,27 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     line-height: 1.2 !important;
 }
 .pa-loan-row:hover { background: #1e2532 !important; }
-
-/* Expand toggle button: small text link */
-[data-testid="stButton"] > button[data-testid*="exptoggle_"],
-button[key^="exptoggle_"] {
-    background: transparent !important;
-    border: none !important;
-    color: #64748b !important;
-    font-size: 9px !important;
-    padding: 0 6px !important;
-    height: 16px !important;
-    min-height: 16px !important;
-    box-shadow: none !important;
-    width: auto !important;
+/* Pipeline action row — compact buttons & selects */
+.pipeline-scroll [data-testid="stButton"] > button[data-testid*="open_"],
+.pipeline-scroll [data-testid="stButton"] > button[data-testid*="notesbtn_"],
+.pipeline-scroll [data-testid="stButton"] > button[data-testid*="docsbtn_"] {
+    font-size: 10px !important;
+    padding: 2px 6px !important;
+    height: 22px !important;
+    min-height: 22px !important;
+    line-height: 1 !important;
 }
-[data-testid="stButton"] > button[data-testid*="exptoggle_"]:hover,
-button[key^="exptoggle_"]:hover {
-    color: #3b82f6 !important;
-    background: transparent !important;
+.pipeline-scroll [data-testid="stSelectbox"] select,
+.pipeline-scroll [data-testid="stSelectbox"] > div > div {
+    font-size: 10px !important;
+    min-height: 22px !important;
+    height: 22px !important;
+    padding: 1px 6px !important;
 }
+.pipeline-scroll [data-testid="stSelectbox"] { margin-bottom: 0 !important; }
+.pipeline-scroll [data-testid="stButton"] { margin-bottom: 0 !important; }
+.pipeline-scroll [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"],
+.pipeline-scroll [data-testid="stVerticalBlock"] > div { gap: 2px !important; }
 
 
 .pipeline-scroll [data-testid="stVerticalBlockBorderWrapper"] {
@@ -4236,10 +4238,6 @@ def show_pipeline():
                 f'text-decoration:none;opacity:0.6;">x</a>'
             )
 
-        # ── Per-loan expand toggle (default expanded so everything is visible) ──
-        _row_open_key = f"row_open_{lid}"
-        _row_expanded = st.session_state.get(_row_open_key, True)
-
         # ── Single compact row — grid-aligned columns (tabbed) ───────
         st.markdown(
             f'<div class="pa-loan-row" style="border-left:3px solid {_status_clr};padding:3px 8px;margin-bottom:1px;min-height:22px;">'
@@ -4264,15 +4262,6 @@ def show_pipeline():
             + f'</div>',
             unsafe_allow_html=True,
         )
-
-        # ── Tiny expand chevron (replaces the heavy action row when collapsed) ──
-        _exp_label = "▾ collapse" if _row_expanded else "▸ expand"
-        if st.button(_exp_label, key=f"exptoggle_{lid}", use_container_width=False):
-            st.session_state[_row_open_key] = not _row_expanded
-            st.rerun()
-
-        if not _row_expanded:
-            continue  # skip rendering action row + expanders for this loan
 
         # ── Compact action row: Open | Status | Assign ───────────────
         ac1, ac2, ac3 = st.columns([1.3, 1.5, 2])
