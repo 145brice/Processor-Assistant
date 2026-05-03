@@ -1141,23 +1141,23 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 /* All pipeline buttons + selectboxes: same 32px height, 11px font */
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) button,
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stButton"] button {
-    height: 32px !important;
-    min-height: 32px !important;
-    font-size: 11px !important;
-    padding: 0 8px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    font-size: 10px !important;
+    padding: 0 6px !important;
     line-height: 1 !important;
     box-shadow: none !important;
 }
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) button p {
-    font-size: 11px !important;
+    font-size: 10px !important;
     line-height: 1 !important;
     margin: 0 !important;
 }
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stSelectbox"] > div > div {
-    height: 32px !important;
-    min-height: 32px !important;
-    font-size: 11px !important;
-    padding: 0 8px !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    font-size: 10px !important;
+    padding: 0 6px !important;
 }
 /* Zero gap everywhere — rows touch */
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stVerticalBlock"] {
@@ -3327,6 +3327,17 @@ def _pipeline_cond_row(c, contacts=None, loan_num="", borrower=""):
 def show_pipeline():
     """Color-coded CRM loan pipeline dashboard."""
     import os
+    # Handle dash header chip click — set status filter from query param
+    _qp = st.query_params
+    _qp_filter = _qp.get("pipefilter", "")
+    if isinstance(_qp_filter, list):
+        _qp_filter = _qp_filter[0] if _qp_filter else ""
+    if _qp_filter:
+        st.session_state["pipeline_filter_val"] = _qp_filter
+        if "pipeline_filter" in st.session_state:
+            del st.session_state["pipeline_filter"]
+        st.query_params.clear()
+        st.rerun()
     from crm import (
         get_all_loans, add_loan, set_status, delete_loan, update_loan,
         STATUS_OPTIONS, STATUS_EMOJI, STATUS_COLORS,
@@ -3347,7 +3358,7 @@ def show_pipeline():
     # ── Top action bar ──────────────────────────────────────────────────────
     tb1, tb2, tb3, tb4, tb5 = st.columns([1.5, 2, 2.5, 2, 1])
     with tb1:
-        st.markdown('<div style="height:26px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:30px;"></div>', unsafe_allow_html=True)
         if st.button("+Add Loan", use_container_width=True, type="primary"):
             st.session_state.pipeline_add_open = not st.session_state.get("pipeline_add_open", False)
     with tb2:
@@ -3384,7 +3395,7 @@ def show_pipeline():
             key="pipeline_sort",
         )
     with tb5:
-        st.markdown('<div style="height:26px;"></div>', unsafe_allow_html=True)
+        st.markdown('<div style="height:30px;"></div>', unsafe_allow_html=True)
         st.markdown('<div class="pa-myloans-toggle">', unsafe_allow_html=True)
         my_loans_only = st.checkbox("My loans", key="pipeline_myloans")
         st.markdown('</div>', unsafe_allow_html=True)
@@ -4283,9 +4294,9 @@ def show_pipeline():
 
         # ── Single compact row ───────────────────────────────────────
         st.markdown(
-            f'<div style="border-left:3px solid {_status_clr};background:#161b2b;padding:5px 8px 3px 8px;margin-bottom:2px;">'
+            f'<div class="pa-loan-grid" style="border-left:3px solid {_status_clr};background:#161b2b;padding:3px 8px 2px 8px;margin-bottom:1px;">'
             # Line 1: loan# | borrower | status | badges | bar | % | x
-            f'<div style="display:flex;align-items:center;gap:8px;min-height:20px;">'
+            f'<div style="display:flex;align-items:center;gap:8px;min-height:18px;">'
             f'<span style="width:88px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">#{_loan_num}</span>'
             f'<span style="width:140px;font-size:11px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{_borrower}</span>'
             f'<span style="font-size:10px;color:{_status_clr};font-weight:600;white-space:nowrap;flex-shrink:0;">{emoji}{status}</span>'
@@ -8695,9 +8706,9 @@ def show_persistent_header():
     pct_ip  = int((in_prog / total) * 100) if total else 0
     pct_pen = max(0, 100 - pct_clr - pct_ip)
     chip_html = ''.join([
-        f'<span class="pa-pchip" style="--c:{c};">'
+        f'<a href="?pipefilter={s}&page=pipeline" class="pa-pchip" style="--c:{c};text-decoration:none;cursor:pointer;">'
         f'<span class="pa-pchip-n" style="color:{c};">{counts.get(s, 0) if s != "All" else total}</span>'
-        f'<span class="pa-pchip-l">{s}</span></span>'
+        f'<span class="pa-pchip-l">{s}</span></a>'
         for s, c in [("All","#3b82f6"),("Pending","#ef4444"),("Requested","#f59e0b"),
                      ("Cleared","#3b82f6"),("Overdue","#9ca3af"),("Closed","#9ca3af")]
     ])
