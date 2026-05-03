@@ -901,219 +901,113 @@ def show_sidebar():
         _ew_dot     = "●" if _ew_running else "○"
         _ew_badge   = f" ({_ew_pending})" if _ew_pending else ""
 
-        _nav_items = [
-            ("Scanner",  "dashboard", "⬡"),
-            ("Pipeline", "pipeline",  "⬡"),
-            ("Reader",   "reader",    "⬡"),
-            ("Team",     "team",      "⬡"),
-            # ("AI", "ollama", "⬡"),  # HIDDEN — re-enable when ready to offer AI upsell/Ollama page
-            ("Billing",  "billing",   "⬡"),
-        ]
-        if not is_sandbox:
-            _nav_items.append(("History", "history", "⬡"))
-
-        for _nav_label, _nav_page, _nav_icon in _nav_items:
-            _active = _current_page == _nav_page
-            _btn_label = ("● " + _nav_label) if _active else _nav_label
-            if st.button(_btn_label, key=f"nav_{_nav_page}", use_container_width=True,
-                         type=("primary" if _active else "secondary")):
-                st.session_state.page = _nav_page
+        # ── Helper: nav button ───────────────────────────────────────────────
+        def _nav_btn(label, page_key, btn_key=None, indent=False):
+            active = _current_page == page_key
+            lbl = ("● " + label) if active else label
+            cols = st.columns([1, 8]) if indent else None
+            ctx = cols[1] if indent else st
+            if ctx.button(lbl, key=btn_key or f"nav_{page_key}", use_container_width=True,
+                          type=("primary" if active else "secondary")):
+                st.session_state.page = page_key
                 _save_session()
                 st.rerun()
-
-        # ── Email Watch — top-level + sub-nav ────────────────────────────────
-        _ew_pages   = ("email_watch", "email_watch_controls")
-        _ew_active  = _current_page in _ew_pages
-        _ew_top_lbl = f"{_ew_dot} Email Watch{_ew_badge}"
-        if _ew_active:
-            _ew_top_lbl = "● " + _ew_top_lbl
-        if st.button(_ew_top_lbl, key="nav_email_watch_top", use_container_width=True,
-                     type=("primary" if _ew_active else "secondary")):
-            if _ew_active:
-                st.session_state["ew_nav_open"] = not st.session_state.get("ew_nav_open", True)
-            else:
-                st.session_state["ew_nav_open"] = True
-                st.session_state.page = "email_watch_controls"
-                _save_session()
-                st.rerun()
-        _ew_open = _ew_active or st.session_state.get("ew_nav_open", False)
-        if _ew_open:
-            _ew_sub = [
-                ("Controls", "email_watch_controls"),
-                ("Results",  "email_watch"),
-            ]
-            for _sub_lbl, _sub_page in _ew_sub:
-                _sub_active = _current_page == _sub_page
-                _suffix = f"  ({_ew_pending})" if (_sub_page == "email_watch" and _ew_pending) else ""
-                _c_gutter, _c_btn = st.columns([1, 8])
-                with _c_btn:
-                    if st.button(_sub_lbl + _suffix, key=f"nav_{_sub_page}", use_container_width=True,
-                                 type=("primary" if _sub_active else "secondary")):
-                        st.session_state.page = _sub_page
-                        st.session_state["ew_nav_open"] = True
-                        _save_session()
-                        st.rerun()
-
-        st.markdown("---")
-
-        # ── AI status indicator ───────────────────────────────────────────────
-        import ai_router as _ar
-        _ar_status = _ar.get_status()
-        _pref = _ar_status["preferred"]
-        if _pref == "cloud" and _ar_status["cloud_enabled"]:
-            _ai_lbl = f"Cloud · {_ar_status['cloud_provider'].title()}"
-        elif _pref == "ollama" and _ar_status["ollama_enabled"]:
-            _ai_lbl = f"Ollama · {_ar_status['ollama_model']}"
-        elif _ar_status["cloud_enabled"]:
-            _ai_lbl = f"Cloud (fallback)"
-        elif _ar_status["ollama_enabled"]:
-            _ai_lbl = f"Ollama (fallback)"
-        else:
-            _ai_lbl = "Script only"
-        st.markdown(
-            f'<div style="background:#1e1e1e;border:1px solid rgba(255,255,255,0.1);'
-            f'border-radius:var(--radius-sm);padding:5px 10px;margin-bottom:8px;font-size:12px;'
-            f'color:#9ca3af;">'
-            f'AI · {_ai_lbl}</div>',
-            unsafe_allow_html=True,
-        )
 
         # ── Collapsible section helper ────────────────────────────────────────
-        def _section_header(label, state_key, default_open=True):
+        def _section_header(label, state_key, default_open=False, divider=True):
             if state_key not in st.session_state:
                 st.session_state[state_key] = default_open
-            st.markdown("---")
+            if divider:
+                st.markdown("---")
             is_open = st.session_state[state_key]
             chev = "▾" if is_open else "▸"
-            if st.button(
-                f"{chev} {label.upper()}",
-                key=f"_sec_{state_key}",
-                use_container_width=True,
-                help=f"Click to {'collapse' if is_open else 'expand'}",
-            ):
+            if st.button(f"{chev} {label.upper()}", key=f"_sec_{state_key}",
+                         use_container_width=True,
+                         help=f"Click to {'collapse' if is_open else 'expand'}"):
                 st.session_state[state_key] = not is_open
                 st.rerun()
             return st.session_state[state_key]
 
-        # ── Quick Tools ─────────────────────────────────────────────────────
-        if _section_header("Quick Tools", "_sec_open_quick", default_open=False):
-            if st.button("📋 Loan Snapshot", key="nav_snapshot", use_container_width=True, type="secondary"):
-                st.session_state.page = "snapshot"
-                st.session_state["scroll_to"] = "snapshot"
-                _save_session()
-                st.rerun()
+        # ═══════════ PRIMARY NAV: Scanner + Pipeline (always visible) ═══════
+        _nav_btn("Scanner",  "dashboard")
+        _nav_btn("Pipeline", "pipeline")
 
-            if st.button("⚠️ Report Issue", key="nav_report_issue", use_container_width=True, type="secondary"):
-                st.session_state.page = "report_issue"
-                st.session_state["scroll_to"] = "report_issue"
-                _save_session()
-                st.rerun()
+        # ═══════════ WORKSPACE: Reader / Email Watch / Team / Billing ════════
+        if _section_header("Workspace", "_sec_open_workspace", default_open=False):
+            _nav_btn("Reader", "reader")
 
-            if st.button("🗂️ Missing Docs", key="nav_missing_docs", use_container_width=True, type="secondary"):
-                st.session_state.page = "missing_docs"
-                st.session_state["scroll_to"] = "missing_docs"
-                _save_session()
-                st.rerun()
+            # Email Watch with sub-nav
+            _ew_pages   = ("email_watch", "email_watch_controls")
+            _ew_active  = _current_page in _ew_pages
+            _ew_top_lbl = f"{_ew_dot} Email Watch{_ew_badge}"
+            if _ew_active:
+                _ew_top_lbl = "● " + _ew_top_lbl
+            if st.button(_ew_top_lbl, key="nav_email_watch_top", use_container_width=True,
+                         type=("primary" if _ew_active else "secondary")):
+                if _ew_active:
+                    st.session_state["ew_nav_open"] = not st.session_state.get("ew_nav_open", True)
+                else:
+                    st.session_state["ew_nav_open"] = True
+                    st.session_state.page = "email_watch_controls"
+                    _save_session()
+                    st.rerun()
+            _ew_open = _ew_active or st.session_state.get("ew_nav_open", False)
+            if _ew_open:
+                for _sub_lbl, _sub_page in (("Controls", "email_watch_controls"),
+                                            ("Results",  "email_watch")):
+                    _sub_active = _current_page == _sub_page
+                    _suffix = f"  ({_ew_pending})" if (_sub_page == "email_watch" and _ew_pending) else ""
+                    _c_gutter, _c_btn = st.columns([1, 8])
+                    with _c_btn:
+                        if st.button(_sub_lbl + _suffix, key=f"nav_{_sub_page}",
+                                     use_container_width=True,
+                                     type=("primary" if _sub_active else "secondary")):
+                            st.session_state.page = _sub_page
+                            st.session_state["ew_nav_open"] = True
+                            _save_session()
+                            st.rerun()
 
-            if st.button("📅 Doc Expiry", key="nav_doc_expiry", use_container_width=True, type="secondary"):
-                st.session_state.page = "doc_expiry"
-                st.session_state["scroll_to"] = "doc_expiry"
-                _save_session()
-                st.rerun()
+            _nav_btn("Team",    "team")
+            _nav_btn("Billing", "billing")
+            if not is_sandbox:
+                _nav_btn("History", "history")
 
-            if st.button("🌎 Spanish Reply", key="nav_spanish", use_container_width=True, type="secondary"):
-                st.session_state.page = "spanish_reply"
-                st.session_state["scroll_to"] = "spanish_reply"
-                _save_session()
-                st.rerun()
+        # ═══════════ TOOLS (parent collapse with nested sub-collapses) ═══════
+        if _section_header("Tools", "_sec_open_tools_parent", default_open=False):
 
-        # ── Advanced Tools ─────────────────────────────────────────────────────
-        if _section_header("Advanced Tools", "_sec_open_advanced", default_open=False):
-            if st.button("📊 Income Verifier", key="nav_income_verifier", use_container_width=True, type="secondary"):
-                st.session_state.page = "income_verifier"
-                _save_session()
-                st.rerun()
+            # Quick Tools
+            if _section_header("Quick Tools", "_sec_open_quick", default_open=False, divider=False):
+                _nav_btn("📋 Loan Snapshot",  "snapshot",      "nav_snapshot")
+                _nav_btn("⚠️ Report Issue",   "report_issue",  "nav_report_issue")
+                _nav_btn("🗂️ Missing Docs",   "missing_docs",  "nav_missing_docs")
+                _nav_btn("📅 Doc Expiry",     "doc_expiry",    "nav_doc_expiry")
+                _nav_btn("🌎 Spanish Reply",  "spanish_reply", "nav_spanish")
 
-            if st.button("📝 Auto Data Entry", key="nav_auto_data_entry", use_container_width=True, type="secondary"):
-                st.session_state.page = "auto_data_entry"
-                _save_session()
-                st.rerun()
+            # Advanced Tools
+            if _section_header("Advanced Tools", "_sec_open_advanced", default_open=False, divider=False):
+                _nav_btn("📊 Income Verifier",    "income_verifier",    "nav_income_verifier")
+                _nav_btn("📝 Auto Data Entry",    "auto_data_entry",    "nav_auto_data_entry")
+                _nav_btn("💳 Credit Summary",     "credit_summary",     "nav_credit_summary")
+                _nav_btn("🧮 DTI Calculator",     "dti_calculator",     "nav_dti_calculator")
+                _nav_btn("✅ Condition Clearer",  "condition_clearer",  "nav_condition_clearer")
+                _nav_btn("⚖️ Compliance Checker", "compliance_checker", "nav_compliance_checker")
 
-            if st.button("💳 Credit Summary", key="nav_credit_summary", use_container_width=True, type="secondary"):
-                st.session_state.page = "credit_summary"
-                _save_session()
-                st.rerun()
+            # Pipeline Advanced (Pipeline Dashboard removed — now in persistent header)
+            if _section_header("Pipeline Advanced", "_sec_open_pipeline", default_open=False, divider=False):
+                _nav_btn("📦 Closing Package",  "closing_package",  "nav_closing_package")
+                _nav_btn("📋 Guideline Checker","guideline_checker","nav_guideline_checker")
+                _nav_btn("🔍 Fraud Detector",   "fraud_detector",   "nav_fraud_detector")
+                _nav_btn("👥 Multi-Borrower",   "multi_borrower",   "nav_multi_borrower")
+                _nav_btn("📤 LOS Export",       "los_export",       "nav_los_export")
 
-            if st.button("🧮 DTI Calculator", key="nav_dti_calculator", use_container_width=True, type="secondary"):
-                st.session_state.page = "dti_calculator"
-                _save_session()
-                st.rerun()
+            # Advanced Automation
+            if _section_header("Advanced Automation", "_sec_open_automation", default_open=False, divider=False):
+                _nav_btn("🔒 Rate Lock Monitor",     "rate_lock_monitor",     "nav_rate_lock_monitor")
+                _nav_btn("📋 Underwriting Tracker",  "underwriting_tracker",  "nav_underwriting_tracker")
+                _nav_btn("🏷️ Document Classifier",   "document_classifier",   "nav_document_classifier")
+                _nav_btn("💰 Escrow Calculator",     "escrow_calculator",     "nav_escrow_calculator")
 
-            if st.button("✅ Condition Clearer", key="nav_condition_clearer", use_container_width=True, type="secondary"):
-                st.session_state.page = "condition_clearer"
-                _save_session()
-                st.rerun()
-
-            if st.button("⚖️ Compliance Checker", key="nav_compliance_checker", use_container_width=True, type="secondary"):
-                st.session_state.page = "compliance_checker"
-                _save_session()
-                st.rerun()
-
-        # ── Pipeline & Advanced Tools ──────────────────────────────────────────
-        if _section_header("Pipeline & Advanced", "_sec_open_pipeline", default_open=False):
-            if st.button("📦 Closing Package", key="nav_closing_package", use_container_width=True, type="secondary"):
-                st.session_state.page = "closing_package"
-                _save_session()
-                st.rerun()
-
-            if st.button("📊 Pipeline Dashboard", key="nav_pipeline_dashboard", use_container_width=True, type="secondary"):
-                st.session_state.page = "pipeline_dashboard"
-                _save_session()
-                st.rerun()
-
-            if st.button("📋 Guideline Checker", key="nav_guideline_checker", use_container_width=True, type="secondary"):
-                st.session_state.page = "guideline_checker"
-                _save_session()
-                st.rerun()
-
-            if st.button("🔍 Fraud Detector", key="nav_fraud_detector", use_container_width=True, type="secondary"):
-                st.session_state.page = "fraud_detector"
-                _save_session()
-                st.rerun()
-
-            if st.button("👥 Multi-Borrower", key="nav_multi_borrower", use_container_width=True, type="secondary"):
-                st.session_state.page = "multi_borrower"
-                _save_session()
-                st.rerun()
-
-            if st.button("📤 LOS Export", key="nav_los_export", use_container_width=True, type="secondary"):
-                st.session_state.page = "los_export"
-                _save_session()
-                st.rerun()
-
-        # ── Advanced Automation ───────────────────────────────────────────────
-        if _section_header("Advanced Automation", "_sec_open_automation", default_open=False):
-            if st.button("🔒 Rate Lock Monitor", key="nav_rate_lock_monitor", use_container_width=True, type="secondary"):
-                st.session_state.page = "rate_lock_monitor"
-                _save_session()
-                st.rerun()
-
-            if st.button("📋 Underwriting Tracker", key="nav_underwriting_tracker", use_container_width=True, type="secondary"):
-                st.session_state.page = "underwriting_tracker"
-                _save_session()
-                st.rerun()
-
-            if st.button("🏷️ Document Classifier", key="nav_document_classifier", use_container_width=True, type="secondary"):
-                st.session_state.page = "document_classifier"
-                _save_session()
-                st.rerun()
-
-            if st.button("💰 Escrow Calculator", key="nav_escrow_calculator", use_container_width=True, type="secondary"):
-                st.session_state.page = "escrow_calculator"
-                _save_session()
-                st.rerun()
-
-        # ── Settings ───────────────────────────────────────────────────────────
+        # ═══════════ SETTINGS ═══════════════════════════════════════════════
         if _section_header("Settings", "_sec_open_settings", default_open=False):
             # Quick Cloud AI status + toggle (no full-page navigation needed)
             try:
@@ -8148,11 +8042,78 @@ def show_loan_detail():
 
 
 # --- Main ---
+def show_persistent_header():
+    """Sticky pipeline summary bar shown on every authenticated page."""
+    try:
+        from crm import get_all_loans
+        loans = get_all_loans() or []
+    except Exception:
+        loans = []
+
+    total = len(loans)
+    pending_conds = 0
+    needs_attn = 0
+    in_progress = 0
+    from datetime import date as _d, datetime as _dt
+    today = _d.today()
+    for ln in loans:
+        status = (ln.get("status") or "").lower()
+        if status not in ("cleared", "closed", "cancelled"):
+            in_progress += 1
+        for c in (ln.get("conditions") or []):
+            if not c.get("cleared"):
+                pending_conds += 1
+        if status in ("overdue", "pending"):
+            needs_attn += 1
+        cd = ln.get("closing_date") or ln.get("due_date")
+        if cd:
+            try:
+                cd_d = _dt.fromisoformat(str(cd)[:10]).date()
+                if (cd_d - today).days <= 3 and status not in ("cleared","closed","cancelled"):
+                    needs_attn += 1
+            except Exception:
+                pass
+
+    st.markdown(
+        f"""
+        <div style="position:sticky;top:0;z-index:9000;
+             background:linear-gradient(90deg,#181818 0%,#1a1a1a 100%);
+             border-bottom:1px solid rgba(57,255,20,0.25);
+             padding:8px 14px;margin:-1.5rem -2rem 14px -2rem;
+             display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+             box-shadow:0 2px 14px rgba(0,0,0,0.5);">
+          <div style="font-size:10px;color:#39FF14;font-weight:700;letter-spacing:1.2px;
+               text-transform:uppercase;padding-right:8px;border-right:1px solid rgba(255,255,255,0.1);">
+            Pipeline
+          </div>
+          <div style="display:flex;gap:6px;align-items:baseline;">
+            <span style="font-size:18px;font-weight:800;color:#39FF14;">{total}</span>
+            <span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.6px;">Active Loans</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:baseline;">
+            <span style="font-size:18px;font-weight:800;color:#fbbf24;">{in_progress}</span>
+            <span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.6px;">In Progress</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:baseline;">
+            <span style="font-size:18px;font-weight:800;color:#a78bfa;">{pending_conds}</span>
+            <span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.6px;">Pending Conditions</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:baseline;">
+            <span style="font-size:18px;font-weight:800;color:{'#ef4444' if needs_attn else '#9ca3af'};">{needs_attn}</span>
+            <span style="font-size:10px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.6px;">Need Attention</span>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 def main():
     if not st.session_state.authenticated:
         show_login_page()
     else:
         show_sidebar()
+        show_persistent_header()
         page = st.session_state.page
         if page == "dashboard":
             show_dashboard()
