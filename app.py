@@ -91,7 +91,7 @@ header[data-testid="stHeader"], [data-testid="stHeader"], .stAppHeader {
 /* ─── Custom sidebar toggle (DOM-injected button + body class) ─── */
 #pa-sidebar-toggle {
     position: fixed !important;
-    top: 60px !important;
+    top: 44px !important;
     left: 252px !important;
     z-index: 999999 !important;
     width: 36px !important;
@@ -8623,21 +8623,10 @@ def show_persistent_header():
     urgent_count = len(closing_3d) + len(locks_expired) + len(overdue_loans)
     warning_count = len(closing_7d) + len(locks_expiring_7d) + requested_stale
 
-    # Power BI / Tableau-style KPI strip
+    # Power BI / Tableau-style KPI strip — compact frozen row
     def _kpi(value, label, sublabel="", accent="#3b82f6", icon="", tooltip=""):
-        sub_html = f'<div class="pa-kpi-sub">{sublabel}</div>' if sublabel else ''
-        icon_html = f'<div class="pa-kpi-icon" style="background:{accent}1a;color:{accent};">{icon}</div>' if icon else ''
         tip_attr = f'title="{tooltip}"' if tooltip else ''
-        return f'''
-          <div class="pa-kpi" {tip_attr}>
-            {icon_html}
-            <div class="pa-kpi-body">
-              <div class="pa-kpi-label">{label}</div>
-              <div class="pa-kpi-value" style="color:{accent};">{value}</div>
-              {sub_html}
-            </div>
-          </div>
-        '''
+        return f'''<div class="pa-kpi" {tip_attr}><span class="pa-kpi-value" style="color:{accent};">{value}</span><span class="pa-kpi-label">{label}</span></div>'''
 
     # SVG icons (BI-style outline)
     ICN_LOANS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>'
@@ -8663,92 +8652,72 @@ def show_persistent_header():
     st.markdown(
         f"""
         <style>
+          /* Frozen KPI bar — fixed at viewport top, like Excel frozen row */
           .pa-bi-bar {{
-            position:sticky;top:0;z-index:9000;
+            position:fixed;top:0;left:0;right:0;z-index:9999;
             background:#0f1419;
-            border-bottom:1px solid rgba(255,255,255,0.06);
-            padding:10px 16px 10px 60px;
-            margin:-1.5rem -2rem 16px -2rem;
-            box-shadow:0 1px 0 rgba(255,255,255,0.02), 0 4px 12px rgba(0,0,0,0.4);
+            border-bottom:1px solid #1e293b;
+            padding:4px 14px 4px 14px;
+            box-shadow:0 2px 8px rgba(0,0,0,0.5);
+            display:flex;align-items:center;gap:6px;
+            overflow-x:auto;white-space:nowrap;
+            height:36px;
           }}
-          .pa-bi-meta {{
-            display:flex;align-items:center;justify-content:space-between;
-            margin-bottom:8px;
+          /* Push main content + sidebar down to clear the frozen bar */
+          [data-testid="stAppViewContainer"] {{ padding-top:36px !important; }}
+          [data-testid="stSidebar"] {{ padding-top:36px !important; }}
+          /* Pull sidebar header padding off so it aligns with main content top */
+          [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
+            padding-top:0 !important; margin-top:0 !important;
           }}
-          .pa-bi-title {{
-            font-size:11px;font-weight:600;color:#94a3b8;
+          [data-testid="stSidebar"] .block-container {{ padding-top:0 !important; }}
+          .block-container {{ padding-top:0.5rem !important; }}
+
+          .pa-bi-tag {{
+            font-size:9px;font-weight:700;color:#3b82f6;
             text-transform:uppercase;letter-spacing:1.2px;
-            display:flex;align-items:center;gap:8px;
-          }}
-          .pa-bi-title::before {{
-            content:'';width:3px;height:14px;background:#3b82f6;border-radius:2px;
+            padding:2px 6px;border-left:2px solid #3b82f6;
+            margin-right:4px;flex-shrink:0;
           }}
           .pa-bi-date {{
-            font-size:11px;color:#64748b;font-weight:500;
-            font-family:'JetBrains Mono',monospace;
-          }}
-          .pa-bi-grid {{
-            display:grid;
-            grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-            gap:8px;
+            font-size:10px;color:#64748b;font-weight:500;
+            font-family:'JetBrains Mono',monospace;margin-left:auto;flex-shrink:0;
           }}
           .pa-kpi {{
-            display:flex;align-items:flex-start;gap:10px;
-            padding:10px 12px;
-            background:#1a2028;
-            border:1px solid rgba(255,255,255,0.04);
-            border-radius:6px;
-            transition:border-color 0.15s, transform 0.15s;
-            cursor:default;
+            display:inline-flex;align-items:baseline;gap:5px;
+            padding:2px 8px;
+            background:transparent;
+            border-right:1px solid #1e293b;
+            transition:background 0.12s;
+            cursor:default;flex-shrink:0;
           }}
-          .pa-kpi:hover {{
-            border-color:rgba(255,255,255,0.12);
-            transform:translateY(-1px);
-          }}
-          .pa-kpi-icon {{
-            width:28px;height:28px;border-radius:6px;
-            display:flex;align-items:center;justify-content:center;
-            flex-shrink:0;
-          }}
-          .pa-kpi-body {{ flex:1;min-width:0; }}
-          .pa-kpi-label {{
-            font-size:10px;color:#94a3b8;
-            text-transform:uppercase;letter-spacing:0.8px;
-            font-weight:600;margin-bottom:3px;
-            white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
-          }}
+          .pa-kpi:hover {{ background:rgba(59,130,246,0.06); }}
           .pa-kpi-value {{
-            font-size:22px;font-weight:700;line-height:1;
-            font-family:'Inter',-apple-system,sans-serif;
-            letter-spacing:-0.5px;
+            font-size:14px;font-weight:700;line-height:1;
+            font-family:'Segoe UI','Inter',sans-serif;
+            letter-spacing:-0.3px;
           }}
-          .pa-kpi-sub {{
-            font-size:10px;color:#64748b;
-            margin-top:4px;font-weight:500;
-          }}
-          .pa-kpi-section {{
-            font-size:9px;font-weight:700;color:#64748b;
-            text-transform:uppercase;letter-spacing:1.4px;
-            padding:0 4px;display:flex;align-items:center;
-            grid-column:span 1;
+          .pa-kpi-label {{
+            font-size:9px;color:#94a3b8;
+            text-transform:uppercase;letter-spacing:0.6px;
+            font-weight:600;
           }}
         </style>
         <div class="pa-bi-bar">
-          <div class="pa-bi-meta">
-            <div class="pa-bi-title">Pipeline Overview</div>
-            <div class="pa-bi-date">As of {today.strftime('%a, %b %d %Y')}</div>
-          </div>
-          <div class="pa-bi-grid">
-            {_kpi(f"{total}", "Active Loans", _fmt_money(total_volume) + " volume", "#3b82f6", ICN_LOANS)}
-            {_kpi(f"{closed_this_month}", "Closed MTD", "this month", "#10b981", ICN_CHECK)}
-            {_kpi(f"{len(closing_3d)}", "Closing ≤3d", _tip(closing_3d) or "no urgent closings", closing_3d_c, ICN_ALERT, _tip(closing_3d))}
-            {_kpi(f"{len(closing_7d)}", "Closing 4-7d", _tip(closing_7d) or "—", closing_7d_c, ICN_CAL, _tip(closing_7d))}
-            {_kpi(f"{len(closing_30d)}", "Closing ≤30d", "upcoming", "#3b82f6", ICN_CAL)}
-            {_kpi(f"{len(locks_expired)}", "Locks Expired", _tip(locks_expired) or "all current", locks_exp_c, ICN_LOCK, _tip(locks_expired))}
-            {_kpi(f"{len(locks_expiring_7d)}", "Locks ≤7d", _tip(locks_expiring_7d) or "—", locks_7d_c, ICN_LOCK, _tip(locks_expiring_7d))}
-            {_kpi(f"{len(overdue_loans)}", "Overdue", _tip(overdue_loans) or "on track", overdue_c, ICN_CLOCK, _tip(overdue_loans))}
-            {_kpi(f"{pending_cond_total}", "Open Conditions", f"{needs_doc} needed · {requested_stale} stale", cond_color, ICN_DOC)}
-          </div>
+          <span class="pa-bi-tag">Pipeline</span>
+          {_kpi(f"{total}", "Active", "", "#3b82f6")}
+          {_kpi(_fmt_money(total_volume), "Volume", "", "#94a3b8")}
+          {_kpi(f"{closed_this_month}", "Closed MTD", "", "#10b981")}
+          {_kpi(f"{len(closing_3d)}", "Close ≤3d", _tip(closing_3d) or "no urgent closings", closing_3d_c, "", _tip(closing_3d))}
+          {_kpi(f"{len(closing_7d)}", "Close 4-7d", "", closing_7d_c, "", _tip(closing_7d))}
+          {_kpi(f"{len(closing_30d)}", "Close ≤30d", "", "#3b82f6")}
+          {_kpi(f"{len(locks_expired)}", "Lock Exp", "", locks_exp_c, "", _tip(locks_expired))}
+          {_kpi(f"{len(locks_expiring_7d)}", "Lock ≤7d", "", locks_7d_c, "", _tip(locks_expiring_7d))}
+          {_kpi(f"{len(overdue_loans)}", "Overdue", "", overdue_c, "", _tip(overdue_loans))}
+          {_kpi(f"{pending_cond_total}", "Conditions", "", cond_color)}
+          {_kpi(f"{needs_doc}", "Needed", "", "#94a3b8")}
+          {_kpi(f"{requested_stale}", "Stale", "", stale_c)}
+          <span class="pa-bi-date">{today.strftime('%a %b %d')}</span>
         </div>
         """,
         unsafe_allow_html=True,
