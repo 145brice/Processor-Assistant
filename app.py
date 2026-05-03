@@ -351,10 +351,10 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 [data-testid="stCaptionContainer"] p { color: var(--slate-500) !important; }
 .glow-text { text-shadow: 0 0 40px rgba(59, 130, 246, 0.3); }
 /* Pipeline: flat compact cards */
-.pipeline-scroll button { height: 22px !important; min-height: 22px !important; font-size: 11px !important; font-weight: 600 !important; padding: 0 6px !important; border-radius: 3px !important; background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #e5e7eb !important; box-shadow: none !important; transform: none !important; }
+.pipeline-scroll button { height: 14px !important; min-height: 14px !important; font-size: 8px !important; font-weight: 600 !important; padding: 0 4px !important; border-radius: 3px !important; background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #e5e7eb !important; box-shadow: none !important; transform: none !important; }
 .pipeline-scroll button:hover { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.25) !important; color: #ffffff !important; transform: none !important; box-shadow: none !important; }
-.pipeline-scroll button p { color: inherit !important; font-size: 11px !important; font-weight: 600 !important; margin: 0 !important; line-height: 1 !important; }
-.pipeline-scroll [data-testid="stSelectbox"] > div > div { min-height: 24px !important; height: 24px !important; font-size: 11px !important; padding: 0 6px !important; }
+.pipeline-scroll button p { color: inherit !important; font-size: 8px !important; font-weight: 600 !important; margin: 0 !important; line-height: 1 !important; }
+.pipeline-scroll [data-testid="stSelectbox"] > div > div { min-height: 16px !important; height: 16px !important; font-size: 8px !important; padding: 0 4px !important; }
 .pipeline-scroll [data-testid="stSelectbox"] { margin-bottom: 0 !important; }
 .pipeline-scroll [data-testid="stVerticalBlock"] { gap: 2px !important; }
 .pipeline-scroll [data-testid="stHorizontalBlock"] { gap: 4px !important; margin-bottom: 0 !important; }
@@ -1046,10 +1046,10 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 .pipeline-scroll [data-testid="stButton"] > button[data-testid*="open_"],
 .pipeline-scroll [data-testid="stButton"] > button[data-testid*="notesbtn_"],
 .pipeline-scroll [data-testid="stButton"] > button[data-testid*="docsbtn_"] {
-    font-size: 10px !important;
-    padding: 2px 6px !important;
-    height: 22px !important;
-    min-height: 22px !important;
+    font-size: 8px !important;
+    padding: 0 4px !important;
+    height: 14px !important;
+    min-height: 14px !important;
     line-height: 1 !important;
 }
 .pipeline-scroll [data-testid="stSelectbox"] select,
@@ -1086,17 +1086,22 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     line-height: 1.2 !important;
 }
 .pipeline-scroll button {
-    height: 20px !important;
-    min-height: 20px !important;
-    font-size: 10px !important;
-    padding: 0 6px !important;
+    height: 14px !important;
+    min-height: 14px !important;
+    font-size: 8px !important;
+    padding: 0 4px !important;
     line-height: 1 !important;
 }
+.pipeline-scroll button p {
+    font-size: 8px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+}
 .pipeline-scroll [data-testid="stSelectbox"] > div > div {
-    min-height: 22px !important;
-    height: 22px !important;
-    font-size: 10px !important;
-    padding: 0 6px !important;
+    min-height: 16px !important;
+    height: 16px !important;
+    font-size: 8px !important;
+    padding: 0 4px !important;
 }
 .pipeline-scroll [data-testid="stExpander"] summary {
     padding: 2px 8px !important;
