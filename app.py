@@ -51,7 +51,7 @@ st.markdown(r"""
     --neon-glow: none;
     --neon-glow-lg: none;
     --pa-sidebar-w: 244px;
-    --pa-main-gutter: 14px;
+    --pa-main-gutter: 12px;
 }
 html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !important; }
 .stApp { background: #0f1117 !important; }
@@ -77,15 +77,15 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
     margin-left: 0 !important;
     visibility: visible !important;
 }
-/* Keep main content clear of sidebar; apply offset ONLY once to outer main container */
+/* Let Streamlit place main content; only add inner gutter to avoid edge touch */
 [data-testid="stMain"] {
-    margin-left: var(--pa-sidebar-w) !important;
-    width: calc(100vw - var(--pa-sidebar-w)) !important;
-    max-width: calc(100vw - var(--pa-sidebar-w)) !important;
-    padding-left: var(--pa-main-gutter) !important;
+    margin-left: 0 !important;
+    width: auto !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
-    transition: margin-left 0.25s ease, width 0.25s ease !important;
+    transition: none !important;
 }
 [data-testid="stMain"] section[data-testid="stMain"],
 [data-testid="stMain"] > div[data-testid="stMainBlockContainer"],
@@ -94,7 +94,8 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
     margin-left: 0 !important;
     width: auto !important;
     max-width: 100% !important;
-    padding-left: 0 !important;
+    padding-left: var(--pa-main-gutter) !important;
+    padding-right: var(--pa-main-gutter) !important;
     box-sizing: border-box !important;
 }
 /* Force just the user-content visible — leave header/content default so scrolling works */
@@ -151,13 +152,14 @@ body.pa-sidebar-hidden [data-testid="stSidebar"] {
 body.pa-sidebar-hidden [data-testid="stMain"] {
     margin-left: 0 !important;
     padding-left: 0 !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
+    width: auto !important;
+    max-width: 100% !important;
 }
 body.pa-sidebar-hidden [data-testid="stMain"] section[data-testid="stMain"],
 body.pa-sidebar-hidden [data-testid="stMain"] > div[data-testid="stMainBlockContainer"] {
     margin-left: 0 !important;
-    padding-left: 0 !important;
+    padding-left: var(--pa-main-gutter) !important;
+    padding-right: var(--pa-main-gutter) !important;
     max-width: 100% !important;
 }
 [data-testid="stSidebar"] {
