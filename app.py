@@ -4236,9 +4236,9 @@ def show_pipeline():
                 f'text-decoration:none;opacity:0.6;">x</a>'
             )
 
-        # ── Per-loan expand toggle (default collapsed = dense table row) ──
+        # ── Per-loan expand toggle (default expanded so everything is visible) ──
         _row_open_key = f"row_open_{lid}"
-        _row_expanded = st.session_state.get(_row_open_key, False)
+        _row_expanded = st.session_state.get(_row_open_key, True)
 
         # ── Single compact row — grid-aligned columns (tabbed) ───────
         st.markdown(
