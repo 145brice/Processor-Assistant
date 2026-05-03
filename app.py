@@ -50,6 +50,8 @@ st.markdown(r"""
     --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
     --neon-glow: none;
     --neon-glow-lg: none;
+    --pa-sidebar-w: 244px;
+    --pa-main-gutter: 14px;
 }
 html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !important; }
 .stApp { background: #0f1117 !important; }
@@ -69,24 +71,31 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
 }
 /* Sidebar always rendered as expanded — override Streamlit's aria-expanded="false" hiding */
 [data-testid="stSidebar"] {
-    min-width: 244px !important;
-    width: 244px !important;
+    min-width: var(--pa-sidebar-w) !important;
+    width: var(--pa-sidebar-w) !important;
     transform: none !important;
     margin-left: 0 !important;
     visibility: visible !important;
 }
-/* Keep main content clear of fixed-width sidebar (target modern Streamlit containers) */
-[data-testid="stMain"],
-section[data-testid="stMain"],
-section[data-testid="stMain"] > div[data-testid="stMainBlockContainer"],
-[data-testid="stAppViewContainer"] > .main,
-[data-testid="stAppViewContainer"] section.main,
-[data-testid="stSidebar"] + div {
-    margin-left: 244px !important;
-    width: auto !important;
-    max-width: none !important;
-    padding-left: 14px !important; /* visual gutter so content is never flush/hidden */
+/* Keep main content clear of sidebar; apply offset ONLY once to outer main container */
+[data-testid="stMain"] {
+    margin-left: var(--pa-sidebar-w) !important;
+    width: calc(100vw - var(--pa-sidebar-w)) !important;
+    max-width: calc(100vw - var(--pa-sidebar-w)) !important;
+    padding-left: var(--pa-main-gutter) !important;
+    box-sizing: border-box !important;
+    overflow-x: hidden !important;
     transition: margin-left 0.25s ease, width 0.25s ease !important;
+}
+[data-testid="stMain"] section[data-testid="stMain"],
+[data-testid="stMain"] > div[data-testid="stMainBlockContainer"],
+[data-testid="stAppViewContainer"] > .main,
+[data-testid="stAppViewContainer"] section.main {
+    margin-left: 0 !important;
+    width: auto !important;
+    max-width: 100% !important;
+    padding-left: 0 !important;
+    box-sizing: border-box !important;
 }
 /* Force just the user-content visible — leave header/content default so scrolling works */
 [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
@@ -139,45 +148,30 @@ body.pa-sidebar-hidden [data-testid="stSidebar"] {
     overflow: hidden !important;
     visibility: hidden !important;
 }
-body.pa-sidebar-hidden [data-testid="stAppViewContainer"] > .main,
-body.pa-sidebar-hidden [data-testid="stAppViewContainer"] section.main,
-body.pa-sidebar-hidden [data-testid="stSidebar"] + div,
-body.pa-sidebar-hidden [data-testid="stMain"],
-body.pa-sidebar-hidden section[data-testid="stMain"],
-body.pa-sidebar-hidden section[data-testid="stMain"] > div[data-testid="stMainBlockContainer"] {
+body.pa-sidebar-hidden [data-testid="stMain"] {
     margin-left: 0 !important;
     padding-left: 0 !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+}
+body.pa-sidebar-hidden [data-testid="stMain"] section[data-testid="stMain"],
+body.pa-sidebar-hidden [data-testid="stMain"] > div[data-testid="stMainBlockContainer"] {
+    margin-left: 0 !important;
+    padding-left: 0 !important;
+    max-width: 100% !important;
 }
 [data-testid="stSidebar"] {
     transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease !important;
 }
 @media (max-width: 768px) {
+    :root { --pa-sidebar-w: 200px; --pa-main-gutter: 10px; }
     #pa-sidebar-toggle { left: 208px !important; }
     body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
-    [data-testid="stAppViewContainer"] > .main,
-    [data-testid="stAppViewContainer"] section.main,
-    [data-testid="stSidebar"] + div,
-    [data-testid="stMain"],
-    section[data-testid="stMain"],
-    section[data-testid="stMain"] > div[data-testid="stMainBlockContainer"] {
-        margin-left: 200px !important;
-        width: auto !important;
-        padding-left: 10px !important;
-    }
 }
 @media (max-width: 480px) {
+    :root { --pa-sidebar-w: 180px; --pa-main-gutter: 8px; }
     #pa-sidebar-toggle { left: 188px !important; }
     body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
-    [data-testid="stAppViewContainer"] > .main,
-    [data-testid="stAppViewContainer"] section.main,
-    [data-testid="stSidebar"] + div,
-    [data-testid="stMain"],
-    section[data-testid="stMain"],
-    section[data-testid="stMain"] > div[data-testid="stMainBlockContainer"] {
-        margin-left: 180px !important;
-        width: auto !important;
-        padding-left: 8px !important;
-    }
 }
 
 /* ─────────────── Mobile responsiveness ─────────────── */
