@@ -3113,17 +3113,6 @@ def show_pipeline():
 
     import json as _json
 
-    st.markdown(
-        '<div style="background:linear-gradient(180deg,rgba(59,130,246,0.04) 0%,rgba(255,255,255,0.01) 100%);'
-        'border:1px solid rgba(59,130,246,0.18);border-radius:8px;padding:8px 14px 6px 14px;'
-        'margin-bottom:8px;box-shadow:0 0 20px rgba(59,130,246,0.05) inset;">'
-        '<div style="font-size:18px;font-weight:800;color:#3b82f6;letter-spacing:-0.3px;'
-        'text-shadow:0 0 12px rgba(59,130,246,0.35);line-height:1.1;">My Pipeline</div>'
-        '<div style="font-size:10px;color:#9ca3af;margin-top:1px;font-weight:500;line-height:1.1;">Track loans by status</div>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
     from db import get_all_users
     all_users = get_all_users()
     user_names = ["(Unassigned)"] + [
@@ -8734,7 +8723,7 @@ def show_persistent_header():
           }}
         </style>
         <div class="pa-bi-bar">
-          <span class="pa-bi-tag">Pipeline</span>
+          <span class="pa-bi-tag">My Pipeline</span>
           {_kpi(f"{total}", "Active", "", "#3b82f6")}
           {_kpi(_fmt_money(total_volume), "Volume", "", "#94a3b8")}
           {_kpi(f"{closed_this_month}", "Closed MTD", "", "#10b981")}
