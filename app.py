@@ -1146,8 +1146,8 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 [class*="st-key-open_"] button,
 [class*="st-key-notesbtn_"] button,
 [class*="st-key-docsbtn_"] button {
-    height: 24px !important;
-    min-height: 24px !important;
+    height: 26px !important;
+    min-height: 26px !important;
     font-size: 10px !important;
     padding: 0 6px !important;
     line-height: 1 !important;
@@ -1179,6 +1179,17 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 [class*="st-key-st_"] [data-baseweb="select"] span,
 [class*="st-key-assign_"] [data-baseweb="select"] span {
     line-height: 1.2 !important;
+}
+[class*="st-key-st_"] [data-testid="stSelectbox"],
+[class*="st-key-assign_"] [data-testid="stSelectbox"],
+[class*="st-key-open_"] [data-testid="stButton"] {
+    margin: 0 !important;
+}
+[class*="st-key-st_"] [data-testid="stElementContainer"],
+[class*="st-key-assign_"] [data-testid="stElementContainer"],
+[class*="st-key-open_"] [data-testid="stElementContainer"] {
+    margin: 0 !important;
+    padding: 0 !important;
 }
 /* Keep only loan-row select labels hidden */
 [class*="st-key-st_"] [data-testid="stWidgetLabel"],
@@ -4294,7 +4305,7 @@ def show_pipeline():
 
         # ── Single compact row ───────────────────────────────────────
         st.markdown(
-            f'<div class="pa-loan-grid" style="border-left:3px solid {_status_clr};background:#161b2b;padding:2px 6px;margin-bottom:0;">'
+            f'<div class="pa-loan-grid" style="border-left:3px solid {_status_clr};background:#161b2b;padding:2px 6px 3px 6px;margin-bottom:0;">'
             # Line 1: loan# | borrower | status | badges | bar | % | x
             f'<div style="display:flex;align-items:center;gap:6px;min-height:20px;">'
             f'<span style="width:96px;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">#{_loan_num}</span>'
@@ -4307,7 +4318,7 @@ def show_pipeline():
             f'<span style="width:16px;flex-shrink:0;text-align:right;">{_remove_html}</span>'
             f'</div>'
             # Line 2: Close and Lock on their own line
-            f'<div style="display:flex;gap:16px;min-height:14px;padding:1px 0 0 0;">'
+            f'<div style="display:flex;gap:16px;min-height:16px;padding:2px 0 1px 0;">'
             f'<span style="font-size:10px;color:#6b7280;">Close: <span style="color:#9ca3af;">{_closing_dt}</span></span>'
             f'<span style="font-size:10px;color:#6b7280;">Lock: <span style="color:#9ca3af;">{_lock_dt if _lock_dt else "—"}</span></span>'
             f'</div>'
