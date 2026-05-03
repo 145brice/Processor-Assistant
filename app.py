@@ -1500,7 +1500,7 @@ def _env_truthy(name: str, default: str = "1") -> bool:
     return str(os.getenv(name, default)).strip().lower() in {"1", "true", "yes", "on"}
 
 
-_AUTO_ENTER_SANDBOX = _env_truthy("PA_AUTO_ENTER_SANDBOX", "1")
+_AUTO_ENTER_SANDBOX = _env_truthy("PA_AUTO_ENTER_SANDBOX", "0")
 
 
 def _enter_sandbox(page: str = "dashboard") -> None:
