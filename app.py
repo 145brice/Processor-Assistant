@@ -957,6 +957,52 @@ hr { border-color: #1e293b !important; }
 .scan-scroll .cond-num { color: #3b82f6 !important; }
 .scan-scroll .pa-section { color: #94a3b8 !important; }
 
+/* ════ Sticky pipeline dashboard strip ════ */
+.pa-pipe-dash {
+    position: sticky;
+    top: 0;
+    z-index: 9000;
+    background: #0f1117;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.pa-pipe-dash-row {
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 8px;
+}
+.pa-pchip {
+    display: inline-flex; align-items: baseline; gap: 5px;
+    padding: 3px 10px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid #1e293b;
+    border-radius: 6px;
+    transition: background 0.12s, border-color 0.12s;
+}
+.pa-pchip:hover {
+    background: rgba(59,130,246,0.06);
+    border-color: var(--c, #3b82f6);
+}
+.pa-pchip-n {
+    font-size: 14px; font-weight: 700; color: var(--c, #3b82f6);
+    font-family: 'Segoe UI', sans-serif;
+}
+.pa-pchip-l {
+    font-size: 10px; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600;
+}
+.pa-pipe-dash-bar {
+    height: 6px; background: #1e293b; border-radius: 3px;
+    overflow: hidden; display: flex; margin: 4px 0;
+}
+.pa-pipe-dash-bar > div { height: 100%; transition: width 0.3s; }
+.pa-pipe-dash-legend {
+    display: flex; gap: 14px; align-items: center;
+    font-size: 10px; font-weight: 600;
+}
+
 </style>
 
 """, unsafe_allow_html=True)
@@ -3113,12 +3159,58 @@ def show_pipeline():
 
     import json as _json
 
+    st.markdown(
+        '<div style="background:linear-gradient(180deg,rgba(59,130,246,0.04) 0%,rgba(255,255,255,0.01) 100%);'
+        'border:1px solid rgba(59,130,246,0.18);border-radius:8px;padding:8px 14px 6px 14px;'
+        'margin-bottom:8px;">'
+        '<div style="font-size:18px;font-weight:800;color:#3b82f6;letter-spacing:-0.3px;line-height:1.1;">My Pipeline</div>'
+        '<div style="font-size:10px;color:#9ca3af;margin-top:1px;font-weight:500;line-height:1.1;">Track loans by status</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
     from db import get_all_users
     all_users = get_all_users()
     user_names = ["(Unassigned)"] + [
         u.get("display_name") or u["email"] for u in all_users
     ]
     my_name = st.session_state.get("user_name", "")
+
+    # ── Sticky pipeline dashboard strip: status counts + progress (frozen) ──
+    _all_loans_for_dash = get_all_loans()
+    _dash_counts = {s: sum(1 for l in _all_loans_for_dash if l["status"] == s) for s in STATUS_OPTIONS}
+    _dash_total = len(_all_loans_for_dash)
+    _dash_closed = _dash_counts.get("Cleared", 0) + _dash_counts.get("Closed", 0)
+    _dash_inprog = _dash_counts.get("Requested", 0)
+    _dash_pct_clr = int((_dash_closed / _dash_total) * 100) if _dash_total else 0
+    _dash_pct_ip  = int((_dash_inprog / _dash_total) * 100) if _dash_total else 0
+    _dash_pct_pen = max(0, 100 - _dash_pct_clr - _dash_pct_ip)
+    _chip_html = ''.join([
+        f'<span class="pa-pchip" style="--c:{c};">'
+        f'<span class="pa-pchip-n">{_dash_counts.get(s, 0) if s != "All" else _dash_total}</span>'
+        f'<span class="pa-pchip-l">{s}</span></span>'
+        for s, c in [("All","#3b82f6"),("Pending","#ef4444"),("Requested","#f59e0b"),
+                     ("Cleared","#3b82f6"),("Overdue","#9ca3af"),("Closed","#9ca3af")]
+    ])
+    st.markdown(
+        f"""
+        <div class="pa-pipe-dash">
+          <div class="pa-pipe-dash-row">{_chip_html}</div>
+          <div class="pa-pipe-dash-bar">
+            <div style="background:#3b82f6;width:{_dash_pct_clr}%;"></div>
+            <div style="background:#f59e0b;width:{_dash_pct_ip}%;"></div>
+            <div style="background:#ef4444;width:{_dash_pct_pen}%;"></div>
+          </div>
+          <div class="pa-pipe-dash-legend">
+            <span style="color:#3b82f6;">■ Cleared {_dash_pct_clr}%</span>
+            <span style="color:#f59e0b;">■ In Progress {_dash_pct_ip}%</span>
+            <span style="color:#ef4444;">■ Pending/Overdue {_dash_pct_pen}%</span>
+            <span style="margin-left:auto;color:#94a3b8;">{_dash_closed} cleared · {_dash_inprog} in progress · {_dash_total} total</span>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
 
     # ── Top action bar ──────────────────────────────────────────────────────
     tb1, tb2, tb3, tb4, tb5 = st.columns([1.5, 2, 2.5, 2, 1])
@@ -3827,58 +3919,9 @@ def show_pipeline():
         st.info("No loans in pipeline yet. Click **+Add Loan** to get started.")
         return
 
-    # ── Stats row (inline) ────────────────────────────────────────────────
+    # ── Need `all_loans` and `counts` for downstream filtering/sorting ──────
     all_loans = get_all_loans()
     counts = {s: sum(1 for l in all_loans if l["status"] == s) for s in STATUS_OPTIONS}
-    _chip_tints = {
-        "Pending":   ("#ef4444", "rgba(239,68,68,0.1)", "rgba(239,68,68,0.3)"),
-        "Requested": ("#f59e0b", "rgba(245,158,11,0.1)", "rgba(245,158,11,0.3)"),
-        "Cleared":   ("#3b82f6", "rgba(59,130,246,0.1)", "rgba(59,130,246,0.3)"),
-        "Overdue":   ("#9ca3af", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.1)"),
-        "Closed":    ("#9ca3af", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.1)"),
-    }
-    # Status filter chips — real Streamlit buttons, stay in-tab
-    _chip_labels = ["All"] + list(STATUS_OPTIONS)
-    _chip_cols = st.columns(len(_chip_labels))
-    for _i, _s in enumerate(_chip_labels):
-        with _chip_cols[_i]:
-            _n = len(all_loans) if _s == "All" else counts.get(_s, 0)
-            _lbl = f"{_n}  {_s}"
-            _active = (filter_status == _s)
-            if st.button(_lbl, key=f"statchip_{_s}", type=("primary" if _active else "secondary"), use_container_width=True):
-                st.session_state["pipeline_filter_val"] = _s
-                st.session_state.pop("pipeline_filter", None)
-                st.rerun()
-
-    # ── Pipeline-wide progress bar ────────────────────────────────────────────
-    _total_loans = len(all_loans)
-    if _total_loans:
-        _closed = counts.get("Cleared", 0) + counts.get("Closed", 0)
-        _in_prog = counts.get("Requested", 0)
-        _pipeline_pct = int((_closed / _total_loans) * 100)
-        _pipeline_bar_html = (
-            f'<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);border-radius:6px;'
-            f'padding:6px 12px;margin-bottom:6px;margin-top:2px;">'
-            f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'
-            f'<span style="font-size:10px;font-weight:700;color:#ffffff;text-transform:uppercase;letter-spacing:0.4px;">Pipeline Progress</span>'
-            f'<span style="font-size:10px;color:#9ca3af;">'
-            f'{_closed} cleared&nbsp;·&nbsp;{_in_prog} in progress&nbsp;·&nbsp;{_total_loans} total</span>'
-            f'</div>'
-            f'<div style="background:rgba(255,255,255,0.1);border-radius:1px;height:6px;overflow:hidden;position:relative;">'
-            f'<div style="background:#3b82f6;width:{_pipeline_pct}%;height:100%;'
-            f'position:absolute;left:0;"></div>'
-            f'<div style="background:#f59e0b;'
-            f'width:{int((_in_prog/_total_loans)*100)}%;height:100%;'
-            f'position:absolute;left:{_pipeline_pct}%;"></div>'
-            f'</div>'
-            f'<div style="display:flex;gap:10px;margin-top:3px;">'
-            f'<span style="font-size:9px;color:#3b82f6;font-weight:600;">&#9632; Cleared {_pipeline_pct}%</span>'
-            f'<span style="font-size:9px;color:#f59e0b;font-weight:600;">&#9632; In Progress {int((_in_prog/_total_loans)*100)}%</span>'
-            f'<span style="font-size:9px;color:#ef4444;font-weight:600;">&#9632; Pending/Overdue {100 - _pipeline_pct - int((_in_prog/_total_loans)*100)}%</span>'
-            f'</div>'
-            f'</div>'
-        )
-        st.markdown(_pipeline_bar_html, unsafe_allow_html=True)
 
     # ── Visual break between header section and loan rows ────────────────────
     st.markdown(
@@ -8748,7 +8791,6 @@ def main():
         show_login_page()
     else:
         show_sidebar()
-        show_persistent_header()
         page = st.session_state.page
         if page == "dashboard":
             show_dashboard()
