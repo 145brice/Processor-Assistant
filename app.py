@@ -4281,32 +4281,32 @@ def show_pipeline():
                 f'text-decoration:none;opacity:0.6;">x</a>'
             )
 
-        # ── Single compact row — grid-aligned columns (tabbed) ───────
+        # ── Single compact row ───────────────────────────────────────
         st.markdown(
-            f'<div class="pa-loan-row" style="border-left:3px solid {_status_clr};padding:4px 8px 2px 8px;margin-bottom:0;">'
-            # Main info line
-            f'<div class="pa-loan-grid">'
-            f'<span style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">#{_loan_num}</span>'
-            f'<span style="font-size:11px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_borrower}</span>'
-            f'<span style="font-size:10px;color:{_status_clr};font-weight:600;white-space:nowrap;">{emoji}{status}</span>'
-            f'<span style="white-space:nowrap;overflow:hidden;">{_inline_badges}</span>'
-            f'<div style="background:rgba(255,255,255,0.08);height:4px;border-radius:2px;align-self:center;">'
+            f'<div style="border-left:3px solid {_status_clr};background:#161b2b;padding:5px 8px 3px 8px;margin-bottom:2px;">'
+            # Line 1: loan# | borrower | status | badges | bar | % | x
+            f'<div style="display:flex;align-items:center;gap:8px;min-height:20px;">'
+            f'<span style="width:88px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">#{_loan_num}</span>'
+            f'<span style="width:140px;font-size:11px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{_borrower}</span>'
+            f'<span style="font-size:10px;color:{_status_clr};font-weight:600;white-space:nowrap;flex-shrink:0;">{emoji}{status}</span>'
+            f'<span style="flex:1;overflow:hidden;white-space:nowrap;">{_inline_badges}</span>'
+            f'<div style="width:60px;flex-shrink:0;background:rgba(255,255,255,0.1);height:4px;border-radius:2px;">'
             f'<div style="background:{_bar_color};width:{_pct}%;height:100%;border-radius:2px;"></div></div>'
-            f'<span style="font-size:10px;color:{_bar_color};font-weight:700;text-align:right;">{_pct}%</span>'
-            f'<span style="text-align:right;">{_remove_html}</span>'
+            f'<span style="width:32px;font-size:10px;color:{_bar_color};font-weight:700;text-align:right;flex-shrink:0;">{_pct}%</span>'
+            f'<span style="width:16px;flex-shrink:0;text-align:right;">{_remove_html}</span>'
             f'</div>'
-            # Dates line — Close and Lock each on own line, left-aligned with loan info
-            f'<div style="display:flex;gap:16px;padding:2px 0 0 0;">'
-            f'<span style="font-size:10px;color:#9ca3af;"><span style="color:#6b7280;">Close:</span> {_closing_dt}</span>'
-            f'<span style="font-size:10px;color:#9ca3af;"><span style="color:#6b7280;">Lock:</span> {_lock_dt if _lock_dt else "—"}</span>'
+            # Line 2: Close and Lock on their own line
+            f'<div style="display:flex;gap:20px;padding:2px 0 0 0;">'
+            f'<span style="font-size:10px;color:#6b7280;">Close: <span style="color:#9ca3af;">{_closing_dt}</span></span>'
+            f'<span style="font-size:10px;color:#6b7280;">Lock: <span style="color:#9ca3af;">{_lock_dt if _lock_dt else "—"}</span></span>'
             f'</div>'
-            + (_contacts_line if _contacts_line else '')
+            + (f'<div style="font-size:9px;color:#9ca3af;padding:2px 0 0 0;">{_contacts_line}</div>' if _contacts_line else '')
             + f'</div>',
             unsafe_allow_html=True,
         )
 
         # ── Compact action row: Open | Status | Assign ───────────────
-        ac1, ac2, ac3 = st.columns([1.3, 1.5, 2])
+        ac1, ac2, ac3 = st.columns([1, 1.5, 2])
         with ac1:
             if st.button(f"▸ OPEN", key=f"open_{lid}", type="primary", use_container_width=True):
                 from sharing import notify_shared_members as _nsm
