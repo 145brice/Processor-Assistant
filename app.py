@@ -1204,11 +1204,27 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 [class*="st-key-assign_"] [data-baseweb="select"] {
     min-height: 26px !important;
     height: 26px !important;
+    box-sizing: border-box !important;
 }
 [class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-baseweb="select"] > div,
 [class*="st-key-assign_"] [data-baseweb="select"] > div {
     padding-top: 0 !important;
     padding-bottom: 0 !important;
+}
+/* Strict alignment only for the OPEN + Status + Assign row */
+[data-testid="stHorizontalBlock"]:has([class*="st-key-open_"]):has([class*="st-key-assign_"]) {
+    align-items: stretch !important;
+}
+[data-testid="stHorizontalBlock"]:has([class*="st-key-open_"]):has([class*="st-key-assign_"]) > [data-testid="column"] {
+    display: flex !important;
+    align-items: stretch !important;
+}
+[data-testid="stHorizontalBlock"]:has([class*="st-key-open_"]):has([class*="st-key-assign_"]) [data-testid="stVerticalBlock"] {
+    gap: 0 !important;
+}
+[data-testid="stHorizontalBlock"]:has([class*="st-key-open_"]):has([class*="st-key-assign_"]) [data-testid="stElementContainer"] {
+    margin: 0 !important;
+    padding: 0 !important;
 }
 /* Keep only loan-row select labels hidden */
 [class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-testid="stWidgetLabel"],
