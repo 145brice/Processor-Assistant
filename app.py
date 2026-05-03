@@ -241,7 +241,7 @@ button { text-align: left !important; justify-content: flex-start !important; }
 button * { text-align: left !important; }
 button p { text-align: left !important; width: 100% !important; }
 button > div { justify-content: flex-start !important; text-align: left !important; }
-.block-container { padding: 1.5rem 2rem 3rem 2rem !important; max-width: 1200px !important; }
+.block-container { padding: 4.5rem 2rem 3rem 2rem !important; max-width: 1200px !important; }
 h1 { font-size: 24px !important; font-weight: 800 !important; color: var(--slate-900) !important; }
 h2, [data-testid="stMarkdownContainer"] h2, .main h2, .block-container h2 { font-size: 42px !important; font-weight: 800 !important; color: var(--accent) !important; padding: 8px 0 8px 14px !important; border-left: 4px solid var(--accent) !important; text-shadow: 0 0 16px rgba(59,130,246,0.5) !important; margin-bottom: 14px !important; line-height: 1.2 !important; }
 h2 span, [data-testid="stMarkdownContainer"] h2 span { font-size: inherit !important; color: var(--accent) !important; font-weight: inherit !important; }
@@ -1157,6 +1157,25 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     min-height: 16px !important;
     font-size: 8px !important;
     padding: 0 4px !important;
+}
+/* Tighten gaps between elements inside each loan card */
+[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stVerticalBlock"] {
+    gap: 2px !important;
+}
+[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stHorizontalBlock"] {
+    gap: 4px !important;
+    margin-bottom: 2px !important;
+}
+/* Match info-row font sizes to button size */
+[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stMarkdownContainer"] p,
+[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stMarkdownContainer"] span {
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+    margin: 0 !important;
+}
+/* Shrink column padding inside loan cards */
+[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stColumn"] {
+    padding: 0 2px !important;
 }
 
 </style>
