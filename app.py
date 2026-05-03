@@ -1127,6 +1127,33 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     padding: 1px 6px !important;
     line-height: 1.2 !important;
 }
+/* AGGRESSIVE OVERRIDE: pipeline buttons are 50% size */
+.pipeline-scroll button,
+.pipeline-scroll [data-testid="stButton"] button,
+.pipeline-scroll [data-testid="stButton"] button[kind="primary"],
+.pipeline-scroll [data-testid="stButton"] button[kind="secondary"] {
+    height: 14px !important;
+    min-height: 14px !important;
+    font-size: 8px !important;
+    padding: 0 4px !important;
+    line-height: 1 !important;
+}
+.pipeline-scroll button p, .pipeline-scroll [data-testid="stButton"] button p {
+    font-size: 8px !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+}
+/* AGGRESSIVE OVERRIDE: pipeline selectboxes are 50% size */
+.pipeline-scroll [data-testid="stSelectbox"],
+.pipeline-scroll [data-testid="stSelectbox"] > div,
+.pipeline-scroll [data-testid="stSelectbox"] > div > div,
+.pipeline-scroll [data-testid="stSelectbox"] select {
+    height: 16px !important;
+    min-height: 16px !important;
+    font-size: 8px !important;
+    padding: 0 4px !important;
+    line-height: 1 !important;
+}
 
 </style>
 
