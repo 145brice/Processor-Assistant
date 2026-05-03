@@ -957,33 +957,48 @@ hr { border-color: #1e293b !important; }
 .scan-scroll .cond-num { color: #3b82f6 !important; }
 .scan-scroll .pa-section { color: #94a3b8 !important; }
 
-/* ════ Sticky My Pipeline header (persistent on every page) ════ */
+/* ════ My Pipeline header — fixed at top:12px, 36px tall, aligned with blue X ════ */
 .pa-pipe-dash {
-    position: sticky;
-    top: 0;
+    position: fixed;
+    top: 12px;
+    left: 296px;        /* sidebar(244) + gap(16) + toggle(36) clearance */
+    right: 32px;
     z-index: 9000;
+    height: 36px;
     background: #0f1117;
     border: 1px solid #334155;
     border-radius: 6px;
-    padding: 4px 12px 5px 12px;
-    margin-bottom: 10px;
+    padding: 0 14px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    overflow-x: auto;
+    white-space: nowrap;
 }
-.pa-pipe-dash-head {
-    display: flex; align-items: baseline; justify-content: space-between;
-    margin-bottom: 4px;
+body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
+@media (max-width: 768px) {
+    .pa-pipe-dash { left: 252px; right: 12px; }
+    body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
+}
+@media (max-width: 480px) {
+    .pa-pipe-dash { left: 232px; right: 8px; }
+    body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 }
 .pa-pipe-dash-title {
-    font-size: 13px; font-weight: 700; color: #3b82f6;
+    font-size: 11px; font-weight: 700; color: #3b82f6;
     text-transform: uppercase; letter-spacing: 1.2px;
     border-left: 2px solid #3b82f6; padding-left: 8px;
+    flex-shrink: 0;
 }
 .pa-pipe-dash-meta {
     font-size: 10px; color: #94a3b8; font-weight: 500;
+    margin-left: auto;
+    flex-shrink: 0;
 }
 .pa-pipe-dash-row {
-    display: flex; gap: 4px; flex-wrap: wrap; align-items: center;
-    margin-bottom: 4px;
+    display: flex; gap: 4px; align-items: center;
+    flex-shrink: 0;
 }
 .pa-pchip {
     display: inline-flex; align-items: baseline; gap: 4px;
@@ -993,6 +1008,7 @@ hr { border-color: #1e293b !important; }
     border-radius: 4px;
     transition: background 0.12s, border-color 0.12s;
     line-height: 1.4;
+    flex-shrink: 0;
 }
 .pa-pchip:hover {
     background: rgba(59,130,246,0.06);
@@ -1007,10 +1023,16 @@ hr { border-color: #1e293b !important; }
     text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
 }
 .pa-pipe-dash-bar {
-    height: 4px; background: #1e293b; border-radius: 2px;
+    height: 4px; width: 120px; background: #1e293b; border-radius: 2px;
     overflow: hidden; display: flex;
+    flex-shrink: 0;
 }
 .pa-pipe-dash-bar > div { height: 100%; transition: width 0.3s; }
+/* Push main content down so it starts below the fixed header bar */
+[data-testid="stMain"] .block-container,
+[data-testid="stAppViewContainer"] .main .block-container {
+    padding-top: 60px !important;
+}
 
 </style>
 
@@ -1529,40 +1551,34 @@ def show_sidebar():
             if not is_sandbox:
                 _nav_btn("History", "history")
 
-        # ═══════════ TOOLS (parent collapse with nested sub-collapses) ═══════
-        if _section_header("Tools", "_sec_open_tools_parent", default_open=False):
+        # ═══════════ TOOLS — flat top-level collapses (no parent wrapper) ═══
+        if _section_header("Quick Tools", "_sec_open_quick", default_open=False):
+            _nav_btn("📋 Loan Snapshot",  "snapshot",      "nav_snapshot")
+            _nav_btn("⚠️ Report Issue",   "report_issue",  "nav_report_issue")
+            _nav_btn("🗂️ Missing Docs",   "missing_docs",  "nav_missing_docs")
+            _nav_btn("📅 Doc Expiry",     "doc_expiry",    "nav_doc_expiry")
+            _nav_btn("🌎 Spanish Reply",  "spanish_reply", "nav_spanish")
 
-            # Quick Tools
-            if _section_header("Quick Tools", "_sec_open_quick", default_open=False, divider=False):
-                _nav_btn("📋 Loan Snapshot",  "snapshot",      "nav_snapshot")
-                _nav_btn("⚠️ Report Issue",   "report_issue",  "nav_report_issue")
-                _nav_btn("🗂️ Missing Docs",   "missing_docs",  "nav_missing_docs")
-                _nav_btn("📅 Doc Expiry",     "doc_expiry",    "nav_doc_expiry")
-                _nav_btn("🌎 Spanish Reply",  "spanish_reply", "nav_spanish")
+        if _section_header("Advanced Tools", "_sec_open_advanced", default_open=False):
+            _nav_btn("📊 Income Verifier",    "income_verifier",    "nav_income_verifier")
+            _nav_btn("📝 Auto Data Entry",    "auto_data_entry",    "nav_auto_data_entry")
+            _nav_btn("💳 Credit Summary",     "credit_summary",     "nav_credit_summary")
+            _nav_btn("🧮 DTI Calculator",     "dti_calculator",     "nav_dti_calculator")
+            _nav_btn("✅ Condition Clearer",  "condition_clearer",  "nav_condition_clearer")
+            _nav_btn("⚖️ Compliance Checker", "compliance_checker", "nav_compliance_checker")
 
-            # Advanced Tools
-            if _section_header("Advanced Tools", "_sec_open_advanced", default_open=False, divider=False):
-                _nav_btn("📊 Income Verifier",    "income_verifier",    "nav_income_verifier")
-                _nav_btn("📝 Auto Data Entry",    "auto_data_entry",    "nav_auto_data_entry")
-                _nav_btn("💳 Credit Summary",     "credit_summary",     "nav_credit_summary")
-                _nav_btn("🧮 DTI Calculator",     "dti_calculator",     "nav_dti_calculator")
-                _nav_btn("✅ Condition Clearer",  "condition_clearer",  "nav_condition_clearer")
-                _nav_btn("⚖️ Compliance Checker", "compliance_checker", "nav_compliance_checker")
+        if _section_header("Pipeline Advanced", "_sec_open_pipeline", default_open=False):
+            _nav_btn("📦 Closing Package",  "closing_package",  "nav_closing_package")
+            _nav_btn("📋 Guideline Checker","guideline_checker","nav_guideline_checker")
+            _nav_btn("🔍 Fraud Detector",   "fraud_detector",   "nav_fraud_detector")
+            _nav_btn("👥 Multi-Borrower",   "multi_borrower",   "nav_multi_borrower")
+            _nav_btn("📤 LOS Export",       "los_export",       "nav_los_export")
 
-            # Pipeline Advanced (Pipeline Dashboard removed — now in persistent header)
-            if _section_header("Pipeline Advanced", "_sec_open_pipeline", default_open=False, divider=False):
-                _nav_btn("📦 Closing Package",  "closing_package",  "nav_closing_package")
-                _nav_btn("📋 Guideline Checker","guideline_checker","nav_guideline_checker")
-                _nav_btn("🔍 Fraud Detector",   "fraud_detector",   "nav_fraud_detector")
-                _nav_btn("👥 Multi-Borrower",   "multi_borrower",   "nav_multi_borrower")
-                _nav_btn("📤 LOS Export",       "los_export",       "nav_los_export")
-
-            # Advanced Automation
-            if _section_header("Advanced Automation", "_sec_open_automation", default_open=False, divider=False):
-                _nav_btn("🔒 Rate Lock Monitor",     "rate_lock_monitor",     "nav_rate_lock_monitor")
-                _nav_btn("📋 Underwriting Tracker",  "underwriting_tracker",  "nav_underwriting_tracker")
-                _nav_btn("🏷️ Document Classifier",   "document_classifier",   "nav_document_classifier")
-                _nav_btn("💰 Escrow Calculator",     "escrow_calculator",     "nav_escrow_calculator")
+        if _section_header("Advanced Automation", "_sec_open_automation", default_open=False):
+            _nav_btn("🔒 Rate Lock Monitor",     "rate_lock_monitor",     "nav_rate_lock_monitor")
+            _nav_btn("📋 Underwriting Tracker",  "underwriting_tracker",  "nav_underwriting_tracker")
+            _nav_btn("🏷️ Document Classifier",   "document_classifier",   "nav_document_classifier")
+            _nav_btn("💰 Escrow Calculator",     "escrow_calculator",     "nav_escrow_calculator")
 
         # ═══════════ SETTINGS ═══════════════════════════════════════════════
         if _section_header("Settings", "_sec_open_settings", default_open=False):
@@ -8583,16 +8599,14 @@ def show_persistent_header():
     st.markdown(
         f"""
         <div class="pa-pipe-dash">
-          <div class="pa-pipe-dash-head">
-            <span class="pa-pipe-dash-title">My Pipeline</span>
-            <span class="pa-pipe-dash-meta">{closed} cleared · {in_prog} in progress · {total} total</span>
-          </div>
+          <span class="pa-pipe-dash-title">My Pipeline</span>
           <div class="pa-pipe-dash-row">{chip_html}</div>
           <div class="pa-pipe-dash-bar">
             <div style="background:#3b82f6;width:{pct_clr}%;"></div>
             <div style="background:#f59e0b;width:{pct_ip}%;"></div>
             <div style="background:#ef4444;width:{pct_pen}%;"></div>
           </div>
+          <span class="pa-pipe-dash-meta">{closed} cleared · {in_prog} in progress · {total} total</span>
         </div>
         """,
         unsafe_allow_html=True,
