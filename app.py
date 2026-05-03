@@ -1450,6 +1450,7 @@ DEFAULTS = {
     "cc_property_val": 0.0,
     "cc_source": "manual",
     "cc_confidence": "low",
+    "force_login": False,
 }
 
 # ── Persist auth across browser refreshes ──────────────────────────────────
@@ -1506,6 +1507,7 @@ def _enter_sandbox(page: str = "dashboard") -> None:
     st.session_state.user_name = "Sandbox User"
     st.session_state.user_role = "Processor"
     st.session_state.sandbox_mode = True
+    st.session_state.force_login = False
     st.session_state.page = page
     _save_session()
 
@@ -1648,6 +1650,7 @@ def show_login_page():
                         st.session_state.user_name = result.get("display_name") or result["email"].split("@")[0]
                         st.session_state.user_role = result.get("role", "Processor")
                         st.session_state.sandbox_mode = False
+                        st.session_state.force_login = False
                         st.session_state.page = "dashboard"
                         _save_session()
                         st.rerun()
@@ -1881,8 +1884,7 @@ def show_sidebar():
             _clear_session()
             for key in DEFAULTS:
                 st.session_state[key] = DEFAULTS[key]
-            if _AUTO_ENTER_SANDBOX:
-                _enter_sandbox(page="dashboard")
+            st.session_state.force_login = True
             st.rerun()
 
 
@@ -8841,7 +8843,7 @@ def show_persistent_header():
 
 def main():
     if not st.session_state.authenticated:
-        if _AUTO_ENTER_SANDBOX:
+        if _AUTO_ENTER_SANDBOX and not st.session_state.get("force_login", False):
             _enter_sandbox(page="dashboard")
             st.rerun()
         show_login_page()
