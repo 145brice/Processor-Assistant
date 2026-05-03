@@ -77,9 +77,11 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
 }
 /* Keep main content clear of fixed-width sidebar */
 [data-testid="stAppViewContainer"] > .main,
-[data-testid="stAppViewContainer"] section.main {
+[data-testid="stAppViewContainer"] section.main,
+[data-testid="stSidebar"] + div {
     margin-left: 244px !important;
-    width: calc(100% - 244px) !important;
+    width: auto !important;
+    padding-left: 14px !important; /* visual gutter so content is never flush/hidden */
     transition: margin-left 0.25s ease, width 0.25s ease !important;
 }
 /* Force just the user-content visible — leave header/content default so scrolling works */
@@ -134,9 +136,10 @@ body.pa-sidebar-hidden [data-testid="stSidebar"] {
     visibility: hidden !important;
 }
 body.pa-sidebar-hidden [data-testid="stAppViewContainer"] > .main,
-body.pa-sidebar-hidden [data-testid="stAppViewContainer"] section.main {
+body.pa-sidebar-hidden [data-testid="stAppViewContainer"] section.main,
+body.pa-sidebar-hidden [data-testid="stSidebar"] + div {
     margin-left: 0 !important;
-    width: 100% !important;
+    padding-left: 0 !important;
 }
 [data-testid="stSidebar"] {
     transition: width 0.25s ease, min-width 0.25s ease, max-width 0.25s ease !important;
@@ -145,18 +148,22 @@ body.pa-sidebar-hidden [data-testid="stAppViewContainer"] section.main {
     #pa-sidebar-toggle { left: 208px !important; }
     body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
     [data-testid="stAppViewContainer"] > .main,
-    [data-testid="stAppViewContainer"] section.main {
+    [data-testid="stAppViewContainer"] section.main,
+    [data-testid="stSidebar"] + div {
         margin-left: 200px !important;
-        width: calc(100% - 200px) !important;
+        width: auto !important;
+        padding-left: 10px !important;
     }
 }
 @media (max-width: 480px) {
     #pa-sidebar-toggle { left: 188px !important; }
     body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
     [data-testid="stAppViewContainer"] > .main,
-    [data-testid="stAppViewContainer"] section.main {
+    [data-testid="stAppViewContainer"] section.main,
+    [data-testid="stSidebar"] + div {
         margin-left: 180px !important;
-        width: calc(100% - 180px) !important;
+        width: auto !important;
+        padding-left: 8px !important;
     }
 }
 
