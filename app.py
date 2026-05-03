@@ -1161,7 +1161,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     line-height: 1 !important;
     margin: 0 !important;
 }
-[class*="st-key-st_"] [data-testid="stSelectbox"] > div > div,
+[class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-testid="stSelectbox"] > div > div,
 [class*="st-key-assign_"] [data-testid="stSelectbox"] > div > div {
     height: 26px !important;
     min-height: 26px !important;
@@ -1169,30 +1169,49 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     padding: 0 6px !important;
     border-radius: 0 !important;
 }
-[class*="st-key-st_"] [data-baseweb="select"] > div,
+[class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-baseweb="select"] > div,
 [class*="st-key-assign_"] [data-baseweb="select"] > div {
     min-height: 26px !important;
     height: 26px !important;
     display: flex !important;
     align-items: center !important;
 }
-[class*="st-key-st_"] [data-baseweb="select"] span,
+[class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-baseweb="select"] span,
 [class*="st-key-assign_"] [data-baseweb="select"] span {
     line-height: 1.2 !important;
 }
-[class*="st-key-st_"] [data-testid="stSelectbox"],
+[class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-testid="stSelectbox"],
 [class*="st-key-assign_"] [data-testid="stSelectbox"],
 [class*="st-key-open_"] [data-testid="stButton"] {
     margin: 0 !important;
 }
-[class*="st-key-st_"] [data-testid="stElementContainer"],
+[class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-testid="stElementContainer"],
 [class*="st-key-assign_"] [data-testid="stElementContainer"],
 [class*="st-key-open_"] [data-testid="stElementContainer"] {
     margin: 0 !important;
     padding: 0 !important;
 }
+[class*="st-key-open_"],
+[class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]),
+[class*="st-key-assign_"] {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+[class*="st-key-open_"] [data-testid="stButton"],
+[class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-testid="stSelectbox"],
+[class*="st-key-assign_"] [data-testid="stSelectbox"],
+[class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-baseweb="select"],
+[class*="st-key-assign_"] [data-baseweb="select"] {
+    min-height: 26px !important;
+    height: 26px !important;
+}
+[class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-baseweb="select"] > div,
+[class*="st-key-assign_"] [data-baseweb="select"] > div {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
 /* Keep only loan-row select labels hidden */
-[class*="st-key-st_"] [data-testid="stWidgetLabel"],
+[class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-testid="stWidgetLabel"],
 [class*="st-key-assign_"] [data-testid="stWidgetLabel"] {
     display: none !important;
 }
