@@ -1490,6 +1490,26 @@ if not st.session_state.get("authenticated"):
         pass
 
 
+def _env_truthy(name: str, default: str = "1") -> bool:
+    """Parse env flags like 1/true/yes/on."""
+    return str(os.getenv(name, default)).strip().lower() in {"1", "true", "yes", "on"}
+
+
+_AUTO_ENTER_SANDBOX = _env_truthy("PA_AUTO_ENTER_SANDBOX", "1")
+
+
+def _enter_sandbox(page: str = "dashboard") -> None:
+    """Authenticate directly into local sandbox mode."""
+    st.session_state.authenticated = True
+    st.session_state.user_id = "sandbox"
+    st.session_state.user_email = "sandbox@demo"
+    st.session_state.user_name = "Sandbox User"
+    st.session_state.user_role = "Processor"
+    st.session_state.sandbox_mode = True
+    st.session_state.page = page
+    _save_session()
+
+
 # --- All workflow steps ---
 WORKFLOW_STEPS = [
     ("upload", "1", "Upload"),
@@ -1594,14 +1614,7 @@ def show_login_page():
         # ── Sandbox button ───────────────────────────────────────────
         st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
         if st.button("Try Sandbox  —  No Account Needed", type="primary", use_container_width=True):
-            st.session_state.authenticated = True
-            st.session_state.user_id = "sandbox"
-            st.session_state.user_email = "sandbox@demo"
-            st.session_state.user_name = "Sandbox User"
-            st.session_state.user_role = "Processor"
-            st.session_state.sandbox_mode = True
-            st.session_state.page = "dashboard"
-            _save_session()
+            _enter_sandbox(page="dashboard")
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         st.markdown(
@@ -1868,6 +1881,8 @@ def show_sidebar():
             _clear_session()
             for key in DEFAULTS:
                 st.session_state[key] = DEFAULTS[key]
+            if _AUTO_ENTER_SANDBOX:
+                _enter_sandbox(page="dashboard")
             st.rerun()
 
 
@@ -8826,6 +8841,9 @@ def show_persistent_header():
 
 def main():
     if not st.session_state.authenticated:
+        if _AUTO_ENTER_SANDBOX:
+            _enter_sandbox(page="dashboard")
+            st.rerun()
         show_login_page()
     else:
         show_sidebar()
