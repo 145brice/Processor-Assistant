@@ -90,7 +90,7 @@ header[data-testid="stHeader"], [data-testid="stHeader"], .stAppHeader {
 /* ─── Custom sidebar toggle (DOM-injected button + body class) ─── */
 #pa-sidebar-toggle {
     position: fixed !important;
-    top: 12px !important;
+    top: 60px !important;
     left: 252px !important;
     z-index: 999999 !important;
     width: 36px !important;
@@ -8079,8 +8079,8 @@ def show_persistent_header():
         <div style="position:sticky;top:0;z-index:9000;
              background:linear-gradient(90deg,#181818 0%,#1a1a1a 100%);
              border-bottom:1px solid rgba(57,255,20,0.25);
-             padding:8px 14px;margin:-1.5rem -2rem 14px -2rem;
-             display:flex;gap:10px;flex-wrap:wrap;align-items:center;
+             padding:8px 14px 8px 60px;margin:-1.5rem -2rem 14px -2rem;
+             display:flex;gap:14px;flex-wrap:wrap;align-items:center;
              box-shadow:0 2px 14px rgba(0,0,0,0.5);">
           <div style="font-size:10px;color:#39FF14;font-weight:700;letter-spacing:1.2px;
                text-transform:uppercase;padding-right:8px;border-right:1px solid rgba(255,255,255,0.1);">
