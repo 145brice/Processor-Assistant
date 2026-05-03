@@ -1127,32 +1127,26 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     padding: 1px 6px !important;
     line-height: 1.2 !important;
 }
-/* AGGRESSIVE OVERRIDE: pipeline buttons are 50% size */
-.pipeline-scroll button,
-.pipeline-scroll [data-testid="stButton"] button,
-.pipeline-scroll [data-testid="stButton"] button[kind="primary"],
-.pipeline-scroll [data-testid="stButton"] button[kind="secondary"] {
+/* Pipeline buttons — use :has(.pa-loan-grid) since pipeline-scroll div does NOT wrap widgets */
+[data-testid="stVerticalBlock"]:has(.pa-loan-grid) button,
+[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stButton"] button {
     height: 14px !important;
     min-height: 14px !important;
     font-size: 8px !important;
     padding: 0 4px !important;
     line-height: 1 !important;
+    box-shadow: none !important;
 }
-.pipeline-scroll button p, .pipeline-scroll [data-testid="stButton"] button p {
+[data-testid="stVerticalBlock"]:has(.pa-loan-grid) button p {
     font-size: 8px !important;
     line-height: 1 !important;
     margin: 0 !important;
 }
-/* AGGRESSIVE OVERRIDE: pipeline selectboxes are 50% size */
-.pipeline-scroll [data-testid="stSelectbox"],
-.pipeline-scroll [data-testid="stSelectbox"] > div,
-.pipeline-scroll [data-testid="stSelectbox"] > div > div,
-.pipeline-scroll [data-testid="stSelectbox"] select {
+[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stSelectbox"] > div > div {
     height: 16px !important;
     min-height: 16px !important;
     font-size: 8px !important;
     padding: 0 4px !important;
-    line-height: 1 !important;
 }
 
 </style>
