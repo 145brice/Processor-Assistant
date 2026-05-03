@@ -1090,7 +1090,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 .pipeline-scroll [data-testid="stHorizontalBlock"] {
     gap: 4px !important;
     margin-bottom: 0 !important;
-    align-items: stretch !important;
+    align-items: center !important;
 }
 .pipeline-scroll [data-testid="stMarkdownContainer"] p,
 .pipeline-scroll [data-testid="stMarkdownContainer"] div {
@@ -1140,10 +1140,10 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     padding: 1px 6px !important;
     line-height: 1.2 !important;
 }
-/* Pipeline buttons — use :has(.pa-loan-grid) since pipeline-scroll div does NOT wrap widgets */
-/* All pipeline buttons + selectboxes: same 32px height, 11px font */
-[data-testid="stVerticalBlock"]:has(.pa-loan-grid) button,
-[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stButton"] button {
+/* Loan-row widgets only (scoped by Streamlit key classes) */
+[class*="st-key-open_"] button,
+[class*="st-key-notesbtn_"] button,
+[class*="st-key-docsbtn_"] button {
     height: 24px !important;
     min-height: 24px !important;
     font-size: 10px !important;
@@ -1152,44 +1152,25 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     box-shadow: none !important;
     border-radius: 0 !important;
 }
-[data-testid="stVerticalBlock"]:has(.pa-loan-grid) button p {
+[class*="st-key-open_"] button p,
+[class*="st-key-notesbtn_"] button p,
+[class*="st-key-docsbtn_"] button p {
     font-size: 10px !important;
     line-height: 1 !important;
     margin: 0 !important;
 }
-[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stSelectbox"] > div > div {
+[class*="st-key-st_"] [data-testid="stSelectbox"] > div > div,
+[class*="st-key-assign_"] [data-testid="stSelectbox"] > div > div {
     height: 24px !important;
     min-height: 24px !important;
     font-size: 10px !important;
     padding: 0 6px !important;
     border-radius: 0 !important;
 }
-/* Zero gap everywhere — rows touch */
-[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stVerticalBlock"] {
-    gap: 2px !important;
-}
-[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stHorizontalBlock"] {
-    gap: 4px !important;
-    margin-bottom: 0 !important;
-    margin-top: 0 !important;
-}
-[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stWidgetLabel"] {
+/* Keep only loan-row select labels hidden */
+[class*="st-key-st_"] [data-testid="stWidgetLabel"],
+[class*="st-key-assign_"] [data-testid="stWidgetLabel"] {
     display: none !important;
-}
-/* Info text */
-[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stMarkdownContainer"] p,
-[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stMarkdownContainer"] span {
-    font-size: 11px !important;
-    line-height: 1.3 !important;
-    margin: 0 !important;
-}
-[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stElementContainer"] {
-    padding: 0 !important;
-    margin: 0 !important;
-}
-/* Shrink column padding inside loan cards */
-[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stColumn"] {
-    padding: 0 1px !important;
 }
 
 </style>
