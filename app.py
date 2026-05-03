@@ -8665,13 +8665,27 @@ def show_persistent_header():
             overflow-x:auto;white-space:nowrap;
             height:36px;
           }}
-          /* Strip sidebar's top empty space so it aligns with main content */
-          [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
-            padding-top:0 !important; margin-top:0 !important;
+          /* Aggressively strip ALL top spacing in sidebar */
+          [data-testid="stSidebar"],
+          [data-testid="stSidebar"] > div,
+          [data-testid="stSidebar"] > div > div,
+          [data-testid="stSidebar"] section,
+          [data-testid="stSidebar"] [data-testid="stSidebarContent"],
+          [data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
+          [data-testid="stSidebar"] [data-testid="stVerticalBlock"],
+          [data-testid="stSidebar"] .block-container {{
+            padding-top:0 !important;
+            margin-top:0 !important;
           }}
-          [data-testid="stSidebar"] .block-container {{ padding-top:0 !important; padding-bottom:0 !important; }}
-          [data-testid="stSidebar"] > div:first-child {{ padding-top:0 !important; }}
-          [data-testid="stSidebarHeader"] {{ display:none !important; height:0 !important; }}
+          [data-testid="stSidebarHeader"],
+          [data-testid="stSidebar"] header,
+          [data-testid="stSidebar"] [data-testid="stSidebarNavSeparator"] {{
+            display:none !important;
+            height:0 !important;
+            min-height:0 !important;
+            padding:0 !important;
+            margin:0 !important;
+          }}
 
           .pa-bi-tag {{
             font-size:9px;font-weight:700;color:#3b82f6;
