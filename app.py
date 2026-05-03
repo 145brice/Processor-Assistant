@@ -957,51 +957,60 @@ hr { border-color: #1e293b !important; }
 .scan-scroll .cond-num { color: #3b82f6 !important; }
 .scan-scroll .pa-section { color: #94a3b8 !important; }
 
-/* ════ Sticky pipeline dashboard strip ════ */
+/* ════ Sticky My Pipeline header (persistent on every page) ════ */
 .pa-pipe-dash {
     position: sticky;
     top: 0;
     z-index: 9000;
     background: #0f1117;
     border: 1px solid #334155;
-    border-radius: 8px;
-    padding: 8px 12px;
-    margin-bottom: 12px;
+    border-radius: 6px;
+    padding: 4px 12px 5px 12px;
+    margin-bottom: 10px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.4);
 }
+.pa-pipe-dash-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    margin-bottom: 4px;
+}
+.pa-pipe-dash-title {
+    font-size: 13px; font-weight: 700; color: #3b82f6;
+    text-transform: uppercase; letter-spacing: 1.2px;
+    border-left: 2px solid #3b82f6; padding-left: 8px;
+}
+.pa-pipe-dash-meta {
+    font-size: 10px; color: #94a3b8; font-weight: 500;
+}
 .pa-pipe-dash-row {
-    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
-    margin-bottom: 8px;
+    display: flex; gap: 4px; flex-wrap: wrap; align-items: center;
+    margin-bottom: 4px;
 }
 .pa-pchip {
-    display: inline-flex; align-items: baseline; gap: 5px;
-    padding: 3px 10px;
+    display: inline-flex; align-items: baseline; gap: 4px;
+    padding: 1px 8px;
     background: rgba(255,255,255,0.03);
     border: 1px solid #1e293b;
-    border-radius: 6px;
+    border-radius: 4px;
     transition: background 0.12s, border-color 0.12s;
+    line-height: 1.4;
 }
 .pa-pchip:hover {
     background: rgba(59,130,246,0.06);
     border-color: var(--c, #3b82f6);
 }
 .pa-pchip-n {
-    font-size: 14px; font-weight: 700; color: var(--c, #3b82f6);
+    font-size: 12px; font-weight: 700;
     font-family: 'Segoe UI', sans-serif;
 }
 .pa-pchip-l {
-    font-size: 10px; color: #94a3b8;
-    text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600;
+    font-size: 9px; color: #94a3b8;
+    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
 }
 .pa-pipe-dash-bar {
-    height: 6px; background: #1e293b; border-radius: 3px;
-    overflow: hidden; display: flex; margin: 4px 0;
+    height: 4px; background: #1e293b; border-radius: 2px;
+    overflow: hidden; display: flex;
 }
 .pa-pipe-dash-bar > div { height: 100%; transition: width 0.3s; }
-.pa-pipe-dash-legend {
-    display: flex; gap: 14px; align-items: center;
-    font-size: 10px; font-weight: 600;
-}
 
 </style>
 
@@ -3159,58 +3168,12 @@ def show_pipeline():
 
     import json as _json
 
-    st.markdown(
-        '<div style="background:linear-gradient(180deg,rgba(59,130,246,0.04) 0%,rgba(255,255,255,0.01) 100%);'
-        'border:1px solid rgba(59,130,246,0.18);border-radius:8px;padding:8px 14px 6px 14px;'
-        'margin-bottom:8px;">'
-        '<div style="font-size:18px;font-weight:800;color:#3b82f6;letter-spacing:-0.3px;line-height:1.1;">My Pipeline</div>'
-        '<div style="font-size:10px;color:#9ca3af;margin-top:1px;font-weight:500;line-height:1.1;">Track loans by status</div>'
-        '</div>',
-        unsafe_allow_html=True,
-    )
-
     from db import get_all_users
     all_users = get_all_users()
     user_names = ["(Unassigned)"] + [
         u.get("display_name") or u["email"] for u in all_users
     ]
     my_name = st.session_state.get("user_name", "")
-
-    # ── Sticky pipeline dashboard strip: status counts + progress (frozen) ──
-    _all_loans_for_dash = get_all_loans()
-    _dash_counts = {s: sum(1 for l in _all_loans_for_dash if l["status"] == s) for s in STATUS_OPTIONS}
-    _dash_total = len(_all_loans_for_dash)
-    _dash_closed = _dash_counts.get("Cleared", 0) + _dash_counts.get("Closed", 0)
-    _dash_inprog = _dash_counts.get("Requested", 0)
-    _dash_pct_clr = int((_dash_closed / _dash_total) * 100) if _dash_total else 0
-    _dash_pct_ip  = int((_dash_inprog / _dash_total) * 100) if _dash_total else 0
-    _dash_pct_pen = max(0, 100 - _dash_pct_clr - _dash_pct_ip)
-    _chip_html = ''.join([
-        f'<span class="pa-pchip" style="--c:{c};">'
-        f'<span class="pa-pchip-n">{_dash_counts.get(s, 0) if s != "All" else _dash_total}</span>'
-        f'<span class="pa-pchip-l">{s}</span></span>'
-        for s, c in [("All","#3b82f6"),("Pending","#ef4444"),("Requested","#f59e0b"),
-                     ("Cleared","#3b82f6"),("Overdue","#9ca3af"),("Closed","#9ca3af")]
-    ])
-    st.markdown(
-        f"""
-        <div class="pa-pipe-dash">
-          <div class="pa-pipe-dash-row">{_chip_html}</div>
-          <div class="pa-pipe-dash-bar">
-            <div style="background:#3b82f6;width:{_dash_pct_clr}%;"></div>
-            <div style="background:#f59e0b;width:{_dash_pct_ip}%;"></div>
-            <div style="background:#ef4444;width:{_dash_pct_pen}%;"></div>
-          </div>
-          <div class="pa-pipe-dash-legend">
-            <span style="color:#3b82f6;">■ Cleared {_dash_pct_clr}%</span>
-            <span style="color:#f59e0b;">■ In Progress {_dash_pct_ip}%</span>
-            <span style="color:#ef4444;">■ Pending/Overdue {_dash_pct_pen}%</span>
-            <span style="margin-left:auto;color:#94a3b8;">{_dash_closed} cleared · {_dash_inprog} in progress · {_dash_total} total</span>
-          </div>
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
 
     # ── Top action bar ──────────────────────────────────────────────────────
     tb1, tb2, tb3, tb4, tb5 = st.columns([1.5, 2, 2.5, 2, 1])
@@ -8562,224 +8525,42 @@ def show_loan_detail():
 
 # --- Main ---
 def show_persistent_header():
-    """Sticky pipeline command bar shown on every authenticated page.
-    Surfaces all date-sensitive items so processors never miss a deadline."""
+    """My Pipeline header shown on every authenticated page.
+    Compact sticky strip with title + status counts + progress bar."""
     try:
-        from crm import get_all_loans
+        from crm import get_all_loans, STATUS_OPTIONS
         loans = get_all_loans() or []
     except Exception:
         loans = []
+        STATUS_OPTIONS = ["Pending", "Requested", "Cleared", "Overdue", "Closed"]
 
-    from datetime import date as _d, datetime as _dt, timedelta as _td
-    today = _d.today()
-
-    def _parse(s):
-        if not s:
-            return None
-        try:
-            return _dt.fromisoformat(str(s)[:10]).date()
-        except Exception:
-            return None
-
-    DEAD_STATUSES = {"cleared", "closed", "cancelled"}
-    total = 0
-    closing_3d = []      # name + days
-    closing_7d = []
-    closing_30d = []
-    locks_expiring_7d = []
-    locks_expired = []
-    overdue_loans = []
-    pending_cond_total = 0
-    requested_stale = 0   # condition Requested >24h
-    needs_doc = 0         # condition still Needed
-    closed_this_month = 0
-    avg_loan_amt = 0.0
-    total_volume = 0.0
-
-    for ln in loans:
-        status = (ln.get("status") or "").lower()
-        if status in DEAD_STATUSES:
-            if status == "closed":
-                cd = _parse(ln.get("closing_date"))
-                if cd and cd.year == today.year and cd.month == today.month:
-                    closed_this_month += 1
-            continue
-        total += 1
-        try:
-            total_volume += float(ln.get("loan_amount") or 0)
-        except Exception:
-            pass
-
-        if status == "overdue":
-            overdue_loans.append(ln.get("borrower") or ln.get("loan_num") or "?")
-
-        cd = _parse(ln.get("closing_date") or ln.get("due_date"))
-        if cd:
-            d = (cd - today).days
-            label = f"{ln.get('borrower') or ln.get('loan_num') or '?'} ({d}d)"
-            if d < 0:
-                overdue_loans.append(label)
-            elif d <= 3:
-                closing_3d.append(label)
-            elif d <= 7:
-                closing_7d.append(label)
-            elif d <= 30:
-                closing_30d.append(label)
-
-        le = _parse(ln.get("lock_expiry"))
-        if le:
-            d = (le - today).days
-            label = f"{ln.get('borrower') or ln.get('loan_num') or '?'} ({d}d)"
-            if d < 0:
-                locks_expired.append(label)
-            elif d <= 7:
-                locks_expiring_7d.append(label)
-
-        for c in (ln.get("conditions") or []):
-            cstat = (c.get("status") or "").lower()
-            if cstat in ("cleared", "received"):
-                continue
-            pending_cond_total += 1
-            if cstat == "needed":
-                needs_doc += 1
-            if cstat == "requested" and c.get("requested_at"):
-                try:
-                    rt = _dt.fromisoformat(c["requested_at"])
-                    if (_dt.now() - rt).total_seconds() > 86400:
-                        requested_stale += 1
-                except Exception:
-                    pass
-
-    if total:
-        avg_loan_amt = total_volume / total
-
-    def _fmt_money(v):
-        if v >= 1_000_000:
-            return f"${v/1_000_000:.1f}M"
-        if v >= 1_000:
-            return f"${v/1_000:.0f}K"
-        return f"${v:.0f}"
-
-    # ── tooltip helper: list up to 5 items
-    def _tip(items):
-        if not items:
-            return ""
-        head = items[:5]
-        more = f" +{len(items)-5} more" if len(items) > 5 else ""
-        return " • ".join(head) + more
-
-    urgent_count = len(closing_3d) + len(locks_expired) + len(overdue_loans)
-    warning_count = len(closing_7d) + len(locks_expiring_7d) + requested_stale
-
-    # Power BI / Tableau-style KPI strip — compact frozen row
-    def _kpi(value, label, sublabel="", accent="#3b82f6", icon="", tooltip=""):
-        tip_attr = f'title="{tooltip}"' if tooltip else ''
-        return f'''<div class="pa-kpi" {tip_attr}><span class="pa-kpi-value" style="color:{accent};">{value}</span><span class="pa-kpi-label">{label}</span></div>'''
-
-    # SVG icons (BI-style outline)
-    ICN_LOANS = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>'
-    ICN_MONEY = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9a3 3 0 0 0 0 6h6a3 3 0 0 1 0 6H7"/></svg>'
-    ICN_CHECK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>'
-    ICN_ALERT = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
-    ICN_CLOCK = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>'
-    ICN_LOCK  = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
-    ICN_DOC   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>'
-    ICN_CAL   = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>'
-
-    # Semantic colors based on counts
-    urgent_color   = "#dc2626" if urgent_count else "#475569"
-    warning_color  = "#d97706" if warning_count else "#475569"
-    cond_color     = "#7c3aed" if pending_cond_total else "#475569"
-    closing_3d_c   = "#dc2626" if closing_3d else "#475569"
-    locks_exp_c    = "#dc2626" if locks_expired else "#475569"
-    overdue_c      = "#dc2626" if overdue_loans else "#475569"
-    closing_7d_c   = "#d97706" if closing_7d else "#475569"
-    locks_7d_c     = "#d97706" if locks_expiring_7d else "#475569"
-    stale_c        = "#d97706" if requested_stale else "#475569"
-
+    counts = {s: sum(1 for l in loans if l.get("status") == s) for s in STATUS_OPTIONS}
+    total = len(loans)
+    closed = counts.get("Cleared", 0) + counts.get("Closed", 0)
+    in_prog = counts.get("Requested", 0)
+    pct_clr = int((closed / total) * 100) if total else 0
+    pct_ip  = int((in_prog / total) * 100) if total else 0
+    pct_pen = max(0, 100 - pct_clr - pct_ip)
+    chip_html = ''.join([
+        f'<span class="pa-pchip" style="--c:{c};">'
+        f'<span class="pa-pchip-n" style="color:{c};">{counts.get(s, 0) if s != "All" else total}</span>'
+        f'<span class="pa-pchip-l">{s}</span></span>'
+        for s, c in [("All","#3b82f6"),("Pending","#ef4444"),("Requested","#f59e0b"),
+                     ("Cleared","#3b82f6"),("Overdue","#9ca3af"),("Closed","#9ca3af")]
+    ])
     st.markdown(
         f"""
-        <style>
-          /* Frozen KPI bar — sticky at top of MAIN content area only */
-          .pa-bi-bar {{
-            position:sticky;top:0;z-index:9000;
-            background:#0f1419;
-            border:1px solid #1e293b;
-            border-radius:6px;
-            padding:4px 14px 4px 50px;
-            margin:0 0 12px 0;
-            box-shadow:0 2px 6px rgba(0,0,0,0.4);
-            display:flex;align-items:center;gap:6px;
-            overflow-x:auto;white-space:nowrap;
-            height:36px;
-          }}
-          /* Aggressively strip ALL top spacing in sidebar */
-          [data-testid="stSidebar"],
-          [data-testid="stSidebar"] > div,
-          [data-testid="stSidebar"] > div > div,
-          [data-testid="stSidebar"] section,
-          [data-testid="stSidebar"] [data-testid="stSidebarContent"],
-          [data-testid="stSidebar"] [data-testid="stSidebarUserContent"],
-          [data-testid="stSidebar"] [data-testid="stVerticalBlock"],
-          [data-testid="stSidebar"] .block-container {{
-            padding-top:0 !important;
-            margin-top:0 !important;
-          }}
-          [data-testid="stSidebarHeader"],
-          [data-testid="stSidebar"] header,
-          [data-testid="stSidebar"] [data-testid="stSidebarNavSeparator"] {{
-            display:none !important;
-            height:0 !important;
-            min-height:0 !important;
-            padding:0 !important;
-            margin:0 !important;
-          }}
-
-          .pa-bi-tag {{
-            font-size:9px;font-weight:700;color:#3b82f6;
-            text-transform:uppercase;letter-spacing:1.2px;
-            padding:2px 6px;border-left:2px solid #3b82f6;
-            margin-right:4px;flex-shrink:0;
-          }}
-          .pa-bi-date {{
-            font-size:10px;color:#64748b;font-weight:500;
-            font-family:'JetBrains Mono',monospace;margin-left:auto;flex-shrink:0;
-          }}
-          .pa-kpi {{
-            display:inline-flex;align-items:baseline;gap:5px;
-            padding:2px 8px;
-            background:transparent;
-            border-right:1px solid #1e293b;
-            transition:background 0.12s;
-            cursor:default;flex-shrink:0;
-          }}
-          .pa-kpi:hover {{ background:rgba(59,130,246,0.06); }}
-          .pa-kpi-value {{
-            font-size:14px;font-weight:700;line-height:1;
-            font-family:'Segoe UI','Inter',sans-serif;
-            letter-spacing:-0.3px;
-          }}
-          .pa-kpi-label {{
-            font-size:9px;color:#94a3b8;
-            text-transform:uppercase;letter-spacing:0.6px;
-            font-weight:600;
-          }}
-        </style>
-        <div class="pa-bi-bar">
-          <span class="pa-bi-tag">My Pipeline</span>
-          {_kpi(f"{total}", "Active", "", "#3b82f6")}
-          {_kpi(_fmt_money(total_volume), "Volume", "", "#94a3b8")}
-          {_kpi(f"{closed_this_month}", "Closed MTD", "", "#10b981")}
-          {_kpi(f"{len(closing_3d)}", "Close ≤3d", _tip(closing_3d) or "no urgent closings", closing_3d_c, "", _tip(closing_3d))}
-          {_kpi(f"{len(closing_7d)}", "Close 4-7d", "", closing_7d_c, "", _tip(closing_7d))}
-          {_kpi(f"{len(closing_30d)}", "Close ≤30d", "", "#3b82f6")}
-          {_kpi(f"{len(locks_expired)}", "Lock Exp", "", locks_exp_c, "", _tip(locks_expired))}
-          {_kpi(f"{len(locks_expiring_7d)}", "Lock ≤7d", "", locks_7d_c, "", _tip(locks_expiring_7d))}
-          {_kpi(f"{len(overdue_loans)}", "Overdue", "", overdue_c, "", _tip(overdue_loans))}
-          {_kpi(f"{pending_cond_total}", "Conditions", "", cond_color)}
-          {_kpi(f"{needs_doc}", "Needed", "", "#94a3b8")}
-          {_kpi(f"{requested_stale}", "Stale", "", stale_c)}
-          <span class="pa-bi-date">{today.strftime('%a %b %d')}</span>
+        <div class="pa-pipe-dash">
+          <div class="pa-pipe-dash-head">
+            <span class="pa-pipe-dash-title">My Pipeline</span>
+            <span class="pa-pipe-dash-meta">{closed} cleared · {in_prog} in progress · {total} total</span>
+          </div>
+          <div class="pa-pipe-dash-row">{chip_html}</div>
+          <div class="pa-pipe-dash-bar">
+            <div style="background:#3b82f6;width:{pct_clr}%;"></div>
+            <div style="background:#f59e0b;width:{pct_ip}%;"></div>
+            <div style="background:#ef4444;width:{pct_pen}%;"></div>
+          </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -8791,6 +8572,7 @@ def main():
         show_login_page()
     else:
         show_sidebar()
+        show_persistent_header()
         page = st.session_state.page
         if page == "dashboard":
             show_dashboard()
