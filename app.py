@@ -8656,9 +8656,10 @@ def show_persistent_header():
           .pa-bi-bar {{
             position:sticky;top:0;z-index:9000;
             background:#0f1419;
-            border-bottom:1px solid #1e293b;
-            padding:4px 14px;
-            margin:-1.5rem -2rem 12px -2rem;
+            border:1px solid #1e293b;
+            border-radius:6px;
+            padding:4px 14px 4px 50px;
+            margin:0 0 12px 0;
             box-shadow:0 2px 6px rgba(0,0,0,0.4);
             display:flex;align-items:center;gap:6px;
             overflow-x:auto;white-space:nowrap;
