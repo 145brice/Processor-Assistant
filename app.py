@@ -1034,7 +1034,35 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     padding-top: 60px !important;
 }
 
-/* ════ Compact loan rows — max 3 excel rows (~60px) per loan ════ */
+/* ════ Dense loan table — Tax-Delinquencies row density (~22px each) ════ */
+.pa-loan-row {
+    background: #1a1f2e !important;
+    border-radius: 0 !important;
+    border-bottom: 1px solid #1e293b !important;
+    line-height: 1.2 !important;
+}
+.pa-loan-row:hover { background: #1e2532 !important; }
+
+/* Expand toggle button: small text link */
+[data-testid="stButton"] > button[data-testid*="exptoggle_"],
+button[key^="exptoggle_"] {
+    background: transparent !important;
+    border: none !important;
+    color: #64748b !important;
+    font-size: 9px !important;
+    padding: 0 6px !important;
+    height: 16px !important;
+    min-height: 16px !important;
+    box-shadow: none !important;
+    width: auto !important;
+}
+[data-testid="stButton"] > button[data-testid*="exptoggle_"]:hover,
+button[key^="exptoggle_"]:hover {
+    color: #3b82f6 !important;
+    background: transparent !important;
+}
+
+
 .pipeline-scroll [data-testid="stVerticalBlockBorderWrapper"] {
     padding: 3px 8px !important;
     margin-bottom: 2px !important;
@@ -4208,9 +4236,13 @@ def show_pipeline():
                 f'text-decoration:none;opacity:0.6;">x</a>'
             )
 
+        # ── Per-loan expand toggle (default collapsed = dense table row) ──
+        _row_open_key = f"row_open_{lid}"
+        _row_expanded = st.session_state.get(_row_open_key, False)
+
         # ── Single compact row — grid-aligned columns (tabbed) ───────
         st.markdown(
-            f'<div class="pa-loan-row" style="border-left:3px solid {_status_clr};padding:6px 8px;margin-bottom:3px;min-height:32px;">'
+            f'<div class="pa-loan-row" style="border-left:3px solid {_status_clr};padding:3px 8px;margin-bottom:1px;min-height:22px;">'
             f'<div class="pa-loan-grid">'
             f'<span class="pa-col-loan" style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">#{_loan_num}</span>'
             f'<span class="pa-col-borrower" style="font-size:11px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_borrower}</span>'
@@ -4232,6 +4264,15 @@ def show_pipeline():
             + f'</div>',
             unsafe_allow_html=True,
         )
+
+        # ── Tiny expand chevron (replaces the heavy action row when collapsed) ──
+        _exp_label = "▾ collapse" if _row_expanded else "▸ expand"
+        if st.button(_exp_label, key=f"exptoggle_{lid}", use_container_width=False):
+            st.session_state[_row_open_key] = not _row_expanded
+            st.rerun()
+
+        if not _row_expanded:
+            continue  # skip rendering action row + expanders for this loan
 
         # ── Compact action row: Open | Status | Assign ───────────────
         ac1, ac2, ac3 = st.columns([1.3, 1.5, 2])
