@@ -1206,6 +1206,11 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     height: 26px !important;
     box-sizing: border-box !important;
 }
+[class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-testid="stSelectbox"],
+[class*="st-key-assign_"] [data-testid="stSelectbox"] {
+    position: relative !important;
+    top: -1px !important;
+}
 [class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-baseweb="select"] > div,
 [class*="st-key-assign_"] [data-baseweb="select"] > div {
     padding-top: 0 !important;
