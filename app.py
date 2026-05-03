@@ -1209,7 +1209,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 [class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-testid="stSelectbox"],
 [class*="st-key-assign_"] [data-testid="stSelectbox"] {
     position: relative !important;
-    top: 2px !important;
+    top: 3px !important;
 }
 [class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-baseweb="select"] > div,
 [class*="st-key-assign_"] [data-baseweb="select"] > div {
