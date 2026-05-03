@@ -225,9 +225,9 @@ body.pa-sidebar-hidden [data-testid="stSidebar"] {
 .stDeployButton { display: none; }
 /* Keep native sidebar collapse/expand toggle visible so users can reopen the sidebar */
 [data-testid="stSidebar"] { background: linear-gradient(180deg, #222222 0%, #181818 100%) !important; border-right: 1px solid rgba(255,255,255,0.1) !important; }
-[data-testid="stSidebar"] > div:first-child { padding: 0.75rem 1rem 1rem 1rem !important; }
-[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding-top: 0.5rem !important; margin-top: 0 !important; }
-[data-testid="stSidebar"] .block-container { padding-top: 0.75rem !important; }
+[data-testid="stSidebar"] > div:first-child { padding: 0.1rem 1rem 1rem 1rem !important; }
+[data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding-top: 0 !important; margin-top: 0 !important; }
+[data-testid="stSidebar"] .block-container { padding-top: 0 !important; }
 [data-testid="stSidebar"] button, [data-testid="stSidebar"] button[kind], [data-testid="stSidebar"] [data-testid*="baseButton"] { background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; border-radius: var(--radius-sm) !important; font-size: 13px !important; font-weight: 500 !important; text-align: left !important; padding: 8px 12px !important; margin-bottom: 3px !important; width: 100% !important; box-shadow: none !important; transition: all 0.2s ease !important; height: auto !important; min-height: 36px !important; opacity: 1 !important; display: block !important; visibility: visible !important; }
 [data-testid="stSidebar"] button p, [data-testid="stSidebar"] button span, [data-testid="stSidebar"] button div { background: transparent !important; color: #c0c0c0 !important; }
 [data-testid="stSidebar"] button[kind="primary"] { background: rgba(59,130,246,0.08) !important; border: 1px solid var(--accent) !important; color: var(--accent) !important; font-weight: 600 !important; box-shadow: 0 0 8px rgba(59,130,246,0.18) !important; }
