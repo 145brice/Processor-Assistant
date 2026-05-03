@@ -366,7 +366,7 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 /* Tabbed alignment for loan rows — every field lines up across all rows */
 .pa-loan-grid {
     display: grid;
-    grid-template-columns: 80px 130px 70px 1fr 150px 40px 28px 16px;
+    grid-template-columns: 90px 140px 80px 1fr 60px 32px 18px;
     gap: 6px;
     align-items: center;
     width: 100%;
@@ -1138,12 +1138,13 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     line-height: 1.2 !important;
 }
 /* Pipeline buttons — use :has(.pa-loan-grid) since pipeline-scroll div does NOT wrap widgets */
+/* All pipeline buttons + selectboxes: same 32px height, 11px font */
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) button,
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stButton"] button {
-    height: 20px !important;
-    min-height: 20px !important;
+    height: 32px !important;
+    min-height: 32px !important;
     font-size: 11px !important;
-    padding: 0 6px !important;
+    padding: 0 8px !important;
     line-height: 1 !important;
     box-shadow: none !important;
 }
@@ -1158,19 +1159,27 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     font-size: 11px !important;
     padding: 0 8px !important;
 }
-/* Zero gap between OPEN row and Notes row */
+/* Zero gap everywhere — rows touch */
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stVerticalBlock"] {
-    gap: 0px !important;
+    gap: 0 !important;
 }
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stHorizontalBlock"] {
     gap: 4px !important;
     margin-bottom: 0 !important;
+    margin-top: 0 !important;
 }
-/* Info row font */
+[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stWidgetLabel"] {
+    display: none !important;
+}
+/* Info text */
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stMarkdownContainer"] p,
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stMarkdownContainer"] span {
     font-size: 11px !important;
     line-height: 1.3 !important;
+    margin: 0 !important;
+}
+[data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stElementContainer"] {
+    padding: 0 !important;
     margin: 0 !important;
 }
 /* Shrink column padding inside loan cards */
@@ -4274,25 +4283,24 @@ def show_pipeline():
 
         # ── Single compact row — grid-aligned columns (tabbed) ───────
         st.markdown(
-            f'<div class="pa-loan-row" style="border-left:3px solid {_status_clr};padding:3px 8px;margin-bottom:1px;min-height:22px;">'
+            f'<div class="pa-loan-row" style="border-left:3px solid {_status_clr};padding:4px 8px 2px 8px;margin-bottom:0;">'
+            # Main info line
             f'<div class="pa-loan-grid">'
-            f'<span class="pa-col-loan" style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">#{_loan_num}</span>'
-            f'<span class="pa-col-borrower" style="font-size:11px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_borrower}</span>'
-            f'<span class="pa-col-status" style="font-size:9px;color:{_status_clr};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{emoji}{status}</span>'
-            f'<span class="pa-col-badges" style="white-space:nowrap;overflow:hidden;">{_inline_badges}</span>'
-            f'<span class="pa-col-dates" style="font-size:9px;color:#6b7280;white-space:nowrap;display:grid;grid-template-columns:auto auto;column-gap:6px;row-gap:1px;justify-content:end;line-height:1.2;">'
-            f'<span style="color:#9ca3af;font-weight:600;text-align:right;">Close:</span>'
-            f'<span style="color:#d1d5db;text-align:right;">{_closing_dt}</span>'
-            f'<span style="color:#9ca3af;font-weight:600;text-align:right;">Lock:</span>'
-            f'<span style="color:#d1d5db;text-align:right;">{_lock_dt if _lock_dt else "—"}</span>'
-            f'</span>'
-            f'<div class="pa-col-bar" style="background:rgba(255,255,255,0.08);height:3px;border-radius:1px;align-self:center;">'
-            f'<div style="background:{_bar_color};width:{_pct}%;height:100%;"></div></div>'
-            f'<span class="pa-col-pct" style="font-size:8px;color:{_bar_color};font-weight:700;text-align:right;">{_pct}%</span>'
-            f'<span class="pa-col-x" style="text-align:right;">{_remove_html}</span>'
+            f'<span style="font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">#{_loan_num}</span>'
+            f'<span style="font-size:11px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{_borrower}</span>'
+            f'<span style="font-size:10px;color:{_status_clr};font-weight:600;white-space:nowrap;">{emoji}{status}</span>'
+            f'<span style="white-space:nowrap;overflow:hidden;">{_inline_badges}</span>'
+            f'<div style="background:rgba(255,255,255,0.08);height:4px;border-radius:2px;align-self:center;">'
+            f'<div style="background:{_bar_color};width:{_pct}%;height:100%;border-radius:2px;"></div></div>'
+            f'<span style="font-size:10px;color:{_bar_color};font-weight:700;text-align:right;">{_pct}%</span>'
+            f'<span style="text-align:right;">{_remove_html}</span>'
+            f'</div>'
+            # Dates line — Close and Lock each on own line, left-aligned with loan info
+            f'<div style="display:flex;gap:16px;padding:2px 0 0 0;">'
+            f'<span style="font-size:10px;color:#9ca3af;"><span style="color:#6b7280;">Close:</span> {_closing_dt}</span>'
+            f'<span style="font-size:10px;color:#9ca3af;"><span style="color:#6b7280;">Lock:</span> {_lock_dt if _lock_dt else "—"}</span>'
             f'</div>'
             + (_contacts_line if _contacts_line else '')
-            + _orders_line
             + f'</div>',
             unsafe_allow_html=True,
         )
