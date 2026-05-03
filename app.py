@@ -75,12 +75,16 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
     margin-left: 0 !important;
     visibility: visible !important;
 }
-/* Keep main content clear of fixed-width sidebar */
+/* Keep main content clear of fixed-width sidebar (target modern Streamlit containers) */
+[data-testid="stMain"],
+section[data-testid="stMain"],
+section[data-testid="stMain"] > div[data-testid="stMainBlockContainer"],
 [data-testid="stAppViewContainer"] > .main,
 [data-testid="stAppViewContainer"] section.main,
 [data-testid="stSidebar"] + div {
     margin-left: 244px !important;
     width: auto !important;
+    max-width: none !important;
     padding-left: 14px !important; /* visual gutter so content is never flush/hidden */
     transition: margin-left 0.25s ease, width 0.25s ease !important;
 }
@@ -137,7 +141,10 @@ body.pa-sidebar-hidden [data-testid="stSidebar"] {
 }
 body.pa-sidebar-hidden [data-testid="stAppViewContainer"] > .main,
 body.pa-sidebar-hidden [data-testid="stAppViewContainer"] section.main,
-body.pa-sidebar-hidden [data-testid="stSidebar"] + div {
+body.pa-sidebar-hidden [data-testid="stSidebar"] + div,
+body.pa-sidebar-hidden [data-testid="stMain"],
+body.pa-sidebar-hidden section[data-testid="stMain"],
+body.pa-sidebar-hidden section[data-testid="stMain"] > div[data-testid="stMainBlockContainer"] {
     margin-left: 0 !important;
     padding-left: 0 !important;
 }
@@ -149,7 +156,10 @@ body.pa-sidebar-hidden [data-testid="stSidebar"] + div {
     body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
     [data-testid="stAppViewContainer"] > .main,
     [data-testid="stAppViewContainer"] section.main,
-    [data-testid="stSidebar"] + div {
+    [data-testid="stSidebar"] + div,
+    [data-testid="stMain"],
+    section[data-testid="stMain"],
+    section[data-testid="stMain"] > div[data-testid="stMainBlockContainer"] {
         margin-left: 200px !important;
         width: auto !important;
         padding-left: 10px !important;
@@ -160,7 +170,10 @@ body.pa-sidebar-hidden [data-testid="stSidebar"] + div {
     body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
     [data-testid="stAppViewContainer"] > .main,
     [data-testid="stAppViewContainer"] section.main,
-    [data-testid="stSidebar"] + div {
+    [data-testid="stSidebar"] + div,
+    [data-testid="stMain"],
+    section[data-testid="stMain"],
+    section[data-testid="stMain"] > div[data-testid="stMainBlockContainer"] {
         margin-left: 180px !important;
         width: auto !important;
         padding-left: 8px !important;
