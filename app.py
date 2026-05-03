@@ -1516,6 +1516,39 @@ def _enter_sandbox(page: str = "dashboard") -> None:
     _save_session()
 
 
+def _render_auth_debug():
+    """Temporary on-screen auth state strip for troubleshooting."""
+    try:
+        auth = bool(st.session_state.get("authenticated", False))
+        sandbox = bool(st.session_state.get("sandbox_mode", False))
+        force_login = bool(st.session_state.get("force_login", False))
+        page = st.session_state.get("page", "")
+        user = st.session_state.get("user_id", None)
+        st.markdown(
+            f"""
+            <div style="
+                position: fixed;
+                right: 14px;
+                bottom: 12px;
+                z-index: 999999;
+                background: rgba(15,17,23,0.92);
+                border: 1px solid #334155;
+                color: #cbd5e1;
+                padding: 6px 10px;
+                border-radius: 8px;
+                font-size: 11px;
+                font-family: 'JetBrains Mono', monospace;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+            ">
+              auth={auth} | sandbox={sandbox} | force_login={force_login} | page={page} | user={user}
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    except Exception:
+        pass
+
+
 # --- All workflow steps ---
 WORKFLOW_STEPS = [
     ("upload", "1", "Upload"),
@@ -8836,6 +8869,7 @@ def show_persistent_header():
 
 
 def main():
+    _render_auth_debug()
     if not st.session_state.authenticated:
         # If user explicitly logged out, show login once, then stop forcing it.
         if st.session_state.get("force_login", False):
