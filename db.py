@@ -263,6 +263,10 @@ def login(email: str, password: str) -> dict:
                 "display_name": row["display_name"] or "",
                 "role": row["role"] or "Processor",
             }
+        if not _supabase_url() or not _supabase_public_key():
+            return {
+                "error": "Supabase auth is not configured on this deployment yet. Set SUPABASE_URL and SUPABASE_ANON_KEY (or SUPABASE_PUBLISHABLE_KEY)."
+            }
         # Fall back to Supabase Auth and refresh the local cache from the canonical auth source.
         sb = _login_via_supabase_auth(email, password)
         if sb.get("ok"):
