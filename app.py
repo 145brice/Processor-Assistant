@@ -343,7 +343,7 @@ hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
 .login-divider span { font-size:11px;color:var(--slate-500);white-space:nowrap; }
 .login-divider hr { flex:1;border:none;border-top:1px solid var(--slate-200); }
 [data-testid="stToast"], div[data-testid="stToast"] > div { background: var(--bg-white) !important; color: var(--slate-900) !important; border: 1px solid var(--slate-300) !important; }
-div[data-baseweb="popover"], ul[data-testid="stSelectboxVirtualDropdown"] { background: var(--bg-white) !important; border: 1px solid var(--slate-300) !important; }
+div[data-baseweb="popover"], ul[data-testid="stSelectboxVirtualDropdown"] { background: var(--bg-white) !important; border: 1px solid var(--slate-300) !important; z-index: 999999 !important; }
 [data-baseweb="tooltip"] { background: #1a1a1a !important; color: #c0c0c0 !important; border: 1px solid rgba(255,255,255,0.15) !important; box-shadow: none !important; }
 [data-baseweb="tooltip"] * { background: transparent !important; color: #c0c0c0 !important; }
 div[data-baseweb="popover"] li, ul[data-testid="stSelectboxVirtualDropdown"] li { color: var(--slate-900) !important; }
@@ -375,8 +375,9 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     background: rgba(255,255,255,0.04) !important;
     border: 1px solid rgba(255,255,255,0.15) !important;
     border-radius: 6px !important;
-    padding: 7px 10px !important;
-    height: 38px !important;
+    padding: 0 10px !important;
+    min-height: 26px !important;
+    height: 26px !important;
     display: flex !important;
     align-items: center !important;
     transition: all 0.2s ease !important;
@@ -386,9 +387,10 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     background: rgba(59,130,246,0.05) !important;
 }
 .pa-myloans-toggle + div [data-testid="stCheckbox"] label {
-    font-size: 13px !important;
+    font-size: 12px !important;
     color: #d1d5db !important;
     font-weight: 500 !important;
+    white-space: nowrap !important;
 }
 /* Primary (Open) button inside pipeline — neon-green, more prominent */
 .pipeline-scroll [data-testid="stButton"] button,
@@ -1161,11 +1163,22 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 }
 [class*="st-key-st_"] [data-testid="stSelectbox"] > div > div,
 [class*="st-key-assign_"] [data-testid="stSelectbox"] > div > div {
-    height: 24px !important;
-    min-height: 24px !important;
+    height: 26px !important;
+    min-height: 26px !important;
     font-size: 10px !important;
     padding: 0 6px !important;
     border-radius: 0 !important;
+}
+[class*="st-key-st_"] [data-baseweb="select"] > div,
+[class*="st-key-assign_"] [data-baseweb="select"] > div {
+    min-height: 26px !important;
+    height: 26px !important;
+    display: flex !important;
+    align-items: center !important;
+}
+[class*="st-key-st_"] [data-baseweb="select"] span,
+[class*="st-key-assign_"] [data-baseweb="select"] span {
+    line-height: 1.2 !important;
 }
 /* Keep only loan-row select labels hidden */
 [class*="st-key-st_"] [data-testid="stWidgetLabel"],
@@ -3342,9 +3355,8 @@ def show_pipeline():
     my_name = st.session_state.get("user_name", "")
 
     # ── Top action bar ──────────────────────────────────────────────────────
-    tb1, tb2, tb3, tb4, tb5 = st.columns([1.5, 2, 2.5, 2, 1])
+    tb1, tb2, tb3, tb4, tb5 = st.columns([1.45, 1.9, 2.4, 1.8, 1.0])
     with tb1:
-        st.markdown('<div style="height:30px;"></div>', unsafe_allow_html=True)
         if st.button("+Add Loan", use_container_width=True, type="primary"):
             st.session_state.pipeline_add_open = not st.session_state.get("pipeline_add_open", False)
     with tb2:
@@ -3356,12 +3368,14 @@ def show_pipeline():
             "Status", _opts,
             index=_opts.index(_default),
             key="pipeline_filter",
+            label_visibility="collapsed",
         )
         st.session_state["pipeline_filter_val"] = filter_status
     with tb3:
         search_loan = st.text_input(
             "Search", placeholder="Loan # or borrower name",
             key="pipeline_search",
+            label_visibility="collapsed",
         )
     with tb4:
         sort_by = st.selectbox(
@@ -3379,9 +3393,9 @@ def show_pipeline():
                 "Borrower (A→Z)",
             ],
             key="pipeline_sort",
+            label_visibility="collapsed",
         )
     with tb5:
-        st.markdown('<div style="height:30px;"></div>', unsafe_allow_html=True)
         st.markdown('<div class="pa-myloans-toggle">', unsafe_allow_html=True)
         my_loans_only = st.checkbox("My loans", key="pipeline_myloans")
         st.markdown('</div>', unsafe_allow_html=True)
