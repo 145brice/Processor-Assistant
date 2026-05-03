@@ -963,21 +963,31 @@ hr { border-color: #1e293b !important; }
 /* ════ My Pipeline header — fixed at top:12px, 36px tall, aligned with blue X ════ */
 .pa-pipe-dash {
     position: fixed;
-    top: 12px;
-    left: 296px;        /* sidebar(244) + gap(16) + toggle(36) clearance */
-    right: 32px;
+    top: 0;
+    left: 296px;
+    right: 0;
     z-index: 9000;
-    height: 36px;
+    height: 56px;
     background: #0f1117;
-    border: 1px solid #334155;
-    border-radius: 6px;
-    padding: 0 14px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+    border-bottom: 1px solid #334155;
+    padding: 10px 32px 10px 14px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.6);
     display: flex;
     align-items: center;
     gap: 14px;
     overflow-x: auto;
     white-space: nowrap;
+}
+/* Solid backdrop strip covering the entire top so nothing scrolls through */
+.pa-pipe-dash::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 56px;
+    background: #0f1117;
+    z-index: -1;
 }
 body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 @media (max-width: 768px) {
@@ -1560,7 +1570,7 @@ def show_sidebar():
         is_sandbox = st.session_state.get("sandbox_mode", False)
 
         st.markdown(
-            '<div style="padding:6px 0 28px 0;margin:0;">'
+            '<div style="padding:0 0 16px 0;margin:-30px 0 0 0;">'
             '<div style="font-size:18px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;">'
             'Processor Assistant</div>'
             '</div>',
