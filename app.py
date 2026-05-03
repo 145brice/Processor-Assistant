@@ -1140,37 +1140,37 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
 /* Pipeline buttons — use :has(.pa-loan-grid) since pipeline-scroll div does NOT wrap widgets */
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) button,
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stButton"] button {
-    height: 14px !important;
-    min-height: 14px !important;
-    font-size: 8px !important;
-    padding: 0 4px !important;
+    height: 20px !important;
+    min-height: 20px !important;
+    font-size: 11px !important;
+    padding: 0 6px !important;
     line-height: 1 !important;
     box-shadow: none !important;
 }
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) button p {
-    font-size: 8px !important;
+    font-size: 11px !important;
     line-height: 1 !important;
     margin: 0 !important;
 }
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stSelectbox"] > div > div {
-    height: 16px !important;
-    min-height: 16px !important;
-    font-size: 8px !important;
-    padding: 0 4px !important;
+    height: 22px !important;
+    min-height: 22px !important;
+    font-size: 11px !important;
+    padding: 0 6px !important;
 }
-/* Tighten gaps between elements inside each loan card */
+/* Zero gap between OPEN row and Notes row */
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stVerticalBlock"] {
-    gap: 2px !important;
+    gap: 0px !important;
 }
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stHorizontalBlock"] {
     gap: 4px !important;
-    margin-bottom: 2px !important;
+    margin-bottom: 0 !important;
 }
-/* Match info-row font sizes to button size */
+/* Info row font */
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stMarkdownContainer"] p,
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stMarkdownContainer"] span {
-    font-size: 9px !important;
-    line-height: 1.2 !important;
+    font-size: 11px !important;
+    line-height: 1.3 !important;
     margin: 0 !important;
 }
 /* Shrink column padding inside loan cards */
