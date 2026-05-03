@@ -639,11 +639,43 @@ button[kind="secondary"]:hover p { color: #ffffff !important; }
     box-shadow: none !important;
 }
 
-/* File uploader */
+/* File uploader — compact, less obnoxious */
 [data-testid="stFileUploader"] {
     background: #161b2b !important;
     border: 1px dashed #334155 !important;
-    border-radius: 10px !important;
+    border-radius: 6px !important;
+    padding: 4px 8px !important;
+}
+[data-testid="stFileUploader"] section {
+    padding: 4px 8px !important;
+    min-height: 0 !important;
+}
+[data-testid="stFileUploader"] section > div {
+    padding: 0 !important;
+    min-height: 0 !important;
+}
+[data-testid="stFileUploader"] section small,
+[data-testid="stFileUploader"] section span {
+    font-size: 11px !important;
+    color: #94a3b8 !important;
+}
+[data-testid="stFileUploader"] button {
+    padding: 4px 12px !important;
+    font-size: 12px !important;
+    min-height: 0 !important;
+    height: 28px !important;
+}
+[data-testid="stFileUploader"] svg { width: 16px !important; height: 16px !important; }
+[data-testid="stFileUploaderDropzone"] {
+    padding: 6px 10px !important;
+    min-height: 0 !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+[data-testid="stFileUploaderDropzoneInstructions"] > div {
+    font-size: 12px !important;
 }
 [data-testid="stFileUploader"]:hover {
     border-color: #3b82f6 !important;
@@ -1336,10 +1368,9 @@ def show_sidebar():
         is_sandbox = st.session_state.get("sandbox_mode", False)
 
         st.markdown(
-            '<div style="padding:6px 0 12px 0;margin:0;">'
+            '<div style="padding:6px 0 28px 0;margin:0;">'
             '<div style="font-size:18px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;">'
             'Processor Assistant</div>'
-            '<div style="font-size:10px;color:var(--slate-400);margin-top:2px;">Offline · Local</div>'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -1551,38 +1582,23 @@ def show_dashboard():
         _user = st.session_state.get("user_name", "") or "there"
         st.markdown(
             f"""
-            <div style="margin:8px 0 18px 0;padding:22px 26px;
-                 background:#1a1f2e;
-                 border:1px solid #334155;border-radius:10px;
-                 box-shadow:none;">
-              <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">
-                <div style="width:42px;height:42px;border-radius:8px;
-                     background:#2563eb;
-                     display:flex;align-items:center;justify-content:center;
-                     box-shadow:none;">
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                       stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="3" y="4" width="18" height="16" rx="2"/>
-                    <path d="M7 8h10M7 12h10M7 16h6"/>
-                  </svg>
-                </div>
-                <div>
-                  <div style="font-size:22px;font-weight:800;color:#ffffff;line-height:1.1;letter-spacing:-0.4px;">
-                    Welcome back, {_user.split()[0] if _user else 'there'}.
-                  </div>
-                  <div style="font-size:13px;color:#9ca3af;margin-top:3px;">
-                    Drop in any loan document — I'll auto-detect the type, pull conditions & contacts, and match it to your pipeline.
-                  </div>
-                </div>
+            <div style="margin:4px 0 8px 0;padding:8px 12px;
+                 background:#1a1f2e;border:1px solid #334155;border-radius:6px;
+                 display:flex;align-items:center;gap:10px;">
+              <div style="width:24px;height:24px;border-radius:4px;background:#2563eb;
+                   display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                     stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="16" rx="2"/>
+                  <path d="M7 8h10M7 12h10M7 16h6"/>
+                </svg>
               </div>
-              <div style="display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;">
-                <div style="font-size:11px;color:#94a3b8;">
-                  <span style="color:#3b82f6;font-weight:700;">●</span>
-                  Approval · CD · LE · 1003 · Purchase Contract · Bank Stmt · W-2 · Appraisal · Title · HOI · and more
-                </div>
-                <div style="font-size:11px;color:#94a3b8;margin-left:auto;">
-                  <b style="color:#3b82f6;">{_loan_ct}</b> loan{'s' if _loan_ct != 1 else ''} in pipeline
-                </div>
+              <div style="font-size:13px;font-weight:600;color:#e0e0e0;flex:1;">
+                Welcome back, {_user.split()[0] if _user else 'there'}.
+                <span style="font-weight:400;color:#94a3b8;margin-left:6px;">Drop a loan doc to auto-detect & match.</span>
+              </div>
+              <div style="font-size:11px;color:#94a3b8;white-space:nowrap;">
+                <b style="color:#3b82f6;">{_loan_ct}</b> in pipeline
               </div>
             </div>
             """,
