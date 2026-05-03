@@ -354,7 +354,7 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .pipeline-scroll button { height: 14px !important; min-height: 14px !important; font-size: 8px !important; font-weight: 600 !important; padding: 0 4px !important; border-radius: 3px !important; background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #e5e7eb !important; box-shadow: none !important; transform: none !important; }
 .pipeline-scroll button:hover { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.25) !important; color: #ffffff !important; transform: none !important; box-shadow: none !important; }
 .pipeline-scroll button p { color: inherit !important; font-size: 8px !important; font-weight: 600 !important; margin: 0 !important; line-height: 1 !important; }
-.pipeline-scroll [data-testid="stSelectbox"] > div > div { min-height: 16px !important; height: 16px !important; font-size: 8px !important; padding: 0 4px !important; }
+.pipeline-scroll [data-testid="stSelectbox"] > div > div { min-height: 32px !important; height: 32px !important; font-size: 11px !important; padding: 0 8px !important; }
 .pipeline-scroll [data-testid="stSelectbox"] { margin-bottom: 0 !important; }
 .pipeline-scroll [data-testid="stVerticalBlock"] { gap: 2px !important; }
 .pipeline-scroll [data-testid="stHorizontalBlock"] { gap: 4px !important; margin-bottom: 0 !important; }
@@ -366,8 +366,8 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 /* Tabbed alignment for loan rows — every field lines up across all rows */
 .pa-loan-grid {
     display: grid;
-    grid-template-columns: 110px 1fr 90px 160px 130px 60px 34px 20px;
-    gap: 8px;
+    grid-template-columns: 80px 130px 70px 1fr 150px 40px 28px 16px;
+    gap: 6px;
     align-items: center;
     width: 100%;
 }
@@ -1153,10 +1153,10 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     margin: 0 !important;
 }
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stSelectbox"] > div > div {
-    height: 22px !important;
-    min-height: 22px !important;
+    height: 32px !important;
+    min-height: 32px !important;
     font-size: 11px !important;
-    padding: 0 6px !important;
+    padding: 0 8px !important;
 }
 /* Zero gap between OPEN row and Notes row */
 [data-testid="stVerticalBlock"]:has(.pa-loan-grid) [data-testid="stVerticalBlock"] {
