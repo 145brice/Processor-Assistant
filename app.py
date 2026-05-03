@@ -1336,7 +1336,7 @@ def show_sidebar():
         is_sandbox = st.session_state.get("sandbox_mode", False)
 
         st.markdown(
-            '<div style="padding:0 0 36px 0;margin-top:-4px;">'
+            '<div style="padding:6px 0 12px 0;margin:0;">'
             '<div style="font-size:18px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;">'
             'Processor Assistant</div>'
             '<div style="font-size:10px;color:var(--slate-400);margin-top:2px;">Offline · Local</div>'
@@ -8669,7 +8669,9 @@ def show_persistent_header():
           [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {{
             padding-top:0 !important; margin-top:0 !important;
           }}
-          [data-testid="stSidebar"] .block-container {{ padding-top:0.5rem !important; }}
+          [data-testid="stSidebar"] .block-container {{ padding-top:0 !important; padding-bottom:0 !important; }}
+          [data-testid="stSidebar"] > div:first-child {{ padding-top:0 !important; }}
+          [data-testid="stSidebarHeader"] {{ display:none !important; height:0 !important; }}
 
           .pa-bi-tag {{
             font-size:9px;font-weight:700;color:#3b82f6;
