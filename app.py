@@ -1034,6 +1034,62 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
     padding-top: 60px !important;
 }
 
+/* ════ Compact loan rows — max 3 excel rows (~60px) per loan ════ */
+.pipeline-scroll [data-testid="stVerticalBlockBorderWrapper"] {
+    padding: 3px 8px !important;
+    margin-bottom: 2px !important;
+    min-height: 0 !important;
+    max-height: 64px !important;
+    overflow: hidden !important;
+    line-height: 1.15 !important;
+}
+.pipeline-scroll [data-testid="stVerticalBlock"] { gap: 1px !important; }
+.pipeline-scroll [data-testid="stHorizontalBlock"] {
+    gap: 4px !important;
+    margin-bottom: 0 !important;
+    align-items: center !important;
+}
+.pipeline-scroll [data-testid="stMarkdownContainer"] p,
+.pipeline-scroll [data-testid="stMarkdownContainer"] div {
+    margin: 0 !important;
+    padding: 0 !important;
+    line-height: 1.2 !important;
+}
+.pipeline-scroll button {
+    height: 20px !important;
+    min-height: 20px !important;
+    font-size: 10px !important;
+    padding: 0 6px !important;
+    line-height: 1 !important;
+}
+.pipeline-scroll [data-testid="stSelectbox"] > div > div {
+    min-height: 22px !important;
+    height: 22px !important;
+    font-size: 10px !important;
+    padding: 0 6px !important;
+}
+.pipeline-scroll [data-testid="stExpander"] summary {
+    padding: 2px 8px !important;
+    font-size: 10px !important;
+    min-height: 0 !important;
+}
+.pipeline-scroll .pa-loan-grid {
+    grid-template-columns: 90px 1fr 80px 130px 110px 50px 30px 20px !important;
+    gap: 6px !important;
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+}
+.pipeline-scroll .loan-num,
+.pipeline-scroll .loan-name { font-size: 11px !important; line-height: 1.2 !important; }
+.pipeline-scroll .loan-due,
+.pipeline-scroll .loan-missing { font-size: 9px !important; line-height: 1.1 !important; }
+.pipeline-scroll .badge,
+.pipeline-scroll .status-chip {
+    font-size: 9px !important;
+    padding: 1px 6px !important;
+    line-height: 1.2 !important;
+}
+
 </style>
 
 """, unsafe_allow_html=True)
