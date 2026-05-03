@@ -392,23 +392,26 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     font-weight: 500 !important;
 }
 /* Primary (Open) button inside pipeline — neon-green, more prominent */
-.pipeline-scroll button[kind="primary"], button[kind="primary"][data-testid*="open_"] {
+.pipeline-scroll [data-testid="stButton"] button,
+.pipeline-scroll [data-testid="stButton"] button[kind="primary"],
+.pipeline-scroll button[kind="primary"] {
     background: rgba(59,130,246,0.08) !important;
     border: 1px solid var(--accent) !important;
     color: var(--accent) !important;
     font-weight: 800 !important;
-    font-size: 11px !important;
-    height: 24px !important;
-    min-height: 24px !important;
+    font-size: 8px !important;
+    height: 14px !important;
+    min-height: 14px !important;
     letter-spacing: 0.3px !important;
     box-shadow: 0 0 8px rgba(59,130,246,0.15) !important;
+    padding: 0 4px !important;
 }
-.pipeline-scroll button[kind="primary"]:hover, button[kind="primary"][data-testid*="open_"]:hover {
+.pipeline-scroll button[kind="primary"]:hover {
     background: rgba(59,130,246,0.16) !important;
     box-shadow: 0 0 14px rgba(59,130,246,0.4) !important;
     color: var(--accent) !important;
 }
-.pipeline-scroll button[kind="primary"] p { color: var(--accent) !important; font-weight: 800 !important; font-size: 11px !important; margin: 0 !important; line-height: 1 !important; }
+.pipeline-scroll button[kind="primary"] p { color: var(--accent) !important; font-weight: 800 !important; font-size: 8px !important; margin: 0 !important; line-height: 1 !important; }
 /* Hoverable contact chip tooltip */
 .pa-tip { position: relative; cursor: help; display: inline-block; }
 .pa-tip-box { visibility: hidden; opacity: 0; position: absolute; bottom: 125%; left: 0; z-index: 9999;
