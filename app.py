@@ -4165,31 +4165,7 @@ def show_pipeline():
                 + " · ".join(_contact_chips) + '</div>'
             )
 
-        # ── Order-out status badges (HOI / Title / Appraisal) ────────
-        _orders = loan.get("orders", {})
-        _order_defs = [("HOI", "hoi"), ("Title", "title"), ("Appraisal", "appraisal")]
-        _order_badges = []
-        for _olabel, _okey in _order_defs:
-            _ostat = _orders.get(_okey, "Not Sent")
-            if _ostat == "Received":
-                _obg, _oclr = "rgba(59,130,246,0.15)", "#3b82f6"
-                _oicon = "✓"
-            elif _ostat == "Requested":
-                _obg, _oclr = "rgba(245,158,11,0.12)", "#f59e0b"
-                _oicon = "⏳"
-            else:
-                _obg, _oclr = "rgba(255,255,255,0.04)", "#6b7280"
-                _oicon = "○"
-            _order_badges.append(
-                f'<span style="font-size:9px;padding:1px 6px;border-radius:3px;font-weight:600;'
-                f'background:{_obg};color:{_oclr};border:1px solid {_oclr}22;white-space:nowrap;">'
-                f'{_oicon} {_olabel}</span>'
-            )
-        _orders_line = (
-            f'<div style="display:flex;gap:4px;margin-bottom:6px;">'
-            + "".join(_order_badges)
-            + '</div>'
-        )
+        _orders_line = ""
 
         _loan_num = loan.get('loan_num', '—')
         _borrower = loan.get('borrower', '—')
@@ -4481,29 +4457,6 @@ def show_pipeline():
                     + '</div>',
                     unsafe_allow_html=True,
                 )
-
-        # ── Order-out tracker ────────────────────────────────────────────────
-        st.markdown(
-            '<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-            'letter-spacing:0.8px;margin:10px 0 6px 0;">Order Status</div>',
-            unsafe_allow_html=True,
-        )
-        _orders = loan.get("orders", {})
-        _order_statuses = ["Not Sent", "Requested", "Received"]
-        _oc1, _oc2, _oc3 = st.columns(3)
-        for _ocol, (_olabel, _okey) in zip([_oc1, _oc2, _oc3], [("HOI", "hoi"), ("Title", "title"), ("Appraisal", "appraisal")]):
-            with _ocol:
-                _cur = _orders.get(_okey, "Not Sent")
-                _new_order = st.selectbox(
-                    _olabel, _order_statuses,
-                    index=_order_statuses.index(_cur) if _cur in _order_statuses else 0,
-                    key=f"order_{_okey}_{lid}",
-                )
-                if _new_order != _cur:
-                    _updated_orders = {**_orders, _okey: _new_order}
-                    update_loan(lid, orders=_updated_orders)
-                    log_activity(lid, "order", f"{_olabel} order → {_new_order}", user=my_name)
-                    st.rerun()
 
         # ── Share this loan ──────────────────────────────────────────────────
         from sharing import get_members, share_loan as _share_loan, send_update as _send_update
