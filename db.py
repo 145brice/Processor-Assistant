@@ -105,6 +105,32 @@ def _supabase_post(path: str, payload: dict, api_key: str, bearer: str | None = 
         return {"ok": False, "status": 0, "data": {"message": str(e)}}
 
 
+def _upsert_local_user(email: str, password: str, display_name: str = "", role: str = "Processor") -> dict:
+    """Keep the local cache aligned with whichever auth system succeeded."""
+    conn = _get_conn()
+    pw_hash = _hash_password(password)
+    row = conn.execute(
+        "SELECT id FROM users WHERE email = ?",
+        (email,),
+    ).fetchone()
+    if row:
+        conn.execute(
+            "UPDATE users SET password_hash = ?, display_name = ?, role = ? WHERE id = ?",
+            (pw_hash, display_name, role, row["id"]),
+        )
+        conn.commit()
+        user_id = str(row["id"])
+    else:
+        cur = conn.execute(
+            "INSERT INTO users (email, password_hash, display_name, role) VALUES (?, ?, ?, ?)",
+            (email, pw_hash, display_name, role),
+        )
+        conn.commit()
+        user_id = str(cur.lastrowid)
+    conn.close()
+    return {"user_id": user_id, "email": email, "display_name": display_name, "role": role}
+
+
 def _sync_user_to_supabase_auth(email: str, password: str, display_name: str, role: str) -> dict:
     """
     Create user in Supabase Auth so it appears in Authentication > Users.
@@ -152,6 +178,37 @@ def _sync_user_to_supabase_auth(email: str, password: str, display_name: str, ro
     return {"ok": False, "error": "No Supabase auth key configured (need service role or anon/publishable key)"}
 
 
+def _login_via_supabase_auth(email: str, password: str) -> dict:
+    """Attempt password login against Supabase Auth."""
+    public_key = _supabase_public_key()
+    if not _supabase_url() or not public_key:
+        return {"ok": False, "error": "Supabase public auth key not configured"}
+
+    r = _supabase_post(
+        "/auth/v1/token?grant_type=password",
+        {"email": email, "password": password},
+        public_key,
+        bearer=public_key,
+    )
+    if not r["ok"]:
+        return {
+            "ok": False,
+            "error": (r.get("data") or {}).get("message")
+            or (r.get("data") or {}).get("msg")
+            or "Invalid email or password",
+        }
+
+    user = (r["data"] or {}).get("user") or {}
+    meta = user.get("user_metadata") or {}
+    return {
+        "ok": True,
+        "email": user.get("email", email),
+        "display_name": meta.get("display_name") or "",
+        "role": meta.get("role") or "Processor",
+        "supabase_user_id": user.get("id"),
+    }
+
+
 # --- Auth ---
 
 def signup(email: str, password: str, display_name: str = "", role: str = "Processor") -> dict:
@@ -164,26 +221,17 @@ def signup(email: str, password: str, display_name: str = "", role: str = "Proce
             if not sb.get("ok"):
                 return {"error": f"Supabase auth error: {sb.get('error')}"}
 
-        conn = _get_conn()
+        local = _upsert_local_user(email, password, display_name, role)
         pw_hash = _hash_password(password)
-        conn.execute(
-            "INSERT INTO users (email, password_hash, display_name, role) VALUES (?, ?, ?, ?)",
-            (email, pw_hash, display_name, role),
-        )
-        conn.commit()
-        row = conn.execute(
-            "SELECT id FROM users WHERE email = ?", (email,)
-        ).fetchone()
-        conn.close()
         try:
             import supabase_sync
             supabase_sync.mirror_user({
-                "id": str(row["id"]), "email": email, "password_hash": pw_hash,
+                "id": local["user_id"], "email": email, "password_hash": pw_hash,
                 "display_name": display_name, "role": role,
             })
         except Exception:
             pass
-        return {"success": True, "user_id": str(row["id"]), "email": email,
+        return {"success": True, "user_id": local["user_id"], "email": email,
                 "display_name": display_name, "role": role}
     except sqlite3.IntegrityError:
         return {"error": "Email already registered"}
@@ -214,6 +262,22 @@ def login(email: str, password: str) -> dict:
                 "email": email,
                 "display_name": row["display_name"] or "",
                 "role": row["role"] or "Processor",
+            }
+        # Fall back to Supabase Auth and refresh the local cache from the canonical auth source.
+        sb = _login_via_supabase_auth(email, password)
+        if sb.get("ok"):
+            local = _upsert_local_user(
+                email=sb["email"],
+                password=password,
+                display_name=sb.get("display_name", ""),
+                role=sb.get("role", "Processor"),
+            )
+            return {
+                "success": True,
+                "user_id": local["user_id"],
+                "email": local["email"],
+                "display_name": local["display_name"],
+                "role": local["role"],
             }
         return {"error": "Invalid email or password"}
     except Exception as e:
