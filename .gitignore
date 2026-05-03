@@ -11,3 +11,7 @@ pipeline.json
 loan_docs/
 loan_activity/
 generated_docs/
+cloud_config.json
+cloud_log.txt
+streamlit_local.log
+streamlit_local.err.log

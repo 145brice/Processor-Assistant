@@ -5,6 +5,12 @@ Main Streamlit application.
 
 import os
 import streamlit as st
+from dotenv import load_dotenv
+
+# Load .env from app dir and parent workspace for local runs
+_APP_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(_APP_DIR, ".env"), override=False)
+load_dotenv(os.path.join(os.path.dirname(_APP_DIR), ".env"), override=False)
 
 # --- Page Config ---
 st.set_page_config(
@@ -7053,7 +7059,7 @@ def show_ollama_page():
             elif sb_status["configured"]:
                 st.error("⚠ Config error")
             else:
-                st.info("○ Not configured (set SUPABASE_URL + SUPABASE_KEY env vars)")
+                st.info("○ Not configured (set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY env vars)")
         with sc2:
             st.metric("Calls (last hour)", f"{sb_status['calls_last_hour']} / {sb_status['hourly_cap']}")
         with sc3:

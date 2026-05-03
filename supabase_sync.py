@@ -16,10 +16,20 @@ import threading
 import hashlib
 from datetime import datetime, timezone
 from typing import Any
+from dotenv import load_dotenv
+
+# Load .env from both app dir and parent workspace (local dev convenience)
+_THIS_DIR = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(_THIS_DIR, ".env"), override=False)
+load_dotenv(os.path.join(os.path.dirname(_THIS_DIR), ".env"), override=False)
 
 # ─────────────────────────── Config ───────────────────────────
 SUPABASE_URL = os.environ.get("SUPABASE_URL", "").strip()
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "").strip()
+SUPABASE_KEY = (
+    os.environ.get("SUPABASE_SERVICE_ROLE_KEY", "").strip()
+    or os.environ.get("SUPABASE_KEY", "").strip()
+    or os.environ.get("SUPABASE_SECRET_KEY", "").strip()
+)
 
 _FLUSH_INTERVAL_SEC = 60
 _MAX_BATCH_SIZE = 50
@@ -99,16 +109,29 @@ def mirror_loan(loan: dict):
         "id": loan["id"],
         "loan_num": redacted.get("loan_num"),
         "borrower": redacted.get("borrower"),
-        "property_address": redacted.get("property_address"),
         "status": redacted.get("status"),
+        "due_date": _to_str(redacted.get("due_date")),
+        "closing_date": _to_str(redacted.get("closing_date") or redacted.get("due_date")),
+        "lock_expiry": _to_str(redacted.get("lock_expiry")),
+        "commitment_date": _to_str(redacted.get("commitment_date")),
+        "missing_docs": _to_str(redacted.get("missing_docs")),
+        "folder_path": _to_str(redacted.get("folder_path")),
+        "created_by": _to_str(redacted.get("created_by")),
+        "assigned_to": _to_str(redacted.get("assigned_to")),
         "lender": redacted.get("lender"),
         "loan_amount": _to_str(redacted.get("loan_amount")),
         "purchase_price": _to_str(redacted.get("purchase_price")),
         "loan_type": redacted.get("loan_type"),
-        "closing_date": redacted.get("closing_date"),
         "loan_officer": redacted.get("loan_officer"),
         "loan_processor": redacted.get("loan_processor"),
+        "property_address": _to_str(redacted.get("property_address")),
+        "notes": _to_str(redacted.get("notes")),
+        "created": _to_str(redacted.get("created")),
+        "updated": _to_str(redacted.get("updated")),
         "contacts_json": json.dumps(_redact(loan.get("contacts", {}) or {})),
+        "conditions_json": json.dumps(_redact(loan.get("conditions", []) or [])),
+        "documents_json": json.dumps(_redact(loan.get("documents", []) or [])),
+        "raw_json": json.dumps(redacted),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     _enqueue("loans", record["id"], record)
@@ -190,23 +213,62 @@ def restore_from_cloud() -> dict:
         # Reconstruct minimal loan structure from cloud rows
         local_loans = []
         for row in loans:
-            loan = {
+            raw_json = row.get("raw_json")
+            if isinstance(raw_json, str):
+                try:
+                    raw_json = json.loads(raw_json)
+                except Exception:
+                    raw_json = None
+            loan = (raw_json if isinstance(raw_json, dict) else {}) or {
                 "id": row.get("id"),
                 "loan_num": row.get("loan_num"),
                 "borrower": row.get("borrower"),
-                "property_address": row.get("property_address"),
                 "status": row.get("status"),
+                "due_date": row.get("due_date"),
+                "closing_date": row.get("closing_date"),
+                "lock_expiry": row.get("lock_expiry"),
+                "commitment_date": row.get("commitment_date"),
+                "missing_docs": row.get("missing_docs"),
+                "folder_path": row.get("folder_path"),
+                "created_by": row.get("created_by"),
+                "assigned_to": row.get("assigned_to"),
                 "lender": row.get("lender"),
                 "loan_amount": row.get("loan_amount"),
                 "purchase_price": row.get("purchase_price"),
                 "loan_type": row.get("loan_type"),
-                "closing_date": row.get("closing_date"),
                 "loan_officer": row.get("loan_officer"),
                 "loan_processor": row.get("loan_processor"),
-                "contacts": json.loads(row.get("contacts_json") or "{}"),
-                "documents": [],  # Documents never sync — local-only
+                "property_address": row.get("property_address"),
+                "notes": row.get("notes"),
+                "created": row.get("created"),
+                "updated": row.get("updated"),
+                "contacts": {},
                 "conditions": [],
+                "documents": [],
             }
+            _contacts = row.get("contacts_json")
+            if isinstance(_contacts, str):
+                try:
+                    _contacts = json.loads(_contacts)
+                except Exception:
+                    _contacts = {}
+            loan["contacts"] = _contacts if isinstance(_contacts, dict) else {}
+
+            _conds = row.get("conditions_json")
+            if isinstance(_conds, str):
+                try:
+                    _conds = json.loads(_conds)
+                except Exception:
+                    _conds = []
+            loan["conditions"] = _conds if isinstance(_conds, list) else []
+
+            _docs = row.get("documents_json")
+            if isinstance(_docs, str):
+                try:
+                    _docs = json.loads(_docs)
+                except Exception:
+                    _docs = []
+            loan["documents"] = _docs if isinstance(_docs, list) else []
             local_loans.append(loan)
 
         pipeline_path = os.path.join(os.path.dirname(__file__), "pipeline.json")
