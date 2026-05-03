@@ -26,29 +26,30 @@ st.markdown(r"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 :root {
-    --bg-page: #111111; --bg-white: #1a1a1a; --bg-subtle: #242424;
-    --accent: #39FF14; --accent-dark: #32d410; --accent-light: rgba(57, 255, 20, 0.1);
-    --green: #39FF14; --green-bg: rgba(57, 255, 20, 0.1); --green-border: rgba(57, 255, 20, 0.3);
-    --red: #ef4444; --red-bg: rgba(239, 68, 68, 0.1); --red-border: rgba(239, 68, 68, 0.3);
-    --amber: #f59e0b; --amber-bg: rgba(245, 158, 11, 0.1); --amber-border: rgba(245, 158, 11, 0.3);
-    --purple: #a78bfa; --purple-bg: rgba(167, 139, 250, 0.1); --purple-border: rgba(167, 139, 250, 0.3);
-    --pink: #f472b6; --pink-bg: rgba(244, 114, 182, 0.1); --pink-border: rgba(244, 114, 182, 0.3);
-    --gold: #fbbf24; --gold-bg: rgba(251, 191, 36, 0.1);
-    --slate-900: #ffffff; --slate-700: #e5e7eb; --slate-600: #9ca3af;
-    --slate-500: #6b7280; --slate-400: #6b7280; --slate-300: #374151;
-    --slate-200: rgba(255, 255, 255, 0.05); --slate-100: rgba(255, 255, 255, 0.03);
-    --radius-sm: 6px; --radius-md: 12px;
-    --shadow-card: 0 1px 3px rgba(0,0,0,0.3);
-    --shadow-hover: 0 4px 12px rgba(0,0,0,0.4);
+    /* Tax-Delinquencies design system: navy/blue, flat, BI-tool aesthetic */
+    --bg-page: #0f1117; --bg-white: #1a1f2e; --bg-subtle: #161b2b;
+    --accent: #2563eb; --accent-dark: #1d4ed8; --accent-light: rgba(59, 130, 246, 0.1);
+    --green: #16a34a; --green-bg: #14532d; --green-border: rgba(34, 197, 94, 0.4);
+    --red: #ef4444; --red-bg: #7f1d1d; --red-border: rgba(239, 68, 68, 0.4);
+    --amber: #fcd34d; --amber-bg: #78350f; --amber-border: rgba(245, 158, 11, 0.4);
+    --purple: #c7d2fe; --purple-bg: #1e1b4b; --purple-border: rgba(99, 102, 241, 0.4);
+    --pink: #fed7aa; --pink-bg: #7c2d12; --pink-border: rgba(234, 88, 12, 0.4);
+    --gold: #fcd34d; --gold-bg: rgba(251, 191, 36, 0.1);
+    --slate-900: #ffffff; --slate-700: #e0e0e0; --slate-600: #94a3b8;
+    --slate-500: #64748b; --slate-400: #64748b; --slate-300: #334155;
+    --slate-200: #1e293b; --slate-100: #161b2b;
+    --radius-sm: 6px; --radius-md: 10px;
+    --shadow-card: none;
+    --shadow-hover: 0 2px 6px rgba(0,0,0,0.3);
     --shadow-lg: 0 10px 30px rgba(0,0,0,0.5);
-    --neon-glow: 0 0 20px rgba(57, 255, 20, 0.15), 0 0 60px rgba(57, 255, 20, 0.05);
-    --neon-glow-lg: 0 0 30px rgba(57, 255, 20, 0.25), 0 0 80px rgba(57, 255, 20, 0.1);
+    --neon-glow: none;
+    --neon-glow-lg: none;
 }
-html, body, [class*="css"] { font-family: 'Inter', sans-serif !important; }
-.stApp { background: linear-gradient(160deg, #1a1a1a 0%, #111111 60%, #161616 100%) !important; }
+html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !important; }
+.stApp { background: #0f1117 !important; }
 .stApp::before {
     content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-    background-image: radial-gradient(circle, rgba(57, 255, 20, 0.03) 1px, transparent 1px);
+    background-image: radial-gradient(circle, rgba(59, 130, 246, 0.03) 1px, transparent 1px);
     background-size: 32px 32px; pointer-events: none; z-index: 0;
 }
 [data-testid="stAppViewContainer"] > div:first-child { background: transparent !important; }
@@ -96,13 +97,13 @@ header[data-testid="stHeader"], [data-testid="stHeader"], .stAppHeader {
     width: 36px !important;
     height: 36px !important;
     border-radius: 8px !important;
-    background: #39FF14 !important;
+    background: #3b82f6 !important;
     color: #000 !important;
     border: 2px solid #000 !important;
     font-size: 18px !important;
     font-weight: 900 !important;
     cursor: pointer !important;
-    box-shadow: 0 0 14px rgba(57,255,20,0.7), 0 2px 6px rgba(0,0,0,0.4) !important;
+    box-shadow: 0 0 14px rgba(59,130,246,0.7), 0 2px 6px rgba(0,0,0,0.4) !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -229,11 +230,11 @@ body.pa-sidebar-hidden [data-testid="stSidebar"] {
 [data-testid="stSidebar"] .block-container { padding-top: 0.75rem !important; }
 [data-testid="stSidebar"] button, [data-testid="stSidebar"] button[kind], [data-testid="stSidebar"] [data-testid*="baseButton"] { background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; border-radius: var(--radius-sm) !important; font-size: 13px !important; font-weight: 500 !important; text-align: left !important; padding: 8px 12px !important; margin-bottom: 3px !important; width: 100% !important; box-shadow: none !important; transition: all 0.2s ease !important; height: auto !important; min-height: 36px !important; opacity: 1 !important; display: block !important; visibility: visible !important; }
 [data-testid="stSidebar"] button p, [data-testid="stSidebar"] button span, [data-testid="stSidebar"] button div { background: transparent !important; color: #c0c0c0 !important; }
-[data-testid="stSidebar"] button[kind="primary"] { background: rgba(57,255,20,0.08) !important; border: 1px solid var(--accent) !important; color: var(--accent) !important; font-weight: 600 !important; box-shadow: 0 0 8px rgba(57,255,20,0.18) !important; }
+[data-testid="stSidebar"] button[kind="primary"] { background: rgba(59,130,246,0.08) !important; border: 1px solid var(--accent) !important; color: var(--accent) !important; font-weight: 600 !important; box-shadow: 0 0 8px rgba(59,130,246,0.18) !important; }
 [data-testid="stSidebar"] button[kind="primary"] p, [data-testid="stSidebar"] button[kind="primary"] span, [data-testid="stSidebar"] button[kind="primary"] div { color: var(--accent) !important; font-weight: 600 !important; background: transparent !important; }
-[data-testid="stSidebar"] button[kind="primary"]:hover { background: rgba(57,255,20,0.14) !important; border-color: var(--accent) !important; color: var(--accent) !important; box-shadow: 0 0 14px rgba(57,255,20,0.35) !important; }
-[data-testid="stSidebar"] button[kind="primary"]:focus, [data-testid="stSidebar"] button[kind="primary"]:active { background: rgba(57,255,20,0.08) !important; color: var(--accent) !important; border-color: var(--accent) !important; }
-[data-testid="stSidebar"] button:hover { background: rgba(57,255,20,0.12) !important; border-color: rgba(57,255,20,0.35) !important; color: var(--accent) !important; outline: none !important; box-shadow: none !important; }
+[data-testid="stSidebar"] button[kind="primary"]:hover { background: rgba(59,130,246,0.14) !important; border-color: var(--accent) !important; color: var(--accent) !important; box-shadow: 0 0 14px rgba(59,130,246,0.35) !important; }
+[data-testid="stSidebar"] button[kind="primary"]:focus, [data-testid="stSidebar"] button[kind="primary"]:active { background: rgba(59,130,246,0.08) !important; color: var(--accent) !important; border-color: var(--accent) !important; }
+[data-testid="stSidebar"] button:hover { background: rgba(59,130,246,0.12) !important; border-color: rgba(59,130,246,0.35) !important; color: var(--accent) !important; outline: none !important; box-shadow: none !important; }
 [data-testid="stSidebar"] button:focus, [data-testid="stSidebar"] button:focus-visible, [data-testid="stSidebar"] button:active, [data-testid="stSidebar"] button[data-focused="true"] { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; outline: none !important; box-shadow: none !important; }
 [data-testid="stSidebar"] button:focus p, [data-testid="stSidebar"] button:focus-visible p, [data-testid="stSidebar"] button:active p { color: #c0c0c0 !important; background: transparent !important; }
 button { text-align: left !important; justify-content: flex-start !important; }
@@ -242,26 +243,26 @@ button p { text-align: left !important; width: 100% !important; }
 button > div { justify-content: flex-start !important; text-align: left !important; }
 .block-container { padding: 1.5rem 2rem 3rem 2rem !important; max-width: 1200px !important; }
 h1 { font-size: 24px !important; font-weight: 800 !important; color: var(--slate-900) !important; }
-h2, [data-testid="stMarkdownContainer"] h2, .main h2, .block-container h2 { font-size: 42px !important; font-weight: 800 !important; color: var(--accent) !important; padding: 8px 0 8px 14px !important; border-left: 4px solid var(--accent) !important; text-shadow: 0 0 16px rgba(57,255,20,0.5) !important; margin-bottom: 14px !important; line-height: 1.2 !important; }
+h2, [data-testid="stMarkdownContainer"] h2, .main h2, .block-container h2 { font-size: 42px !important; font-weight: 800 !important; color: var(--accent) !important; padding: 8px 0 8px 14px !important; border-left: 4px solid var(--accent) !important; text-shadow: 0 0 16px rgba(59,130,246,0.5) !important; margin-bottom: 14px !important; line-height: 1.2 !important; }
 h2 span, [data-testid="stMarkdownContainer"] h2 span { font-size: inherit !important; color: var(--accent) !important; font-weight: inherit !important; }
 h3 { font-size: 15px !important; font-weight: 600 !important; color: var(--slate-700) !important; }
 p, li { color: var(--slate-600) !important; font-size: 13px !important; }
 label { color: var(--slate-700) !important; font-size: 13px !important; font-weight: 500 !important; }
 [data-testid="stMarkdownContainer"] p, [data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span { color: var(--slate-600) !important; font-size: 13px !important; }
 [data-testid="stMarkdownContainer"] strong { color: var(--slate-900) !important; font-weight: 600 !important; }
-button[kind="primary"] { background: rgba(57,255,20,0.08) !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; border-radius: var(--radius-sm) !important; font-weight: 700 !important; font-size: 13px !important; height: 36px !important; box-shadow: 0 0 10px rgba(57, 255, 20, 0.18) !important; transition: all 0.25s ease !important; }
-button[kind="primary"]:hover { background: rgba(57,255,20,0.15) !important; color: var(--accent) !important; border-color: var(--accent) !important; box-shadow: 0 0 18px rgba(57, 255, 20, 0.4) !important; transform: translateY(-1px) !important; }
+button[kind="primary"] { background: rgba(59,130,246,0.08) !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; border-radius: var(--radius-sm) !important; font-weight: 700 !important; font-size: 13px !important; height: 36px !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.18) !important; transition: all 0.25s ease !important; }
+button[kind="primary"]:hover { background: rgba(59,130,246,0.15) !important; color: var(--accent) !important; border-color: var(--accent) !important; box-shadow: 0 0 18px rgba(59, 130, 246, 0.4) !important; transform: translateY(-1px) !important; }
 button[kind="primary"] p { color: var(--accent) !important; font-weight: 700 !important; }
 button[kind="secondary"] { background: linear-gradient(135deg, #2a2a2a 0%, #222222 100%) !important; color: #c0c0c0 !important; border: 1px solid rgba(255,255,255,0.15) !important; border-radius: var(--radius-sm) !important; font-weight: 500 !important; font-size: 12px !important; height: 34px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important; }
 button[kind="secondary"]:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: var(--accent-light) !important; box-shadow: var(--neon-glow) !important; }
 button[kind="secondary"] p { color: var(--slate-600) !important; }
 button[kind="secondary"]:hover p { color: var(--accent) !important; }
 [data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea, [data-testid="stSelectbox"] > div > div, [data-testid="stNumberInput"] input { background: var(--bg-subtle) !important; border: 1px solid var(--slate-300) !important; border-radius: var(--radius-sm) !important; color: var(--slate-900) !important; font-size: 13px !important; }
-[data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(57, 255, 20, 0.1) !important; }
-[data-testid="stFileUploader"] { background: rgba(255,255,255,0.02) !important; border: 1.5px dashed rgba(57,255,20,0.3) !important; border-radius: 14px !important; padding: 8px !important; transition: all 0.18s ease-in-out !important; }
-[data-testid="stFileUploader"]:hover { border-color: rgba(57,255,20,0.6) !important; background: rgba(57,255,20,0.04) !important; box-shadow: 0 0 24px rgba(57,255,20,0.12) !important; }
+[data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important; }
+[data-testid="stFileUploader"] { background: rgba(255,255,255,0.02) !important; border: 1.5px dashed rgba(59,130,246,0.3) !important; border-radius: 14px !important; padding: 8px !important; transition: all 0.18s ease-in-out !important; }
+[data-testid="stFileUploader"]:hover { border-color: rgba(59,130,246,0.6) !important; background: rgba(59,130,246,0.04) !important; box-shadow: 0 0 24px rgba(59,130,246,0.12) !important; }
 [data-testid="stFileUploader"] section { background: transparent !important; }
-[data-testid="stFileUploader"] button { background: rgba(57,255,20,0.08) !important; border: 1px solid rgba(57,255,20,0.3) !important; color: #39FF14 !important; }
+[data-testid="stFileUploader"] button { background: rgba(59,130,246,0.08) !important; border: 1px solid rgba(59,130,246,0.3) !important; color: #3b82f6 !important; }
 [data-testid="stFileUploader"] small, [data-testid="stFileUploader"] span, [data-testid="stFileUploader"] p { color: #6b7280 !important; }
 [data-testid="stFileUploaderFile"] { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
 [data-testid="stFileUploaderFile"] span, [data-testid="stFileUploaderFile"] p { color: #9ca3af !important; }
@@ -283,7 +284,7 @@ hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
 [data-testid="stVerticalBlockBorderWrapper"]:hover { border-color: rgba(255,255,255,0.2) !important; box-shadow: none !important; transform: none !important; }
 [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] { background: transparent !important; border: none !important; box-shadow: none !important; }
 [data-testid="stSidebar"] button > div, [data-testid="stSidebar"] button > div > div, [data-testid="stSidebar"] [data-testid="baseButton-secondary"] { background: transparent !important; }
-[data-testid="stSidebar"] [data-testid="baseButton-secondary"]:hover { background: rgba(57,255,20,0.12) !important; }
+[data-testid="stSidebar"] [data-testid="baseButton-secondary"]:hover { background: rgba(59,130,246,0.12) !important; }
 [data-baseweb="popover"] ul, [data-baseweb="menu"] { background: var(--bg-white) !important; border: 1px solid var(--slate-300) !important; box-shadow: var(--shadow-hover) !important; }
 [data-baseweb="popover"] li, [data-baseweb="menu"] li { background: var(--bg-white) !important; color: var(--slate-900) !important; }
 [data-baseweb="popover"] li:hover, [data-baseweb="menu"] li:hover { background: var(--accent-light) !important; color: var(--accent) !important; }
@@ -302,7 +303,7 @@ hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
 .progress-nav { display: flex; gap: 3px; background: var(--bg-subtle); border-radius: var(--radius-md); padding: 4px; margin-bottom: 14px; border: 1px solid var(--slate-200); box-shadow: var(--shadow-card); }
 .pn-step { flex: 1; min-width: 70px; text-align: center; padding: 6px; border-radius: var(--radius-sm); font-size: 10px; font-weight: 500; text-decoration: none; color: var(--slate-500); }
 .pn-step.done { background: var(--green-bg); color: var(--green); border: 1px solid var(--green-border); font-weight: 600 !important; }
-.pn-step.active { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent); font-weight: 600 !important; box-shadow: 0 0 10px rgba(57, 255, 20, 0.15); }
+.pn-step.active { background: var(--accent-light); color: var(--accent); border: 1px solid var(--accent); font-weight: 600 !important; box-shadow: 0 0 10px rgba(59, 130, 246, 0.15); }
 .pn-step.pending { background: transparent; color: var(--slate-500); }
 .pn-num { display: block; font-size: 12px; font-weight: 600; margin-bottom: 1px; }
 .badge { display: inline-block; padding: 2px 10px; border-radius: 9999px; font-size: 11px; font-weight: 600; }
@@ -331,12 +332,12 @@ hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
 .stat-card:hover { border-color: var(--accent) !important; box-shadow: var(--neon-glow) !important; transform: translateY(-2px) !important; }
 .stat-num { font-size: 20px; font-weight: 700; color: var(--accent); }
 .stat-label { font-size: 10px; color: var(--slate-500); font-weight: 600; text-transform: uppercase; letter-spacing: 0.4px; }
-.login-card { max-width: 360px; margin: 0 auto; background: var(--bg-white); border: 1px solid var(--slate-200); border-radius: 16px; padding: 36px 32px 28px; box-shadow: 0 0 30px rgba(57, 255, 20, 0.1), 0 4px 24px rgba(0,0,0,0.4); }
+.login-card { max-width: 360px; margin: 0 auto; background: var(--bg-white); border: 1px solid var(--slate-200); border-radius: 16px; padding: 36px 32px 28px; box-shadow: 0 0 30px rgba(59, 130, 246, 0.1), 0 4px 24px rgba(0,0,0,0.4); }
 .login-title { font-size: 22px; font-weight: 800; color: var(--slate-900); text-align: center; letter-spacing: -0.4px; }
 .login-sub { font-size: 12px; color: var(--slate-500); text-align: center; margin-bottom: 20px; }
 .login-page-wrap { max-width: 360px; margin: 0 auto; padding: 0 0 40px 0; }
-.login-sandbox-btn button { background: rgba(57,255,20,0.08) !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; font-weight: 700 !important; font-size: 13px !important; border-radius: 12px !important; height: 44px !important; min-height: 44px !important; box-shadow: 0 0 14px rgba(57, 255, 20, 0.25) !important; transition: all 0.25s ease !important; }
-.login-sandbox-btn button:hover { box-shadow: 0 0 30px rgba(57, 255, 20, 0.4) !important; transform: translateY(-2px) !important; }
+.login-sandbox-btn button { background: rgba(59,130,246,0.08) !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; font-weight: 700 !important; font-size: 13px !important; border-radius: 12px !important; height: 44px !important; min-height: 44px !important; box-shadow: 0 0 14px rgba(59, 130, 246, 0.25) !important; transition: all 0.25s ease !important; }
+.login-sandbox-btn button:hover { box-shadow: 0 0 30px rgba(59, 130, 246, 0.4) !important; transform: translateY(-2px) !important; }
 .login-sandbox-btn button p { color: #000 !important; font-weight: 700 !important; }
 .login-divider { display:flex;align-items:center;gap:10px;margin:18px 0 14px; }
 .login-divider span { font-size:11px;color:var(--slate-500);white-space:nowrap; }
@@ -348,7 +349,7 @@ div[data-baseweb="popover"], ul[data-testid="stSelectboxVirtualDropdown"] { back
 div[data-baseweb="popover"] li, ul[data-testid="stSelectboxVirtualDropdown"] li { color: var(--slate-900) !important; }
 div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown"] li:hover { background: var(--accent-light) !important; }
 [data-testid="stCaptionContainer"] p { color: var(--slate-500) !important; }
-.glow-text { text-shadow: 0 0 40px rgba(57, 255, 20, 0.3); }
+.glow-text { text-shadow: 0 0 40px rgba(59, 130, 246, 0.3); }
 /* Pipeline: flat compact cards */
 .pipeline-scroll button { height: 22px !important; min-height: 22px !important; font-size: 11px !important; font-weight: 600 !important; padding: 0 6px !important; border-radius: 3px !important; background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #e5e7eb !important; box-shadow: none !important; transform: none !important; }
 .pipeline-scroll button:hover { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.25) !important; color: #ffffff !important; transform: none !important; box-shadow: none !important; }
@@ -382,8 +383,8 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     transition: all 0.2s ease !important;
 }
 .pa-myloans-toggle + div [data-testid="stCheckbox"]:hover {
-    border-color: rgba(57,255,20,0.4) !important;
-    background: rgba(57,255,20,0.05) !important;
+    border-color: rgba(59,130,246,0.4) !important;
+    background: rgba(59,130,246,0.05) !important;
 }
 .pa-myloans-toggle + div [data-testid="stCheckbox"] label {
     font-size: 13px !important;
@@ -392,7 +393,7 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 }
 /* Primary (Open) button inside pipeline — neon-green, more prominent */
 .pipeline-scroll button[kind="primary"], button[kind="primary"][data-testid*="open_"] {
-    background: rgba(57,255,20,0.08) !important;
+    background: rgba(59,130,246,0.08) !important;
     border: 1px solid var(--accent) !important;
     color: var(--accent) !important;
     font-weight: 800 !important;
@@ -400,18 +401,18 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     height: 24px !important;
     min-height: 24px !important;
     letter-spacing: 0.3px !important;
-    box-shadow: 0 0 8px rgba(57,255,20,0.15) !important;
+    box-shadow: 0 0 8px rgba(59,130,246,0.15) !important;
 }
 .pipeline-scroll button[kind="primary"]:hover, button[kind="primary"][data-testid*="open_"]:hover {
-    background: rgba(57,255,20,0.16) !important;
-    box-shadow: 0 0 14px rgba(57,255,20,0.4) !important;
+    background: rgba(59,130,246,0.16) !important;
+    box-shadow: 0 0 14px rgba(59,130,246,0.4) !important;
     color: var(--accent) !important;
 }
 .pipeline-scroll button[kind="primary"] p { color: var(--accent) !important; font-weight: 800 !important; font-size: 11px !important; margin: 0 !important; line-height: 1 !important; }
 /* Hoverable contact chip tooltip */
 .pa-tip { position: relative; cursor: help; display: inline-block; }
 .pa-tip-box { visibility: hidden; opacity: 0; position: absolute; bottom: 125%; left: 0; z-index: 9999;
-    background: #1a1a1a; border: 1px solid rgba(57,255,20,0.35); border-radius: 8px;
+    background: #1a1a1a; border: 1px solid rgba(59,130,246,0.35); border-radius: 8px;
     padding: 8px 10px; min-width: 200px; max-width: 320px;
     box-shadow: 0 6px 24px rgba(0,0,0,0.6); transition: opacity 0.12s ease-in-out;
     white-space: normal; pointer-events: none; }
@@ -420,14 +421,14 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .scan-scroll button { height: 26px !important; min-height: 26px !important; font-size: 11px !important; font-weight: 600 !important; padding: 0 7px !important; border-radius: 3px !important; background: rgba(255,255,255,0.05) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #e5e7eb !important; box-shadow: none !important; transform: none !important; }
 .scan-scroll button:hover { background: rgba(255,255,255,0.1) !important; border-color: rgba(255,255,255,0.25) !important; color: #ffffff !important; }
 .scan-scroll button p { color: inherit !important; font-size: 11px !important; font-weight: 600 !important; margin: 0 !important; }
-.scan-scroll [data-testid="stCheckbox"] label { font-size: 11px !important; font-weight: 700 !important; color: #39FF14 !important; }
+.scan-scroll [data-testid="stCheckbox"] label { font-size: 11px !important; font-weight: 700 !important; color: #3b82f6 !important; }
 .scan-scroll [data-testid="stCheckbox"] { padding-top: 2px !important; }
 .scan-scroll [data-baseweb="select"] > div { min-height: 26px !important; height: 26px !important; font-size: 11px !important; }
 .scan-scroll [data-baseweb="select"] * { font-size: 11px !important; }
 .scan-scroll div[data-testid="stVerticalBlock"] { gap: 2px !important; }
 .scan-scroll div[data-testid="stHorizontalBlock"] { gap: 4px !important; align-items: center !important; }
 .scan-scroll .cond-row { display:flex; align-items:center; gap:6px; padding:3px 0; border-bottom:1px dashed rgba(255,255,255,0.06); }
-.scan-scroll .cond-num { color:#39FF14; font-weight:800; font-size:11px; min-width:22px; }
+.scan-scroll .cond-num { color:#3b82f6; font-weight:800; font-size:11px; min-width:22px; }
 .scan-scroll .cond-desc { color:#e5e7eb; font-size:12px; line-height:1.35; flex:1; }
 .scan-scroll .pa-section { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.6px; margin:6px 0 2px 0; }
 /* Sidebar section collapse toggle buttons — green label style */
@@ -436,9 +437,9 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 [data-testid="stSidebar"] .pa-sec-btn button {
     background: transparent !important;
     border: none !important;
-    border-bottom: 1px solid rgba(57,255,20,0.2) !important;
+    border-bottom: 1px solid rgba(59,130,246,0.2) !important;
     border-radius: 0 !important;
-    color: #39FF14 !important;
+    color: #3b82f6 !important;
     font-size: 11px !important;
     font-weight: 700 !important;
     letter-spacing: 1px !important;
@@ -450,10 +451,480 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 }
 [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(hr) + [data-testid="stElementContainer"] button p,
 [data-testid="stSidebar"] .pa-sec-btn button p {
-    color: #39FF14 !important;
+    color: #3b82f6 !important;
     font-size: 11px !important;
     font-weight: 700 !important;
 }
+
+/* ════════════════════════════════════════════════════════════════════
+   TAX-DELINQUENCIES THEME OVERRIDES
+   Overrides any leftover neon-green hardcoded references.
+   ════════════════════════════════════════════════════════════════════ */
+
+/* Background grid pattern: remove neon dot pattern */
+.stApp::before { display: none !important; }
+
+/* Page-level dark navy */
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"] {
+    background: #0f1117 !important;
+}
+
+/* Sidebar navy */
+[data-testid="stSidebar"] {
+    background: #161b2b !important;
+    border-right: 1px solid #1e293b !important;
+}
+
+/* H1 / branding */
+[data-testid="stSidebar"] [style*="font-size:18px"][style*="font-weight:800"] {
+    color: #ffffff !important;
+}
+
+/* H2: replace neon green hero with subdued white + blue accent bar */
+h2, [data-testid="stMarkdownContainer"] h2, .main h2, .block-container h2 {
+    color: #ffffff !important;
+    border-left: 3px solid #2563eb !important;
+    text-shadow: none !important;
+    font-size: 18px !important;
+    font-weight: 600 !important;
+    padding: 4px 0 4px 12px !important;
+    letter-spacing: 0.3px !important;
+}
+h2 span, [data-testid="stMarkdownContainer"] h2 span {
+    color: #ffffff !important;
+}
+
+/* H1 */
+h1 {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.5px !important;
+}
+
+/* H3 / smaller headings */
+h3, h4, h5 { color: #e0e0e0 !important; }
+
+/* Body text */
+p, li, label, [data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li, [data-testid="stMarkdownContainer"] span {
+    color: #e0e0e0 !important;
+}
+[data-testid="stMarkdownContainer"] strong { color: #ffffff !important; }
+
+/* Labels uppercase */
+label, .stSelectbox label, .stTextInput label, .stTextArea label,
+.stNumberInput label, .stDateInput label {
+    font-size: 11px !important;
+    color: #94a3b8 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.6px !important;
+    font-weight: 600 !important;
+}
+
+/* Cards & containers */
+[data-testid="stVerticalBlockBorderWrapper"],
+div[data-testid="stExpander"],
+div[data-testid="stForm"] {
+    background: #1a1f2e !important;
+    border: 1px solid #334155 !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+}
+[data-testid="stVerticalBlockBorderWrapper"]:hover,
+div[data-testid="stExpander"]:hover {
+    border-color: #475569 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+
+/* Sidebar internals stay flat */
+[data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
+    background: transparent !important;
+    border: none !important;
+}
+
+/* Primary buttons → blue */
+button[kind="primary"], .stButton > button[kind="primary"] {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 600 !important;
+    font-size: 13px !important;
+    box-shadow: none !important;
+    transition: opacity 0.15s !important;
+}
+button[kind="primary"]:hover {
+    opacity: 0.85 !important;
+    background: #2563eb !important;
+    color: #ffffff !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+button[kind="primary"] p, button[kind="primary"] span {
+    color: #ffffff !important;
+    font-weight: 600 !important;
+}
+
+/* Secondary buttons → slate */
+button[kind="secondary"], .stButton > button[kind="secondary"] {
+    background: #334155 !important;
+    color: #e0e0e0 !important;
+    border: none !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    box-shadow: none !important;
+}
+button[kind="secondary"]:hover {
+    background: #475569 !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+button[kind="secondary"] p { color: #e0e0e0 !important; }
+button[kind="secondary"]:hover p { color: #ffffff !important; }
+
+/* Sidebar nav buttons */
+[data-testid="stSidebar"] button {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid #1e293b !important;
+    color: #cbd5e1 !important;
+    border-radius: 6px !important;
+    font-weight: 500 !important;
+    font-size: 13px !important;
+    box-shadow: none !important;
+}
+[data-testid="stSidebar"] button:hover {
+    background: rgba(59,130,246,0.1) !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+[data-testid="stSidebar"] button[kind="primary"] {
+    background: #2563eb !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+[data-testid="stSidebar"] button[kind="primary"] p,
+[data-testid="stSidebar"] button[kind="primary"] span {
+    color: #ffffff !important;
+}
+[data-testid="stSidebar"] button p,
+[data-testid="stSidebar"] button span,
+[data-testid="stSidebar"] button div {
+    color: #cbd5e1 !important;
+}
+[data-testid="stSidebar"] button:hover p,
+[data-testid="stSidebar"] button:hover span {
+    color: #ffffff !important;
+}
+
+/* Inputs */
+[data-testid="stTextInput"] input,
+[data-testid="stTextArea"] textarea,
+[data-testid="stSelectbox"] > div > div,
+[data-testid="stNumberInput"] input,
+[data-testid="stDateInput"] input {
+    background: #0f1117 !important;
+    border: 1px solid #334155 !important;
+    border-radius: 6px !important;
+    color: #e0e0e0 !important;
+    font-size: 13px !important;
+}
+[data-testid="stTextInput"] input:focus,
+[data-testid="stTextArea"] textarea:focus {
+    border-color: #3b82f6 !important;
+    box-shadow: none !important;
+}
+
+/* File uploader */
+[data-testid="stFileUploader"] {
+    background: #161b2b !important;
+    border: 1px dashed #334155 !important;
+    border-radius: 10px !important;
+}
+[data-testid="stFileUploader"]:hover {
+    border-color: #3b82f6 !important;
+    background: rgba(59,130,246,0.04) !important;
+    box-shadow: none !important;
+}
+[data-testid="stFileUploader"] button {
+    background: #2563eb !important;
+    border: none !important;
+    color: #ffffff !important;
+}
+
+/* Alerts */
+[data-testid="stAlert"] {
+    border-radius: 6px !important;
+    border: none !important;
+    font-weight: 500 !important;
+}
+[data-testid="stAlert"][data-type="info"], .stAlert[kind="info"] {
+    background: #1e3a8a !important; color: #93c5fd !important; border: none !important;
+}
+[data-testid="stAlert"][data-type="success"], .stAlert[kind="success"] {
+    background: #14532d !important; color: #86efac !important; border: none !important;
+}
+[data-testid="stAlert"][data-type="warning"], .stAlert[kind="warning"] {
+    background: #78350f !important; color: #fcd34d !important; border: none !important;
+}
+[data-testid="stAlert"][data-type="error"], .stAlert[kind="error"] {
+    background: #7f1d1d !important; color: #fca5a5 !important; border: none !important;
+}
+
+/* Tabs */
+[data-testid="stTabs"] [data-baseweb="tab-list"] {
+    border-bottom: 1px solid #1e293b !important;
+}
+[data-testid="stTabs"] [role="tab"] {
+    color: #94a3b8 !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+}
+[data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+    color: #3b82f6 !important;
+    border-bottom: 2px solid #2563eb !important;
+    font-weight: 600 !important;
+}
+
+/* Expander */
+[data-testid="stExpander"] summary {
+    color: #e0e0e0 !important;
+    font-weight: 600 !important;
+}
+[data-testid="stExpander"] summary:hover {
+    color: #3b82f6 !important;
+    background: rgba(59,130,246,0.05) !important;
+}
+
+/* Tables */
+[data-testid="stMarkdownContainer"] table {
+    background: #1a1f2e !important;
+    border: 1px solid #334155 !important;
+    box-shadow: none !important;
+}
+[data-testid="stMarkdownContainer"] thead tr { background: #161b2b !important; }
+[data-testid="stMarkdownContainer"] th {
+    color: #94a3b8 !important;
+    font-size: 11px !important;
+    text-transform: uppercase !important;
+    border-bottom: 2px solid #1e293b !important;
+}
+[data-testid="stMarkdownContainer"] td {
+    color: #e0e0e0 !important;
+    border-bottom: 1px solid #1e293b !important;
+}
+[data-testid="stMarkdownContainer"] tr:hover td {
+    background: #161b2b !important;
+}
+
+/* Progress */
+[data-testid="stProgress"] > div > div { background: #2563eb !important; }
+[data-testid="stProgress"] { background: #1e293b !important; }
+
+/* Toggle */
+[data-testid="stToggle"] > label > div[data-checked="true"] {
+    background: #2563eb !important;
+}
+
+/* Multiselect */
+[data-testid="stMultiSelect"] > div {
+    background: #0f1117 !important;
+    border: 1px solid #334155 !important;
+}
+[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
+    background: rgba(59,130,246,0.15) !important;
+    color: #93c5fd !important;
+    border: 1px solid #2563eb !important;
+}
+
+/* Popover / dropdown menus */
+[data-baseweb="popover"] ul, [data-baseweb="menu"],
+ul[data-testid="stSelectboxVirtualDropdown"] {
+    background: #1a1f2e !important;
+    border: 1px solid #334155 !important;
+}
+[data-baseweb="popover"] li, [data-baseweb="menu"] li,
+ul[data-testid="stSelectboxVirtualDropdown"] li {
+    background: #1a1f2e !important;
+    color: #e0e0e0 !important;
+}
+[data-baseweb="popover"] li:hover, [data-baseweb="menu"] li:hover,
+ul[data-testid="stSelectboxVirtualDropdown"] li:hover {
+    background: rgba(59,130,246,0.15) !important;
+    color: #93c5fd !important;
+}
+
+/* Status chips & badges → BI-style pill colors */
+.status-pending  { background: #7f1d1d !important; color: #fca5a5 !important; border: none !important; }
+.status-requested{ background: #78350f !important; color: #fcd34d !important; border: none !important; }
+.status-cleared  { background: #14532d !important; color: #86efac !important; border: none !important; }
+.status-overdue  { background: #1e293b !important; color: #94a3b8 !important; border: none !important; }
+.status-closed   { background: #1e293b !important; color: #64748b !important; border: none !important; }
+
+.badge-borrower    { background: #1e3a8a !important; color: #93c5fd !important; border: none !important; }
+.badge-title       { background: #1e1b4b !important; color: #c7d2fe !important; border: none !important; }
+.badge-underwriter { background: #78350f !important; color: #fcd34d !important; border: none !important; }
+.badge-insurance   { background: #14532d !important; color: #86efac !important; border: none !important; }
+.badge-closer      { background: #7c2d12 !important; color: #fed7aa !important; border: none !important; }
+.badge-jr          { background: #581c87 !important; color: #e9d5ff !important; border: none !important; }
+.badge-manager     { background: #14532d !important; color: #86efac !important; border: none !important; }
+.badge-appraiser   { background: #14532d !important; color: #86efac !important; border: none !important; }
+.badge-default     { background: #1e293b !important; color: #94a3b8 !important; border: none !important; }
+
+/* Loan card */
+.loan-card {
+    background: #1a1f2e !important;
+    border: 1px solid #334155 !important;
+    border-radius: 8px !important;
+    box-shadow: none !important;
+}
+.loan-card:hover {
+    border-color: #3b82f6 !important;
+    background: #1e2532 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+.loan-num { color: #3b82f6 !important; }
+.loan-name { color: #ffffff !important; }
+.loan-due { color: #94a3b8 !important; }
+.loan-missing { color: #fca5a5 !important; }
+
+/* Stat cards */
+.stat-card {
+    background: #1a1f2e !important;
+    border: 1px solid #334155 !important;
+    border-radius: 10px !important;
+    box-shadow: none !important;
+}
+.stat-card:hover {
+    border-color: #3b82f6 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+.stat-num { color: #3b82f6 !important; font-weight: 700 !important; }
+.stat-label { color: #94a3b8 !important; }
+
+/* Progress nav */
+.progress-nav {
+    background: #161b2b !important;
+    border: 1px solid #1e293b !important;
+    box-shadow: none !important;
+}
+.pn-step.done {
+    background: #14532d !important;
+    color: #86efac !important;
+    border: 1px solid rgba(34,197,94,0.4) !important;
+}
+.pn-step.active {
+    background: rgba(59,130,246,0.15) !important;
+    color: #93c5fd !important;
+    border: 1px solid #2563eb !important;
+    box-shadow: none !important;
+}
+
+/* Custom sidebar toggle button → blue */
+#pa-sidebar-toggle {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.4) !important;
+}
+#pa-sidebar-toggle:hover {
+    background: #1d4ed8 !important;
+}
+
+/* Login card */
+.login-card {
+    background: #1a1f2e !important;
+    border: 1px solid #334155 !important;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4) !important;
+}
+.login-title { color: #ffffff !important; }
+.login-sub { color: #94a3b8 !important; }
+.login-sandbox-btn button {
+    background: #2563eb !important;
+    color: #ffffff !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.login-sandbox-btn button:hover {
+    background: #1d4ed8 !important;
+    box-shadow: none !important;
+    transform: none !important;
+}
+.login-sandbox-btn button p { color: #ffffff !important; }
+.login-divider hr { border-top: 1px solid #1e293b !important; }
+.login-divider span { color: #94a3b8 !important; }
+
+/* HR */
+hr { border-color: #1e293b !important; }
+
+/* Caption */
+[data-testid="stCaptionContainer"] p { color: #64748b !important; }
+
+/* Toast */
+[data-testid="stToast"], div[data-testid="stToast"] > div {
+    background: #1a1f2e !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #334155 !important;
+}
+
+/* Tooltip */
+[data-baseweb="tooltip"] {
+    background: #1a1f2e !important;
+    color: #e0e0e0 !important;
+    border: 1px solid #334155 !important;
+    box-shadow: none !important;
+}
+
+/* Select dropdown */
+[data-baseweb="select"] > div {
+    background: #0f1117 !important;
+    border-color: #334155 !important;
+    color: #e0e0e0 !important;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px !important; height: 6px !important; }
+::-webkit-scrollbar-track { background: #0f1117 !important; }
+::-webkit-scrollbar-thumb { background: #334155 !important; border-radius: 4px !important; }
+::-webkit-scrollbar-thumb:hover { background: #475569 !important; }
+
+/* Glow text removed */
+.glow-text { text-shadow: none !important; color: #ffffff !important; }
+
+/* Pipeline scroll buttons (kept compact, neutral colors) */
+.pipeline-scroll button {
+    background: #161b2b !important;
+    border: 1px solid #1e293b !important;
+    color: #cbd5e1 !important;
+}
+.pipeline-scroll button:hover {
+    background: rgba(59,130,246,0.1) !important;
+    border-color: #3b82f6 !important;
+    color: #ffffff !important;
+}
+.pipeline-scroll button[kind="primary"] {
+    background: #2563eb !important;
+    border: none !important;
+    color: #ffffff !important;
+    box-shadow: none !important;
+}
+.pipeline-scroll button[kind="primary"]:hover {
+    background: #1d4ed8 !important;
+    box-shadow: none !important;
+}
+.pipeline-scroll button[kind="primary"] p { color: #ffffff !important; }
+
+/* Scan scroll: replace neon green */
+.scan-scroll [data-testid="stCheckbox"] label { color: #3b82f6 !important; }
+.scan-scroll .cond-num { color: #3b82f6 !important; }
+.scan-scroll .pa-section { color: #94a3b8 !important; }
+
 </style>
 
 """, unsafe_allow_html=True)
@@ -727,7 +1198,7 @@ def _render_condition(_c, _fkey, _party_options, _cond_statuses):
     # Show condition description
     st.markdown(
         f'<div style="font-size:12px;color:#ffffff;margin:-8px 0 8px 0;">'
-        f'<b style="color:#39FF14;">#{_cnum}</b> {_cdesc}'
+        f'<b style="color:#3b82f6;">#{_cnum}</b> {_cdesc}'
         f'<span style="color:#9ca3af;margin-left:8px;font-size:11px;">'
         f'{_cstat}</span></div>',
         unsafe_allow_html=True,
@@ -749,7 +1220,7 @@ def show_login_page():
         st.markdown("""
         <div style="text-align:center;margin-bottom:24px;">
           <div style="display:inline-flex;align-items:center;justify-content:center;
-               width:48px;height:48px;background:linear-gradient(135deg,#39FF14,#32E012);
+               width:48px;height:48px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);
                border-radius:12px;margin-bottom:12px;">
             <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
               <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
@@ -876,7 +1347,7 @@ def show_sidebar():
         # ── Who's logged in ──────────────────────────────────────────────────
         if is_sandbox:
             st.markdown(
-                '<div style="font-size:12px;color:#39FF14;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">'
+                '<div style="font-size:12px;color:#3b82f6;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">'
                 '* Sandbox Mode</div>',
                 unsafe_allow_html=True,
             )
@@ -1017,7 +1488,7 @@ def show_sidebar():
                 _sb_on = bool(_sb_cfg.get("enabled")) and _sb_has_key
                 if _sb_has_key:
                     _sb_label = f"🤖 Cloud AI: {'ON' if _sb_on else 'OFF'} · {_sb_cfg.get('provider','claude').title()}"
-                    _sb_color = "#39FF14" if _sb_on else "#9ca3af"
+                    _sb_color = "#3b82f6" if _sb_on else "#9ca3af"
                     st.markdown(
                         f'<div style="font-size:11px;color:{_sb_color};margin:4px 0 6px 4px;font-weight:600;">'
                         f'{_sb_label}</div>',
@@ -1081,16 +1552,16 @@ def show_dashboard():
         st.markdown(
             f"""
             <div style="margin:8px 0 18px 0;padding:22px 26px;
-                 background:linear-gradient(135deg, rgba(57,255,20,0.06) 0%, rgba(57,255,20,0.015) 100%);
-                 border:1px solid rgba(57,255,20,0.18);border-radius:14px;
-                 box-shadow:0 4px 24px rgba(0,0,0,0.25);">
+                 background:#1a1f2e;
+                 border:1px solid #334155;border-radius:10px;
+                 box-shadow:none;">
               <div style="display:flex;align-items:center;gap:14px;margin-bottom:6px;">
-                <div style="width:42px;height:42px;border-radius:11px;
-                     background:linear-gradient(135deg,#39FF14,#2ed410);
+                <div style="width:42px;height:42px;border-radius:8px;
+                     background:#2563eb;
                      display:flex;align-items:center;justify-content:center;
-                     box-shadow:0 0 16px rgba(57,255,20,0.4);">
+                     box-shadow:none;">
                   <svg width="22" height="22" viewBox="0 0 24 24" fill="none"
-                       stroke="#0a0a0a" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                       stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                     <rect x="3" y="4" width="18" height="16" rx="2"/>
                     <path d="M7 8h10M7 12h10M7 16h6"/>
                   </svg>
@@ -1105,12 +1576,12 @@ def show_dashboard():
                 </div>
               </div>
               <div style="display:flex;gap:18px;margin-top:14px;flex-wrap:wrap;">
-                <div style="font-size:11px;color:#9ca3af;">
-                  <span style="color:#39FF14;font-weight:700;">●</span>
+                <div style="font-size:11px;color:#94a3b8;">
+                  <span style="color:#3b82f6;font-weight:700;">●</span>
                   Approval · CD · LE · 1003 · Purchase Contract · Bank Stmt · W-2 · Appraisal · Title · HOI · and more
                 </div>
-                <div style="font-size:11px;color:#9ca3af;margin-left:auto;">
-                  <b style="color:#39FF14;">{_loan_ct}</b> loan{'s' if _loan_ct != 1 else ''} in pipeline
+                <div style="font-size:11px;color:#94a3b8;margin-left:auto;">
+                  <b style="color:#3b82f6;">{_loan_ct}</b> loan{'s' if _loan_ct != 1 else ''} in pipeline
                 </div>
               </div>
             </div>
@@ -1121,7 +1592,7 @@ def show_dashboard():
         st.markdown(
             '<div style="display:flex;align-items:center;gap:10px;margin:4px 0 10px 0;">'
             '<div style="width:26px;height:26px;border-radius:7px;'
-            'background:linear-gradient(135deg,#39FF14,#2ed410);'
+            'background:linear-gradient(135deg,#3b82f6,#1d4ed8);'
             'display:flex;align-items:center;justify-content:center;">'
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" '
             'stroke="#0a0a0a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'
@@ -1418,8 +1889,8 @@ def show_dashboard():
         if _approval_bank_conds and _bank_indices:
             st.markdown("---")
             st.markdown(
-                f'<div style="background:rgba(57,255,20,0.1);border:1px solid rgba(57,255,20,0.3);border-radius:4px;'
-                f'padding:8px 12px;margin-bottom:4px;font-size:12px;color:#39FF14;">'
+                f'<div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:4px;'
+                f'padding:8px 12px;margin-bottom:4px;font-size:12px;color:#3b82f6;">'
                 f'<b>Approval cross-reference</b> — from <i>{_approval_source}</i>:'
                 f'</div>',
                 unsafe_allow_html=True
@@ -1443,9 +1914,9 @@ def show_dashboard():
                 _months_have = len(_uploaded_periods)
                 _ok = _months_have >= _months_req
                 _icon = "✓" if _ok else "✗"
-                _color = "#39FF14" if _ok else "#ef4444"
-                _bg = "rgba(57,255,20,0.1)" if _ok else "rgba(239,68,68,0.1)"
-                _border = "rgba(57,255,20,0.3)" if _ok else "rgba(239,68,68,0.3)"
+                _color = "#3b82f6" if _ok else "#ef4444"
+                _bg = "rgba(59,130,246,0.1)" if _ok else "rgba(239,68,68,0.1)"
+                _border = "rgba(59,130,246,0.3)" if _ok else "rgba(239,68,68,0.3)"
                 _note = f"{_months_have} of {_months_req} month(s) uploaded" if not _ok else f"{_months_have} month(s) — OK"
                 st.markdown(
                     f'<div style="background:{_bg};border:1px solid {_border};border-radius:3px;'
@@ -1475,7 +1946,7 @@ def show_dashboard():
                 _reason_str = " · ".join(_match_reasons) if _match_reasons else _grp_type
 
                 st.markdown(
-                    f'<div style="font-size:12px;font-weight:700;color:#39FF14;margin-bottom:4px;">'
+                    f'<div style="font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:4px;">'
                     f'Group {_gi+1} — {_grp_type} <span style="font-weight:400;color:#9ca3af;">({_reason_str})</span>'
                     f'</div>',
                     unsafe_allow_html=True
@@ -1745,8 +2216,8 @@ def show_dashboard():
                     if "CLOUD" in _r_ai_log.upper():
                         st.markdown(
                             f'<div style="display:inline-block;padding:3px 10px;margin:4px 0 8px 0;'
-                            f'background:rgba(57,255,20,0.12);border:1px solid rgba(57,255,20,0.4);'
-                            f'border-radius:12px;font-size:11px;color:#39FF14;font-weight:600;">'
+                            f'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.4);'
+                            f'border-radius:12px;font-size:11px;color:#3b82f6;font-weight:600;">'
                             f'🤖 Cloud AI · {_r_ai_log}</div>',
                             unsafe_allow_html=True,
                         )
@@ -1766,8 +2237,8 @@ def show_dashboard():
                 # ── Loan match action row ──────────────────────────────
                 if _lm_suggestion == "match":
                     st.markdown(
-                        f'<div style="background:rgba(57,255,20,0.1);border:1px solid rgba(57,255,20,0.3);border-radius:4px;'
-                        f'padding:6px 10px;margin-bottom:8px;font-size:12px;color:#39FF14;">'
+                        f'<div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:4px;'
+                        f'padding:6px 10px;margin-bottom:8px;font-size:12px;color:#3b82f6;">'
                         f'<b>Matched:</b> Loan {_lm_loan_num} — {_lm_borrower} '
                         f'<span style="opacity:0.6;">({_lm_conf}% confidence)</span>'
                         f'</div>', unsafe_allow_html=True
@@ -1934,7 +2405,7 @@ def show_dashboard():
                         with _r2:
                             st.markdown(
                                 f'<div style="font-size:12px;line-height:1.3;padding-top:3px;">'
-                                f'<b style="color:#39FF14;">#{_c["num"]}</b> '
+                                f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
                                 f'<span style="color:#e5e7eb;">{_c["desc"][:110]}</span></div>',
                                 unsafe_allow_html=True,
                             )
@@ -2064,9 +2535,9 @@ def show_dashboard():
                                     _sec_part = f" · <b>{_sec}</b>" if _sec else ""
                                     st.markdown(
                                         f'<div style="font-size:11px;color:#e5e7eb;padding:6px 10px;margin:3px 0 3px 32px;'
-                                        f'background:rgba(57,255,20,0.05);border-left:2px solid rgba(57,255,20,0.45);'
+                                        f'background:rgba(59,130,246,0.05);border-left:2px solid rgba(59,130,246,0.45);'
                                         f'border-radius:4px;">'
-                                        f'<span style="color:#39FF14;font-weight:700;">{_src}</span>'
+                                        f'<span style="color:#3b82f6;font-weight:700;">{_src}</span>'
                                         f'{_sec_part}'
                                         f' <span style="color:#9ca3af;">p.{_pg} · {_sc}% match</span><br/>'
                                         f'<span style="color:#cbd5e1;font-size:10.5px;">{_ex}…</span>'
@@ -2090,9 +2561,9 @@ def show_dashboard():
                         if _parts:
                             _cchips.append(
                                 f'<span style="display:inline-block;font-size:11px;'
-                                f'background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.2);'
+                                f'background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);'
                                 f'border-radius:10px;padding:2px 8px;margin:2px 4px 2px 0;color:#e5e7eb;">'
-                                f'<b style="color:#39FF14;">{_k.replace("_"," ").title()}</b> · '
+                                f'<b style="color:#3b82f6;">{_k.replace("_"," ").title()}</b> · '
                                 f'{" · ".join(_parts)}</span>'
                             )
                     if _cchips:
@@ -2228,7 +2699,7 @@ def show_dashboard():
                                 )
                             st.markdown(
                                 f'<div style="margin-bottom:10px;">'
-                                f'<div style="font-size:11px;font-weight:700;color:#39FF14;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">{_sec_title}</div>'
+                                f'<div style="font-size:11px;font-weight:700;color:#3b82f6;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">{_sec_title}</div>'
                                 f'<table style="border-collapse:collapse;width:100%;">{_rows_html}</table>'
                                 f'</div>',
                                 unsafe_allow_html=True
@@ -2265,7 +2736,7 @@ def show_dashboard():
                             if _wr.get("employee_ssn"):  _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">SSN</td><td style="color:#e5e7eb;font-size:12px;">{_w2_ssn_html(_wr["employee_ssn"])}</td></tr>'
                             if _wr.get("employer_name"): _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Employer</td><td style="color:#e5e7eb;font-size:12px;">{_wr["employer_name"]}</td></tr>'
                             if _wr.get("employer_ein"):  _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">EIN</td><td style="color:#e5e7eb;font-size:12px;">{_wr["employer_ein"]}</td></tr>'
-                            if _wr.get("box1_wages"):    _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 1 — Wages</td><td style="color:#39FF14;font-size:12px;font-weight:700;">{_fmt_money(_wr["box1_wages"])}</td></tr>'
+                            if _wr.get("box1_wages"):    _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 1 — Wages</td><td style="color:#3b82f6;font-size:12px;font-weight:700;">{_fmt_money(_wr["box1_wages"])}</td></tr>'
                             if _wr.get("box2_fed_tax"):  _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 2 — Fed Tax W/H</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_money(_wr["box2_fed_tax"])}</td></tr>'
                             if _wr.get("box3_ss_wages"): _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 3 — SS Wages</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_money(_wr["box3_ss_wages"])}</td></tr>'
                             if _wr.get("box5_medicare_wages"): _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 5 — Medicare Wages</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_money(_wr["box5_medicare_wages"])}</td></tr>'
@@ -2275,7 +2746,7 @@ def show_dashboard():
                             if _wr.get("box14"):         _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 14 — Other</td><td style="color:#e5e7eb;font-size:12px;">{_wr["box14"]}</td></tr>'
                             st.markdown(
                                 f'<div style="margin-bottom:10px;">'
-                                f'<div style="font-size:11px;font-weight:700;color:#39FF14;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Tax Year {_yr}</div>'
+                                f'<div style="font-size:11px;font-weight:700;color:#3b82f6;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Tax Year {_yr}</div>'
                                 f'<table style="border-collapse:collapse;width:100%;">{_rows_h}</table>'
                                 f'</div>',
                                 unsafe_allow_html=True
@@ -2293,10 +2764,10 @@ def show_dashboard():
                         if _ic.get("two_year_avg"):
                             _ic_rows += f'<tr style="border-top:1px solid rgba(255,255,255,0.1);"><td style="color:#9ca3af;padding:3px 16px 3px 0;font-size:12px;">2-Year Average</td><td style="color:#e5e7eb;font-size:12px;text-align:right;">{_fmt_money(_ic["two_year_avg"])}</td></tr>'
                         if _ic.get("monthly_avg"):
-                            _ic_rows += f'<tr><td style="color:#39FF14;padding:3px 16px 3px 0;font-size:13px;font-weight:700;">Monthly Income</td><td style="color:#39FF14;font-size:13px;font-weight:700;text-align:right;">{_fmt_money(_ic["monthly_avg"])}</td></tr>'
+                            _ic_rows += f'<tr><td style="color:#3b82f6;padding:3px 16px 3px 0;font-size:13px;font-weight:700;">Monthly Income</td><td style="color:#3b82f6;font-size:13px;font-weight:700;text-align:right;">{_fmt_money(_ic["monthly_avg"])}</td></tr>'
                         st.markdown(
-                            f'<div style="background:rgba(57,255,20,0.06);border:1px solid rgba(57,255,20,0.25);border-radius:6px;padding:10px 14px;margin-top:8px;">'
-                            f'<div style="font-size:11px;font-weight:700;color:#39FF14;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Income Calculation ({_method})</div>'
+                            f'<div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:10px 14px;margin-top:8px;">'
+                            f'<div style="font-size:11px;font-weight:700;color:#3b82f6;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Income Calculation ({_method})</div>'
                             f'<table style="border-collapse:collapse;width:100%;">{_ic_rows}</table>'
                             f'</div>',
                             unsafe_allow_html=True
@@ -2335,7 +2806,7 @@ def show_dashboard():
                     if _pi_rows:
                         st.markdown(
                             f'<div style="margin-bottom:10px;">'
-                            f'<div style="font-size:11px;font-weight:700;color:#39FF14;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Borrower</div>'
+                            f'<div style="font-size:11px;font-weight:700;color:#3b82f6;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Borrower</div>'
                             f'<table style="border-collapse:collapse;width:100%;">{_pi_rows}</table>'
                             f'</div>', unsafe_allow_html=True
                         )
@@ -2347,10 +2818,10 @@ def show_dashboard():
                         # Reorder: [lowest, middle, highest] → display as [lowest, middle, highest]
                         for _bur, _scr in _sorted_scores:
                             _is_mid = (_bur == _cr_mid_bur and _scr == _cr_mid)
-                            _bg = "rgba(57,255,20,0.15)" if _is_mid else "rgba(255,255,255,0.05)"
-                            _border = "rgba(57,255,20,0.5)" if _is_mid else "rgba(255,255,255,0.12)"
-                            _badge = '<div style="font-size:9px;color:#39FF14;font-weight:700;letter-spacing:0.1em;">MIDDLE</div>' if _is_mid else ''
-                            _score_color = "#39FF14" if _is_mid else ("#ef4444" if _scr < 620 else ("#f59e0b" if _scr < 680 else "#e5e7eb"))
+                            _bg = "rgba(59,130,246,0.15)" if _is_mid else "rgba(255,255,255,0.05)"
+                            _border = "rgba(59,130,246,0.5)" if _is_mid else "rgba(255,255,255,0.12)"
+                            _badge = '<div style="font-size:9px;color:#3b82f6;font-weight:700;letter-spacing:0.1em;">MIDDLE</div>' if _is_mid else ''
+                            _score_color = "#3b82f6" if _is_mid else ("#ef4444" if _scr < 620 else ("#f59e0b" if _scr < 680 else "#e5e7eb"))
                             _score_html += (
                                 f'<div style="background:{_bg};border:1px solid {_border};border-radius:8px;'
                                 f'padding:8px 14px;text-align:center;min-width:90px;">'
@@ -2371,7 +2842,7 @@ def show_dashboard():
                         _flag_html += '</div>'
                         st.markdown(_flag_html, unsafe_allow_html=True)
                     else:
-                        st.markdown('<div style="font-size:12px;color:#39FF14;margin-bottom:8px;">✓ No derogatory items detected</div>', unsafe_allow_html=True)
+                        st.markdown('<div style="font-size:12px;color:#3b82f6;margin-bottom:8px;">✓ No derogatory items detected</div>', unsafe_allow_html=True)
 
                     # Summary row
                     _sum_parts = []
@@ -2403,7 +2874,7 @@ def show_dashboard():
                     if _tf.get("recipient_ssn"): _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">SSN</td><td style="font-size:12px;">{_1099_ssn_html(_tf["recipient_ssn"])}</td></tr>'
                     if _tf.get("payer_name"):    _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Payer</td><td style="color:#e5e7eb;font-size:12px;">{_tf["payer_name"]}</td></tr>'
                     if _tf.get("payer_tin"):     _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Payer TIN</td><td style="color:#e5e7eb;font-size:12px;">{_tf["payer_tin"]}</td></tr>'
-                    if _tf.get("box1"):          _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 1 Income</td><td style="color:#39FF14;font-size:12px;font-weight:700;">{_fmt_m(_tf["box1"])}</td></tr>'
+                    if _tf.get("box1"):          _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 1 Income</td><td style="color:#3b82f6;font-size:12px;font-weight:700;">{_fmt_m(_tf["box1"])}</td></tr>'
                     if _tf.get("box2"):          _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 2</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_m(_tf["box2"])}</td></tr>'
                     if _tf.get("box4_fed_tax"):  _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Fed Tax W/H</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_m(_tf["box4_fed_tax"])}</td></tr>'
                     if _rows_h:
@@ -2412,11 +2883,11 @@ def show_dashboard():
                     # Income calc box
                     if _tf.get("annual_income", 0) > 0:
                         st.markdown(
-                            f'<div style="background:rgba(57,255,20,0.06);border:1px solid rgba(57,255,20,0.25);border-radius:6px;padding:10px 14px;">'
-                            f'<div style="font-size:11px;font-weight:700;color:#39FF14;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Income (annual ÷ 12)</div>'
+                            f'<div style="background:rgba(59,130,246,0.06);border:1px solid rgba(59,130,246,0.25);border-radius:6px;padding:10px 14px;">'
+                            f'<div style="font-size:11px;font-weight:700;color:#3b82f6;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Income (annual ÷ 12)</div>'
                             f'<table style="border-collapse:collapse;width:100%;">'
                             f'<tr><td style="color:#9ca3af;padding:3px 16px 3px 0;font-size:12px;">Annual</td><td style="color:#e5e7eb;font-size:12px;text-align:right;">{_fmt_m(_tf["annual_income"])}</td></tr>'
-                            f'<tr><td style="color:#39FF14;padding:3px 16px 3px 0;font-size:13px;font-weight:700;">Monthly</td><td style="color:#39FF14;font-size:13px;font-weight:700;text-align:right;">{_fmt_m(_tf["monthly_income"])}</td></tr>'
+                            f'<tr><td style="color:#3b82f6;padding:3px 16px 3px 0;font-size:13px;font-weight:700;">Monthly</td><td style="color:#3b82f6;font-size:13px;font-weight:700;text-align:right;">{_fmt_m(_tf["monthly_income"])}</td></tr>'
                             f'</table>'
                             f'</div>', unsafe_allow_html=True
                         )
@@ -2490,7 +2961,7 @@ def show_dashboard():
                         st.markdown("**VA Certificate of Eligibility**")
                         st.markdown(f'<table style="border-collapse:collapse;width:100%;">{_coe_html}</table>', unsafe_allow_html=True)
                     if _coe.get("funding_fee_exempt"):
-                        st.markdown('<div style="background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.3);border-radius:4px;padding:6px 10px;font-size:12px;color:#39FF14;margin-top:6px;">✓ Funding fee exemption noted</div>', unsafe_allow_html=True)
+                        st.markdown('<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:6px 10px;font-size:12px;color:#3b82f6;margin-top:6px;">✓ Funding fee exemption noted</div>', unsafe_allow_html=True)
 
                 # ── DD-214 display ─────────────────────────────────────────
                 if _batch.get("type") == "DD-214" and not _r.get("image_only"):
@@ -2516,7 +2987,7 @@ def show_dashboard():
                         st.markdown("**DD-214 — Certificate of Release**")
                         st.markdown(f'<table style="border-collapse:collapse;width:100%;">{_dd_rows_html}</table>', unsafe_allow_html=True)
                     if _dd.get("disability_noted"):
-                        st.markdown('<div style="background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.3);border-radius:4px;padding:6px 10px;font-size:12px;color:#39FF14;margin-top:6px;">✓ Service-connected disability noted — verify VA funding fee exemption</div>', unsafe_allow_html=True)
+                        st.markdown('<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:6px 10px;font-size:12px;color:#3b82f6;margin-top:6px;">✓ Service-connected disability noted — verify VA funding fee exemption</div>', unsafe_allow_html=True)
 
                 # ── Government ID display ──────────────────────────────────
                 if _batch.get("type") == "Government ID" and not _r.get("image_only"):
@@ -2529,7 +3000,7 @@ def show_dashboard():
                         return (f'<span style="filter:blur(3px);color:#9ca3af;user-select:none;">***-**-</span>'
                                 f'<span style="color:#e5e7eb;">{last4}</span>')
                     _gid_html = ""
-                    if _gid.get("id_type"):  _gid_html += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">ID Type</td><td style="color:#39FF14;font-size:12px;font-weight:700;">{_gid["id_type"]}</td></tr>'
+                    if _gid.get("id_type"):  _gid_html += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">ID Type</td><td style="color:#3b82f6;font-size:12px;font-weight:700;">{_gid["id_type"]}</td></tr>'
                     if _gid.get("name"):     _gid_html += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Name</td><td style="color:#e5e7eb;font-size:12px;"><b>{_gid["name"]}</b></td></tr>'
                     if _gid.get("dob"):      _gid_html += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Date of Birth</td><td style="color:#e5e7eb;font-size:12px;">{_gid["dob"]}</td></tr>'
                     if _gid.get("expiry"):   _gid_html += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Expires</td><td style="color:#e5e7eb;font-size:12px;">{_gid["expiry"]}</td></tr>'
@@ -2553,8 +3024,8 @@ def show_dashboard():
 def _pipeline_cond_row(c, contacts=None, loan_num="", borrower=""):
     import urllib.parse as _uparse
     _status = c.get("status", "")
-    _bg = "rgba(57,255,20,0.15)" if _status in ("Cleared","Ready to Clear") else "rgba(245,158,11,0.12)" if _status == "Requested" else "rgba(239,68,68,0.12)"
-    _clr = "#39FF14" if _status in ("Cleared","Ready to Clear") else "#f59e0b" if _status == "Requested" else "#ef4444"
+    _bg = "rgba(59,130,246,0.15)" if _status in ("Cleared","Ready to Clear") else "rgba(245,158,11,0.12)" if _status == "Requested" else "rgba(239,68,68,0.12)"
+    _clr = "#3b82f6" if _status in ("Cleared","Ready to Clear") else "#f59e0b" if _status == "Requested" else "#ef4444"
     _parties = c.get("party", []) if isinstance(c.get("party"), list) else [c.get("party", "")]
     _party_str = ", ".join(_parties)
 
@@ -2627,11 +3098,11 @@ def show_pipeline():
     import json as _json
 
     st.markdown(
-        '<div style="background:linear-gradient(180deg,rgba(57,255,20,0.04) 0%,rgba(255,255,255,0.01) 100%);'
-        'border:1px solid rgba(57,255,20,0.18);border-radius:8px;padding:8px 14px 6px 14px;'
-        'margin-bottom:8px;box-shadow:0 0 20px rgba(57,255,20,0.05) inset;">'
-        '<div style="font-size:18px;font-weight:800;color:#39FF14;letter-spacing:-0.3px;'
-        'text-shadow:0 0 12px rgba(57,255,20,0.35);line-height:1.1;">My Pipeline</div>'
+        '<div style="background:linear-gradient(180deg,rgba(59,130,246,0.04) 0%,rgba(255,255,255,0.01) 100%);'
+        'border:1px solid rgba(59,130,246,0.18);border-radius:8px;padding:8px 14px 6px 14px;'
+        'margin-bottom:8px;box-shadow:0 0 20px rgba(59,130,246,0.05) inset;">'
+        '<div style="font-size:18px;font-weight:800;color:#3b82f6;letter-spacing:-0.3px;'
+        'text-shadow:0 0 12px rgba(59,130,246,0.35);line-height:1.1;">My Pipeline</div>'
         '<div style="font-size:10px;color:#9ca3af;margin-top:1px;font-weight:500;line-height:1.1;">Track loans by status</div>'
         '</div>',
         unsafe_allow_html=True,
@@ -3039,10 +3510,10 @@ def show_pipeline():
                     st.markdown(
                         f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
                         f'padding:10px;margin:6px 0;font-size:12px;color:#9ca3af;">'
-                        f'<b style="color:#39FF14;">Scanned {len(_sc)} file(s):</b> '
+                        f'<b style="color:#3b82f6;">Scanned {len(_sc)} file(s):</b> '
                         f'{_ok} processed, {_skip} skipped<br>'
                         + "".join(
-                            f'<span style="color:{"#39FF14" if s["status"]=="ok" else "#ef4444"};">'
+                            f'<span style="color:{"#3b82f6" if s["status"]=="ok" else "#ef4444"};">'
                             f'{"✓" if s["status"]=="ok" else "✗"}</span> '
                             f'{s["name"]} → {s["type"]}&nbsp;&nbsp;'
                             for s in _sc
@@ -3066,8 +3537,8 @@ def show_pipeline():
                         _parts.append(f'<b>{len(_bulk_data["contacts"])}</b> contact group(s)')
                     if _parts:
                         st.markdown(
-                            f'<div style="background:#0a1a0a;border:1px solid rgba(57,255,20,0.2);border-radius:8px;'
-                            f'padding:10px;margin:4px 0;font-size:12px;color:#39FF14;">'
+                            f'<div style="background:#0a1a0a;border:1px solid rgba(59,130,246,0.2);border-radius:8px;'
+                            f'padding:10px;margin:4px 0;font-size:12px;color:#3b82f6;">'
                             f'✓ Auto-filled: {" &nbsp;·&nbsp; ".join(_parts)}'
                             f'</div>',
                             unsafe_allow_html=True,
@@ -3161,8 +3632,8 @@ def show_pipeline():
                 st.markdown(
                     f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
                     f'padding:8px 12px;margin:4px 0;font-size:12px;color:#9ca3af;">'
-                    f'From bulk scan: <b style="color:#39FF14;">{len(_bf_conds)}</b> condition(s) '
-                    f'and <b style="color:#39FF14;">{len(_bf_contacts)}</b> contact group(s) '
+                    f'From bulk scan: <b style="color:#3b82f6;">{len(_bf_conds)}</b> condition(s) '
+                    f'and <b style="color:#3b82f6;">{len(_bf_contacts)}</b> contact group(s) '
                     f'will be attached to this loan on save.</div>',
                     unsafe_allow_html=True,
                 )
@@ -3224,7 +3695,7 @@ def show_pipeline():
                 with _nc1:
                     st.markdown(
                         f'<div style="font-size:12px;color:#d1d5db;">'
-                        f'<b style="color:#39FF14;">{_nf.get("by","?")}</b> {_ev} '
+                        f'<b style="color:#3b82f6;">{_nf.get("by","?")}</b> {_ev} '
                         f'<b>#{_nf.get("loan_num","—")}</b> {_nf.get("borrower","")}'
                         f'</div>'
                         f'<div style="font-size:10px;color:#6b7280;">{_nf.get("ts","")[:16]}</div>',
@@ -3357,7 +3828,7 @@ def show_pipeline():
     _chip_tints = {
         "Pending":   ("#ef4444", "rgba(239,68,68,0.1)", "rgba(239,68,68,0.3)"),
         "Requested": ("#f59e0b", "rgba(245,158,11,0.1)", "rgba(245,158,11,0.3)"),
-        "Cleared":   ("#39FF14", "rgba(57,255,20,0.1)", "rgba(57,255,20,0.3)"),
+        "Cleared":   ("#3b82f6", "rgba(59,130,246,0.1)", "rgba(59,130,246,0.3)"),
         "Overdue":   ("#9ca3af", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.1)"),
         "Closed":    ("#9ca3af", "rgba(255,255,255,0.03)", "rgba(255,255,255,0.1)"),
     }
@@ -3389,14 +3860,14 @@ def show_pipeline():
             f'{_closed} cleared&nbsp;·&nbsp;{_in_prog} in progress&nbsp;·&nbsp;{_total_loans} total</span>'
             f'</div>'
             f'<div style="background:rgba(255,255,255,0.1);border-radius:1px;height:6px;overflow:hidden;position:relative;">'
-            f'<div style="background:#39FF14;width:{_pipeline_pct}%;height:100%;'
+            f'<div style="background:#3b82f6;width:{_pipeline_pct}%;height:100%;'
             f'position:absolute;left:0;"></div>'
             f'<div style="background:#f59e0b;'
             f'width:{int((_in_prog/_total_loans)*100)}%;height:100%;'
             f'position:absolute;left:{_pipeline_pct}%;"></div>'
             f'</div>'
             f'<div style="display:flex;gap:10px;margin-top:3px;">'
-            f'<span style="font-size:9px;color:#39FF14;font-weight:600;">&#9632; Cleared {_pipeline_pct}%</span>'
+            f'<span style="font-size:9px;color:#3b82f6;font-weight:600;">&#9632; Cleared {_pipeline_pct}%</span>'
             f'<span style="font-size:9px;color:#f59e0b;font-weight:600;">&#9632; In Progress {int((_in_prog/_total_loans)*100)}%</span>'
             f'<span style="font-size:9px;color:#ef4444;font-weight:600;">&#9632; Pending/Overdue {100 - _pipeline_pct - int((_in_prog/_total_loans)*100)}%</span>'
             f'</div>'
@@ -3407,10 +3878,10 @@ def show_pipeline():
     # ── Visual break between header section and loan rows ────────────────────
     st.markdown(
         '<div style="height:28px;"></div>'
-        '<div style="height:2px;background:linear-gradient(90deg,rgba(57,255,20,0.35) 0%,rgba(57,255,20,0.08) 60%,transparent 100%);margin-bottom:0;"></div>'
+        '<div style="height:2px;background:linear-gradient(90deg,rgba(59,130,246,0.35) 0%,rgba(59,130,246,0.08) 60%,transparent 100%);margin-bottom:0;"></div>'
         '<div style="display:flex;align-items:center;gap:14px;margin:22px 0 18px 0;">'
-        '<div style="font-size:13px;font-weight:800;color:#39FF14;text-transform:uppercase;letter-spacing:2px;'
-        'padding:4px 12px;background:rgba(57,255,20,0.08);border:1px solid rgba(57,255,20,0.3);border-radius:4px;">Loans</div>'
+        '<div style="font-size:13px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:2px;'
+        'padding:4px 12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:4px;">Loans</div>'
         '<div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>'
         '</div>',
         unsafe_allow_html=True,
@@ -3428,7 +3899,7 @@ def show_pipeline():
         border_colors = {
             "Pending":   "#ef4444",
             "Requested": "#f59e0b",
-            "Cleared":   "#39FF14",
+            "Cleared":   "#3b82f6",
             "Overdue":   "#9ca3af",
             "Closed":    "#6b7280",
         }
@@ -3460,7 +3931,7 @@ def show_pipeline():
                 elif _lock_days <= 14:
                     _lock_clr, _lock_lbl = "#f59e0b", f"Lock {_lock_days}d"
                 else:
-                    _lock_clr, _lock_lbl = "#39FF14", f"Lock {_lock_exp}"
+                    _lock_clr, _lock_lbl = "#3b82f6", f"Lock {_lock_exp}"
                 _lock_badge = (
                     f'<span style="background:{_lock_clr};color:#fff;'
                     f'padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">{_lock_lbl}</span>'
@@ -3501,7 +3972,7 @@ def show_pipeline():
 
         # Progress bar color
         if _pct >= 75:
-            _bar_color = "#39FF14"
+            _bar_color = "#3b82f6"
         elif _pct >= 40:
             _bar_color = "#f59e0b"
         else:
@@ -3566,7 +4037,7 @@ def show_pipeline():
             _tip_html = "".join(_tip_rows) if _tip_rows else '<div style="color:#9ca3af;font-size:11px;">No contact details</div>'
             _tooltip = (
                 f'<span class="pa-tip-box">'
-                f'<div style="color:#39FF14;font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
+                f'<div style="color:#3b82f6;font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
                 f'<div style="color:#ffffff;font-size:13px;font-weight:600;margin-bottom:4px;">{_cname}</div>'
                 f'{_tip_html}'
                 f'</span>'
@@ -3588,7 +4059,7 @@ def show_pipeline():
         for _olabel, _okey in _order_defs:
             _ostat = _orders.get(_okey, "Not Sent")
             if _ostat == "Received":
-                _obg, _oclr = "rgba(57,255,20,0.15)", "#39FF14"
+                _obg, _oclr = "rgba(59,130,246,0.15)", "#3b82f6"
                 _oicon = "✓"
             elif _ostat == "Requested":
                 _obg, _oclr = "rgba(245,158,11,0.12)", "#f59e0b"
@@ -3763,7 +4234,7 @@ def show_pipeline():
             _activity_html = ""
             if _status_changes:
                 _activity_html = (
-                    '<div style="font-size:10px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+                    '<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
                     'letter-spacing:0.8px;margin:10px 0 6px 0;">Status History</div>'
                     + "".join([
                         f'<div style="display:flex;gap:10px;padding:2px 0;font-size:10px;border-bottom:1px solid rgba(255,255,255,0.04);">'
@@ -3777,11 +4248,11 @@ def show_pipeline():
             st.markdown(
                 f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);'
                 f'border-radius:6px;padding:10px 14px;margin-bottom:4px;">'
-                f'<div style="font-size:10px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+                f'<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
                 f'letter-spacing:0.8px;margin-bottom:6px;">Notes</div>'
                 f'<div style="font-size:12px;color:#d1d5db;line-height:1.5;">{_notes_txt}</div>'
                 + (
-                    f'<div style="font-size:10px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+                    f'<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
                     f'letter-spacing:0.8px;margin:10px 0 6px 0;">Conditions</div>'
                     + "".join([_pipeline_cond_row(c, contacts=loan.get("contacts",{}), loan_num=loan.get("loan_num",""), borrower=loan.get("borrower","")) for c in _conds])
                     if _conds else '<div style="color:#6b7280;font-size:11px;margin-top:8px;">No conditions.</div>'
@@ -3834,7 +4305,7 @@ def show_pipeline():
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);'
                     'border-radius:8px;padding:10px 12px;margin-top:6px;">'
-                    '<div style="font-size:10px;color:#39FF14;font-weight:700;text-transform:uppercase;margin-bottom:6px;">HOI / Insurance</div>'
+                    '<div style="font-size:10px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:6px;">HOI / Insurance</div>'
                     + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;margin-bottom:4px;">{_name}</div>' if _name else '')
                     + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">📞 {_phone}</div>' if _phone else '')
                     + (f'<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">'
@@ -3885,7 +4356,7 @@ def show_pipeline():
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);'
                     'border-radius:8px;padding:10px 12px;margin-top:6px;">'
-                    '<div style="font-size:10px;color:#39FF14;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Title Company</div>'
+                    '<div style="font-size:10px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Title Company</div>'
                     + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;margin-bottom:4px;">{_name}</div>' if _name else '')
                     + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">📞 {_phone}</div>' if _phone else '')
                     + (f'<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">'
@@ -3900,7 +4371,7 @@ def show_pipeline():
 
         # ── Order-out tracker ────────────────────────────────────────────────
         st.markdown(
-            '<div style="font-size:10px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+            '<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
             'letter-spacing:0.8px;margin:10px 0 6px 0;">Order Status</div>',
             unsafe_allow_html=True,
         )
@@ -4054,7 +4525,7 @@ def show_pipeline():
                 tc1, tc2, tc3 = st.columns([4, 1, 1])
                 with tc1:
                     st.markdown(
-                        f'<span style="font-weight:700;color:#39FF14;">#{tl.get("loan_num", "—")}</span>'
+                        f'<span style="font-weight:700;color:#3b82f6;">#{tl.get("loan_num", "—")}</span>'
                         f' &nbsp;{tl.get("borrower", "—")}'
                         f' &nbsp;<span style="color:#9ca3af;font-size:10px;">removed {tl.get("deleted_on", "?")}</span>'
                         f' &nbsp;{_exp_tag}',
@@ -4388,7 +4859,7 @@ def show_team_page():
     st.markdown(
         f"<div style='font-size:12px;color:#9ca3af;margin-top:4px;'>"
         f"Share this path with teammates so they can drop files for you: "
-        f"<code style='color:#39FF14;'>{config.get('my_inbox','(not set)')}</code>"
+        f"<code style='color:#3b82f6;'>{config.get('my_inbox','(not set)')}</code>"
         f"</div>",
         unsafe_allow_html=True,
     )
@@ -4450,7 +4921,7 @@ def show_team_page():
                 )
             with mc2:
                 st.markdown(
-                    f"<div style='color:#39FF14;font-size:13px;'>{m.get('role','')}</div>",
+                    f"<div style='color:#3b82f6;font-size:13px;'>{m.get('role','')}</div>",
                     unsafe_allow_html=True,
                 )
             with mc3:
@@ -4495,7 +4966,7 @@ def show_snapshot_page():
 
     sc1, sc2, sc3, sc4 = st.columns(4)
     with sc1:
-        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#39FF14;">{snapshot["complete_count"]}</div><div class="stat-label">Complete</div></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#3b82f6;">{snapshot["complete_count"]}</div><div class="stat-label">Complete</div></div>', unsafe_allow_html=True)
     with sc2:
         st.markdown(f'<div class="stat-card"><div class="stat-num" style="color:#ef4444;">{snapshot["missing_count"]}</div><div class="stat-label">Missing</div></div>', unsafe_allow_html=True)
     with sc3:
@@ -4625,8 +5096,8 @@ def show_missing_docs_page():
         for doc_type in all_required:
             if doc_type in found:
                 st.markdown(
-                    f'<div style="padding:5px 10px;margin:3px 0;background:rgba(57,255,20,0.1);'
-                    f'border-left:3px solid #39FF14;border-radius:4px;font-size:12px;color:#39FF14;">'
+                    f'<div style="padding:5px 10px;margin:3px 0;background:rgba(59,130,246,0.1);'
+                    f'border-left:3px solid #3b82f6;border-radius:4px;font-size:12px;color:#3b82f6;">'
                     f'{doc_type}</div>',
                     unsafe_allow_html=True,
                 )
@@ -4706,8 +5177,8 @@ def show_doc_expiry_page():
             st.markdown('<div style="font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;margin:10px 0 6px;">OK</div>', unsafe_allow_html=True)
             for doc in warnings["okay"]:
                 st.markdown(
-                    f'<div style="padding:5px 10px;margin:3px 0;background:rgba(57,255,20,0.1);'
-                    f'border-left:3px solid #39FF14;border-radius:4px;font-size:12px;color:#39FF14;">'
+                    f'<div style="padding:5px 10px;margin:3px 0;background:rgba(59,130,246,0.1);'
+                    f'border-left:3px solid #3b82f6;border-radius:4px;font-size:12px;color:#3b82f6;">'
                     f'{doc.name} — {doc.days_until_expiry}d</div>',
                     unsafe_allow_html=True,
                 )
@@ -4808,8 +5279,8 @@ def show_spanish_reply_page():
                     st.warning("Please enter a reply first.")
     else:
         st.markdown(
-            '<div style="padding:7px 12px;margin-bottom:14px;background:rgba(57,255,20,0.1);'
-            'border-left:3px solid #39FF14;border-radius:4px;font-size:12px;color:#39FF14;">'
+            '<div style="padding:7px 12px;margin-bottom:14px;background:rgba(59,130,246,0.1);'
+            'border-left:3px solid #3b82f6;border-radius:4px;font-size:12px;color:#3b82f6;">'
             '📧 English Email Detected — Generate Spanish Reply Templates</div>',
             unsafe_allow_html=True,
         )
@@ -5009,8 +5480,8 @@ def show_current_loan_banner():
             current_loan = next((l for l in loans if l.get("id") == current_loan_id), None)
             if current_loan:
                 st.markdown(
-                    f'<div style="background:#1a1a1a;border:1px solid #39FF14;border-radius:8px;padding:12px 16px;margin-bottom:20px;">'
-                    f'<div style="color:#39FF14;font-weight:600;font-size:14px;margin-bottom:4px;">Current Loan</div>'
+                    f'<div style="background:#1a1a1a;border:1px solid #3b82f6;border-radius:8px;padding:12px 16px;margin-bottom:20px;">'
+                    f'<div style="color:#3b82f6;font-weight:600;font-size:14px;margin-bottom:4px;">Current Loan</div>'
                     f'<div style="color:#ffffff;font-weight:700;font-size:16px;">{current_loan["borrower"]}</div>'
                     f'<div style="color:#9ca3af;font-size:13px;margin-top:2px;">{current_loan["loan_num"]} • {current_loan["status"]}</div>'
                     f'</div>',
@@ -5769,7 +6240,7 @@ def show_email_watch_controls_page():
     # ── Status card ──────────────────────────────────────────────────────────
     if status["running"]:
         st.markdown(
-            f'<div style="background:rgba(57,255,20,0.05);border-left:4px solid #39FF14;border-radius:8px;'
+            f'<div style="background:rgba(59,130,246,0.05);border-left:4px solid #3b82f6;border-radius:8px;'
             f'padding:10px 16px;margin-bottom:16px;">'
             f'<span style="font-size:14px;font-weight:700;color:#a9dfbf;">● Watching inbox</span>'
             f'<span style="font-size:12px;color:#7dcea0;margin-left:12px;">'
@@ -5927,7 +6398,7 @@ def show_email_watch_page():
     with _rs1:
         st.markdown(
             f'<div style="background:#1e1e1e;border-left:3px solid '
-            f'{"#39FF14" if _ew_running else "rgba(255,255,255,0.15)"};border-radius:6px;'
+            f'{"#3b82f6" if _ew_running else "rgba(255,255,255,0.15)"};border-radius:6px;'
             f'padding:6px 14px;font-size:12px;color:#9ca3af;">'
             f'{_dot} {_state} · <b style="color:#fff">{_ew_pending} attachment(s) waiting</b></div>',
             unsafe_allow_html=True,
@@ -5951,7 +6422,7 @@ def show_email_watch_page():
             lnum  = m.get("loan_num", "")
 
             if sugg == "match":
-                conf_color = "#39FF14"
+                conf_color = "#3b82f6"
                 conf_label = f"✓ Matched — {bname} · Loan {lnum} ({conf}% confidence)"
             elif sugg == "possible":
                 conf_color = "#fbbf24"
@@ -5973,7 +6444,7 @@ def show_email_watch_page():
                     folder = m.get("suggested_folder", "")
                     if folder:
                         st.markdown(
-                            f'<div style="font-size:12px;color:#39FF14;margin-top:4px;">'
+                            f'<div style="font-size:12px;color:#3b82f6;margin-top:4px;">'
                             f'Suggested folder: {folder}</div>',
                             unsafe_allow_html=True,
                         )
@@ -6109,7 +6580,7 @@ def show_email_watch_page():
                            "verdict": "check", "borrower": None, "loan_num": "",
                            "suggested_folder": "", "confidence": 0}
 
-                _v_color = {"pass": "#39FF14", "review": "#fbbf24", "check": "#ef4444"}.get(
+                _v_color = {"pass": "#3b82f6", "review": "#fbbf24", "check": "#ef4444"}.get(
                     _qv.get("verdict", "check"), "#ef4444"
                 )
                 _v_icon  = {"pass": "✓", "review": "△", "check": "?"}.get(
@@ -6126,7 +6597,7 @@ def show_email_watch_page():
                         f'<span style="font-weight:700;color:#ffffff;font-size:13px;">'
                         f'{_v_icon} {_qfname}</span>'
                         f'<span style="font-size:12px;color:#9ca3af;">{_match_label}</span><br>'
-                        f'<span style="font-size:11px;color:#39FF14;">{_qv.get("doc_type","Document")} · '
+                        f'<span style="font-size:11px;color:#3b82f6;">{_qv.get("doc_type","Document")} · '
                         f'{_qv.get("page_count",0)} pages · '
                         f'{_qv.get("days_old","?")}d old</span></div>',
                         unsafe_allow_html=True,
@@ -6134,7 +6605,7 @@ def show_email_watch_page():
                     _qa, _qb, _qc, _qd = st.columns([3, 1, 1, 1])
                     with _qa:
                         for _ok in _qv.get("ok_list", []):
-                            st.markdown(f'<span style="color:#39FF14;font-size:11px;">✓ {_ok}</span><br>',
+                            st.markdown(f'<span style="color:#3b82f6;font-size:11px;">✓ {_ok}</span><br>',
                                         unsafe_allow_html=True)
                         for _fl in _qv.get("flags", []):
                             st.markdown(f'<span style="color:#ef4444;font-size:11px;">⚑ {_fl}</span><br>',
@@ -6435,7 +6906,7 @@ def show_billing_page():
 
     # ── Usage bar ─────────────────────────────────────────────────────────────
     pct = usage["pct_used"]
-    bar_color = "#39FF14" if pct < 80 else ("#f59e0b" if pct < 100 else "#ef4444")
+    bar_color = "#3b82f6" if pct < 80 else ("#f59e0b" if pct < 100 else "#ef4444")
     st.markdown(
         f'<div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px 16px;margin:8px 0 16px;">'
         f'<div style="font-size:13px;color:#d1d5db;margin-bottom:6px;">'
@@ -6456,7 +6927,7 @@ def show_billing_page():
                 f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">'
                 f'<span style="font-size:13px;color:#d1d5db;width:220px;">{dtype or "Unknown"}</span>'
                 f'<div style="flex:1;background:rgba(255,255,255,0.03);border-radius:4px;height:8px;">'
-                f'<div style="background:#39FF14;width:{pct_dt}%;height:8px;border-radius:4px;"></div></div>'
+                f'<div style="background:#3b82f6;width:{pct_dt}%;height:8px;border-radius:4px;"></div></div>'
                 f'<span style="font-size:13px;color:#d1d5db;width:40px;text-align:right;">{count}</span>'
                 f'</div>',
                 unsafe_allow_html=True,
@@ -6568,13 +7039,13 @@ def show_loan_detail():
         if loan.get("closing_date"): _ld_pct = min(_ld_pct + 10, 100)
         if loan.get("lock_expiry"):  _ld_pct = min(_ld_pct + 10, 100)
         _ld_label = f"{status} — no conditions tracked yet"
-    _ld_bar_color = "#39FF14" if _ld_pct >= 75 else ("#f59e0b" if _ld_pct >= 40 else "#ef4444")
+    _ld_bar_color = "#3b82f6" if _ld_pct >= 75 else ("#f59e0b" if _ld_pct >= 40 else "#ef4444")
 
     st.markdown(
         f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-left:3px solid {border_color};'
         f'border-radius:3px;padding:12px 14px;margin:4px 0;">'
         f'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">'
-        f'<span style="font-size:16px;font-weight:700;color:#39FF14;">#{loan.get("loan_num","—")}</span>'
+        f'<span style="font-size:16px;font-weight:700;color:#3b82f6;">#{loan.get("loan_num","—")}</span>'
         f'<span style="font-size:15px;font-weight:600;color:#ffffff;">{loan.get("borrower","—")}</span>'
         f'<span class="status-chip status-{status.lower()}" style="font-size:13px;">'
         f'<span style="color:{border_color};font-size:10px;">●</span> {status}</span>'
@@ -6592,7 +7063,7 @@ def show_loan_detail():
 
     # ── Key Dates ─────────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;">Key Dates</span>',
         unsafe_allow_html=True,
     )
@@ -6624,7 +7095,7 @@ def show_loan_detail():
     with d1:
         st.markdown(
             f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;">'
-            f'<div style="font-size:10px;color:#39FF14;font-weight:700;text-transform:uppercase;">Closing Date</div>'
+            f'<div style="font-size:10px;color:#3b82f6;font-weight:700;text-transform:uppercase;">Closing Date</div>'
             f'<div style="font-size:16px;font-weight:700;color:#ffffff;margin-top:4px;">'
             f'{_closing or "Not set"}{_days_away(_closing)}</div></div>',
             unsafe_allow_html=True,
@@ -6662,7 +7133,7 @@ def show_loan_detail():
 
     # ── Loan Details ──────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Loan Details</span>',
         unsafe_allow_html=True,
     )
@@ -6707,7 +7178,7 @@ def show_loan_detail():
     # ── Missing Docs ──────────────────────────────────────────────────────
     _missing = loan.get("missing_docs", "")
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Missing Documents</span>',
         unsafe_allow_html=True,
     )
@@ -6722,7 +7193,7 @@ def show_loan_detail():
         st.markdown(_doc_html, unsafe_allow_html=True)
     else:
         st.markdown(
-            '<span style="color:#39FF14;font-size:13px;">All documents received</span>',
+            '<span style="color:#3b82f6;font-size:13px;">All documents received</span>',
             unsafe_allow_html=True,
         )
 
@@ -6732,7 +7203,7 @@ def show_loan_detail():
     _cur_lender = loan.get("lender", "") or "(none)"
     _lender_idx = _lender_options.index(_cur_lender) if _cur_lender in _lender_options else 0
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Lender</span>',
         unsafe_allow_html=True,
     )
@@ -6749,7 +7220,7 @@ def show_loan_detail():
 
     # ── Generate Templates (HOI + Title Request) ────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Generate Documents</span>',
         unsafe_allow_html=True,
     )
@@ -6865,7 +7336,7 @@ def show_loan_detail():
     # ── Quick-copy Title & HOI contacts ─────────────────────────────────────
     _qc_contacts = loan.get("contacts", {}) or {}
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Title &amp; HOI Contact — Copy</span>',
         unsafe_allow_html=True,
     )
@@ -6880,7 +7351,7 @@ def show_loan_detail():
             _phone = _rc.get("phone", "")
             _email = _rc.get("email", "")
             st.markdown(
-                f'<div style="font-size:10px;color:#39FF14;font-weight:700;'
+                f'<div style="font-size:10px;color:#3b82f6;font-weight:700;'
                 f'text-transform:uppercase;margin-bottom:4px;">{_role_label}</div>',
                 unsafe_allow_html=True,
             )
@@ -6903,7 +7374,7 @@ def show_loan_detail():
     # ── Open Conditions (interactive — checkbox, status, parties, email) ────
     _conditions = loan.get("conditions", [])
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Open Conditions</span>',
         unsafe_allow_html=True,
     )
@@ -6979,9 +7450,9 @@ def show_loan_detail():
                         _sec_part = f" · <b>{_sec}</b>" if _sec else ""
                         st.markdown(
                             f'<div style="font-size:11px;color:#e5e7eb;padding:6px 10px;margin:3px 0 3px 32px;'
-                            f'background:rgba(57,255,20,0.05);border-left:2px solid rgba(57,255,20,0.45);'
+                            f'background:rgba(59,130,246,0.05);border-left:2px solid rgba(59,130,246,0.45);'
                             f'border-radius:4px;">'
-                            f'<span style="color:#39FF14;font-weight:700;">{_src}</span>'
+                            f'<span style="color:#3b82f6;font-weight:700;">{_src}</span>'
                             f'{_sec_part}'
                             f' <span style="color:#9ca3af;">p.{_pg} · {_sc}% match</span><br/>'
                             f'<span style="color:#cbd5e1;font-size:10.5px;">{_ex}…</span>'
@@ -6997,7 +7468,7 @@ def show_loan_detail():
 
         # ── Email Draft — below conditions, auto-populate from stored contacts ──
         st.markdown(
-            '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+            '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
             'letter-spacing:0.5px;margin:10px 0 4px 0;display:inline-block;">Draft Email</span>',
             unsafe_allow_html=True,
         )
@@ -7042,7 +7513,7 @@ def show_loan_detail():
         with _em_c3:
             if _ld_checked:
                 st.markdown(
-                    f'<div style="padding-top:26px;font-size:11px;color:#39FF14;font-weight:600;">'
+                    f'<div style="padding-top:26px;font-size:11px;color:#3b82f6;font-weight:600;">'
                     f'✓ {len(_ld_checked)} checked</div>',
                     unsafe_allow_html=True,
                 )
@@ -7128,7 +7599,7 @@ def show_loan_detail():
     # ── Parties & Contacts ───────────────────────────────────────────────
     _contacts = loan.get("contacts", {})
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Parties &amp; Contacts</span>',
         unsafe_allow_html=True,
     )
@@ -7165,7 +7636,7 @@ def show_loan_detail():
                 )
             _contact_html += (
                 f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;">'
-                f'<div style="font-size:10px;color:#39FF14;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
+                f'<div style="font-size:10px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
                 f'<div style="color:#ffffff;font-size:13px;font-weight:600;margin-bottom:4px;">{_cname or "—"}</div>'
                 + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">📞 {_cphone}</div>' if _cphone else '')
                 + (f'<div style="display:flex;align-items:center;font-size:11px;color:#9ca3af;">✉ {_cemail}{_gmail_link}</div>' if _cemail else '')
@@ -7184,7 +7655,7 @@ def show_loan_detail():
 
     # ── Scan & Attach Document ───────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Scan &amp; Attach Document</span>',
         unsafe_allow_html=True,
     )
@@ -7255,8 +7726,8 @@ def show_loan_detail():
             if _ai_log and "CLOUD" in _ai_log.upper():
                 st.markdown(
                     f'<div style="display:inline-block;padding:3px 10px;margin:4px 0 8px 0;'
-                    f'background:rgba(57,255,20,0.12);border:1px solid rgba(57,255,20,0.4);'
-                    f'border-radius:12px;font-size:11px;color:#39FF14;font-weight:600;">'
+                    f'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.4);'
+                    f'border-radius:12px;font-size:11px;color:#3b82f6;font-weight:600;">'
                     f'🤖 Cloud AI augmented · {_ai_log}</div>',
                     unsafe_allow_html=True,
                 )
@@ -7311,7 +7782,7 @@ def show_loan_detail():
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
                     'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
-                    '<b style="color:#39FF14;">Purchase Contract found:</b><br>'
+                    '<b style="color:#3b82f6;">Purchase Contract found:</b><br>'
                     + '<br>'.join(_pc_rows) +
                     '</div>',
                     unsafe_allow_html=True,
@@ -7351,7 +7822,7 @@ def show_loan_detail():
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
                     'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
-                    '<b style="color:#39FF14;">1003 Application found:</b><br>'
+                    '<b style="color:#3b82f6;">1003 Application found:</b><br>'
                     f'Borrower: {_app_b.get("name","—")} · Phone: {_app_b.get("phone","—")}<br>'
                     f'Employer: {_app_emp.get("employer","—")}'
                     '</div>',
@@ -7393,7 +7864,7 @@ def show_loan_detail():
                     st.markdown(
                         f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
                         f'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
-                        f'<b style="color:#39FF14;">{_sr_dtype} scanned:</b> '
+                        f'<b style="color:#3b82f6;">{_sr_dtype} scanned:</b> '
                         f'{len(_new_conds)} condition(s) found</div>',
                         unsafe_allow_html=True,
                     )
@@ -7429,7 +7900,7 @@ def show_loan_detail():
                 st.markdown(
                     f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
                     f'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
-                    f'<b style="color:#39FF14;">Bank Statement Analysis:</b></div>',
+                    f'<b style="color:#3b82f6;">Bank Statement Analysis:</b></div>',
                     unsafe_allow_html=True,
                 )
                 st.markdown(_sr["bank_rules"])
@@ -7437,7 +7908,7 @@ def show_loan_detail():
 
     # ── Approval Fetch ────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Approval Fetch</span>',
         unsafe_allow_html=True,
     )
@@ -7601,7 +8072,7 @@ def show_loan_detail():
                 f'padding:10px;margin:8px 0;">'
                 f'<div style="display:flex;justify-content:space-between;align-items:center;">'
                 f'<div>'
-                f'<span style="color:#39FF14;font-weight:700;font-size:13px;">Approval Letter Scanned</span><br>'
+                f'<span style="color:#3b82f6;font-weight:700;font-size:13px;">Approval Letter Scanned</span><br>'
                 f'<span style="color:#9ca3af;font-size:12px;">Borrower: <b style="color:#ffffff;">'
                 f'{_af_borrower or "Unknown"}</b> · '
                 f'{_af_data["cond_count"]} condition(s) extracted · '
@@ -7677,7 +8148,7 @@ def show_loan_detail():
                         )
                     with _s2:
                         st.markdown(
-                            f'<div class="stat-card"><div class="stat-num" style="color:#39FF14;">'
+                            f'<div class="stat-card"><div class="stat-num" style="color:#3b82f6;">'
                             f'{len(_af_found)}</div>'
                             f'<div class="stat-label">✓ Documents Found</div></div>',
                             unsafe_allow_html=True,
@@ -7693,20 +8164,20 @@ def show_loan_detail():
                     # Found conditions
                     if _af_found:
                         st.markdown(
-                            '<div style="font-size:13px;font-weight:700;color:#39FF14;'
+                            '<div style="font-size:13px;font-weight:700;color:#3b82f6;'
                             'margin:12px 0 6px 0;">FOUND — Documents located in folder</div>',
                             unsafe_allow_html=True,
                         )
                         for _c, _matches in _af_found:
                             _best = _matches[0]
-                            _conf_color = "#39FF14" if _best["score"] >= 70 else (
+                            _conf_color = "#3b82f6" if _best["score"] >= 70 else (
                                 "#fbbf24" if _best["score"] >= 50 else "#f59e0b"
                             )
                             st.markdown(
                                 f'<div style="display:flex;gap:10px;align-items:flex-start;'
-                                f'background:rgba(57,255,20,0.05);border-left:3px solid #39FF14;'
+                                f'background:rgba(59,130,246,0.05);border-left:3px solid #3b82f6;'
                                 f'border-radius:6px;padding:8px 12px;margin-bottom:4px;">'
-                                f'<span style="color:#39FF14;font-weight:700;font-size:12px;min-width:20px;">✓</span>'
+                                f'<span style="color:#3b82f6;font-weight:700;font-size:12px;min-width:20px;">✓</span>'
                                 f'<div style="flex:1;">'
                                 f'<span style="color:#ffffff;font-size:13px;font-weight:600;">'
                                 f'#{_c["num"]} {_c["desc"][:80]}</span><br>'
@@ -7807,7 +8278,7 @@ def show_loan_detail():
 
     # ── Notes ─────────────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Notes</span>',
         unsafe_allow_html=True,
     )
@@ -7825,7 +8296,7 @@ def show_loan_detail():
 
     # ── Quick Actions ─────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Quick Actions</span>',
         unsafe_allow_html=True,
     )
@@ -7897,7 +8368,7 @@ def show_loan_detail():
             break
 
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:16px;display:inline-block;">Documents</span>',
         unsafe_allow_html=True,
     )
@@ -7905,7 +8376,7 @@ def show_loan_detail():
     with _td1:
         st.markdown(
             f'<div style="font-size:14px;color:#d1d5db;padding-top:6px;">'
-            f'<b style="color:#39FF14;">{_ld_doc_count}</b> document(s) added to this loan</div>',
+            f'<b style="color:#3b82f6;">{_ld_doc_count}</b> document(s) added to this loan</div>',
             unsafe_allow_html=True,
         )
     with _td2:
@@ -7925,7 +8396,7 @@ def show_loan_detail():
 
     # ── Ask AI Assistant ──────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:16px;display:inline-block;">Ask AI Assistant</span>',
         unsafe_allow_html=True,
     )
@@ -7999,7 +8470,7 @@ def show_loan_detail():
 
     # ── Activity Log ──────────────────────────────────────────────────────
     st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#39FF14;text-transform:uppercase;'
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:16px;display:inline-block;">Activity Log</span>',
         unsafe_allow_html=True,
     )
@@ -8029,7 +8500,7 @@ def show_loan_detail():
             _detail = entry.get("detail", "")
             _user = entry.get("user", "")
             _icon = _act_icons.get(_action, "●")
-            _user_tag = f'<span style="color:#39FF14;font-weight:600;">{_user}</span> · ' if _user else ""
+            _user_tag = f'<span style="color:#3b82f6;font-weight:600;">{_user}</span> · ' if _user else ""
             st.markdown(
                 f'<div style="display:flex;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
                 f'<span style="font-size:14px;min-width:20px;">{_icon}</span>'
