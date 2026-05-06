@@ -1305,7 +1305,7 @@ _components.html("""
     const hidden = localStorage.getItem(STORAGE_KEY) === '1';
     doc.body.classList.toggle(BODY_CLASS, hidden);
     const btn = doc.getElementById(BTN_ID);
-    if (btn) btn.textContent = hidden ? 'â˜°' : 'âœ•';
+    if (btn) btn.textContent = hidden ? '>' : 'X';
   }
 
   function sidebarExists() {
@@ -1383,7 +1383,7 @@ _components.html("""
       chev.style.cssText = 'display:inline-block;margin-right:8px;font-size:0.65em;vertical-align:middle;user-select:none;transition:transform 0.2s;';
       h2.insertBefore(chev, h2.firstChild);
     }
-    chev.textContent = collapsed ? 'â–¸' : 'â–¾';
+    chev.textContent = collapsed ? '+' : '-';
   }
 
   function wireH2(h2) {
@@ -1393,7 +1393,7 @@ _components.html("""
     h2.title = 'Click to collapse/expand section';
 
     const container = getContainer(h2);
-    const key = STORAGE_PREFIX + (h2.textContent || '').replace(/[â–¸â–¾]/g, '').trim().slice(0, 80);
+    const key = STORAGE_PREFIX + (h2.textContent || '').replace(/[+-]/g, '').trim().slice(0, 80);
     const collapsed = localStorage.getItem(key) === '1';
     applyCollapse(h2, container, collapsed);
 
@@ -1990,13 +1990,13 @@ def show_sidebar():
         _ew_status  = _ew.get_status()
         _ew_pending = _ew_status["pending_count"]
         _ew_running = _ew_status["running"]
-        _ew_dot     = "â—" if _ew_running else "â—‹"
+        _ew_dot     = "ON" if _ew_running else "OFF"
         _ew_badge   = f" ({_ew_pending})" if _ew_pending else ""
 
         # â”€â”€ Helper: nav button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         def _nav_btn(label, page_key, btn_key=None, indent=False):
             active = _current_page == page_key
-            lbl = ("â— " + label) if active else label
+            lbl = label
             cols = st.columns([1, 8]) if indent else None
             ctx = cols[1] if indent else st
             if ctx.button(lbl, key=btn_key or f"nav_{page_key}", use_container_width=True,
@@ -2012,7 +2012,7 @@ def show_sidebar():
             if divider:
                 st.markdown("---")
             is_open = st.session_state[state_key]
-            chev = "â–¾" if is_open else "â–¸"
+            chev = "-" if is_open else "+"
             if st.button(f"{chev} {label.upper()}", key=f"_sec_{state_key}",
                          use_container_width=True,
                          help=f"Click to {'collapse' if is_open else 'expand'}"):
@@ -2033,7 +2033,7 @@ def show_sidebar():
             _ew_active  = _current_page in _ew_pages
             _ew_top_lbl = f"{_ew_dot} Email Watch{_ew_badge}"
             if _ew_active:
-                _ew_top_lbl = "â— " + _ew_top_lbl
+                _ew_top_lbl = _ew_top_lbl
             if st.button(_ew_top_lbl, key="nav_email_watch_top", use_container_width=True,
                          type=("primary" if _ew_active else "secondary")):
                 if _ew_active:
@@ -2066,32 +2066,32 @@ def show_sidebar():
 
         # â•â•â•â•â•â•â•â•â•â•â• TOOLS â€” flat top-level collapses (no parent wrapper) â•â•â•
         if _section_header("Quick Tools", "_sec_open_quick", default_open=False):
-            _nav_btn("ðŸ“‹ Loan Snapshot",  "snapshot",      "nav_snapshot")
-            _nav_btn("âš ï¸ Report Issue",   "report_issue",  "nav_report_issue")
-            _nav_btn("ðŸ—‚ï¸ Missing Docs",   "missing_docs",  "nav_missing_docs")
-            _nav_btn("ðŸ“… Doc Expiry",     "doc_expiry",    "nav_doc_expiry")
-            _nav_btn("ðŸŒŽ Spanish Reply",  "spanish_reply", "nav_spanish")
+            _nav_btn("Loan Snapshot",  "snapshot",      "nav_snapshot")
+            _nav_btn("Report Issue",   "report_issue",  "nav_report_issue")
+            _nav_btn("Missing Docs",   "missing_docs",  "nav_missing_docs")
+            _nav_btn("Doc Expiry",     "doc_expiry",    "nav_doc_expiry")
+            _nav_btn("Spanish Reply",  "spanish_reply", "nav_spanish")
 
         if _section_header("Advanced Tools", "_sec_open_advanced", default_open=False):
-            _nav_btn("ðŸ“Š Income Verifier",    "income_verifier",    "nav_income_verifier")
-            _nav_btn("ðŸ“ Auto Data Entry",    "auto_data_entry",    "nav_auto_data_entry")
-            _nav_btn("ðŸ’³ Credit Summary",     "credit_summary",     "nav_credit_summary")
-            _nav_btn("ðŸ§® DTI Calculator",     "dti_calculator",     "nav_dti_calculator")
-            _nav_btn("âœ… Condition Clearer",  "condition_clearer",  "nav_condition_clearer")
-            _nav_btn("âš–ï¸ Compliance Checker", "compliance_checker", "nav_compliance_checker")
+            _nav_btn("Income Verifier",    "income_verifier",    "nav_income_verifier")
+            _nav_btn("Auto Data Entry",    "auto_data_entry",    "nav_auto_data_entry")
+            _nav_btn("Credit Summary",     "credit_summary",     "nav_credit_summary")
+            _nav_btn("DTI Calculator",     "dti_calculator",     "nav_dti_calculator")
+            _nav_btn("Condition Clearer",  "condition_clearer",  "nav_condition_clearer")
+            _nav_btn("Compliance Checker", "compliance_checker", "nav_compliance_checker")
 
         if _section_header("Pipeline Advanced", "_sec_open_pipeline", default_open=False):
-            _nav_btn("ðŸ“¦ Closing Package",  "closing_package",  "nav_closing_package")
-            _nav_btn("ðŸ“‹ Guideline Checker","guideline_checker","nav_guideline_checker")
-            _nav_btn("ðŸ” Fraud Detector",   "fraud_detector",   "nav_fraud_detector")
-            _nav_btn("ðŸ‘¥ Multi-Borrower",   "multi_borrower",   "nav_multi_borrower")
-            _nav_btn("ðŸ“¤ LOS Export",       "los_export",       "nav_los_export")
+            _nav_btn("Closing Package",  "closing_package",  "nav_closing_package")
+            _nav_btn("Guideline Checker","guideline_checker","nav_guideline_checker")
+            _nav_btn("Fraud Detector",   "fraud_detector",   "nav_fraud_detector")
+            _nav_btn("Multi-Borrower",   "multi_borrower",   "nav_multi_borrower")
+            _nav_btn("LOS Export",       "los_export",       "nav_los_export")
 
         if _section_header("Advanced Automation", "_sec_open_automation", default_open=False):
-            _nav_btn("ðŸ”’ Rate Lock Monitor",     "rate_lock_monitor",     "nav_rate_lock_monitor")
-            _nav_btn("ðŸ“‹ Underwriting Tracker",  "underwriting_tracker",  "nav_underwriting_tracker")
-            _nav_btn("ðŸ·ï¸ Document Classifier",   "document_classifier",   "nav_document_classifier")
-            _nav_btn("ðŸ’° Escrow Calculator",     "escrow_calculator",     "nav_escrow_calculator")
+            _nav_btn("Rate Lock Monitor",     "rate_lock_monitor",     "nav_rate_lock_monitor")
+            _nav_btn("Underwriting Tracker",  "underwriting_tracker",  "nav_underwriting_tracker")
+            _nav_btn("Document Classifier",   "document_classifier",   "nav_document_classifier")
+            _nav_btn("Escrow Calculator",     "escrow_calculator",     "nav_escrow_calculator")
 
         # â•â•â•â•â•â•â•â•â•â•â• SETTINGS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         if _section_header("Settings", "_sec_open_settings", default_open=False):
@@ -2102,7 +2102,7 @@ def show_sidebar():
                 _sb_has_key = bool(_sb_cfg.get("api_key"))
                 _sb_on = bool(_sb_cfg.get("enabled")) and _sb_has_key
                 if _sb_has_key:
-                    _sb_label = f"ðŸ¤– Cloud AI: {'ON' if _sb_on else 'OFF'} Â· {_sb_cfg.get('provider','claude').title()}"
+                    _sb_label = f"Cloud AI: {'ON' if _sb_on else 'OFF'} - {_sb_cfg.get('provider','claude').title()}"
                     _sb_color = "#3b82f6" if _sb_on else "#9ca3af"
                     st.markdown(
                         f'<div style="font-size:11px;color:{_sb_color};margin:4px 0 6px 4px;font-weight:600;">'
@@ -2117,13 +2117,13 @@ def show_sidebar():
                 else:
                     st.markdown(
                         '<div style="font-size:11px;color:#9ca3af;margin:4px 0 6px 4px;">'
-                        'ðŸ¤– Cloud AI: no key set</div>',
+                        'Cloud AI: no key set</div>',
                         unsafe_allow_html=True,
                     )
             except Exception:
                 pass
 
-            if st.button("ðŸ¤– AI Settings (Claude / Gemini / OpenAI)", key="nav_ai_settings", use_container_width=True, type="secondary"):
+            if st.button("AI Settings (Claude / Gemini / OpenAI)", key="nav_ai_settings", use_container_width=True, type="secondary"):
                 st.session_state.page = "ai_settings"
                 _save_session()
                 st.rerun()
@@ -2208,7 +2208,7 @@ def show_dashboard():
 
     # â”€â”€ File uploader (additive) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     new_files = st.file_uploader(
-        "Drop PDFs here â€” or click to browse" if not _has_upload else "Add more PDFs",
+        "Drop PDFs here - or click to browse" if not _has_upload else "Add more PDFs",
         type=["pdf"], accept_multiple_files=True,
         key="dash_uploader",
     )
@@ -2583,17 +2583,17 @@ def show_dashboard():
         # Check all / Uncheck all / Delete selected controls
         _sel_c1, _sel_c2, _sel_c3 = st.columns([1, 1, 2])
         with _sel_c1:
-            if st.button("âœ“ Check All", key="dash_check_all", use_container_width=True):
+            if st.button("Check All", key="dash_check_all", use_container_width=True):
                 for _vi in _visible:
                     st.session_state[f"dash_sel_{_vi}"] = True
                 st.rerun()
         with _sel_c2:
-            if st.button("âœ— Uncheck All", key="dash_uncheck_all", use_container_width=True):
+            if st.button("Uncheck All", key="dash_uncheck_all", use_container_width=True):
                 for _vi in _visible:
                     st.session_state[f"dash_sel_{_vi}"] = False
                 st.rerun()
         with _sel_c3:
-            if st.button("ðŸ—‘ Delete Selected", key="dash_del_selected", use_container_width=True):
+            if st.button("Delete Selected", key="dash_del_selected", use_container_width=True):
                 _to_remove = [_vi for _vi in _visible if not st.session_state.get(f"dash_sel_{_vi}", True)]
                 # Remove from file_bytes_cache and detections by rebuilding sans removed
                 _keep = [i for i in range(len(new_files)) if i not in _to_remove]
@@ -2727,12 +2727,12 @@ def show_dashboard():
                     })
                     st.session_state.scan_batches = _batch
                     if _result.get("image_only"):
-                        st.warning(f"{_sq_name}: {_sq_type} â€” scanned image, logged without extraction")
+                        st.warning(f"{_sq_name}: {_sq_type} - scanned image, logged without extraction")
                     else:
-                        st.success(f"{_sq_name}: {_sq_type} âœ“")
+                        st.success(f"{_sq_name}: {_sq_type} OK")
                 else:
                     st.error(f"{_sq_name}: {_result.get('error', 'Failed')}")
-            _sq_progress.progress(100, text=f"Done â€” {_sq_total} document(s) scanned")
+            _sq_progress.progress(100, text=f"Done - {_sq_total} document(s) scanned")
 
     # â”€â”€ Show completed scan results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if st.session_state.scan_batches:
@@ -2765,12 +2765,12 @@ def show_dashboard():
         if _total_pages > 1:
             _pg_cols = st.columns([1, 2, 1])
             with _pg_cols[0]:
-                if st.button("â† Prev", key="scan_pg_prev", disabled=st.session_state.scan_page == 0):
+                if st.button("Prev", key="scan_pg_prev", disabled=st.session_state.scan_page == 0):
                     st.session_state.scan_page -= 1; st.rerun()
             with _pg_cols[1]:
                 st.markdown(f'<div style="text-align:center;font-size:12px;color:#9ca3af;padding-top:8px;">Page {st.session_state.scan_page+1} of {_total_pages} ({_total_batches} docs)</div>', unsafe_allow_html=True)
             with _pg_cols[2]:
-                if st.button("Next â†’", key="scan_pg_next", disabled=st.session_state.scan_page >= _total_pages - 1):
+                if st.button("Next", key="scan_pg_next", disabled=st.session_state.scan_page >= _total_pages - 1):
                     st.session_state.scan_page += 1; st.rerun()
 
         _page_start = st.session_state.scan_page * _PAGE_SIZE
@@ -2803,7 +2803,7 @@ def show_dashboard():
 
             _del_col, _exp_col = st.columns([1, 11])
             with _del_col:
-                if st.button("âœ•", key=f"ds_del_{_bidx}", help="Remove this scan result"):
+                if st.button("X", key=f"ds_del_{_bidx}", help="Remove this scan result"):
                     st.session_state.scan_batches.pop(_bidx)
                     st.rerun()
             with _exp_col:
@@ -3021,11 +3021,11 @@ def show_dashboard():
                                                        default=[_c["party"]] if _c["party"] in _PARTY_OPTS_SCAN else [],
                                                        key=f"{_uid}_party", label_visibility="collapsed")
                         with _r5:
-                            if st.button("ðŸ“§", key=f"{_uid}_email", help="Draft email"):
+                            if st.button("Email", key=f"{_uid}_email", help="Draft email"):
                                 st.session_state[f"{_uid}_email_open"] = True
                         with _r6:
                             _fd = not (_lm_suggestion == "match" and _lm_loan_id)
-                            if st.button("ðŸ“", key=f"{_uid}_fetch", disabled=_fd,
+                            if st.button("Fetch", key=f"{_uid}_fetch", disabled=_fd,
                                          help="Match to loan first" if _fd else "Fetch from folder"):
                                 try:
                                     from pathlib import Path as _P
@@ -3040,7 +3040,7 @@ def show_dashboard():
                                 except Exception as _e:
                                     st.toast(f"Fetch failed: {_e}", icon="âš ï¸")
                         with _r7:
-                            if st.button("ðŸ“–", key=f"{_uid}_guide", help="Check vs. Fannie/Freddie guidelines"):
+                            if st.button("Guide", key=f"{_uid}_guide", help="Check vs. Fannie/Freddie guidelines"):
                                 st.session_state[f"{_uid}_guide_open"] = True
                                 st.session_state.pop(f"{_uid}_guide_results", None)
 
@@ -3061,7 +3061,7 @@ def show_dashboard():
                                     key=f"{_uid}_email_lang", label_visibility="collapsed",
                                 )
                             with _ec3:
-                                if st.button("âœ•", key=f"{_uid}_email_close", help="Close"):
+                                if st.button("Close", key=f"{_uid}_email_close", help="Close"):
                                     for _k in (f"{_uid}_email_open", f"{_uid}_email_body"):
                                         st.session_state.pop(_k, None)
                                     st.rerun()
@@ -3104,7 +3104,7 @@ def show_dashboard():
                         if st.session_state.get(f"{_uid}_guide_open"):
                             _gc1, _gc2 = st.columns([9, 0.5])
                             with _gc2:
-                                if st.button("âœ•", key=f"{_uid}_guide_close", help="Close"):
+                                if st.button("Close", key=f"{_uid}_guide_close", help="Close"):
                                     for _k in (f"{_uid}_guide_open", f"{_uid}_guide_results"):
                                         st.session_state.pop(_k, None)
                                     st.rerun()
@@ -3776,7 +3776,7 @@ def show_pipeline():
             _add_bulk_key = "add_loan_bulk"
             with st.expander("Upload documents to auto-fill loan details", expanded=not st.session_state.get(_add_bulk_key)):
                 _add_bulk_files = st.file_uploader(
-                    "Drop your loan package â€” approval letter, purchase contract, 1003, etc.",
+                    "Drop your loan package - approval letter, purchase contract, 1003, etc.",
                     type=["pdf"], accept_multiple_files=True,
                     key="add_loan_bulk_upload",
                     label_visibility="collapsed",
@@ -4306,7 +4306,7 @@ def show_pipeline():
                         unsafe_allow_html=True,
                     )
                 with _nc2:
-                    if st.button("âœ•", key=f"notif_dismiss_{_nf.get('_file','')}_{_nf.get('ts','')}",
+                    if st.button("Dismiss", key=f"notif_dismiss_{_nf.get('_file','')}_{_nf.get('ts','')}",
                                  use_container_width=True):
                         dismiss_notification(_nf["_file"])
                         st.rerun()
@@ -4337,7 +4337,7 @@ def show_pipeline():
                         unsafe_allow_html=True,
                     )
                 with ib3:
-                    if st.button("âœ“ Accept", key=f"inbox_accept_{share_id}", use_container_width=True):
+                    if st.button("Accept", key=f"inbox_accept_{share_id}", use_container_width=True):
                         # Import into local pipeline
                         add_loan(
                             loan_num=item.get("loan_num", ""),
@@ -4711,7 +4711,7 @@ def show_pipeline():
                     unsafe_allow_html=True,
                 )
             with _cf2:
-                if st.button("âœ“ Yes", key=f"st_yes_{lid}", type="primary", use_container_width=True):
+                if st.button("Yes", key=f"st_yes_{lid}", type="primary", use_container_width=True):
                     set_status(lid, _pending)
                     log_activity(lid, "status_manual", f"Status manually changed â†’ {_pending}", user=my_name or "Unknown")
                     from sharing import notify_shared_members as _nsm
@@ -4720,7 +4720,7 @@ def show_pipeline():
                     st.session_state.pop(_status_pending_key, None)
                     st.rerun()
             with _cf3:
-                if st.button("âœ— No", key=f"st_no_{lid}", use_container_width=True):
+                if st.button("No", key=f"st_no_{lid}", use_container_width=True):
                     st.session_state.pop(_status_confirm_key, None)
                     st.session_state.pop(_status_pending_key, None)
                     st.rerun()
@@ -5044,7 +5044,7 @@ def show_pipeline():
                         st.toast(f"Restored #{tl.get('loan_num', '')}", icon="Resetï¸")
                         st.rerun()
                 with tc3:
-                    if st.button("âœ— Delete", key=f"permdel_{t_lid}", use_container_width=True):
+                    if st.button("Delete", key=f"permdel_{t_lid}", use_container_width=True):
                         permanently_delete(t_lid)
                         st.toast("Permanently deleted", icon="âœ—")
                         st.rerun()
@@ -5755,15 +5755,15 @@ def show_spanish_reply_page():
     original_text = (m.get("subject", "") + "\n" + m.get("body", "")).strip()
 
     # Always show the input area and sample buttons
-    st.markdown("**ðŸ“§ Enter or paste a borrower email:**")
+    st.markdown("**Enter or paste a borrower email:**")
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("ðŸ‡ªðŸ‡¸ Sample Spanish Email", key="sample_spanish"):
+        if st.button("Sample Spanish Email", key="sample_spanish"):
             sample_text = "Estimado seÃ±or, necesitamos los documentos de su prÃ©stamo para continuar con el proceso. Por favor envÃ­e sus estados de cuenta y talones de pago."
             st.session_state["spanish_input_text"] = sample_text
             st.rerun()
     with col2:
-        if st.button("ðŸ‡ºðŸ‡¸ Sample English Email", key="sample_english"):
+        if st.button("Sample English Email", key="sample_english"):
             sample_text = "Dear borrower, we need your loan documents to continue processing. Please send your bank statements and pay stubs."
             st.session_state["spanish_input_text"] = sample_text
             st.rerun()
@@ -5802,7 +5802,7 @@ def show_spanish_reply_page():
             english_reply = st.text_area("Your reply in English", height=90, key="spanish_reply_en",
                                        placeholder="Type your response in English here... e.g., 'Thank you for your email. We need your bank statements and pay stubs.'")
 
-            if st.button("ðŸ”„ Translate to Spanish & Generate Email Draft", key="spanish_translate_btn", type="primary", disabled=not english_reply.strip()):
+            if st.button("Translate to Spanish & Generate Email Draft", key="spanish_translate_btn", type="primary", disabled=not english_reply.strip()):
                 if english_reply.strip():
                     with st.spinner("Translating to Spanish..."):
                         spanish_draft = translate_to_spanish(english_reply)
@@ -5828,8 +5828,8 @@ def show_spanish_reply_page():
         conditions = st.text_area("Conditions (e.g., '1. Bank statements\\n2. Pay stubs')", height=80, key="spanish_conds",
                                 placeholder="1. Government-issued photo ID\n2. Recent bank statements\n3. Recent pay stubs")
 
-        if st.button("ðŸ“ Generate Spanish & English Email Templates", key="spanish_gen_btn", type="primary"):
-            tab_es, tab_en = st.tabs(["ðŸ‡ªðŸ‡¸ Spanish Draft", "ðŸ‡ºðŸ‡¸ English Draft"])
+        if st.button("Generate Spanish & English Email Templates", key="spanish_gen_btn", type="primary"):
+            tab_es, tab_en = st.tabs(["Spanish Draft", "English Draft"])
             with tab_es:
                 st.markdown("**Spanish Email Template (ready to send to borrower):**")
                 st.text_area("Spanish version", value=get_spanish_template(conditions), height=220, key="spanish_gen_out")
@@ -5845,14 +5845,14 @@ def show_spanish_reply_page():
     st.markdown("---")
     col_close, col_clear = st.columns(2)
     with col_close:
-        if st.button("âŒ Close", key="spanish_close", type="secondary"):
+        if st.button("Close", key="spanish_close", type="secondary"):
             st.session_state["spanish_reply_data"] = None
             st.session_state["spanish_input_text"] = ""
             for key in ["spanish_translated", "spanish_reply_en", "spanish_final_draft", "spanish_gen_out", "english_gen_out"]:
                 st.session_state.pop(key, None)
             st.rerun()
     with col_clear:
-        if st.button("ðŸ§¹ Clear All", key="spanish_clear", type="secondary"):
+        if st.button("Clear All", key="spanish_clear", type="secondary"):
             st.session_state["spanish_input_text"] = ""
             for key in ["spanish_translated", "spanish_reply_en", "spanish_final_draft", "spanish_gen_out", "english_gen_out"]:
                 st.session_state.pop(key, None)
@@ -6065,7 +6065,7 @@ def show_dti_calculator_page():
         # Pull from scanned data button
         col_pull, col_manual = st.columns([1, 1])
         with col_pull:
-            if st.button("ðŸ“Š Pull from Last Scan", key="pull_scan_dti"):
+            if st.button("Pull from Last Scan", key="pull_scan_dti"):
                 from financial_extractor import FinancialDataExtractor
 
                 # Get extracted data using the financial extractor
@@ -6082,7 +6082,7 @@ def show_dti_calculator_page():
                     st.rerun()
 
         with col_manual:
-            if st.button("âœï¸ Clear Manual Input", key="clear_manual_dti"):
+            if st.button("Clear Manual Input", key="clear_manual_dti"):
                 st.session_state["dti_income"] = 0.0
                 st.session_state["dti_debt"] = 0.0
                 st.session_state["dti_housing"] = 0.0
@@ -6131,7 +6131,7 @@ def show_dti_calculator_page():
         # Pull from scanned data button for closing costs
         col_pull_cc, col_clear_cc = st.columns([1, 1])
         with col_pull_cc:
-            if st.button("ðŸ“Š Pull from Last Scan", key="pull_scan_cc"):
+            if st.button("Pull from Last Scan", key="pull_scan_cc"):
                 from financial_extractor import FinancialDataExtractor
 
                 # Get extracted data using the financial extractor
@@ -6148,7 +6148,7 @@ def show_dti_calculator_page():
                     st.rerun()
 
         with col_clear_cc:
-            if st.button("âœï¸ Clear", key="clear_cc"):
+            if st.button("Clear", key="clear_cc"):
                 st.session_state["cc_loan_amt"] = 0.0
                 st.session_state["cc_property_val"] = 0.0
                 st.rerun()
@@ -6802,40 +6802,40 @@ def show_email_watch_controls_page():
     t1, t2, t3 = st.columns([1, 1, 3])
     with t1:
         if status["running"]:
-            if st.button("â¹ Stop Watching", use_container_width=True, type="primary"):
+            if st.button("Stop Watching", use_container_width=True, type="primary"):
                 ew.stop()
                 st.success("Inbox watch stopped.")
                 st.rerun()
         else:
-            if st.button("â–¶ Start Watching", use_container_width=True, type="primary"):
+            if st.button("Start Watching", use_container_width=True, type="primary"):
                 try:
                     ew.start()
-                    st.success("Inbox watch started â€” checking every "
+                    st.success("Inbox watch started - checking every "
                                f"{cfg.get('interval_minutes', 5)} minutes.")
                     st.rerun()
                 except Exception as exc:
-                    st.error(f"Could not start: {exc}  Â·  Set up your credentials below first.")
+                    st.error(f"Could not start: {exc} - Set up your credentials below first.")
     with t2:
-        if st.button("ðŸ”„ Check Now", use_container_width=True,
+        if st.button("Check Now", use_container_width=True,
                      help="Run one check immediately without waiting for interval"):
             with st.spinner("Checking inboxâ€¦"):
                 _found, _msg = ew.check_now()
             if _msg.startswith("Error"):
                 st.error(_msg)
             elif _found:
-                st.success(f"Found {_found} new PDF(s) â€” see below.")
+                st.success(f"Found {_found} new PDF(s) - see below.")
             else:
                 st.info(_msg)
             st.rerun()
 
     # â”€â”€ Credentials setup â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    with st.expander("âš™ï¸ Email Credentials" + (" (configured)" if cfg else " (not set up)"), expanded=not cfg):
+    with st.expander("Email Credentials" + (" (configured)" if cfg else " (not set up)"), expanded=not cfg):
         st.markdown(
             '<div style="background:rgba(251,191,36,0.05);border-left:3px solid #fbbf24;border-radius:6px;'
             'padding:8px 14px;margin-bottom:12px;font-size:12px;color:#f9e79f;">'
-            'âš ï¸ <b>Gmail users:</b> You must use an App Password, not your real password.<br>'
-            'Go to: <b>myaccount.google.com â†’ Security â†’ 2-Step Verification â†’ App Passwords</b><br>'
-            'Select "Mail" + "Windows Computer" â†’ copy the 16-character code â†’ paste below.</div>',
+            '<b>Gmail users:</b> You must use an App Password, not your real password.<br>'
+            'Go to: <b>myaccount.google.com > Security > 2-Step Verification > App Passwords</b><br>'
+            'Select "Mail" + "Windows Computer" > copy the 16-character code > paste below.</div>',
             unsafe_allow_html=True,
         )
 
@@ -6943,7 +6943,7 @@ def show_email_watch_page():
             unsafe_allow_html=True,
         )
     with _rs2:
-        if st.button("âš™ï¸ Controls", key="ew_goto_controls", use_container_width=True):
+        if st.button("Controls", key="ew_goto_controls", use_container_width=True):
             st.session_state.page = "email_watch_controls"
             st.session_state["ew_nav_open"] = True
             st.rerun()
@@ -7046,7 +7046,7 @@ def show_email_watch_page():
                         ew.dismiss(i)
                         st.rerun()
                     # Spanish Reply button
-                    if st.button("ðŸŒŽ Spanish Reply", key=f"ew_spanish_{i}", use_container_width=True):
+                    if st.button("Spanish Reply", key=f"ew_spanish_{i}", use_container_width=True):
                         st.session_state["spanish_reply_data"] = m
                         st.session_state.page = "spanish_reply"
                         st.session_state["scroll_to"] = "spanish_reply"
@@ -7152,7 +7152,7 @@ def show_email_watch_page():
                     _dest_folder = _qv.get("suggested_folder", "")
                     with _qb:
                         if _dest_folder and os.path.isdir(_dest_folder):
-                            if st.button("âœ“ Yes â€” Save", key=f"iq_yes_{_qi}",
+                            if st.button("Yes - Save", key=f"iq_yes_{_qi}",
                                          use_container_width=True, type="primary"):
                                 import shutil as _shu
                                 _dest = os.path.join(_dest_folder, _qfname)
@@ -7174,7 +7174,7 @@ def show_email_watch_page():
                             _manual = st.text_input("Save to:", key=f"iq_path_{_qi}",
                                                     placeholder=r"C:\Loans\Smith",
                                                     label_visibility="collapsed")
-                            if _manual and st.button("âœ“ Yes", key=f"iq_yes_m_{_qi}",
+                            if _manual and st.button("Yes", key=f"iq_yes_m_{_qi}",
                                                      use_container_width=True, type="primary"):
                                 import shutil as _shu
                                 os.makedirs(_manual, exist_ok=True)
@@ -7198,7 +7198,7 @@ def show_email_watch_page():
                             st.session_state.page = "reader"
                             st.rerun()
                     with _qd:
-                        if st.button("âœ— No", key=f"iq_no_{_qi}", use_container_width=True):
+                        if st.button("No", key=f"iq_no_{_qi}", use_container_width=True):
                             try:
                                 os.remove(_qfpath)
                             except Exception:
@@ -7571,7 +7571,7 @@ def show_loan_detail():
     loan = get_loan(lid)
     if not loan:
         st.warning("Loan not found â€” it may have been removed.")
-        if st.button("â† Back to Pipeline"):
+        if st.button("Back to Pipeline"):
             st.session_state.page = "pipeline"
             st.rerun()
         return
@@ -7581,7 +7581,7 @@ def show_loan_detail():
     border_color = STATUS_COLORS.get(status, "#444")
 
     # â”€â”€ Back button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    if st.button("â† Back to Pipeline", key="back_to_pipeline"):
+    if st.button("Back to Pipeline", key="back_to_pipeline"):
         st.session_state.page = "pipeline"
         st.rerun()
 
@@ -7797,7 +7797,7 @@ def show_loan_detail():
 
     _gen_c1, _gen_c2 = st.columns(2)
     with _gen_c1:
-        if st.button("ðŸ“„ Generate HOI Request", key=f"gen_hoi_{lid}", use_container_width=True):
+        if st.button("Generate HOI Request", key=f"gen_hoi_{lid}", use_container_width=True):
             try:
                 from template_filler import fill_template, build_context, OUTPUT_ROOT
                 import os as _os, re as _re
@@ -7831,7 +7831,7 @@ def show_loan_detail():
             except Exception as _e:
                 st.error(f"Generation failed: {_e}")
     with _gen_c2:
-        if st.button("ðŸ“„ Generate Title Request", key=f"gen_title_{lid}", use_container_width=True):
+        if st.button("Generate Title Request", key=f"gen_title_{lid}", use_container_width=True):
             try:
                 from template_filler import fill_template, build_context, OUTPUT_ROOT
                 import os as _os, re as _re
@@ -7970,13 +7970,13 @@ def show_loan_detail():
             _ld_uid = f"{_ld_fkey}_{_c['num']}"
             _gb1, _gb2 = st.columns([0.5, 9.5])
             with _gb1:
-                if st.button("ðŸ“–", key=f"{_ld_uid}_guide", help="Check vs. Fannie/Freddie guidelines"):
+                if st.button("Guide", key=f"{_ld_uid}_guide", help="Check vs. Fannie/Freddie guidelines"):
                     st.session_state[f"{_ld_uid}_guide_open"] = True
                     st.session_state.pop(f"{_ld_uid}_guide_results", None)
             if st.session_state.get(f"{_ld_uid}_guide_open"):
                 _gc1, _gc2 = st.columns([9, 0.5])
                 with _gc2:
-                    if st.button("âœ•", key=f"{_ld_uid}_guide_close"):
+                    if st.button("Close", key=f"{_ld_uid}_guide_close"):
                         for _k in (f"{_ld_uid}_guide_open", f"{_ld_uid}_guide_results"):
                             st.session_state.pop(_k, None)
                         st.rerun()
@@ -8348,7 +8348,7 @@ def show_loan_detail():
                     unsafe_allow_html=True,
                 )
 
-                if st.button("âœ“ Merge contacts into this loan", key=f"detail_merge_pc_{lid}",
+                if st.button("Merge contacts into this loan", key=f"detail_merge_pc_{lid}",
                              use_container_width=True):
                     _new_contacts = dict(_contacts)  # existing contacts
                     _pc_map = {
@@ -8389,7 +8389,7 @@ def show_loan_detail():
                     unsafe_allow_html=True,
                 )
 
-                if st.button("âœ“ Merge contacts into this loan", key=f"detail_merge_1003_{lid}",
+                if st.button("Merge contacts into this loan", key=f"detail_merge_1003_{lid}",
                              use_container_width=True):
                     _new_contacts = dict(_contacts)
                     _1003_map = {
@@ -8437,7 +8437,7 @@ def show_loan_detail():
                             unsafe_allow_html=True,
                         )
 
-                    if st.button("âœ“ Merge conditions into this loan", key=f"detail_merge_conds_{lid}",
+                    if st.button("Merge conditions into this loan", key=f"detail_merge_conds_{lid}",
                                  use_container_width=True):
                         _existing = list(_conditions)
                         _existing_descs = {c.get("desc", "").lower().strip() for c in _existing}
@@ -8784,7 +8784,7 @@ def show_loan_detail():
                     st.markdown("---")
                     _mc1, _mc2 = st.columns([1, 1])
                     with _mc1:
-                        if st.button("âœ“ Merge conditions into this loan", key=f"af_merge_{lid}",
+                        if st.button("Merge conditions into this loan", key=f"af_merge_{lid}",
                                      use_container_width=True, type="primary"):
                             _existing = list(_conditions)
                             _existing_descs = {c.get("desc", "").lower().strip() for c in _existing}
