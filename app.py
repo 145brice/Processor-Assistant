@@ -1600,11 +1600,14 @@ def _handle_google_oauth_callback() -> bool:
     _qp = st.query_params
     oauth_code = _qp.get("code", "")
     oauth_flow = _qp.get("pa_oauth_flow", "")
+    oauth_verifier_qp = _qp.get("pa_oauth_v", "")
     oauth_error = _qp.get("error_description", "") or _qp.get("error", "")
     if isinstance(oauth_code, list):
         oauth_code = oauth_code[0] if oauth_code else ""
     if isinstance(oauth_flow, list):
         oauth_flow = oauth_flow[0] if oauth_flow else ""
+    if isinstance(oauth_verifier_qp, list):
+        oauth_verifier_qp = oauth_verifier_qp[0] if oauth_verifier_qp else ""
     if isinstance(oauth_error, list):
         oauth_error = oauth_error[0] if oauth_error else ""
 
@@ -1615,7 +1618,11 @@ def _handle_google_oauth_callback() -> bool:
     if not oauth_code:
         return False
 
-    verifier = st.session_state.get("oauth_google_verifier", "") or _pop_cached_oauth_verifier(str(oauth_flow))
+    verifier = (
+        st.session_state.get("oauth_google_verifier", "")
+        or _pop_cached_oauth_verifier(str(oauth_flow))
+        or str(oauth_verifier_qp or "")
+    )
 
     try:
         import supabase_auth as _sa

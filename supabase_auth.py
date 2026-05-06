@@ -57,11 +57,16 @@ def _app_base_url() -> str:
     return "http://127.0.0.1:8501"
 
 
-def get_google_redirect_url(flow_id: str = "") -> str:
+def get_google_redirect_url(flow_id: str = "", verifier: str = "") -> str:
     base = f"{_app_base_url()}/"
-    if not flow_id:
+    params = {}
+    if flow_id:
+        params["pa_oauth_flow"] = flow_id
+    if verifier:
+        params["pa_oauth_v"] = verifier
+    if not params:
         return base
-    return f"{base}?pa_oauth_flow={urllib.parse.quote(flow_id)}"
+    return f"{base}?{urllib.parse.urlencode(params)}"
 
 
 def _json_request(method: str, url: str, payload: dict | None = None, *, api_key: str, bearer: str | None = None) -> dict:
@@ -108,7 +113,7 @@ def begin_google_oauth() -> dict:
     flow_id = secrets.token_urlsafe(18)
     params = {
         "provider": "google",
-        "redirect_to": get_google_redirect_url(flow_id),
+        "redirect_to": get_google_redirect_url(flow_id, verifier),
         "code_challenge": _pkce_challenge(verifier),
         "code_challenge_method": "S256",
     }
