@@ -165,6 +165,16 @@ def _setting_key(user_key: str) -> str:
     return f"user_ai:{user_key}"
 
 
+def _settings_table_error(data: dict | str) -> str:
+    text = json.dumps(data) if isinstance(data, dict) else str(data)
+    if "public.settings" in text or "schema cache" in text or "PGRST205" in text:
+        return (
+            "Supabase settings storage is missing. Run SUPABASE_SCHEMA.sql in "
+            "Supabase SQL Editor, then retry saving your Gemini key."
+        )
+    return text
+
+
 def load_user_gemini_key(user_key: str) -> str:
     if not user_key:
         return ""
@@ -215,6 +225,10 @@ def save_user_gemini_key(user_key: str, gemini_api_key: str) -> dict:
             return {"ok": True}
     except urllib.error.HTTPError as e:
         raw = e.read().decode("utf-8", errors="ignore")
-        return {"ok": False, "error": raw or str(e)}
+        try:
+            data = json.loads(raw) if raw else {}
+        except Exception:
+            data = raw or str(e)
+        return {"ok": False, "error": _settings_table_error(data)}
     except Exception as e:
         return {"ok": False, "error": str(e)}
