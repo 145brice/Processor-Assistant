@@ -173,6 +173,16 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
     # UWM and similar approval letters often list conditions as noun phrases
     # rather than action sentences ("Most recent 30 days paystubs", etc.).
     approval_mode = doc_type == "Approval Letter"
+    if approval_mode:
+        condition_heading = re.compile(
+            r'(?i)\b(?:loan\s+approval\s+conditions?|approval\s+conditions?|'
+            r'ptd\s+conditions?|ptf\s+conditions?|prior\s+to\s+(?:closing|docs|funding)\s+conditions?|'
+            r'conditions?\s+(?:of\s+approval|list|summary))\b'
+        )
+        for idx, line in enumerate(lines):
+            if condition_heading.search(line.strip()):
+                lines = lines[idx + 1:]
+                break
 
     # ---------------------------------------------------------------
     # FORMAT A: Lender condition-code format
