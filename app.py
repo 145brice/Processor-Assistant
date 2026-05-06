@@ -4,6 +4,7 @@ Main Streamlit application.
 """
 
 import os
+import time
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -1566,6 +1567,31 @@ def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: s
     _save_session()
 
 
+_OAUTH_VERIFIER_CACHE: dict[str, tuple[str, float]] = {}
+
+
+def _cache_oauth_verifier(flow_id: str, verifier: str) -> None:
+    if not flow_id or not verifier:
+        return
+    now = time.time()
+    _OAUTH_VERIFIER_CACHE[flow_id] = (verifier, now + 15 * 60)
+    expired = [k for k, (_, exp) in _OAUTH_VERIFIER_CACHE.items() if exp < now]
+    for k in expired:
+        _OAUTH_VERIFIER_CACHE.pop(k, None)
+
+
+def _pop_cached_oauth_verifier(flow_id: str) -> str:
+    if not flow_id:
+        return ""
+    item = _OAUTH_VERIFIER_CACHE.pop(flow_id, None)
+    if not item:
+        return ""
+    verifier, expires_at = item
+    if expires_at < time.time():
+        return ""
+    return verifier
+
+
 def _handle_google_oauth_callback() -> bool:
     """
     Process a Supabase OAuth callback if the app has been redirected back with
@@ -1573,9 +1599,12 @@ def _handle_google_oauth_callback() -> bool:
     """
     _qp = st.query_params
     oauth_code = _qp.get("code", "")
+    oauth_flow = _qp.get("pa_oauth_flow", "")
     oauth_error = _qp.get("error_description", "") or _qp.get("error", "")
     if isinstance(oauth_code, list):
         oauth_code = oauth_code[0] if oauth_code else ""
+    if isinstance(oauth_flow, list):
+        oauth_flow = oauth_flow[0] if oauth_flow else ""
     if isinstance(oauth_error, list):
         oauth_error = oauth_error[0] if oauth_error else ""
 
@@ -1586,7 +1615,7 @@ def _handle_google_oauth_callback() -> bool:
     if not oauth_code:
         return False
 
-    verifier = st.session_state.get("oauth_google_verifier", "")
+    verifier = st.session_state.get("oauth_google_verifier", "") or _pop_cached_oauth_verifier(str(oauth_flow))
 
     try:
         import supabase_auth as _sa
@@ -1616,6 +1645,7 @@ def _handle_google_oauth_callback() -> bool:
             page="dashboard",
         )
         st.session_state.pop("oauth_google_verifier", None)
+        st.session_state.pop("oauth_google_flow_id", None)
         st.session_state.pop("oauth_error_message", None)
         st.query_params.clear()
         st.rerun()
@@ -1820,6 +1850,8 @@ def show_login_page():
             oauth_info = _sa.begin_google_oauth()
             if oauth_info.get("ok"):
                 st.session_state["oauth_google_verifier"] = oauth_info["verifier"]
+                st.session_state["oauth_google_flow_id"] = oauth_info.get("flow_id", "")
+                _cache_oauth_verifier(str(oauth_info.get("flow_id", "")), oauth_info["verifier"])
                 st.markdown(
                     f"""
                     <a href="{oauth_info['url']}" target="_self" style="
@@ -2096,6 +2128,7 @@ def show_sidebar():
             for key in DEFAULTS:
                 st.session_state[key] = DEFAULTS[key]
             st.session_state.pop("oauth_google_verifier", None)
+            st.session_state.pop("oauth_google_flow_id", None)
             st.session_state.force_login = True
             st.rerun()
 

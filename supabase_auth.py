@@ -57,8 +57,11 @@ def _app_base_url() -> str:
     return "http://127.0.0.1:8501"
 
 
-def get_google_redirect_url() -> str:
-    return f"{_app_base_url()}/"
+def get_google_redirect_url(flow_id: str = "") -> str:
+    base = f"{_app_base_url()}/"
+    if not flow_id:
+        return base
+    return f"{base}?pa_oauth_flow={urllib.parse.quote(flow_id)}"
 
 
 def _json_request(method: str, url: str, payload: dict | None = None, *, api_key: str, bearer: str | None = None) -> dict:
@@ -96,20 +99,21 @@ def _pkce_challenge(verifier: str) -> str:
 def begin_google_oauth() -> dict:
     """
     Create a Supabase Google OAuth URL using PKCE.
-    Returns url + verifier that the Streamlit session should store.
+    Returns url + verifier/flow_id that the app should store.
     """
     if not is_configured():
         return {"ok": False, "error": "Supabase OAuth is not configured yet."}
 
     verifier = _pkce_verifier()
+    flow_id = secrets.token_urlsafe(18)
     params = {
         "provider": "google",
-        "redirect_to": get_google_redirect_url(),
+        "redirect_to": get_google_redirect_url(flow_id),
         "code_challenge": _pkce_challenge(verifier),
         "code_challenge_method": "S256",
     }
     url = f"{_supabase_url()}/auth/v1/authorize?{urllib.parse.urlencode(params)}"
-    return {"ok": True, "url": url, "verifier": verifier}
+    return {"ok": True, "url": url, "verifier": verifier, "flow_id": flow_id}
 
 
 def exchange_google_code(code: str, verifier: str) -> dict:
