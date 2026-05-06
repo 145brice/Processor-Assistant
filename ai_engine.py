@@ -54,10 +54,18 @@ _CONDITION_ACTION = re.compile(
     r'letter of|payoff|title|insurance|hoi|hazard|flood|appraisal|voe|bank statement|'
     r'paystub|pay stub|w-?2|tax return|lease|gift letter)\b'
 )
+_CONDITION_OBJECT = re.compile(
+    r'(?i)\b(?:paystubs?|pay\s*stubs?|bank statements?|asset statements?|'
+    r'w-?2s?|1099s?|tax returns?|tax transcripts?|voe|v[oe]m|loe|letter of explanation|'
+    r'gift letters?|title commitment|title policy|survey|payoff|subordination|'
+    r'homeowners?|hazard|hoi|flood|insurance|appraisal|inspection|purchase contract|'
+    r'closing disclosure|cd|driver.?s license|photo id|ssn|social security|'
+    r'mortgage statement|rent verification|lease agreement|earnest money|emd)\b'
+)
 _APPROVAL_NON_CONDITION = re.compile(
     r'(?i)^(?:borrower|co-?borrower|loan\s*(?:number|amount|purpose|type)|'
     r'property|subject property|purchase price|interest rate|ltv|cltv|dti|'
-    r'program|product|uwm|united wholesale|approval|approved|decision|'
+    r'program|product|uwm|united wholesale|loan approval|approval|approved|decision|'
     r'broker|loan officer|account executive|date|expiration|expires|'
     r'prior to closing|prior to docs|prior to funding|conditions?|'
     r'ptd conditions?|ptf conditions?|summary|notes?|message|page\s+\d+)\b'
@@ -129,7 +137,18 @@ def _is_real_condition_text(text: str, *, approval_only: bool = False) -> bool:
         return False
     if len(t.split()) < 3:
         return False
-    return bool(_CONDITION_ACTION.search(t))
+    return bool(_CONDITION_ACTION.search(t) or (approval_only and _CONDITION_OBJECT.search(t)))
+
+
+def _approval_condition_candidate(text: str) -> bool:
+    t = re.sub(r'\s+', ' ', str(text or '')).strip()
+    if not _is_real_condition_text(t, approval_only=True) and not _CONDITION_OBJECT.search(t):
+        return False
+    if _APPROVAL_NON_CONDITION.match(t):
+        return False
+    if re.search(r'(?i)\b(?:prepared for|contact name|email:|phone:|date printed|senior uw|account manager)\b', t):
+        return False
+    return True
 
 
 def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
@@ -150,6 +169,10 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
     seen = set()
 
     lines = pdf_text.split("\n")
+
+    # UWM and similar approval letters often list conditions as noun phrases
+    # rather than action sentences ("Most recent 30 days paystubs", etc.).
+    approval_mode = doc_type == "Approval Letter"
 
     # ---------------------------------------------------------------
     # FORMAT A: Lender condition-code format
@@ -297,6 +320,7 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
         in_section = False
         section_start = re.compile(
             r'(?i)(?:prior\s+to\s+(?:closing|funding|docs|CTC|clear)|'
+            r'loan\s+approval\s+conditions?|approval\s+conditions?|'
             r'conditions?\s*(?:of\s+approval|to\s+be\s+satisfied|list|:)|'
             r'outstanding\s+(?:conditions?|items?|requirements?)|'
             r'underwriting\s+conditions?|'
@@ -321,7 +345,9 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
                 continue
             if in_section:
                 cleaned = re.sub(r'^[\s]*(?:\d{1,3}[\.\)\:]|[a-zA-Z][\.\)]|[\-\*\•])\s*', '', line).strip()
-                if not _is_real_condition_text(cleaned, approval_only=(doc_type == "Approval Letter")):
+                if approval_mode and not _approval_condition_candidate(cleaned):
+                    continue
+                if not approval_mode and not _is_real_condition_text(cleaned):
                     continue
                 if cleaned.lower() in seen:
                     continue
@@ -341,7 +367,11 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
             if m:
                 desc = m.group(1).strip().rstrip('.')
                 lower = desc.lower()
-                if _is_real_condition_text(desc, approval_only=(doc_type == "Approval Letter")) and lower not in seen:
+                if approval_mode:
+                    is_real = _approval_condition_candidate(desc)
+                else:
+                    is_real = _is_real_condition_text(desc)
+                if is_real and lower not in seen:
                     already = any(lower in s or s in lower for s in seen)
                     if not already:
                         seen.add(lower)

@@ -1604,10 +1604,21 @@ def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
     if isinstance(raw_conditions, list):
         source = raw_conditions
     elif isinstance(raw_conditions, str):
+        if "No specific conditions found in this document" in raw_conditions:
+            return []
         source = []
         for line in raw_conditions.splitlines():
             line = line.strip()
             if not line or line.startswith("**") or line.startswith("```"):
+                continue
+            if any(skip in line for skip in (
+                "Possible reasons:",
+                "Raw text preview",
+                "PDF may be a scanned image",
+                "Conditions may use non-standard formatting",
+                "This document type may not contain conditions",
+                "If you see condition text above",
+            )):
                 continue
             if line.startswith("|") and line.endswith("|"):
                 parts = [p.strip() for p in line.strip("|").split("|")]
