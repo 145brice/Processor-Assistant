@@ -2899,6 +2899,8 @@ def show_dashboard():
         for _bidx, _batch in enumerate(st.session_state.scan_batches[_page_start:_page_end], start=_page_start):
             _r = _batch["result"]
             _raw_c = _r.get("conditions")
+            _norm_conds = _normalize_scanned_conditions(_raw_c)
+            _norm_cond_count = len(_norm_conds)
             if isinstance(_raw_c, list):
                 _cond_count = len(_raw_c)
             elif isinstance(_raw_c, str):
@@ -2928,8 +2930,8 @@ def show_dashboard():
                     st.rerun()
             with _exp_col:
                 _exp = st.expander(
-                    f"âœ“ {_batch['file']} â€” {_batch['type']} ({_cond_count} cond){_match_badge}",
-                    expanded=(_cond_count > 0)
+                    f"âœ“ {_batch['file']} â€” {_batch['type']} ({_norm_cond_count} cond){_match_badge}",
+                    expanded=(_norm_cond_count > 0)
                 )
             with _exp:
                 # â”€â”€ AI usage badge + raw AI dump (debugging) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -3084,7 +3086,7 @@ def show_dashboard():
                             st.rerun()
 
                 # â”€â”€ Conditions (interactive, compact) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                if _cond_count:
+                if _norm_cond_count:
                     st.markdown('<div class="scan-scroll">', unsafe_allow_html=True)
                     st.markdown('<div class="pa-section">Conditions</div>', unsafe_allow_html=True)
                     _PARTY_OPTS_SCAN = [
@@ -3106,7 +3108,6 @@ def show_dashboard():
                         return "Borrower"
 
                     _scan_fkey = f"scan_{_bidx}"
-                    _norm_conds = _normalize_scanned_conditions(_r.get("conditions", []))
 
                     for _c in _norm_conds:
                         _uid = f"{_scan_fkey}_{_c['num']}"
@@ -3264,6 +3265,13 @@ def show_dashboard():
                                     unsafe_allow_html=True,
                                 )
                     st.markdown('</div>', unsafe_allow_html=True)
+                elif _cond_count:
+                    st.markdown(
+                        '<div style="font-size:12px;color:#9ca3af;margin:6px 0;">'
+                        'Conditions were detected, but no actionable condition rows were parsed.'
+                        '</div>',
+                        unsafe_allow_html=True,
+                    )
                 if _cont_count:
                     _cchips = []
                     for _k, _v in _r.get("contacts", {}).items():
@@ -3729,8 +3737,8 @@ def show_dashboard():
                         st.markdown("**Government ID**")
                         st.markdown(f'<table style="border-collapse:collapse;width:100%;">{_gid_html}</table>', unsafe_allow_html=True)
 
-                if _cond_count > 10:
-                    st.caption(f"...and {_cond_count - 10} more conditions")
+                if _norm_cond_count > 10:
+                    st.caption(f"...and {_norm_cond_count - 10} more conditions")
 
 
 
