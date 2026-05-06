@@ -1579,6 +1579,65 @@ def _stamp_current_user_on_loan(loan_id: int | dict, *, assigned: bool = False) 
         pass
 
 
+def _infer_condition_party(desc: str) -> str:
+    text = str(desc or "").lower()
+    if any(k in text for k in ["insurance", "hoi", "hazard", "flood"]):
+        return "Insurance"
+    if any(k in text for k in ["title", "lien", "payoff", "survey"]):
+        return "Title"
+    if any(k in text for k in ["appraisal", "appraiser", "value"]):
+        return "Appraiser"
+    if any(k in text for k in ["voe", "employer", "employment"]):
+        return "Employer"
+    if any(k in text for k in ["purchase contract", "realtor", "agent"]):
+        return "Realtor"
+    if "seller" in text:
+        return "Seller"
+    if any(k in text for k in ["closer", "cd ", "closing disclosure"]):
+        return "Closer"
+    return "Borrower"
+
+
+def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
+    """Convert extractor output into UI condition rows."""
+    rows = []
+    if isinstance(raw_conditions, list):
+        source = raw_conditions
+    elif isinstance(raw_conditions, str):
+        source = []
+        for line in raw_conditions.splitlines():
+            line = line.strip()
+            if not line or line.startswith("**") or line.startswith("```"):
+                continue
+            if line.startswith("|") and line.endswith("|"):
+                parts = [p.strip() for p in line.strip("|").split("|")]
+                if len(parts) >= 4 and parts[0] not in {"#", "---"} and not parts[0].startswith("-"):
+                    source.append({
+                        "num": parts[0],
+                        "desc": parts[1],
+                        "party": parts[2],
+                        "status": parts[3],
+                    })
+                continue
+            cleaned = line.strip(" -*\t")
+            if cleaned and "No specific conditions found" not in cleaned:
+                source.append({"desc": cleaned})
+    else:
+        source = []
+
+    for idx, item in enumerate(source):
+        cond = dict(item) if isinstance(item, dict) else {"desc": str(item)}
+        desc = (cond.get("desc") or cond.get("description") or "").strip()
+        if not desc or desc.lower() in {"condition", "-----------"}:
+            continue
+        cond["num"] = str(cond.get("num") or idx + 1)
+        cond["desc"] = desc
+        cond["party"] = cond.get("party") or _infer_condition_party(desc)
+        cond["status"] = cond.get("status") or "Needed"
+        rows.append(cond)
+    return rows
+
+
 def _load_user_gemini_key_into_session(force: bool = False) -> str:
     """Load the signed-in user's Gemini key from Supabase into session state."""
     if st.session_state.get("sandbox_mode", False):
@@ -2909,7 +2968,7 @@ def show_dashboard():
                             if _existing_loan:
                                 _existing_conds = _existing_loan.get("conditions", [])
                                 _existing_contacts = _existing_loan.get("contacts", {})
-                                _new_conds = _r.get("conditions", [])
+                                _new_conds = _normalize_scanned_conditions(_r.get("conditions", []))
                                 _new_contacts = _r.get("contacts", {}) or {}
                                 _upd = {}
                                 _added = 0
@@ -3002,7 +3061,7 @@ def show_dashboard():
                                 borrower=_nl_borrower,
                                 loan_num=_nl_loannum or "TBD",
                                 closing_date=_nl_closing or "",
-                                conditions=_r.get("conditions", []),
+                                conditions=_normalize_scanned_conditions(_r.get("conditions", [])),
                                 contacts=_pf_contacts,
                                 created_by=st.session_state.get("user_name", ""),
                             )
@@ -3036,18 +3095,7 @@ def show_dashboard():
                         return "Borrower"
 
                     _scan_fkey = f"scan_{_bidx}"
-                    _raw_conds = _r.get("conditions", []) or []
-                    if isinstance(_raw_conds, str):
-                        _raw_conds = [ln.strip(" -â€¢\t") for ln in _raw_conds.splitlines() if ln.strip()]
-                    _norm_conds = []
-                    for _i, _c in enumerate(_raw_conds):
-                        _cc = dict(_c) if isinstance(_c, dict) else {"desc": str(_c)}
-                        _cc.setdefault("num", str(_i + 1))
-                        _cc["desc"] = _cc.get("desc") or _cc.get("description") or "â€”"
-                        if not _cc.get("party"):
-                            _cc["party"] = _infer_party(_cc["desc"])
-                        _cc.setdefault("status", "Needed")
-                        _norm_conds.append(_cc)
+                    _norm_conds = _normalize_scanned_conditions(_r.get("conditions", []))
 
                     for _c in _norm_conds:
                         _uid = f"{_scan_fkey}_{_c['num']}"

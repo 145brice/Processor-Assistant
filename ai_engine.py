@@ -4650,7 +4650,7 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
                 # Never let cloud failure block local extraction
                 result["ai_log"] = f"Cloud augmentation FAILED: {type(_e).__name__}: {str(_e)[:120]}"
     elif doc_type == "Approval Letter":
-        result["conditions"] = ""
+        result["conditions"] = extract_conditions(text, doc_type, user_history)
         result["extracted_data"] = {}
         result["raw_text"] = text[:12000]  # retained for optional AI re-extraction
 
