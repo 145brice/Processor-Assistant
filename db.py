@@ -131,6 +131,17 @@ def _upsert_local_user(email: str, password: str, display_name: str = "", role: 
     return {"user_id": user_id, "email": email, "display_name": display_name, "role": role}
 
 
+def upsert_oauth_user(email: str, display_name: str = "", role: str = "Processor", external_id: str = "") -> dict:
+    """Create/update a local shadow user for OAuth logins."""
+    marker_password = f"oauth:{external_id or email}"
+    return _upsert_local_user(
+        email=(email or "").strip().lower(),
+        password=marker_password,
+        display_name=(display_name or "").strip(),
+        role=role or "Processor",
+    )
+
+
 def _sync_user_to_supabase_auth(email: str, password: str, display_name: str, role: str) -> dict:
     """
     Create user in Supabase Auth so it appears in Authentication > Users.
@@ -231,8 +242,14 @@ def signup(email: str, password: str, display_name: str = "", role: str = "Proce
             })
         except Exception:
             pass
-        return {"success": True, "user_id": local["user_id"], "email": email,
-                "display_name": display_name, "role": role}
+        return {
+            "success": True,
+            "user_id": local["user_id"],
+            "supabase_user_id": sb.get("id") if 'sb' in locals() else None,
+            "email": email,
+            "display_name": display_name,
+            "role": role,
+        }
     except sqlite3.IntegrityError:
         return {"error": "Email already registered"}
     except Exception as e:
@@ -249,6 +266,7 @@ def login(email: str, password: str) -> dict:
         conn.close()
         if row and row["password_hash"] == _hash_password(password):
             # Backfill legacy local users into Supabase Auth when configured.
+            sb_user_id = None
             if _supabase_url() and (_supabase_service_key() or _supabase_public_key()):
                 _ = _sync_user_to_supabase_auth(
                     email=email,
@@ -256,9 +274,15 @@ def login(email: str, password: str) -> dict:
                     display_name=row["display_name"] or "",
                     role=row["role"] or "Processor",
                 )
+                sb_user_id = _.get("id")
+                if not sb_user_id and _supabase_public_key():
+                    sb_login = _login_via_supabase_auth(email, password)
+                    if sb_login.get("ok"):
+                        sb_user_id = sb_login.get("supabase_user_id")
             return {
                 "success": True,
                 "user_id": str(row["id"]),
+                "supabase_user_id": sb_user_id,
                 "email": email,
                 "display_name": row["display_name"] or "",
                 "role": row["role"] or "Processor",
@@ -279,6 +303,7 @@ def login(email: str, password: str) -> dict:
             return {
                 "success": True,
                 "user_id": local["user_id"],
+                "supabase_user_id": sb.get("supabase_user_id"),
                 "email": local["email"],
                 "display_name": local["display_name"],
                 "role": local["role"],

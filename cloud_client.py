@@ -83,18 +83,32 @@ def _parse_ai_json(text: str) -> dict:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_config() -> dict:
+    cfg = None
     if not os.path.exists(_CFG_FILE):
-        return {
+        cfg = {
             "enabled":  False,
             "provider": DEFAULT_PROVIDER,
             "api_key":  "",
             "model":    DEFAULT_MODELS[DEFAULT_PROVIDER],
         }
+    else:
+        try:
+            with open(_CFG_FILE, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+        except Exception:
+            cfg = {"enabled": False, "provider": DEFAULT_PROVIDER, "api_key": "", "model": ""}
+
+    # For Gemini, prefer the signed-in user's saved Supabase key over the machine-wide file.
     try:
-        with open(_CFG_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+        import streamlit as st
+        session_key = str(st.session_state.get("user_gemini_api_key", "")).strip()
+        if cfg.get("provider") == "gemini" and session_key:
+            cfg = dict(cfg)
+            cfg["api_key"] = session_key
     except Exception:
-        return {"enabled": False, "provider": DEFAULT_PROVIDER, "api_key": "", "model": ""}
+        pass
+
+    return cfg
 
 
 def save_config(enabled: bool, provider: str, api_key: str, model: str) -> dict:

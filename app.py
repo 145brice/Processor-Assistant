@@ -1433,9 +1433,11 @@ DEFAULTS = {
     "page": "dashboard",
     "authenticated": False,
     "user_id": None,
+    "supabase_user_id": None,
     "user_email": "",
     "user_name": "",
     "user_role": "",
+    "user_gemini_api_key": "",
     "sandbox_mode": False,
     "scan_results": None,
     "last_fetch_folder": "",
@@ -1460,7 +1462,7 @@ DEFAULTS = {
 # â”€â”€ Persist auth across browser refreshes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 import json as _json_auth
 _SESSION_FILE = os.path.join(os.path.dirname(__file__), ".session_cache.json")
-_AUTH_KEYS = ["authenticated", "user_id", "user_email", "user_name", "user_role", "sandbox_mode", "page"]
+_AUTH_KEYS = ["authenticated", "user_id", "supabase_user_id", "user_email", "user_name", "user_role", "sandbox_mode", "page"]
 
 def _save_session():
     try:
@@ -1507,13 +1509,171 @@ def _enter_sandbox(page: str = "dashboard") -> None:
     """Authenticate directly into local sandbox mode."""
     st.session_state.authenticated = True
     st.session_state.user_id = "sandbox"
+    st.session_state.supabase_user_id = None
     st.session_state.user_email = "sandbox@demo"
     st.session_state.user_name = "Sandbox User"
     st.session_state.user_role = "Processor"
     st.session_state.sandbox_mode = True
+    st.session_state.user_gemini_api_key = ""
     st.session_state.force_login = False
     st.session_state.page = page
     _save_session()
+
+
+def _current_auth_user_key() -> str:
+    """Stable per-user key for Supabase-stored settings."""
+    return str(
+        st.session_state.get("supabase_user_id")
+        or st.session_state.get("user_id")
+        or ""
+    ).strip()
+
+
+def _load_user_gemini_key_into_session(force: bool = False) -> str:
+    """Load the signed-in user's Gemini key from Supabase into session state."""
+    if st.session_state.get("sandbox_mode", False):
+        st.session_state.user_gemini_api_key = ""
+        return ""
+    if st.session_state.get("user_gemini_api_key") and not force:
+        return st.session_state.user_gemini_api_key
+
+    user_key = _current_auth_user_key()
+    if not user_key:
+        st.session_state.user_gemini_api_key = ""
+        return ""
+
+    try:
+        import supabase_auth as _sa
+        st.session_state.user_gemini_api_key = _sa.load_user_gemini_key(user_key)
+    except Exception:
+        st.session_state.user_gemini_api_key = ""
+    return st.session_state.user_gemini_api_key
+
+
+def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: str = "dashboard") -> None:
+    """Normalize all successful auth paths into one session update."""
+    st.session_state.authenticated = True
+    st.session_state.user_id = result.get("user_id")
+    st.session_state.supabase_user_id = result.get("supabase_user_id")
+    st.session_state.user_email = result.get("email", "")
+    st.session_state.user_name = result.get("display_name") or result.get("email", "user").split("@")[0]
+    st.session_state.user_role = result.get("role", "Processor")
+    st.session_state.sandbox_mode = sandbox_mode
+    st.session_state.force_login = False
+    st.session_state.page = page
+    st.session_state.user_gemini_api_key = ""
+    _load_user_gemini_key_into_session(force=True)
+    _save_session()
+
+
+def _handle_google_oauth_callback() -> bool:
+    """
+    Process a Supabase OAuth callback if the app has been redirected back with
+    a Google auth code.
+    """
+    _qp = st.query_params
+    oauth_code = _qp.get("code", "")
+    oauth_state = _qp.get("state", "")
+    oauth_error = _qp.get("error_description", "") or _qp.get("error", "")
+    if isinstance(oauth_code, list):
+        oauth_code = oauth_code[0] if oauth_code else ""
+    if isinstance(oauth_state, list):
+        oauth_state = oauth_state[0] if oauth_state else ""
+    if isinstance(oauth_error, list):
+        oauth_error = oauth_error[0] if oauth_error else ""
+
+    if oauth_error:
+        st.session_state["oauth_error_message"] = str(oauth_error)
+        st.query_params.clear()
+        return False
+    if not oauth_code:
+        return False
+
+    expected_state = st.session_state.get("oauth_google_state", "")
+    verifier = st.session_state.get("oauth_google_verifier", "")
+    if expected_state and oauth_state and oauth_state != expected_state:
+        st.session_state["oauth_error_message"] = "Google sign-in state mismatch. Please try again."
+        st.query_params.clear()
+        return False
+
+    try:
+        import supabase_auth as _sa
+        from db import upsert_oauth_user
+
+        oauth_result = _sa.exchange_google_code(oauth_code, verifier)
+        if not oauth_result.get("ok"):
+            st.session_state["oauth_error_message"] = oauth_result.get("error", "Google sign-in failed.")
+            st.query_params.clear()
+            return False
+
+        local_user = upsert_oauth_user(
+            email=oauth_result.get("email", ""),
+            display_name=oauth_result.get("display_name", ""),
+            role=oauth_result.get("role", "Processor"),
+            external_id=oauth_result.get("supabase_user_id", ""),
+        )
+        _complete_login_session(
+            {
+                "user_id": local_user.get("user_id"),
+                "supabase_user_id": oauth_result.get("supabase_user_id"),
+                "email": oauth_result.get("email", ""),
+                "display_name": local_user.get("display_name") or oauth_result.get("display_name", ""),
+                "role": local_user.get("role") or oauth_result.get("role", "Processor"),
+            },
+            sandbox_mode=False,
+            page="dashboard",
+        )
+        st.session_state.pop("oauth_google_state", None)
+        st.session_state.pop("oauth_google_verifier", None)
+        st.session_state.pop("oauth_error_message", None)
+        st.query_params.clear()
+        st.rerun()
+    except Exception as e:
+        st.session_state["oauth_error_message"] = f"Google sign-in failed: {e}"
+        st.query_params.clear()
+    return False
+
+
+def _render_gemini_key_prompt() -> None:
+    """Prompt signed-in users to save a Gemini key if none is stored yet."""
+    if not st.session_state.get("authenticated"):
+        return
+    if st.session_state.get("sandbox_mode", False):
+        return
+    if st.session_state.get("user_gemini_api_key"):
+        return
+
+    user_key = _current_auth_user_key()
+    if not user_key:
+        return
+
+    with st.container(border=True):
+        st.markdown("### Add Your Gemini 1.5 Flash API Key")
+        st.caption("We’ll save it to your account in Supabase so it auto-loads the next time you sign in.")
+        with st.form("gemini_key_bootstrap_form"):
+            gemini_key = st.text_input(
+                "Gemini API Key",
+                type="password",
+                placeholder="Paste your Gemini API key here",
+                help="Get one at https://aistudio.google.com/app/apikey",
+            )
+            save_key = st.form_submit_button("Save Gemini Key", type="primary")
+            if save_key:
+                if not gemini_key.strip():
+                    st.error("Please paste a Gemini API key first.")
+                else:
+                    try:
+                        import supabase_auth as _sa
+
+                        result = _sa.save_user_gemini_key(user_key, gemini_key)
+                        if result.get("ok"):
+                            st.session_state.user_gemini_api_key = gemini_key.strip()
+                            st.success("Gemini API key saved to your account.")
+                            st.rerun()
+                        else:
+                            st.error(result.get("error", "Could not save Gemini API key."))
+                    except Exception as e:
+                        st.error(f"Could not save Gemini API key: {e}")
 
 
 def _render_auth_debug():
@@ -1624,6 +1784,10 @@ def _render_condition(_c, _fkey, _party_options, _cond_statuses):
 
 def show_login_page():
     """Login / Signup page."""
+    _oauth_error = st.session_state.pop("oauth_error_message", "")
+    if _oauth_error:
+        st.error(_oauth_error)
+
     # Push content down and center in a stable responsive wrapper
     st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
     st.markdown('<div class="login-page-wrap">', unsafe_allow_html=True)
@@ -1657,6 +1821,44 @@ def show_login_page():
         unsafe_allow_html=True
     )
 
+    st.markdown('<div style="margin:10px 0 8px 0;">', unsafe_allow_html=True)
+    try:
+        import supabase_auth as _sa
+
+        if _sa.is_configured():
+            oauth_info = _sa.begin_google_oauth()
+            if oauth_info.get("ok"):
+                st.session_state["oauth_google_verifier"] = oauth_info["verifier"]
+                st.session_state["oauth_google_state"] = oauth_info["state"]
+                st.markdown(
+                    f"""
+                    <a href="{oauth_info['url']}" target="_self" style="
+                        display:flex;
+                        width:100%;
+                        align-items:center;
+                        justify-content:center;
+                        text-decoration:none;
+                        padding:12px 14px;
+                        border-radius:10px;
+                        border:1px solid #334155;
+                        background:#161b2b;
+                        color:#ffffff;
+                        font-weight:600;
+                        margin-bottom:8px;
+                    ">
+                      Sign in with Google
+                    </a>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.caption(oauth_info.get("error", "Google sign-in is unavailable right now."))
+        else:
+            st.caption("Google sign-in will appear automatically once Supabase OAuth is configured.")
+    except Exception as e:
+        st.caption(f"Google sign-in unavailable: {e}")
+    st.markdown('</div>', unsafe_allow_html=True)
+
     st.markdown("""
     <div class="login-divider">
       <hr/><span>or sign in with your account</span><hr/>
@@ -1674,15 +1876,7 @@ def show_login_page():
                 from db import login
                 result = login(email, password)
                 if result.get("success"):
-                    st.session_state.authenticated = True
-                    st.session_state.user_id = result["user_id"]
-                    st.session_state.user_email = result["email"]
-                    st.session_state.user_name = result.get("display_name") or result["email"].split("@")[0]
-                    st.session_state.user_role = result.get("role", "Processor")
-                    st.session_state.sandbox_mode = False
-                    st.session_state.force_login = False
-                    st.session_state.page = "dashboard"
-                    _save_session()
+                    _complete_login_session(result, sandbox_mode=False, page="dashboard")
                     st.rerun()
                 else:
                     st.error(result.get("error", "Login failed"))
@@ -1911,6 +2105,8 @@ def show_sidebar():
             _clear_session()
             for key in DEFAULTS:
                 st.session_state[key] = DEFAULTS[key]
+            st.session_state.pop("oauth_google_state", None)
+            st.session_state.pop("oauth_google_verifier", None)
             st.session_state.force_login = True
             st.rerun()
 
@@ -6994,6 +7190,9 @@ def show_ollama_page():
     st.markdown("### Cloud AI")
 
     cc_cfg = _cc.get_config()
+    _real_user = bool(st.session_state.get("authenticated") and not st.session_state.get("sandbox_mode"))
+    _user_key = _current_auth_user_key()
+    _saved_gemini_key = st.session_state.get("user_gemini_api_key", "")
 
     # â”€â”€ Enable toggle saves immediately on change (matches sidebar button) â”€â”€
     cc_enabled_now = st.toggle(
@@ -7060,7 +7259,7 @@ def show_ollama_page():
         }
         cc_key = st.text_input(
             "API Key",
-            value=cc_cfg.get("api_key", ""),
+            value=_saved_gemini_key if (cc_provider == "gemini" and _real_user) else cc_cfg.get("api_key", ""),
             type="password",
             key="cc_key",
             help=_key_help.get(cc_provider, ""),
@@ -7068,8 +7267,26 @@ def show_ollama_page():
         cc_save = st.form_submit_button("Save Provider / Model / Key", type="primary")
 
     if cc_save:
-        _cc.save_config(cc_enabled_now, cc_provider, cc_key, cc_model)
-        st.success("Cloud AI settings saved.")
+        key_to_store_locally = cc_key
+        if cc_provider == "gemini" and _real_user and _user_key:
+            try:
+                import supabase_auth as _sa
+
+                _save_result = _sa.save_user_gemini_key(_user_key, cc_key)
+                if not _save_result.get("ok"):
+                    st.error(_save_result.get("error", "Could not save Gemini API key to Supabase."))
+                    return
+                st.session_state.user_gemini_api_key = cc_key.strip()
+                key_to_store_locally = ""
+            except Exception as e:
+                st.error(f"Could not save Gemini API key: {e}")
+                return
+
+        _cc.save_config(cc_enabled_now, cc_provider, key_to_store_locally, cc_model)
+        if cc_provider == "gemini" and _real_user:
+            st.success("Cloud AI settings saved. Your Gemini key is linked to your account.")
+        else:
+            st.success("Cloud AI settings saved.")
         st.rerun()
 
     if st.button("Test Cloud Connection", key="cc_test"):
@@ -8869,6 +9086,7 @@ def show_persistent_header():
 
 
 def main():
+    _handle_google_oauth_callback()
     _render_auth_debug()
     if not st.session_state.authenticated:
         # If user explicitly logged out, show login once, then stop forcing it.
@@ -8881,8 +9099,10 @@ def main():
             st.rerun()
         show_login_page()
     else:
+        _load_user_gemini_key_into_session()
         show_sidebar()
         show_persistent_header()
+        _render_gemini_key_prompt()
         page = st.session_state.page
         if page == "dashboard":
             show_dashboard()
