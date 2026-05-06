@@ -2949,7 +2949,7 @@ def show_dashboard():
                             f'<div style="display:inline-block;padding:3px 10px;margin:4px 0 8px 0;'
                             f'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.4);'
                             f'border-radius:12px;font-size:11px;color:#3b82f6;font-weight:600;">'
-                            f'ðŸ¤– Cloud AI Â· {_r_ai_log}</div>',
+                            f'Cloud AI - {_r_ai_log}</div>',
                             unsafe_allow_html=True,
                         )
                     else:
@@ -2957,7 +2957,7 @@ def show_dashboard():
                             f'<div style="display:inline-block;padding:3px 10px;margin:4px 0 8px 0;'
                             f'background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.4);'
                             f'border-radius:12px;font-size:11px;color:#f59e0b;font-weight:600;">'
-                            f'âš  {_r_ai_log}</div>',
+                            f'Warning - {_r_ai_log}</div>',
                             unsafe_allow_html=True,
                         )
                     # Dump raw AI response so we can see what Claude actually returned

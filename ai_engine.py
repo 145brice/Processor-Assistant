@@ -151,6 +151,24 @@ def _approval_condition_candidate(text: str) -> bool:
     return True
 
 
+def _is_approval_metadata_line(text: str) -> bool:
+    """Skip approval-letter header/loan-summary lines without rejecting terse conditions."""
+    t = re.sub(r'\s+', ' ', str(text or '')).strip()
+    if not t:
+        return True
+    if re.search(r'(?i)\b(?:prepared for|contact name|email:|phone:|date printed|senior uw|account manager)\b', t):
+        return True
+    if re.match(
+        r'(?i)^(?:borrower|co-?borrower|loan\s*(?:number|amount|purpose|type)|'
+        r'property|subject property|purchase price|interest rate|ltv|cltv|dti|'
+        r'program|product|uwm|united wholesale|loan approval|approval|approved|'
+        r'decision|broker|loan officer|date|expiration|expires|page\s+\d+)\b',
+        t,
+    ):
+        return True
+    return False
+
+
 def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
     """
     Extract conditions by reading the actual text from the PDF.
@@ -216,7 +234,10 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
         desc = re.sub(r'(?i)^(?:Orion\s+)?Responsible\s*', '', desc).strip()
         # Remove leading dates again (in case Responsible removal exposed one)
         desc = re.sub(r'^\d{1,2}/\d{1,2}/\d{2,4}\s*', '', desc).strip()
-        if not _is_real_condition_text(desc, approval_only=(doc_type == "Approval Letter")):
+        if doc_type == "Approval Letter":
+            if _is_junk_line(desc) or _is_approval_metadata_line(desc) or len(desc) < 12:
+                return
+        elif not _is_real_condition_text(desc):
             return
         lower = desc.lower()
         if lower in seen:
@@ -355,9 +376,10 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
                 continue
             if in_section:
                 cleaned = re.sub(r'^[\s]*(?:\d{1,3}[\.\)\:]|[a-zA-Z][\.\)]|[\-\*\•])\s*', '', line).strip()
-                if approval_mode and not _approval_condition_candidate(cleaned):
-                    continue
-                if not approval_mode and not _is_real_condition_text(cleaned):
+                if approval_mode:
+                    if _is_junk_line(cleaned) or _is_approval_metadata_line(cleaned) or len(cleaned) < 12:
+                        continue
+                elif not _is_real_condition_text(cleaned):
                     continue
                 if cleaned.lower() in seen:
                     continue
@@ -378,7 +400,7 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
                 desc = m.group(1).strip().rstrip('.')
                 lower = desc.lower()
                 if approval_mode:
-                    is_real = _approval_condition_candidate(desc)
+                    is_real = not (_is_junk_line(desc) or _is_approval_metadata_line(desc) or len(desc) < 12)
                 else:
                     is_real = _is_real_condition_text(desc)
                 if is_real and lower not in seen:
