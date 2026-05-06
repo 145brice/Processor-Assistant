@@ -102,11 +102,31 @@ def get_config() -> dict:
     try:
         import streamlit as st
         session_key = str(st.session_state.get("user_gemini_api_key", "")).strip()
-        if cfg.get("provider") == "gemini" and session_key:
+        if session_key:
             cfg = dict(cfg)
+            current_model = str(cfg.get("model", "")).strip()
+            cfg["enabled"] = True
+            cfg["provider"] = "gemini"
             cfg["api_key"] = session_key
+            cfg["model"] = current_model if current_model.startswith("gemini") else DEFAULT_MODELS["gemini"]
     except Exception:
         pass
+
+    # Railway does not carry ignored local cloud_config.json, so allow env vars.
+    if not cfg.get("api_key"):
+        env_options = [
+            ("gemini", os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")),
+            ("claude", os.getenv("ANTHROPIC_API_KEY") or os.getenv("CLAUDE_API_KEY")),
+            ("openai", os.getenv("OPENAI_API_KEY")),
+        ]
+        for provider, api_key in env_options:
+            if api_key:
+                cfg = dict(cfg)
+                cfg["enabled"] = True
+                cfg["provider"] = provider
+                cfg["api_key"] = api_key.strip()
+                cfg["model"] = os.getenv(f"{provider.upper()}_MODEL") or DEFAULT_MODELS[provider]
+                break
 
     return cfg
 

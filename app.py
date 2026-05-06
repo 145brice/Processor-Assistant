@@ -1818,9 +1818,15 @@ def _render_gemini_key_prompt() -> None:
                             st.success("Gemini API key saved to your account.")
                             st.rerun()
                         else:
-                            st.error(result.get("error", "Could not save Gemini API key."))
+                            st.session_state.user_gemini_api_key = gemini_key.strip()
+                            st.warning(
+                                "Could not save Gemini key to Supabase, but it is active for this session."
+                            )
+                            st.rerun()
                     except Exception as e:
-                        st.error(f"Could not save Gemini API key: {e}")
+                        st.session_state.user_gemini_api_key = gemini_key.strip()
+                        st.warning(f"Gemini key is active for this session. Supabase save failed: {e}")
+                        st.rerun()
 
 
 def _render_auth_debug():
@@ -2964,7 +2970,7 @@ def show_dashboard():
                     st.markdown(
                         f'<div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:4px;'
                         f'padding:6px 10px;margin-bottom:8px;font-size:12px;color:#3b82f6;">'
-                        f'<b>Matched:</b> Loan {_lm_loan_num} â€” {_lm_borrower} '
+                        f'<b>Matched:</b> Loan {_lm_loan_num} - {_lm_borrower} '
                         f'<span style="opacity:0.6;">({_lm_conf}% confidence)</span>'
                         f'</div>', unsafe_allow_html=True
                     )
@@ -3265,7 +3271,7 @@ def show_dashboard():
                                     unsafe_allow_html=True,
                                 )
                     st.markdown('</div>', unsafe_allow_html=True)
-                elif _cond_count:
+                elif _cond_count and "No specific conditions found in this document" not in str(_raw_c):
                     st.markdown(
                         '<div style="font-size:12px;color:#9ca3af;margin:6px 0;">'
                         'Conditions were detected, but no actionable condition rows were parsed.'
@@ -7424,13 +7430,18 @@ def show_ollama_page():
 
                 _save_result = _sa.save_user_gemini_key(_user_key, cc_key)
                 if not _save_result.get("ok"):
-                    st.error(_save_result.get("error", "Could not save Gemini API key to Supabase."))
-                    return
+                    st.warning(
+                        "Could not save Gemini key to Supabase, but it is active for this session."
+                    )
+                    st.session_state.user_gemini_api_key = cc_key.strip()
+                    key_to_store_locally = ""
+                else:
+                    st.session_state.user_gemini_api_key = cc_key.strip()
+                    key_to_store_locally = ""
+            except Exception as e:
+                st.warning(f"Gemini key is active for this session. Supabase save failed: {e}")
                 st.session_state.user_gemini_api_key = cc_key.strip()
                 key_to_store_locally = ""
-            except Exception as e:
-                st.error(f"Could not save Gemini API key: {e}")
-                return
 
         _cc.save_config(cc_enabled_now, cc_provider, key_to_store_locally, cc_model)
         if cc_provider == "gemini" and _real_user:
