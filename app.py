@@ -2917,11 +2917,11 @@ def show_dashboard():
 
             # Match badge for expander title
             if _lm_suggestion == "match":
-                _match_badge = f" Â· Loan {_lm_loan_num} ({_lm_borrower})"
+                _match_badge = f" - Loan {_lm_loan_num} ({_lm_borrower})"
             elif _lm_suggestion == "possible":
-                _match_badge = f" Â· Possible: {_lm_borrower}"
+                _match_badge = f" - Possible: {_lm_borrower}"
             else:
-                _match_badge = " Â· No loan match"
+                _match_badge = " - No loan match"
 
             _del_col, _exp_col = st.columns([1, 11])
             with _del_col:
@@ -2930,7 +2930,7 @@ def show_dashboard():
                     st.rerun()
             with _exp_col:
                 _exp = st.expander(
-                    f"âœ“ {_batch['file']} â€” {_batch['type']} ({_norm_cond_count} cond){_match_badge}",
+                    f"OK {_batch['file']} - {_batch['type']} ({_norm_cond_count} cond){_match_badge}",
                     expanded=(_norm_cond_count > 0)
                 )
             with _exp:

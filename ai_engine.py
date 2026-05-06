@@ -4727,10 +4727,12 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
             try:
                 import cloud_client as _cc
                 if _cc.is_enabled():
-                    ai_data, ai_log = _cc.extract_purchase_contract_ai(text)
-                    if ai_data:
-                        result["extracted_data"] = ai_data
-                        result["ai_log"] = ai_log
+                    enhanced_conditions, ai_log = _cc.enhance_conditions(
+                        text, doc_type, result["conditions"]
+                    )
+                    if enhanced_conditions:
+                        result["conditions"] = enhanced_conditions
+                    result["ai_log"] = ai_log
             except Exception as _e:
                 # Never let cloud failure block local extraction
                 result["ai_log"] = f"Cloud augmentation skipped: {str(_e)[:80]}"
