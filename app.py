@@ -1530,6 +1530,55 @@ def _current_auth_user_key() -> str:
     ).strip()
 
 
+def _loan_user_keys(loan: dict) -> set[str]:
+    keys = set()
+    for field in ("owner_user_key", "created_by_user_key", "assigned_user_key"):
+        value = str(loan.get(field) or "").strip()
+        if value:
+            keys.add(value)
+    shared = loan.get("shared_with_user_keys", [])
+    if isinstance(shared, str):
+        try:
+            import json as _json
+            shared = _json.loads(shared)
+        except Exception:
+            shared = [shared]
+    if isinstance(shared, list):
+        keys.update(str(v).strip() for v in shared if str(v).strip())
+    return keys
+
+
+def _visible_account_loans(loans: list[dict]) -> list[dict]:
+    """Sandbox sees demo loans; real accounts only see loans explicitly tied to them."""
+    if st.session_state.get("sandbox_mode", False):
+        return loans
+    user_key = _current_auth_user_key()
+    if not user_key:
+        return []
+    return [loan for loan in loans if user_key in _loan_user_keys(loan)]
+
+
+def _stamp_current_user_on_loan(loan_id: int | dict, *, assigned: bool = False) -> None:
+    user_key = _current_auth_user_key()
+    if not user_key or st.session_state.get("sandbox_mode", False):
+        return
+    if isinstance(loan_id, dict):
+        loan_id = loan_id.get("id")
+    if not loan_id:
+        return
+    try:
+        from crm import update_loan
+        fields = {
+            "owner_user_key": user_key,
+            "created_by_user_key": user_key,
+        }
+        if assigned:
+            fields["assigned_user_key"] = user_key
+        update_loan(loan_id, **fields)
+    except Exception:
+        pass
+
+
 def _load_user_gemini_key_into_session(force: bool = False) -> str:
     """Load the signed-in user's Gemini key from Supabase into session state."""
     if st.session_state.get("sandbox_mode", False):
@@ -2163,7 +2212,7 @@ def show_dashboard():
         _loan_ct = 0
         try:
             from crm import get_all_loans as _gl_hero
-            _loan_ct = len(_gl_hero())
+            _loan_ct = len(_visible_account_loans(_gl_hero()))
         except Exception:
             pass
         _user = st.session_state.get("user_name", "") or "there"
@@ -2956,6 +3005,7 @@ def show_dashboard():
                                 contacts=_pf_contacts,
                                 created_by=st.session_state.get("user_name", ""),
                             )
+                            _stamp_current_user_on_loan(_new_lid, assigned=True)
                             _la(_new_lid, "created", f"Loan created from scanned {_batch['type']}",
                                 user=st.session_state.get("user_name", ""))
                             st.toast(f"Loan created for {_nl_borrower}", icon="âœ…")
@@ -4261,6 +4311,7 @@ def show_pipeline():
                             conditions=_bf_conds,
                             contacts=_bf_contacts,
                         )
+                        _stamp_current_user_on_loan(_new, assigned=True)
                         _cond_note = f", {len(_bf_conds)} conditions" if _bf_conds else ""
                         _cont_note = f", {len(_bf_contacts)} contact groups" if _bf_contacts else ""
                         log_activity(_new["id"], "created",
@@ -4339,7 +4390,7 @@ def show_pipeline():
                 with ib3:
                     if st.button("Accept", key=f"inbox_accept_{share_id}", use_container_width=True):
                         # Import into local pipeline
-                        add_loan(
+                        _accepted = add_loan(
                             loan_num=item.get("loan_num", ""),
                             borrower=item.get("borrower", ""),
                             status=item.get("status", "Pending"),
@@ -4351,6 +4402,7 @@ def show_pipeline():
                             lock_expiry=item.get("lock_expiry", ""),
                             closing_date=item.get("closing_date", ""),
                         )
+                        _stamp_current_user_on_loan(_accepted, assigned=True)
                         # Store share metadata on the loan for "Send Update"
                         all_local = get_all_loans()
                         for ln in all_local:
@@ -4373,7 +4425,8 @@ def show_pipeline():
                             unsafe_allow_html=True)
 
     # â”€â”€ Load and filter loans â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    loans = get_all_loans()
+    all_account_loans = _visible_account_loans(get_all_loans())
+    loans = list(all_account_loans)
 
     if filter_status != "All":
         loans = [l for l in loans if l["status"] == filter_status]
@@ -4427,7 +4480,7 @@ def show_pipeline():
         return
 
     # â”€â”€ Need `all_loans` and `counts` for downstream filtering/sorting â”€â”€â”€â”€â”€â”€
-    all_loans = get_all_loans()
+    all_loans = list(all_account_loans)
     counts = {s: sum(1 for l in all_loans if l["status"] == s) for s in STATUS_OPTIONS}
 
     # â”€â”€ Visual break between header section and loan rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -5612,7 +5665,7 @@ def show_missing_docs_page():
     )
 
     _DOCS_BASE = os.path.join(os.path.dirname(__file__), "loan_docs")
-    all_loans = get_all_loans()
+    all_loans = _visible_account_loans(get_all_loans())
     loan_options = {f"{l['borrower']} ({l['loan_num']})": str(l["id"]) for l in all_loans}
     loan_options["Custom Folder"] = None
 
@@ -5674,7 +5727,7 @@ def show_doc_expiry_page():
     )
 
     _DOCS_BASE = os.path.join(os.path.dirname(__file__), "loan_docs")
-    all_loans = get_all_loans()
+    all_loans = _visible_account_loans(get_all_loans())
     loan_options = {f"{l['borrower']} ({l['loan_num']})": str(l["id"]) for l in all_loans}
     loan_options["Custom Folder"] = None
 
@@ -5878,7 +5931,7 @@ def show_income_verifier_page():
     st.markdown("Compare extracted document data against 1003 loan application data.")
 
     # Select loan
-    all_loans = get_all_loans()
+    all_loans = _visible_account_loans(get_all_loans())
     loan_options = {f"{l['borrower']} ({l['loan_num']})": l for l in all_loans}
     selected_loan = st.selectbox("Select Loan", list(loan_options.keys()))
 
@@ -6011,7 +6064,7 @@ def show_current_loan_banner():
     """Show current loan information banner."""
     from crm import get_all_loans
 
-    loans = get_all_loans()
+    loans = _visible_account_loans(get_all_loans())
     if loans:
         # Show current/selected loan
         current_loan_id = st.session_state.get("current_loan_id")
@@ -6317,7 +6370,7 @@ def show_pipeline_dashboard_page():
 
     st.markdown("Monitor loan pipeline with deadline alerts and status tracking.")
 
-    loans = get_all_loans()
+    loans = _visible_account_loans(get_all_loans())
     dashboard = PipelineDashboard()
     alerts = dashboard.get_alerts(loans)
     summary = dashboard.get_pipeline_summary(loans)
@@ -6540,7 +6593,7 @@ def show_rate_lock_monitor_page():
 
     st.markdown("Track interest rate locks, monitor expirations, and get float-down alerts.")
 
-    loans = get_all_loans()
+    loans = _visible_account_loans(get_all_loans())
     monitor = RateLockMonitor()
 
     # Sample lock data (in real app, this would come from loan records)
@@ -9078,7 +9131,7 @@ def show_persistent_header():
     Compact sticky strip with title + status counts + progress bar."""
     try:
         from crm import get_all_loans, STATUS_OPTIONS
-        loans = get_all_loans() or []
+        loans = _visible_account_loans(get_all_loans() or [])
     except Exception:
         loans = []
         STATUS_OPTIONS = ["Pending", "Requested", "Cleared", "Overdue", "Closed"]
