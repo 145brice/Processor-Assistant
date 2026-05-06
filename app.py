@@ -1936,6 +1936,7 @@ def show_login_page():
     except Exception as e:
         st.caption(f"Google sign-in unavailable: {e}")
     st.markdown('</div>', unsafe_allow_html=True)
+    return
 
     st.markdown("""
     <div class="login-divider">
