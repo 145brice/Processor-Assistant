@@ -48,6 +48,20 @@ _JUNK_MORTGAGEE = re.compile(r'(?i)^(?:S\.?A\.?O\.?A|I\.?S\.?A\.?O\.?A)')
 _JUNK_MASKED = re.compile(r'^X{3,}\d+$')
 _JUNK_BOILERPLATE = re.compile(r'(?i)(?:must be received from the broker within|calendar days of the initial|closed for incompleteness)')
 _JUNK_WAIVED = re.compile(r'(?i)^(?:Not Waived|Past Due|contact your|Account Manager)$')
+_CONDITION_ACTION = re.compile(
+    r'(?i)\b(?:provide|submit|obtain|furnish|verify|document|explain|clear|'
+    r'resolve|update|upload|supply|confirm|complete|correct|evidence|copy of|'
+    r'letter of|payoff|title|insurance|hoi|hazard|flood|appraisal|voe|bank statement|'
+    r'paystub|pay stub|w-?2|tax return|lease|gift letter)\b'
+)
+_APPROVAL_NON_CONDITION = re.compile(
+    r'(?i)^(?:borrower|co-?borrower|loan\s*(?:number|amount|purpose|type)|'
+    r'property|subject property|purchase price|interest rate|ltv|cltv|dti|'
+    r'program|product|uwm|united wholesale|approval|approved|decision|'
+    r'broker|loan officer|account executive|date|expiration|expires|'
+    r'prior to closing|prior to docs|prior to funding|conditions?|'
+    r'ptd conditions?|ptf conditions?|summary|notes?|message|page\s+\d+)\b'
+)
 
 
 def _is_junk_line(text: str) -> bool:
@@ -107,6 +121,17 @@ def _is_junk_line(text: str) -> bool:
     return False
 
 
+def _is_real_condition_text(text: str, *, approval_only: bool = False) -> bool:
+    t = re.sub(r'\s+', ' ', str(text or '')).strip()
+    if _is_junk_line(t):
+        return False
+    if approval_only and _APPROVAL_NON_CONDITION.match(t):
+        return False
+    if len(t.split()) < 3:
+        return False
+    return bool(_CONDITION_ACTION.search(t))
+
+
 def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
     """
     Extract conditions by reading the actual text from the PDF.
@@ -158,7 +183,7 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
         desc = re.sub(r'(?i)^(?:Orion\s+)?Responsible\s*', '', desc).strip()
         # Remove leading dates again (in case Responsible removal exposed one)
         desc = re.sub(r'^\d{1,2}/\d{1,2}/\d{2,4}\s*', '', desc).strip()
-        if _is_junk_line(desc) or len(desc) < 12:
+        if not _is_real_condition_text(desc, approval_only=(doc_type == "Approval Letter")):
             return
         lower = desc.lower()
         if lower in seen:
@@ -296,7 +321,7 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
                 continue
             if in_section:
                 cleaned = re.sub(r'^[\s]*(?:\d{1,3}[\.\)\:]|[a-zA-Z][\.\)]|[\-\*\•])\s*', '', line).strip()
-                if _is_junk_line(cleaned):
+                if not _is_real_condition_text(cleaned, approval_only=(doc_type == "Approval Letter")):
                     continue
                 if cleaned.lower() in seen:
                     continue
@@ -316,7 +341,7 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
             if m:
                 desc = m.group(1).strip().rstrip('.')
                 lower = desc.lower()
-                if not _is_junk_line(desc) and lower not in seen:
+                if _is_real_condition_text(desc, approval_only=(doc_type == "Approval Letter")) and lower not in seen:
                     already = any(lower in s or s in lower for s in seen)
                     if not already:
                         seen.add(lower)
