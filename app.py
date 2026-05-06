@@ -2815,7 +2815,7 @@ def show_dashboard():
             for _sq_i, (_sq_bytes, _sq_name, _sq_type) in enumerate(_scan_queue):
                 _sq_will_use_cloud = (_sq_type in _dash_cloud_doc_types and _dash_user_approved_cloud)
                 _sq_status = (
-                    f"ðŸ¤– Calling {_provider_name} for {_sq_name}... (2-5 sec)"
+                    f"Calling {_provider_name} for {_sq_name}... (2-5 sec)"
                     if _sq_will_use_cloud
                     else f"Scanning {_sq_i + 1} of {_sq_total}: {_sq_name}..."
                 )
@@ -2828,7 +2828,7 @@ def show_dashboard():
                     continue
                 _sq_approved = _dash_user_approved_cloud if _sq_type in _dash_cloud_doc_types else False
                 if _sq_will_use_cloud:
-                    with st.spinner(f"ðŸ¤– Sending {_sq_name} to {_provider_name} for AI extraction..."):
+                    with st.spinner(f"Sending {_sq_name} to {_provider_name} for AI extraction..."):
                         _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
                 else:
                     _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
@@ -2962,7 +2962,7 @@ def show_dashboard():
                         )
                     # Dump raw AI response so we can see what Claude actually returned
                     if _r_ai_raw is not None:
-                        with st.expander("ðŸ” Raw AI response (debug)", expanded=False):
+                        with st.expander("Raw AI response (debug)", expanded=False):
                             st.json(_r_ai_raw)
 
                 # â”€â”€ Loan match action row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -7340,7 +7340,7 @@ def show_ollama_page():
     import cloud_client  as _cc
 
     st.title("AI Settings")
-    st.caption("Cloud AI for enhanced document extraction â€” choose your provider below.")
+    st.caption("Cloud AI for enhanced document extraction - choose your provider below.")
 
     # â”€â”€ Cloud AI settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.markdown("### Cloud AI")
@@ -8392,7 +8392,7 @@ def show_loan_detail():
             except Exception:
                 pass
             _spinner_label = (
-                f"ðŸ¤– Sending {_scan_dtype} to {_ld_provider}... (2-5 sec)"
+                f"Sending {_scan_dtype} to {_ld_provider}... (2-5 sec)"
                 if _user_approved_cloud
                 else f"Scanning {_scan_dtype}..."
             )
@@ -8420,7 +8420,7 @@ def show_loan_detail():
                     f'<div style="display:inline-block;padding:3px 10px;margin:4px 0 8px 0;'
                     f'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.4);'
                     f'border-radius:12px;font-size:11px;color:#3b82f6;font-weight:600;">'
-                    f'ðŸ¤– Cloud AI augmented Â· {_ai_log}</div>',
+                    f'Cloud AI augmented - {_ai_log}</div>',
                     unsafe_allow_html=True,
                 )
             else:
@@ -8428,7 +8428,7 @@ def show_loan_detail():
                     f'<div style="display:inline-block;padding:3px 10px;margin:4px 0 8px 0;'
                     f'background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.12);'
                     f'border-radius:12px;font-size:11px;color:#9ca3af;">'
-                    f'ðŸ“‹ Regex extraction only (Cloud AI off)</div>',
+                    f'Regex extraction only (Cloud AI off)</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -8663,7 +8663,7 @@ def show_loan_detail():
             except Exception:
                 pass
             _af_spinner = (
-                f"ðŸ¤– Sending Approval Letter to {_af_provider}... (2-5 sec)"
+                f"Sending Approval Letter to {_af_provider}... (2-5 sec)"
                 if _af_user_approved_cloud
                 else "Extracting conditions from approval letter..."
             )

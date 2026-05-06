@@ -290,9 +290,29 @@ def _generate_openai(prompt: str, system: str, model: str,
 # Processing log
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _ascii_log_text(value: str) -> str:
+    text = str(value or "")
+    replacements = {
+        "Â·": "-",
+        "·": "-",
+        "—": "-",
+        "–": "-",
+        "â€”": "-",
+        "â€“": "-",
+        "â†’": "->",
+        "â€¦": "...",
+    }
+    for old, new in replacements.items():
+        text = text.replace(old, new)
+    return text.encode("ascii", errors="ignore").decode("ascii").strip()
+
+
 def _log(mode: str, feature: str, note: str = "") -> str:
     ts   = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    line = f"[{ts}] {mode.upper():14s} | {feature}"
+    mode = _ascii_log_text(mode).upper()
+    feature = _ascii_log_text(feature)
+    note = _ascii_log_text(note)
+    line = f"[{ts}] {mode:14s} | {feature}"
     if note:
         line += f"  ({note})"
     try:
