@@ -96,22 +96,20 @@ def _pkce_challenge(verifier: str) -> str:
 def begin_google_oauth() -> dict:
     """
     Create a Supabase Google OAuth URL using PKCE.
-    Returns url + verifier/state that the Streamlit session should store.
+    Returns url + verifier that the Streamlit session should store.
     """
     if not is_configured():
         return {"ok": False, "error": "Supabase OAuth is not configured yet."}
 
     verifier = _pkce_verifier()
-    state = secrets.token_urlsafe(24)
     params = {
         "provider": "google",
         "redirect_to": get_google_redirect_url(),
         "code_challenge": _pkce_challenge(verifier),
         "code_challenge_method": "S256",
-        "state": state,
     }
     url = f"{_supabase_url()}/auth/v1/authorize?{urllib.parse.urlencode(params)}"
-    return {"ok": True, "url": url, "verifier": verifier, "state": state}
+    return {"ok": True, "url": url, "verifier": verifier}
 
 
 def exchange_google_code(code: str, verifier: str) -> dict:

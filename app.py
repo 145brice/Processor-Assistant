@@ -1573,12 +1573,9 @@ def _handle_google_oauth_callback() -> bool:
     """
     _qp = st.query_params
     oauth_code = _qp.get("code", "")
-    oauth_state = _qp.get("state", "")
     oauth_error = _qp.get("error_description", "") or _qp.get("error", "")
     if isinstance(oauth_code, list):
         oauth_code = oauth_code[0] if oauth_code else ""
-    if isinstance(oauth_state, list):
-        oauth_state = oauth_state[0] if oauth_state else ""
     if isinstance(oauth_error, list):
         oauth_error = oauth_error[0] if oauth_error else ""
 
@@ -1589,12 +1586,7 @@ def _handle_google_oauth_callback() -> bool:
     if not oauth_code:
         return False
 
-    expected_state = st.session_state.get("oauth_google_state", "")
     verifier = st.session_state.get("oauth_google_verifier", "")
-    if expected_state and oauth_state and oauth_state != expected_state:
-        st.session_state["oauth_error_message"] = "Google sign-in state mismatch. Please try again."
-        st.query_params.clear()
-        return False
 
     try:
         import supabase_auth as _sa
@@ -1623,7 +1615,6 @@ def _handle_google_oauth_callback() -> bool:
             sandbox_mode=False,
             page="dashboard",
         )
-        st.session_state.pop("oauth_google_state", None)
         st.session_state.pop("oauth_google_verifier", None)
         st.session_state.pop("oauth_error_message", None)
         st.query_params.clear()
@@ -1829,7 +1820,6 @@ def show_login_page():
             oauth_info = _sa.begin_google_oauth()
             if oauth_info.get("ok"):
                 st.session_state["oauth_google_verifier"] = oauth_info["verifier"]
-                st.session_state["oauth_google_state"] = oauth_info["state"]
                 st.markdown(
                     f"""
                     <a href="{oauth_info['url']}" target="_self" style="
@@ -2105,7 +2095,6 @@ def show_sidebar():
             _clear_session()
             for key in DEFAULTS:
                 st.session_state[key] = DEFAULTS[key]
-            st.session_state.pop("oauth_google_state", None)
             st.session_state.pop("oauth_google_verifier", None)
             st.session_state.force_login = True
             st.rerun()
