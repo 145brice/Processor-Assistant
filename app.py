@@ -2064,6 +2064,25 @@ def show_login_page():
 
     # Push content down and center in a stable responsive wrapper
     st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
+    st.markdown("""
+    <style>
+    div[data-testid="stButton"] > button,
+    .stButton > button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+    div[data-testid="stButton"] > button div[data-testid="stMarkdownContainer"],
+    div[data-testid="stButton"] > button p,
+    .stButton > button p {
+        width: 100% !important;
+        display: block !important;
+        text-align: center !important;
+        margin: 0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
     st.markdown('<div class="login-page-wrap">', unsafe_allow_html=True)
 
     st.markdown("""
