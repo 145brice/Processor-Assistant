@@ -385,9 +385,9 @@ hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
     margin: 0 auto;
     padding: 0 0 40px 0;
 }
-.login-sandbox-btn button { background: rgba(59,130,246,0.08) !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; font-weight: 700 !important; font-size: 13px !important; border-radius: 12px !important; height: 44px !important; min-height: 44px !important; box-shadow: 0 0 14px rgba(59, 130, 246, 0.25) !important; transition: all 0.25s ease !important; }
+.login-sandbox-btn button { background: rgba(59,130,246,0.08) !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; font-weight: 700 !important; font-size: 13px !important; border-radius: 12px !important; height: 44px !important; min-height: 44px !important; box-shadow: 0 0 14px rgba(59, 130, 246, 0.25) !important; transition: all 0.25s ease !important; display: flex !important; align-items: center !important; justify-content: center !important; text-align: center !important; }
 .login-sandbox-btn button:hover { box-shadow: 0 0 30px rgba(59, 130, 246, 0.4) !important; transform: translateY(-2px) !important; }
-.login-sandbox-btn button p { color: #000 !important; font-weight: 700 !important; }
+.login-sandbox-btn button p { color: #000 !important; font-weight: 700 !important; width: 100% !important; text-align: center !important; margin: 0 !important; }
 .login-divider { display:flex;align-items:center;gap:10px;margin:18px 0 14px; }
 .login-divider span { font-size:11px;color:var(--slate-500);white-space:nowrap; }
 .login-divider hr { flex:1;border:none;border-top:1px solid var(--slate-200); }
@@ -947,13 +947,17 @@ ul[data-testid="stSelectboxVirtualDropdown"] li:hover {
     color: #ffffff !important;
     border: none !important;
     box-shadow: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
 }
 .login-sandbox-btn button:hover {
     background: #1d4ed8 !important;
     box-shadow: none !important;
     transform: none !important;
 }
-.login-sandbox-btn button p { color: #ffffff !important; }
+.login-sandbox-btn button p { color: #ffffff !important; width: 100% !important; text-align: center !important; margin: 0 !important; }
 .login-divider hr { border-top: 1px solid #1e293b !important; }
 .login-divider span { color: #94a3b8 !important; }
 
@@ -2175,8 +2179,9 @@ def show_sidebar():
         # â”€â”€ Who's logged in â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if is_sandbox:
             st.markdown(
-                '<div style="font-size:12px;color:#3b82f6;margin-bottom:12px;margin-top:8px;letter-spacing:1px;font-weight:600;text-transform:uppercase;">'
-                '* Sandbox Mode</div>',
+                '<div style="display:flex;align-items:center;justify-content:center;text-align:center;'
+                'font-size:12px;color:#3b82f6;margin:8px 0 12px 0;letter-spacing:1px;'
+                'font-weight:600;text-transform:uppercase;">Sandbox Mode</div>',
                 unsafe_allow_html=True,
             )
         elif user_name:
@@ -2994,7 +2999,11 @@ def show_dashboard():
                             if isinstance(_cv, dict) and _cv.get("name"):
                                 _borrower_hint = _cv["name"]; break
                     _loan_match = _mb(_raw_text, _sq_name, _borrower_hint)
-                    _visible_ids = {l.get("id") for l in _visible_account_loans(_gl())}
+                    try:
+                        from crm import get_all_loans as _match_all_loans
+                        _visible_ids = {l.get("id") for l in _visible_account_loans(_match_all_loans())}
+                    except Exception:
+                        _visible_ids = set()
                     if _loan_match.get("loan_id") not in _visible_ids:
                         _loan_match = {
                             "loan_id": None,
