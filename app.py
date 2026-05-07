@@ -1628,6 +1628,7 @@ def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
                         "desc": parts[1],
                         "party": parts[2],
                         "status": parts[3],
+                        "confidence": parts[4] if len(parts) >= 5 else "",
                     })
                 continue
             cleaned = line.strip(" -*\t")
@@ -3147,10 +3148,15 @@ def show_dashboard():
                             _chk = st.checkbox("", value=False, key=f"{_uid}_chk",
                                                label_visibility="collapsed")
                         with _r2:
+                            _conf = (_c.get("confidence") or "").strip()
+                            _conf_badge = (
+                                f' <span style="color:#93c5fd;font-size:10px;opacity:0.8;">{_conf}</span>'
+                                if _conf else ""
+                            )
                             st.markdown(
                                 f'<div style="font-size:12px;line-height:1.3;padding-top:3px;">'
                                 f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
-                                f'<span style="color:#e5e7eb;">{_c["desc"]}</span></div>',
+                                f'<span style="color:#e5e7eb;">{_c["desc"]}</span>{_conf_badge}</div>',
                                 unsafe_allow_html=True,
                             )
                         with _r3:
@@ -8723,6 +8729,7 @@ def show_loan_detail():
                             _af_conds.append({
                                 "num": _cells[0], "desc": _cells[1],
                                 "party": _cells[2], "status": _cells[3],
+                                "confidence": _cells[4] if len(_cells) >= 5 else "",
                             })
 
                 # Extract commitment/approval expiration date

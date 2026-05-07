@@ -351,7 +351,13 @@ def enhance_conditions(text: str, doc_type: str,
     if not cfg.get("enabled") or not cfg.get("api_key"):
         return script_conditions, _log("SCRIPT", "condition_extraction", "Cloud disabled")
 
-    system = "You are an expert mortgage processor who reviews loan condition checklists."
+    system = (
+        "You are an expert mortgage condition parser. Extract only real lender "
+        "conditions from approval documents. If the lender/format is familiar from "
+        "the document patterns, label the row High Confidence. If you are making an "
+        "educated inference from a new or unclear format, label it Best Guess. Never "
+        "invent conditions that are not present in the document."
+    )
     prompt = f"""Review this {doc_type} and the conditions a script already extracted.
 
 DOCUMENT (first 5000 chars):
@@ -365,14 +371,20 @@ Your job:
 2. Add any conditions the script missed
 3. Fix any descriptions that are vague or truncated
 4. Assign the correct responsible party for each
+5. For approval letters, keep each chronological numbered condition as ONE row.
+   If item 1 has wrapped/detail lines under it, combine those lines into item 1.
+   Do not split wrapped details into extra conditions or extra checkboxes.
+6. Preserve the whole condition text. Do not shorten it.
+7. Mark confidence as High Confidence for clear lender condition rows, or Best Guess when the format is unclear.
 
-Return ONLY the conditions — no intro text, no headers, no explanations.
+Return ONLY the conditions - no intro text, no headers, no explanations.
 Use this exact pipe-delimited format, one condition per line:
-| 1 | Full description of the condition | Borrower | Needed |
-| 2 | Full description of the condition | Title | Needed |
+| 1 | Full description of the condition | Borrower | Needed | High Confidence |
+| 2 | Full description of the condition | Title | Needed | Best Guess |
 
 Responsible party options: Borrower, Title, Underwriter, Insurance, Closer, Appraiser
-Status: always Needed"""
+Status: always Needed
+Confidence options: High Confidence, Best Guess"""
 
     try:
         provider = cfg.get("provider", DEFAULT_PROVIDER)
