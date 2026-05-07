@@ -246,7 +246,7 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
         cond_num += 1
         conditions.append({
             "num": str(cond_num),
-            "desc": desc[:250],
+            "desc": desc,
             "party": cond_obj["party"],
             "status": cond_obj["status"],
         })
@@ -387,7 +387,7 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
                 cond_num += 1
                 conditions.append({
                     "num": str(cond_num),
-                    "desc": cleaned[:250],
+                    "desc": cleaned,
                     "party": _guess_party(cleaned),
                     "status": "Needed",
                 })
@@ -410,7 +410,7 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
                         cond_num += 1
                         conditions.append({
                             "num": str(cond_num),
-                            "desc": desc[:250],
+                            "desc": desc,
                             "party": _guess_party(desc),
                             "status": "Needed",
                         })

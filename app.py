@@ -3115,10 +3115,34 @@ def show_dashboard():
 
                     _scan_fkey = f"scan_{_bidx}"
 
+                    _email_bar_cols = st.columns([1.7, 1, 0.8, 2.8])
+                    with _email_bar_cols[0]:
+                        if st.button("Email Checked", key=f"{_scan_fkey}_email_checked", use_container_width=True):
+                            _checked_for_email = [
+                                c for c in _norm_conds
+                                if st.session_state.get(f"{_scan_fkey}_{c['num']}_chk", False)
+                            ]
+                            if _checked_for_email:
+                                st.session_state[f"{_scan_fkey}_email_group_open"] = True
+                            else:
+                                st.toast("Check one or more conditions first.")
+                    with _email_bar_cols[1]:
+                        _group_to = st.selectbox(
+                            "To", _PARTY_OPTS_SCAN,
+                            key=f"{_scan_fkey}_email_group_to",
+                            label_visibility="collapsed",
+                        )
+                    with _email_bar_cols[2]:
+                        _group_lang = st.selectbox(
+                            "Language", ["English", "Spanish"],
+                            key=f"{_scan_fkey}_email_group_lang",
+                            label_visibility="collapsed",
+                        )
+
                     for _c in _norm_conds:
                         _uid = f"{_scan_fkey}_{_c['num']}"
-                        # Single tight row: [âœ“] #N desc [status] [parties] [ðŸ“§] [ðŸ“] [ðŸ“–]
-                        _r1, _r2, _r3, _r4, _r5, _r6, _r7 = st.columns([0.5, 4, 1.2, 1.6, 0.5, 0.5, 0.5])
+                        # Single tight row: checkbox, full description, status, parties, tools.
+                        _r1, _r2, _r3, _r4, _r6, _r7 = st.columns([0.5, 5.4, 1.2, 1.6, 0.5, 0.5])
                         with _r1:
                             _chk = st.checkbox("", value=False, key=f"{_uid}_chk",
                                                label_visibility="collapsed")
@@ -3126,7 +3150,7 @@ def show_dashboard():
                             st.markdown(
                                 f'<div style="font-size:12px;line-height:1.3;padding-top:3px;">'
                                 f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
-                                f'<span style="color:#e5e7eb;">{_c["desc"][:110]}</span></div>',
+                                f'<span style="color:#e5e7eb;">{_c["desc"]}</span></div>',
                                 unsafe_allow_html=True,
                             )
                         with _r3:
@@ -3137,9 +3161,6 @@ def show_dashboard():
                             _cparties = st.multiselect("p", _PARTY_OPTS_SCAN,
                                                        default=[_c["party"]] if _c["party"] in _PARTY_OPTS_SCAN else [],
                                                        key=f"{_uid}_party", label_visibility="collapsed")
-                        with _r5:
-                            if st.button("Email", key=f"{_uid}_email", help="Draft email"):
-                                st.session_state[f"{_uid}_email_open"] = True
                         with _r6:
                             _fd = not (_lm_suggestion == "match" and _lm_loan_id)
                             if st.button("Fetch", key=f"{_uid}_fetch", disabled=_fd,
@@ -3161,45 +3182,6 @@ def show_dashboard():
                                 st.session_state[f"{_uid}_guide_open"] = True
                                 st.session_state.pop(f"{_uid}_guide_results", None)
 
-                        # â”€â”€ Email drafter panel (toggled by ðŸ“§) â”€â”€
-                        if st.session_state.get(f"{_uid}_email_open"):
-                            _ec1, _ec2, _ec3 = st.columns([1.5, 1, 0.5])
-                            with _ec1:
-                                _p_choice = st.selectbox(
-                                    "To", _PARTY_OPTS_SCAN,
-                                    index=_PARTY_OPTS_SCAN.index(_cparties[0]) if _cparties and _cparties[0] in _PARTY_OPTS_SCAN else (
-                                        _PARTY_OPTS_SCAN.index(_c["party"]) if _c["party"] in _PARTY_OPTS_SCAN else 0
-                                    ),
-                                    key=f"{_uid}_email_to", label_visibility="collapsed",
-                                )
-                            with _ec2:
-                                _lang = st.selectbox(
-                                    "Language", ["English", "Spanish"],
-                                    key=f"{_uid}_email_lang", label_visibility="collapsed",
-                                )
-                            with _ec3:
-                                if st.button("Close", key=f"{_uid}_email_close", help="Close"):
-                                    for _k in (f"{_uid}_email_open", f"{_uid}_email_body"):
-                                        st.session_state.pop(_k, None)
-                                    st.rerun()
-                            try:
-                                from ai_engine import draft_email as _draft
-                                import urllib.parse as _uparse
-                                _ebody = _draft(f"- #{_c['num']}: {_c['desc']}", _p_choice, _lang)
-                            except Exception as _e:
-                                _ebody = f"(Draft failed: {_e})"
-                            st.code(_ebody, language=None)
-                            _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({
-                                "su": f"Condition #{_c['num']} â€” {_c.get('desc','')[:60]}",
-                                "body": _ebody,
-                            })
-                            st.markdown(
-                                f'<a href="{_gmail_compose}" target="_blank" style="display:inline-block;'
-                                f'margin-top:4px;padding:4px 12px;background:rgba(66,133,244,0.12);'
-                                f'border:1px solid rgba(66,133,244,0.4);border-radius:6px;color:#4285f4;'
-                                f'font-size:11px;font-weight:700;text-decoration:none;">ðŸ“¬ Compose in Gmail</a>',
-                                unsafe_allow_html=True,
-                            )
                         _hits = st.session_state.get(f"{_uid}_fetch_hits")
                         if _hits is not None:
                             if _hits:
@@ -3268,6 +3250,39 @@ def show_dashboard():
                                 st.markdown(
                                     '<div style="font-size:11px;color:#6b7280;padding:4px 0 4px 32px;">'
                                     'No relevant guideline sections found.</div>',
+                                    unsafe_allow_html=True,
+                                )
+                    if st.session_state.get(f"{_scan_fkey}_email_group_open"):
+                        _checked_for_email = [
+                            c for c in _norm_conds
+                            if st.session_state.get(f"{_scan_fkey}_{c['num']}_chk", False)
+                        ]
+                        if _checked_for_email:
+                            try:
+                                from ai_engine import draft_email as _draft
+                                import urllib.parse as _uparse
+                                _cond_text = "\n".join(
+                                    f"- #{c['num']}: {c['desc']}" for c in _checked_for_email
+                                )
+                                _ebody = _draft(_cond_text, _group_to, _group_lang)
+                            except Exception as _e:
+                                _ebody = f"(Draft failed: {_e})"
+                            st.code(_ebody, language=None)
+                            _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({
+                                "su": f"Conditions request - {_batch['type']}",
+                                "body": _ebody,
+                            })
+                            _draft_cols = st.columns([1, 4])
+                            with _draft_cols[0]:
+                                if st.button("Close Draft", key=f"{_scan_fkey}_email_group_close"):
+                                    st.session_state.pop(f"{_scan_fkey}_email_group_open", None)
+                                    st.rerun()
+                            with _draft_cols[1]:
+                                st.markdown(
+                                    f'<a href="{_gmail_compose}" target="_blank" style="display:inline-block;'
+                                    f'margin-top:4px;padding:4px 12px;background:rgba(66,133,244,0.12);'
+                                    f'border:1px solid rgba(66,133,244,0.4);border-radius:6px;color:#4285f4;'
+                                    f'font-size:11px;font-weight:700;text-decoration:none;">Compose in Gmail</a>',
                                     unsafe_allow_html=True,
                                 )
                     st.markdown('</div>', unsafe_allow_html=True)
