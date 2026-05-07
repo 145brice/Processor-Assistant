@@ -385,8 +385,19 @@ hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
     margin: 0 auto;
     padding: 0 0 40px 0;
 }
-.login-sandbox-btn button { background: rgba(59,130,246,0.08) !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; font-weight: 700 !important; font-size: 13px !important; border-radius: 12px !important; height: 44px !important; min-height: 44px !important; box-shadow: 0 0 14px rgba(59, 130, 246, 0.25) !important; transition: all 0.25s ease !important; display: flex !important; align-items: center !important; justify-content: center !important; text-align: center !important; }
+.login-sandbox-btn button { background: rgba(59,130,246,0.08) !important; color: var(--accent) !important; border: 1px solid var(--accent) !important; font-weight: 700 !important; font-size: 13px !important; border-radius: 12px !important; height: 44px !important; min-height: 44px !important; box-shadow: 0 0 14px rgba(59, 130, 246, 0.25) !important; transition: all 0.25s ease !important; display: grid !important; place-items: center !important; text-align: center !important; }
 .login-sandbox-btn button:hover { box-shadow: 0 0 30px rgba(59, 130, 246, 0.4) !important; transform: translateY(-2px) !important; }
+.login-sandbox-btn [data-testid="stButton"],
+.login-sandbox-btn [data-testid="stButton"] > div,
+.login-sandbox-btn button > div,
+.login-sandbox-btn button p,
+.login-sandbox-btn button span {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    text-align: center !important;
+}
 .login-sandbox-btn button p { color: #000 !important; font-weight: 700 !important; width: 100% !important; text-align: center !important; margin: 0 !important; }
 .login-divider { display:flex;align-items:center;gap:10px;margin:18px 0 14px; }
 .login-divider span { font-size:11px;color:var(--slate-500);white-space:nowrap; }
@@ -947,6 +958,16 @@ ul[data-testid="stSelectboxVirtualDropdown"] li:hover {
     color: #ffffff !important;
     border: none !important;
     box-shadow: none !important;
+    display: grid !important;
+    place-items: center !important;
+    text-align: center !important;
+}
+.login-sandbox-btn [data-testid="stButton"],
+.login-sandbox-btn [data-testid="stButton"] > div,
+.login-sandbox-btn button > div,
+.login-sandbox-btn button p,
+.login-sandbox-btn button span {
+    width: 100% !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -2064,7 +2085,7 @@ def show_login_page():
     """, unsafe_allow_html=True)
 
     st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
-    if st.button("Try Sandbox  -  No Account Needed", type="primary", use_container_width=True):
+    if st.button("Try Sandbox - No Account Needed", type="primary", use_container_width=True):
         _enter_sandbox(page="dashboard")
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
