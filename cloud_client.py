@@ -789,8 +789,6 @@ def extract_purchase_contract_ai_from_pdf(pdf_bytes: bytes) -> tuple[dict, str, 
         return {}, _log("SCRIPT", "pc_pdf_extract", "Cloud disabled"), ""
 
     provider = cfg.get("provider", DEFAULT_PROVIDER)
-    if provider != "gemini":
-        return {}, _log("SCRIPT", "pc_pdf_extract", f"{provider} does not support inline PDF in this client"), ""
 
     system = (
         "You analyze residential purchase contracts from PDF documents and return a structured JSON object. "
@@ -818,7 +816,17 @@ Return valid JSON in EXACTLY this shape (empty string "" if not present):
 For amounts use digits only ("474500"). Never place a phone/email inside a name field.
 """
     try:
-        model = cfg.get("model") or DEFAULT_MODELS["gemini"]
+        # OCR PDF understanding path is Gemini-native in this client.
+        # If active provider isn't Gemini, attempt GEMINI_API_KEY fallback.
+        if provider == "gemini":
+            api_key = cfg.get("api_key", "")
+            model = cfg.get("model") or DEFAULT_MODELS["gemini"]
+        else:
+            api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
+            model = DEFAULT_MODELS["gemini"]
+        if not api_key:
+            return {}, _log("SCRIPT", "pc_pdf_extract", "Gemini key missing for PDF OCR fallback"), ""
+
         payload = json.dumps({
             "system_instruction": {
                 "parts": [{"text": system}]
@@ -831,7 +839,7 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
             }],
             "generationConfig": {"temperature": 0.2, "maxOutputTokens": 2048},
         }).encode("utf-8")
-        url = GEMINI_ENDPOINT.format(model=model, key=cfg["api_key"])
+        url = GEMINI_ENDPOINT.format(model=model, key=api_key)
         req = urllib.request.Request(
             url, data=payload,
             headers={"Content-Type": "application/json"},
@@ -841,6 +849,7 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
             data = json.loads(resp.read().decode("utf-8"))
         txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
         parsed = _clean_extracted_contract_data(_parse_ai_json(txt))
-        return parsed, _log("CLOUD", "pc_pdf_extract", f"gemini · {model}"), ""
+        _note = f"gemini · {model}" if provider == "gemini" else f"gemini_fallback · {model}"
+        return parsed, _log("CLOUD", "pc_pdf_extract", _note), ""
     except Exception as e:
         return {}, _log("SCRIPT", "pc_pdf_extract", f"Cloud error: {str(e)[:120]}"), ""
