@@ -193,6 +193,119 @@ def mirror_setting(key: str, value: Any):
     _ensure_flush_thread()
 
 
+def save_pipeline_snapshot(loans: list) -> dict:
+    """Synchronously persist the full pipeline to Supabase settings.
+
+    Railway containers are ephemeral, so the local pipeline.json file cannot be
+    the only source of truth in production. The settings table already exists in
+    every supported schema, making this a durable schema-compatible snapshot.
+    """
+    if not is_enabled():
+        return {"ok": False, "reason": "Supabase not enabled"}
+    client = _get_client()
+    if not client:
+        return {"ok": False, "reason": "No client"}
+    try:
+        payload = {
+            "key": "pipeline_json",
+            "value_json": json.dumps(_redact(loans or []), ensure_ascii=False, default=str),
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }
+        client.table("settings").upsert(payload).execute()
+        return {"ok": True, "count": len(loans or [])}
+    except Exception as e:
+        _log_error(f"Pipeline snapshot save failed: {e}")
+        return {"ok": False, "reason": str(e)}
+
+
+def load_pipeline_snapshot() -> dict:
+    """Load the durable full-pipeline snapshot from Supabase settings."""
+    if not is_enabled():
+        return {"ok": False, "reason": "Supabase not enabled"}
+    client = _get_client()
+    if not client:
+        return {"ok": False, "reason": "No client"}
+    try:
+        res = client.table("settings").select("value_json").eq("key", "pipeline_json").limit(1).execute()
+        rows = res.data or []
+        if not rows:
+            return {"ok": False, "reason": "No pipeline snapshot"}
+        raw = rows[0].get("value_json")
+        data = json.loads(raw) if isinstance(raw, str) else raw
+        if not isinstance(data, list):
+            return {"ok": False, "reason": "Pipeline snapshot was not a list"}
+        return {"ok": True, "loans": data}
+    except Exception as e:
+        _log_error(f"Pipeline snapshot load failed: {e}")
+        return {"ok": False, "reason": str(e)}
+
+
+def load_loans_backup() -> dict:
+    """Load loans from the legacy Supabase loans mirror table."""
+    if not is_enabled():
+        return {"ok": False, "reason": "Supabase not enabled"}
+    client = _get_client()
+    if not client:
+        return {"ok": False, "reason": "No client"}
+    try:
+        res = client.table("loans").select("*").execute()
+        rows = res.data or []
+        loans = []
+        for row in rows:
+            raw_json = row.get("raw_json")
+            if isinstance(raw_json, str):
+                try:
+                    raw_json = json.loads(raw_json)
+                except Exception:
+                    raw_json = None
+            loan = raw_json if isinstance(raw_json, dict) else {
+                "id": row.get("id"),
+                "loan_num": row.get("loan_num"),
+                "borrower": row.get("borrower"),
+                "status": row.get("status") or "Pending",
+                "due_date": row.get("due_date") or "",
+                "closing_date": row.get("closing_date") or "",
+                "lock_expiry": row.get("lock_expiry") or "",
+                "commitment_date": row.get("commitment_date") or "",
+                "missing_docs": row.get("missing_docs") or "",
+                "folder_path": row.get("folder_path") or "",
+                "created_by": row.get("created_by") or "",
+                "assigned_to": row.get("assigned_to") or "",
+                "lender": row.get("lender") or "",
+                "loan_amount": row.get("loan_amount") or "",
+                "purchase_price": row.get("purchase_price") or "",
+                "loan_type": row.get("loan_type") or "",
+                "loan_officer": row.get("loan_officer") or "",
+                "loan_processor": row.get("loan_processor") or "",
+                "property_address": row.get("property_address") or "",
+                "notes": row.get("notes") or "",
+                "created": row.get("created") or "",
+                "updated": row.get("updated") or "",
+                "contacts": {},
+                "conditions": [],
+                "documents": [],
+            }
+            for json_field, loan_field, default in (
+                ("contacts_json", "contacts", {}),
+                ("conditions_json", "conditions", []),
+                ("documents_json", "documents", []),
+            ):
+                value = row.get(json_field)
+                if isinstance(value, str):
+                    try:
+                        value = json.loads(value)
+                    except Exception:
+                        value = default
+                loan[loan_field] = value if isinstance(value, type(default)) else default
+            if loan.get("id"):
+                loans.append(loan)
+        loans.sort(key=lambda x: int(x.get("id") or 0))
+        return {"ok": True, "loans": loans}
+    except Exception as e:
+        _log_error(f"Legacy loans backup load failed: {e}")
+        return {"ok": False, "reason": str(e)}
+
+
 def force_flush() -> dict:
     """Manually flush the queue. Returns result dict."""
     if not is_enabled():

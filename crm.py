@@ -13,6 +13,8 @@ _TRASH_FILE     = os.path.join(os.path.dirname(__file__), "pipeline_trash.json")
 _REMOVED_DIR    = os.path.join(os.path.dirname(__file__), "removed")
 _REMOVED_CFG    = os.path.join(os.path.dirname(__file__), "removed_config.json")
 _DOCS_DIR       = os.path.join(os.path.dirname(__file__), "loan_docs")
+_CLOUD_LOAD_ATTEMPTED = False
+_CLOUD_LOAD_OK = False
 
 RETENTION_OPTIONS = {
     "7 days":   7,
@@ -56,7 +58,42 @@ PARTY_COLORS = {
 
 
 def _load() -> list:
-    """Load pipeline from JSON. Seeds from pipeline.sample.json on first run."""
+    """Load pipeline from durable cloud snapshot first, JSON fallback second."""
+    global _CLOUD_LOAD_ATTEMPTED, _CLOUD_LOAD_OK
+    if not _CLOUD_LOAD_ATTEMPTED:
+        _CLOUD_LOAD_ATTEMPTED = True
+        try:
+            import supabase_sync
+            snap = supabase_sync.load_pipeline_snapshot()
+            if snap.get("ok") and isinstance(snap.get("loans"), list):
+                loans = snap.get("loans") or []
+                if not loans:
+                    legacy = supabase_sync.load_loans_backup()
+                    if legacy.get("ok") and legacy.get("loans"):
+                        loans = legacy.get("loans") or []
+                        supabase_sync.save_pipeline_snapshot(loans)
+                _CLOUD_LOAD_OK = True
+                # Cache locally for faster reads and emergency fallback.
+                try:
+                    with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
+                        json.dump(loans, f, indent=2, ensure_ascii=False)
+                except OSError:
+                    pass
+                return loans
+            legacy = supabase_sync.load_loans_backup()
+            if legacy.get("ok") and legacy.get("loans"):
+                loans = legacy.get("loans") or []
+                _CLOUD_LOAD_OK = True
+                supabase_sync.save_pipeline_snapshot(loans)
+                try:
+                    with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
+                        json.dump(loans, f, indent=2, ensure_ascii=False)
+                except OSError:
+                    pass
+                return loans
+        except Exception:
+            pass
+
     if not os.path.exists(_PIPELINE_FILE):
         _sample = os.path.join(os.path.dirname(_PIPELINE_FILE), "pipeline.sample.json")
         if os.path.exists(_sample):
@@ -69,17 +106,27 @@ def _load() -> list:
         return []
     try:
         with open(_PIPELINE_FILE, "r", encoding="utf-8") as f:
-            return json.load(f)
+            loans = json.load(f)
+        # If Supabase is configured but has no snapshot yet, seed it from the
+        # current JSON file instead of letting the next deploy lose the data.
+        if loans and not _CLOUD_LOAD_OK:
+            try:
+                import supabase_sync
+                supabase_sync.save_pipeline_snapshot(loans)
+            except Exception:
+                pass
+        return loans
     except (json.JSONDecodeError, OSError):
         return []
 
 
 def _save(loans: list):
-    """Save pipeline to JSON, then mirror to Supabase backup (queued, non-blocking)."""
+    """Save pipeline to JSON and durable Supabase snapshot when configured."""
     with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
         json.dump(loans, f, indent=2, ensure_ascii=False)
     try:
         import supabase_sync
+        supabase_sync.save_pipeline_snapshot(loans)
         supabase_sync.mirror_loans_bulk(loans)
     except Exception:
         pass
