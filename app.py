@@ -2066,8 +2066,24 @@ def show_login_page():
     st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
     st.markdown("""
     <style>
+    button[kind="primary"],
     div[data-testid="stButton"] > button,
     .stButton > button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        text-align: center !important;
+    }
+    button[kind="primary"] *,
+    div[data-testid="stButton"] > button *,
+    .stButton > button * {
+        text-align: center !important;
+        justify-content: center !important;
+    }
+    button[kind="primary"] > div,
+    div[data-testid="stButton"] > button > div,
+    .stButton > button > div {
+        width: 100% !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
