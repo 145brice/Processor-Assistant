@@ -2845,26 +2845,21 @@ def show_dashboard():
                         _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
                 else:
                     _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
-                # Safety net: for scanned Purchase Contracts, force one direct PDF-AI retry
-                # so we don't silently fall through to image-only when OCR path is available.
+                # Safety net: for scanned Purchase Contracts, force one direct PDF-AI retry.
                 if (
                     _result.get("success")
                     and _sq_type == "Purchase Contract"
                     and _result.get("image_only")
-                    and _sq_approved
                 ):
                     try:
                         import cloud_client as _cc_retry
-                        _pc_data, _pc_log, _pc_text = _cc_retry.extract_purchase_contract_ai_from_pdf(_sq_bytes)
-                        if _pc_data:
-                            _result = {
-                                "success": True,
-                                "doc_type": _sq_type,
-                                "text_length": len(_pc_text or ""),
-                                "conditions": "",
-                                "bank_rules": "",
-                                "extracted_data": _pc_data,
-                                "contacts": {
+                        if not _cc_retry.is_enabled():
+                            _result["ai_log"] = "Cloud AI disabled or missing API key"
+                        else:
+                            _pc_data, _pc_log, _pc_text = _cc_retry.extract_purchase_contract_ai_from_pdf(_sq_bytes)
+                            _result["ai_log"] = _pc_log or "PDF OCR returned no log"
+                            if _pc_data:
+                                _pc_contacts = {
                                     k: v for k, v in {
                                         "buyer": _pc_data.get("buyer", {}),
                                         "seller": _pc_data.get("seller", {}),
@@ -2872,14 +2867,31 @@ def show_dashboard():
                                         "selling_agent": _pc_data.get("selling_agent", {}),
                                         "title": _pc_data.get("title", {}),
                                     }.items() if isinstance(v, dict) and v.get("name")
-                                },
-                                "image_only": False,
-                                "ocr_via_cloud": True,
-                                "ai_log": _pc_log,
-                                "raw_text": (_pc_text or "")[:12000],
-                            }
-                    except Exception:
-                        pass
+                                }
+                                _result = {
+                                    "success": True,
+                                    "doc_type": _sq_type,
+                                    "text_length": len(_pc_text or ""),
+                                    "conditions": "",
+                                    "bank_rules": "",
+                                    "extracted_data": _pc_data,
+                                    "contacts": _pc_contacts,
+                                    "image_only": False,
+                                    "ocr_via_cloud": True,
+                                    "ai_log": _pc_log,
+                                    "raw_text": (_pc_text or "")[:12000],
+                                }
+                            else:
+                                _result["ai_log"] = f"{_pc_log or 'PDF OCR returned empty data'} | no fields extracted"
+                    except Exception as _ocr_e:
+                        _result["ai_log"] = f"PDF OCR exception: {type(_ocr_e).__name__}: {str(_ocr_e)[:160]}"
+                if (
+                    _result.get("success")
+                    and _sq_type == "Purchase Contract"
+                    and _result.get("image_only")
+                    and not _result.get("ai_log")
+                ):
+                    _result["ai_log"] = f"PDF OCR retry skipped; cloud={bool(_try_cloud)} approved={bool(_sq_approved)}"
                 if _result.get("success"):
                     # Auto-match to a pipeline loan
                     _raw_text = _result.get("raw_text", "") or _result.get("bank_raw_text", "") or ""
