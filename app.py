@@ -3073,10 +3073,12 @@ def show_dashboard():
                     _loan_match = _mb(_raw_text, _sq_name, _borrower_hint)
                     try:
                         from crm import get_all_loans as _match_all_loans
-                        _visible_ids = {l.get("id") for l in _visible_account_loans(_match_all_loans())}
+                        _visible_loans_for_match = _visible_account_loans(_match_all_loans())
+                        _visible_ids = {l.get("id") for l in _visible_loans_for_match}
                     except Exception:
+                        _visible_loans_for_match = []
                         _visible_ids = set()
-                    if _loan_match.get("loan_id") not in _visible_ids:
+                    if not _visible_loans_for_match or _loan_match.get("loan_id") not in _visible_ids:
                         _loan_match = {
                             "loan_id": None,
                             "loan_num": "",
@@ -3165,6 +3167,18 @@ def show_dashboard():
             _lm_loan_num = _lm.get("loan_num", "")
             _lm_loan_id = _lm.get("loan_id")
             _lm_conf = _lm.get("confidence", 0)
+            try:
+                _current_visible_loans = _visible_account_loans(_gl())
+                _current_visible_ids = {l.get("id") for l in _current_visible_loans}
+            except Exception:
+                _current_visible_loans = []
+                _current_visible_ids = set()
+            if not _current_visible_loans or (_lm_loan_id and _lm_loan_id not in _current_visible_ids):
+                _lm_suggestion = "unknown"
+                _lm_borrower = ""
+                _lm_loan_num = ""
+                _lm_loan_id = None
+                _lm_conf = 0
 
             def _create_pipeline_loan_from_scan() -> dict | None:
                 _pcd = (_r.get("extracted_data") or {})
@@ -8005,7 +8019,7 @@ Scans include all document uploads processed through the Scanner.
 def show_loan_detail():
     """Full detail view for a single loan â€” all info, activity, documents."""
     from crm import (
-        get_loan, update_loan, set_status, delete_loan,
+        get_loan, add_loan, update_loan, set_status, delete_loan,
         STATUS_OPTIONS, STATUS_EMOJI, STATUS_COLORS,
         get_activity, log_activity,
     )
@@ -8042,7 +8056,37 @@ def show_loan_detail():
             f'</div>',
             unsafe_allow_html=True,
         )
-        _pm1, _pm2 = st.columns([1, 1])
+        def _create_loan_from_pending_scan() -> dict | None:
+            _pcd = (_ps_result.get("extracted_data") or {})
+            _txn = _pcd.get("transaction", {}) if isinstance(_pcd, dict) else {}
+            _buyer = _pcd.get("buyer", {}) if isinstance(_pcd, dict) else {}
+            _contacts = _ps_result.get("contacts", {}) or {}
+            _borrower = _buyer.get("name", "") if isinstance(_buyer, dict) else ""
+            if not _borrower and isinstance(_contacts, dict):
+                for _cv in _contacts.values():
+                    if isinstance(_cv, dict) and _cv.get("name"):
+                        _borrower = _cv["name"]
+                        break
+            if not _borrower:
+                st.error("I parsed the document, but I do not have a borrower name to create the loan.")
+                return None
+            _closing = (_txn.get("closing_date", "") if isinstance(_txn, dict) else "") or ""
+            _new = add_loan(
+                loan_num=_ps_result.get("loan_num", "") or "TBD",
+                borrower=_borrower,
+                status="Pending",
+                due_date=_closing,
+                missing_docs="",
+                folder_path="",
+                closing_date=_closing,
+                conditions=_normalize_scanned_conditions(_ps_result.get("conditions", [])),
+                contacts=_contacts if isinstance(_contacts, dict) else {},
+                created_by=st.session_state.get("user_name", ""),
+            )
+            _stamp_current_user_on_loan(_new, assigned=True)
+            return _new
+
+        _pm1, _pm2, _pm3 = st.columns([1, 1, 1])
         with _pm1:
             if st.button("Merge Scanned Contract Into This Loan", key=f"detail_pending_merge_{lid}", type="primary", use_container_width=True):
                 from crm import attach_document as _attach_doc
@@ -8083,6 +8127,20 @@ def show_loan_detail():
                 st.toast(f"{_ps_type} merged into loan")
                 st.rerun()
         with _pm2:
+            if st.button("Create New Loan From This Scan", key=f"detail_pending_create_new_{lid}", use_container_width=True):
+                from crm import attach_document as _attach_doc
+                _new_loan = _create_loan_from_pending_scan()
+                if _new_loan:
+                    _attach_doc(_new_loan["id"], _ps_file, _ps_type, extracted=_ps_result.get("extracted_data"))
+                    log_activity(_new_loan["id"], "created", f"Loan created from scanned {_ps_type}", user=my_name)
+                    _bi = _pending_scan.get("batch_index")
+                    if isinstance(_bi, int) and 0 <= _bi < len(st.session_state.get("scan_batches", [])):
+                        st.session_state.scan_batches.pop(_bi)
+                    st.session_state.pop("pending_scan_merge", None)
+                    st.session_state.detail_loan_id = _new_loan["id"]
+                    st.toast(f"Loan created for {_new_loan.get('borrower', '')}")
+                    st.rerun()
+        with _pm3:
             if st.button("Dismiss Pending Scan", key=f"detail_pending_dismiss_{lid}", use_container_width=True):
                 st.session_state.pop("pending_scan_merge", None)
                 st.rerun()
