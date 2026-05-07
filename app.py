@@ -1516,6 +1516,8 @@ def _env_truthy(name: str, default: str = "1") -> bool:
 
 
 _AUTO_ENTER_SANDBOX = _env_truthy("PA_AUTO_ENTER_SANDBOX", "0")
+_SCAN_HISTORY_FILE = os.path.join(os.path.dirname(__file__), "scan_history.json")
+_SCAN_HISTORY_DAYS = 7
 
 
 def _enter_sandbox(page: str = "dashboard") -> None:
@@ -1589,6 +1591,63 @@ def _stamp_current_user_on_loan(loan_id: int | dict, *, assigned: bool = False) 
         update_loan(loan_id, **fields)
     except Exception:
         pass
+
+
+def _scan_history_user_key() -> str:
+    return _current_auth_user_key() or "anonymous"
+
+
+def _load_scan_history_all() -> list[dict]:
+    try:
+        import json as _json
+        with open(_SCAN_HISTORY_FILE, "r", encoding="utf-8") as f:
+            data = _json.load(f)
+        return data if isinstance(data, list) else []
+    except Exception:
+        return []
+
+
+def _save_scan_history_all(items: list[dict]) -> None:
+    try:
+        import json as _json
+        cutoff = time.time() - (_SCAN_HISTORY_DAYS * 86400)
+        cleaned = [i for i in items if float(i.get("ts", 0) or 0) >= cutoff]
+        cleaned = sorted(cleaned, key=lambda i: float(i.get("ts", 0) or 0), reverse=True)[:150]
+        with open(_SCAN_HISTORY_FILE, "w", encoding="utf-8") as f:
+            _json.dump(cleaned, f, indent=2, ensure_ascii=False, default=str)
+    except Exception:
+        pass
+
+
+def _remember_scan_batch(batch: dict) -> None:
+    if not isinstance(batch, dict):
+        return
+    entry = {
+        "id": f"{int(time.time() * 1000)}_{abs(hash(str(batch.get('file', ''))))}",
+        "ts": time.time(),
+        "user_key": _scan_history_user_key(),
+        "batch": batch,
+    }
+    items = _load_scan_history_all()
+    sig = (entry["user_key"], batch.get("file"), batch.get("type"), str((batch.get("result") or {}).get("text_length", "")))
+    kept = []
+    for item in items:
+        ib = item.get("batch") or {}
+        isig = (item.get("user_key"), ib.get("file"), ib.get("type"), str((ib.get("result") or {}).get("text_length", "")))
+        if isig != sig:
+            kept.append(item)
+    _save_scan_history_all([entry] + kept)
+
+
+def _recent_scan_history() -> list[dict]:
+    key = _scan_history_user_key()
+    cutoff = time.time() - (_SCAN_HISTORY_DAYS * 86400)
+    items = [
+        i for i in _load_scan_history_all()
+        if i.get("user_key") == key and float(i.get("ts", 0) or 0) >= cutoff and isinstance(i.get("batch"), dict)
+    ]
+    _save_scan_history_all(_load_scan_history_all())
+    return sorted(items, key=lambda i: float(i.get("ts", 0) or 0), reverse=True)
 
 
 def _normalize_contact_value(value) -> dict:
@@ -2305,6 +2364,7 @@ def show_dashboard():
 
     _has_batches = bool(st.session_state.scan_batches)
     _has_upload = bool(st.session_state.get("dash_uploader"))
+    _recent_scans = _recent_scan_history()
 
     # â”€â”€ Header: hero when empty, compact when active â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if not _has_batches and not _has_upload:
@@ -2353,6 +2413,29 @@ def show_dashboard():
             '</div>',
             unsafe_allow_html=True,
         )
+
+    if _recent_scans:
+        with st.expander(f"Recent Scans ({len(_recent_scans)} saved for 7 days)", expanded=False):
+            for _hi, _entry in enumerate(_recent_scans[:20]):
+                _hb = _entry.get("batch") or {}
+                _hr = _hb.get("result") or {}
+                _hcontacts = _hr.get("contacts", {}) if isinstance(_hr, dict) else {}
+                _hcontact_count = len(_hcontacts) if isinstance(_hcontacts, dict) else 0
+                _age_hours = int((time.time() - float(_entry.get("ts", 0) or 0)) / 3600)
+                _age = f"{_age_hours}h ago" if _age_hours < 48 else f"{int(_age_hours / 24)}d ago"
+                _hc1, _hc2 = st.columns([5, 1])
+                with _hc1:
+                    st.markdown(
+                        f'<div style="font-size:12px;color:#e5e7eb;font-weight:600;">{_hb.get("file", "scan")}</div>'
+                        f'<div style="font-size:11px;color:#9ca3af;">{_hb.get("type", "Document")} · {_hcontact_count} contact group(s) · {_age}</div>',
+                        unsafe_allow_html=True,
+                    )
+                with _hc2:
+                    if st.button("Restore", key=f"restore_scan_{_entry.get('id', _hi)}", use_container_width=True):
+                        _restored = dict(_hb)
+                        st.session_state.scan_batches.append(_restored)
+                        st.toast(f"Restored {_restored.get('file', 'scan')}")
+                        st.rerun()
 
     # â”€â”€ File uploader (additive) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     new_files = st.file_uploader(
@@ -2911,16 +2994,28 @@ def show_dashboard():
                             if isinstance(_cv, dict) and _cv.get("name"):
                                 _borrower_hint = _cv["name"]; break
                     _loan_match = _mb(_raw_text, _sq_name, _borrower_hint)
+                    _visible_ids = {l.get("id") for l in _visible_account_loans(_gl())}
+                    if _loan_match.get("loan_id") not in _visible_ids:
+                        _loan_match = {
+                            "loan_id": None,
+                            "loan_num": "",
+                            "borrower": None,
+                            "confidence": 0,
+                            "suggestion": "unknown",
+                            "suggested_folder": "",
+                        }
 
                     _batch = st.session_state.scan_batches
                     _new_bidx = len(_batch)
-                    _batch.append({
+                    _new_batch = {
                         "file": _sq_name,
                         "type": _sq_type,
                         "result": _result,
                         "loan_match": _loan_match,
-                    })
+                    }
+                    _batch.append(_new_batch)
                     st.session_state.scan_batches = _batch
+                    _remember_scan_batch(_new_batch)
                     if _result.get("image_only"):
                         st.warning(f"{_sq_name}: {_sq_type} - scanned image, logged without extraction")
                     else:
