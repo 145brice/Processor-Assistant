@@ -190,7 +190,7 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
 
     # UWM and similar approval letters often list conditions as noun phrases
     # rather than action sentences ("Most recent 30 days paystubs", etc.).
-    approval_mode = doc_type == "Approval Letter"
+    approval_mode = doc_type in {"Approval Letter", "Broker Package (BP)"}
     if approval_mode:
         condition_heading = re.compile(
             r'(?i)\b(?:loan\s+approval\s+conditions?|approval\s+conditions?|'
@@ -364,56 +364,113 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
             r'the\s+above\s+(?:loan|mortgage))\b'
         )
 
-        for raw_line in lines:
-            line = raw_line.strip()
-            if not line:
-                continue
-            if section_start.search(line):
-                in_section = True
-                continue
-            if in_section and section_end.search(line):
-                in_section = False
-                continue
-            if in_section:
-                cleaned = re.sub(r'^[\s]*(?:\d{1,3}[\.\)\:]|[a-zA-Z][\.\)]|[\-\*\•])\s*', '', line).strip()
-                if approval_mode:
-                    if _is_junk_line(cleaned) or _is_approval_metadata_line(cleaned) or len(cleaned) < 12:
-                        continue
-                elif not _is_real_condition_text(cleaned):
-                    continue
-                if cleaned.lower() in seen:
-                    continue
-                seen.add(cleaned.lower())
+        if approval_mode:
+            current_section_cond = None
+            numbered_start = re.compile(r'^\s*(\d{1,3})[\.\)\:]\s*(.+)$')
+
+            def _clean_approval_line(value: str) -> str:
+                return re.sub(r'^[\s]*(?:[a-zA-Z][\.\)]|[\-\*\u2022])\s*', '', value).strip()
+
+            def _flush_section_condition():
+                nonlocal cond_num, current_section_cond
+                if not current_section_cond:
+                    return
+                display_num = current_section_cond["num"]
+                desc = re.sub(r'\s+', ' ', " ".join(current_section_cond["parts"])).strip()
+                current_section_cond = None
+                if _is_junk_line(desc) or _is_approval_metadata_line(desc) or len(desc) < 12:
+                    return
+                lower = desc.lower()
+                if lower in seen:
+                    return
+                seen.add(lower)
                 cond_num += 1
                 conditions.append({
-                    "num": str(cond_num),
-                    "desc": cleaned,
-                    "party": _guess_party(cleaned),
+                    "num": display_num,
+                    "desc": desc,
+                    "party": _guess_party(desc),
                     "status": "Needed",
                 })
 
-        # Also catch standalone action lines
-        for raw_line in lines:
-            line = raw_line.strip()
-            m = re.match(r'(?i)^\s*(?:\d{1,3}[\.\)\:]|[\-\*\•])?\s*(?:provide|submit|obtain|furnish)\s+(.{15,})', line)
-            if m:
-                desc = m.group(1).strip().rstrip('.')
-                lower = desc.lower()
-                if approval_mode:
-                    is_real = not (_is_junk_line(desc) or _is_approval_metadata_line(desc) or len(desc) < 12)
-                else:
-                    is_real = _is_real_condition_text(desc)
-                if is_real and lower not in seen:
-                    already = any(lower in s or s in lower for s in seen)
-                    if not already:
-                        seen.add(lower)
-                        cond_num += 1
-                        conditions.append({
-                            "num": str(cond_num),
-                            "desc": desc,
-                            "party": _guess_party(desc),
-                            "status": "Needed",
-                        })
+            for raw_line in lines:
+                line = raw_line.strip()
+                if not line:
+                    continue
+                if section_start.search(line):
+                    _flush_section_condition()
+                    in_section = True
+                    continue
+                if in_section and section_end.search(line):
+                    _flush_section_condition()
+                    in_section = False
+                    continue
+                if not in_section:
+                    continue
+
+                num_match = numbered_start.match(line)
+                if num_match:
+                    _flush_section_condition()
+                    first_text = _clean_approval_line(num_match.group(2))
+                    if not (_is_junk_line(first_text) or _is_approval_metadata_line(first_text) or len(first_text) < 12):
+                        current_section_cond = {"num": num_match.group(1), "parts": [first_text]}
+                    continue
+
+                cleaned = _clean_approval_line(line)
+                if _is_junk_line(cleaned) or _is_approval_metadata_line(cleaned) or len(cleaned) < 12:
+                    continue
+                if current_section_cond:
+                    current_section_cond["parts"].append(cleaned)
+            _flush_section_condition()
+        else:
+            for raw_line in lines:
+                line = raw_line.strip()
+                if not line:
+                    continue
+                if section_start.search(line):
+                    in_section = True
+                    continue
+                if in_section and section_end.search(line):
+                    in_section = False
+                    continue
+                if in_section:
+                    cleaned = re.sub(r'^[\s]*(?:\d{1,3}[\.\)\:]|[a-zA-Z][\.\)]|[\-\*\u2022])\s*', '', line).strip()
+                    if not _is_real_condition_text(cleaned):
+                        continue
+                    if cleaned.lower() in seen:
+                        continue
+                    seen.add(cleaned.lower())
+                    cond_num += 1
+                    conditions.append({
+                        "num": str(cond_num),
+                        "desc": cleaned,
+                        "party": _guess_party(cleaned),
+                        "status": "Needed",
+                    })
+
+        # Also catch standalone action lines, but do not split approval continuation text
+        # into extra checkboxes once numbered approval conditions were found.
+        if not (approval_mode and conditions):
+            for raw_line in lines:
+                line = raw_line.strip()
+                m = re.match(r'(?i)^\s*(?:\d{1,3}[\.\)\:]|[\-\*\u2022])?\s*(?:provide|submit|obtain|furnish)\s+(.{15,})', line)
+                if m:
+                    desc = m.group(1).strip().rstrip('.')
+                    lower = desc.lower()
+                    if approval_mode:
+                        is_real = not (_is_junk_line(desc) or _is_approval_metadata_line(desc) or len(desc) < 12)
+                    else:
+                        is_real = _is_real_condition_text(desc)
+                    if is_real and lower not in seen:
+                        already = any(lower in s or s in lower for s in seen)
+                        if not already:
+                            seen.add(lower)
+                            cond_num += 1
+                            conditions.append({
+                                "num": str(cond_num),
+                                "desc": desc,
+                                "party": _guess_party(desc),
+                                "status": "Needed",
+                            })
 
     time.sleep(0.3)
 
