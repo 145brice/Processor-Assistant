@@ -375,7 +375,7 @@ Available when logged in (not Sandbox). Shows all past document scans saved to t
 ---
 
 ### 7. Sandbox Mode
-No account needed. Full access to every feature except scan history. Nothing saved between sessions. Good for demos or evaluation.
+No account needed. Uploaded documents are not saved. Non-sensitive extracted loan data and recent scan history/cache may persist for continuity. Good for demos or evaluation.
 
 ---
 

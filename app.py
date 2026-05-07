@@ -2126,7 +2126,7 @@ def show_login_page():
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown(
         '<div style="text-align:center;font-size:10px;color:#9ca3af;margin-top:4px;margin-bottom:4px;">'
-        'Full access - Nothing saved between sessions</div>',
+        'Full access - Docs not saved; non-sensitive data and recent scan history may persist</div>',
         unsafe_allow_html=True
     )
 
