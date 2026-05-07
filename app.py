@@ -9576,6 +9576,11 @@ def main():
         show_login_page()
     else:
         _load_user_gemini_key_into_session()
+        _qp_page = st.query_params.get("page", "")
+        if isinstance(_qp_page, list):
+            _qp_page = _qp_page[0] if _qp_page else ""
+        if _qp_page:
+            st.session_state.page = str(_qp_page)
         show_sidebar()
         show_persistent_header()
         _render_gemini_key_prompt()
