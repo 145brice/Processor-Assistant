@@ -1591,6 +1591,15 @@ def _stamp_current_user_on_loan(loan_id: int | dict, *, assigned: bool = False) 
         pass
 
 
+def _normalize_contact_value(value) -> dict:
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        text = value.strip()
+        return {"name": text} if text else {}
+    return {}
+
+
 def _infer_condition_party(desc: str) -> str:
     text = str(desc or "").lower()
     if any(k in text for k in ["insurance", "hoi", "hazard", "flood"]):
@@ -4825,8 +4834,8 @@ def show_pipeline():
             "title": "Title", "insurance": "HOI",
         }
         for _ck in ["seller", "listing_agent", "selling_agent", "title", "insurance"]:
-            _cv = _contacts_data.get(_ck)
-            if not _cv or not isinstance(_cv, dict):
+            _cv = _normalize_contact_value(_contacts_data.get(_ck))
+            if not _cv:
                 continue
             _cname = _cv.get("name") or _cv.get("company") or _cv.get("contact") or ""
             if not _cname:
@@ -8164,7 +8173,7 @@ def show_loan_detail():
         (_qc_c2, "insurance", "HOI / Insurance"),
     ]:
         with _col:
-            _rc = _qc_contacts.get(_role_key) or {}
+            _rc = _normalize_contact_value(_qc_contacts.get(_role_key))
             _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
             _phone = _rc.get("phone", "")
             _email = _rc.get("email", "")
@@ -8300,7 +8309,8 @@ def show_loan_detail():
             "title": "Title", "employer": "Employer",
         }
         for _ck, _cv in _stored_contacts.items():
-            if not _cv or not isinstance(_cv, dict):
+            _cv = _normalize_contact_value(_cv)
+            if not _cv:
                 continue
             _clabel = _party_display_labels.get(_ck, _ck.replace("_", " ").title())
             _cname = _cv.get("name") or _cv.get("company") or ""
@@ -8352,7 +8362,7 @@ def show_loan_detail():
         if _ld_draft_btn:
             from ai_engine import draft_email as _de
             import urllib.parse
-            _recip_contact = _contact_party_map.get(_ld_recipient, {})
+            _recip_contact = _normalize_contact_value(_contact_party_map.get(_ld_recipient, {}))
             _recip_label = _recip_contact.get("name") or _ld_recipient.split("â€”")[0].strip()
             if _ld_checked:
                 _cond_lines = [f"- Condition #{c['num']}: {c['desc']}" for c in _ld_checked]
@@ -8392,7 +8402,7 @@ def show_loan_detail():
                         _conds_for_ai, _ld_recipient.split("â€”")[0].strip(), _ld_lang
                     )
                 if _ld_ai_text:
-                    _recip_contact2 = _contact_party_map.get(_ld_recipient, {})
+                    _recip_contact2 = _normalize_contact_value(_contact_party_map.get(_ld_recipient, {}))
                     _recip_email2 = _recip_contact2.get("email", "")
                     st.container(border=True).markdown(_ld_ai_text)
                     _gmail_url2 = "https://mail.google.com/mail/?view=cm&fs=1&" + urllib.parse.urlencode({
@@ -8431,7 +8441,8 @@ def show_loan_detail():
         import urllib.parse as _uparse2
         _contact_html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
         for _ck, _cv in _contacts.items():
-            if not _cv or not isinstance(_cv, dict):
+            _cv = _normalize_contact_value(_cv)
+            if not _cv:
                 continue
             if not any(str(v).strip() for v in _cv.values()):
                 continue
