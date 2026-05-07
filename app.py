@@ -3135,7 +3135,7 @@ def show_dashboard():
                             if _new_loan:
                                 st.session_state.scan_batches.pop(_bidx)
                                 st.session_state.page = "pipeline"
-                                st.toast(f"Loan created for {_new_loan.get('borrower', '')}", icon="âœ…")
+                                st.toast(f"Loan created for {_new_loan.get('borrower', '')}")
                             st.rerun()
                 else:
                     # No match â€” offer to start a new loan pre-filled from scan
@@ -3157,7 +3157,7 @@ def show_dashboard():
                         if _new_loan:
                             st.session_state.scan_batches.pop(_bidx)
                             st.session_state.page = "pipeline"
-                            st.toast(f"Loan created for {_new_loan.get('borrower', '')}", icon="âœ…")
+                            st.toast(f"Loan created for {_new_loan.get('borrower', '')}")
                         st.rerun()
 
                 # â”€â”€ New loan form (shown when triggered) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
