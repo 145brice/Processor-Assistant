@@ -50,6 +50,40 @@ def _parse_ai_json(text: str) -> dict:
         return json.loads(s)
     except Exception:
         pass
+
+    def _clean_json_candidate(candidate: str) -> str:
+        candidate = candidate.strip()
+        candidate = re.sub(r',\s*([}\]])', r'\1', candidate)
+        return candidate
+
+    def _repair_json_candidate(candidate: str) -> str:
+        candidate = _clean_json_candidate(candidate)
+        stack = []
+        in_str = False
+        esc = False
+        for c in candidate:
+            if esc:
+                esc = False
+                continue
+            if c == '\\' and in_str:
+                esc = True
+                continue
+            if c == '"':
+                in_str = not in_str
+                continue
+            if in_str:
+                continue
+            if c == '{':
+                stack.append('}')
+            elif c == '[':
+                stack.append(']')
+            elif c in ('}', ']') and stack and stack[-1] == c:
+                stack.pop()
+        if in_str:
+            candidate += '"'
+        candidate = _clean_json_candidate(candidate)
+        return candidate + ''.join(reversed(stack))
+
     # Fallback: find the largest balanced {...} block
     start = s.find('{')
     if start == -1:
@@ -75,8 +109,13 @@ def _parse_ai_json(text: str) -> dict:
         elif c == '}':
             depth -= 1
             if depth == 0:
-                return json.loads(s[start:i+1])
-    raise ValueError("Unbalanced JSON in AI response")
+                return json.loads(_clean_json_candidate(s[start:i+1]))
+
+    repaired = _repair_json_candidate(s[start:])
+    try:
+        return json.loads(repaired)
+    except Exception as e:
+        raise ValueError(f"Unbalanced JSON in AI response: {str(e)[:80]}")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -837,7 +876,11 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
                     {"text": prompt},
                 ]
             }],
-            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 2048},
+            "generationConfig": {
+                "temperature": 0.0,
+                "maxOutputTokens": 8192,
+                "responseMimeType": "application/json",
+            },
         }).encode("utf-8")
         url = GEMINI_ENDPOINT.format(model=model, key=api_key)
         req = urllib.request.Request(
