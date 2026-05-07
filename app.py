@@ -2845,6 +2845,41 @@ def show_dashboard():
                         _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
                 else:
                     _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
+                # Safety net: for scanned Purchase Contracts, force one direct PDF-AI retry
+                # so we don't silently fall through to image-only when OCR path is available.
+                if (
+                    _result.get("success")
+                    and _sq_type == "Purchase Contract"
+                    and _result.get("image_only")
+                    and _sq_approved
+                ):
+                    try:
+                        import cloud_client as _cc_retry
+                        _pc_data, _pc_log, _pc_text = _cc_retry.extract_purchase_contract_ai_from_pdf(_sq_bytes)
+                        if _pc_data:
+                            _result = {
+                                "success": True,
+                                "doc_type": _sq_type,
+                                "text_length": len(_pc_text or ""),
+                                "conditions": "",
+                                "bank_rules": "",
+                                "extracted_data": _pc_data,
+                                "contacts": {
+                                    k: v for k, v in {
+                                        "buyer": _pc_data.get("buyer", {}),
+                                        "seller": _pc_data.get("seller", {}),
+                                        "listing_agent": _pc_data.get("listing_agent", {}),
+                                        "selling_agent": _pc_data.get("selling_agent", {}),
+                                        "title": _pc_data.get("title", {}),
+                                    }.items() if isinstance(v, dict) and v.get("name")
+                                },
+                                "image_only": False,
+                                "ocr_via_cloud": True,
+                                "ai_log": _pc_log,
+                                "raw_text": (_pc_text or "")[:12000],
+                            }
+                    except Exception:
+                        pass
                 if _result.get("success"):
                     # Auto-match to a pipeline loan
                     _raw_text = _result.get("raw_text", "") or _result.get("bank_raw_text", "") or ""
@@ -3694,7 +3729,9 @@ def show_dashboard():
                         f'<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);'
                         f'border-radius:4px;padding:8px 12px;font-size:12px;color:#fbbf24;margin-top:4px;">'
                         f'ðŸ“„ Scanned image PDF â€” text extraction not available in offline mode.<br>'
-                        f'<span style="color:#9ca3af;">{_img_msg}</span></div>',
+                        f'<span style="color:#9ca3af;">{_img_msg}</span>'
+                        + (f'<br><span style="color:#f59e0b;">AI log: {(_r.get("ai_log","") or "none")}</span>' if _batch.get("type") == "Purchase Contract" else "")
+                        + '</div>',
                         unsafe_allow_html=True
                     )
 
