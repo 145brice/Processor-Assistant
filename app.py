@@ -3094,6 +3094,38 @@ def show_dashboard():
             _lm_loan_id = _lm.get("loan_id")
             _lm_conf = _lm.get("confidence", 0)
 
+            def _create_pipeline_loan_from_scan() -> dict | None:
+                _pcd = (_r.get("extracted_data") or {})
+                _txn = _pcd.get("transaction", {}) if isinstance(_pcd, dict) else {}
+                _pf_contacts = _r.get("contacts", {}) or {}
+                _buyer = _pcd.get("buyer", {}) if isinstance(_pcd, dict) else {}
+                _borrower = _buyer.get("name", "") if isinstance(_buyer, dict) else ""
+                if not _borrower and isinstance(_pf_contacts, dict):
+                    for _cv in _pf_contacts.values():
+                        if isinstance(_cv, dict) and _cv.get("name"):
+                            _borrower = _cv["name"]
+                            break
+                if not _borrower:
+                    st.error("I parsed the document, but I do not have a borrower name to create the loan.")
+                    return None
+                _closing = (_txn.get("closing_date", "") if isinstance(_txn, dict) else "") or ""
+                _new = _al(
+                    loan_num=_r.get("loan_num", "") or "TBD",
+                    borrower=_borrower,
+                    status="Pending",
+                    due_date=_closing,
+                    missing_docs="",
+                    folder_path="",
+                    closing_date=_closing,
+                    conditions=_normalize_scanned_conditions(_r.get("conditions", [])),
+                    contacts=_pf_contacts,
+                    created_by=st.session_state.get("user_name", ""),
+                )
+                _stamp_current_user_on_loan(_new, assigned=True)
+                _la(_new["id"], "created", f"Loan created from scanned {_batch['type']}",
+                    user=st.session_state.get("user_name", ""))
+                return _new
+
             # Match badge for expander title
             if _lm_suggestion == "match":
                 _match_badge = f" - Loan {_lm_loan_num} ({_lm_borrower})"
@@ -3102,7 +3134,7 @@ def show_dashboard():
             else:
                 _match_badge = " - No loan match"
 
-            _del_col, _exp_col = st.columns([1, 11])
+            _del_col, _exp_col, _quick_col = st.columns([1, 8, 2])
             with _del_col:
                 if st.button("X", key=f"ds_del_{_bidx}", help="Remove this scan result"):
                     st.session_state.scan_batches.pop(_bidx)
@@ -3112,6 +3144,15 @@ def show_dashboard():
                     f"OK {_batch['file']} - {_batch['type']} ({_norm_cond_count} cond){_match_badge}",
                     expanded=(_norm_cond_count > 0)
                 )
+            with _quick_col:
+                if _lm_suggestion != "match":
+                    if st.button("Start New Loan", key=f"ds_quick_new_{_bidx}", use_container_width=True):
+                        _new_loan = _create_pipeline_loan_from_scan()
+                        if _new_loan:
+                            st.session_state.scan_batches.pop(_bidx)
+                            st.session_state.page = "pipeline"
+                            st.toast(f"Loan created for {_new_loan.get('borrower', '')}")
+                        st.rerun()
             with _exp:
                 # â”€â”€ AI usage badge + raw AI dump (debugging) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 _r_ai_log = _r.get("ai_log", "")
@@ -3133,44 +3174,11 @@ def show_dashboard():
                             f'Warning - {_r_ai_log}</div>',
                             unsafe_allow_html=True,
                         )
-                    # Dump raw AI response so we can see what Claude actually returned
-                    if _r_ai_raw is not None:
+                    if _r_ai_raw is not None and st.session_state.get("show_ai_debug", False):
                         with st.expander("Raw AI response (debug)", expanded=False):
                             st.json(_r_ai_raw)
 
                 # â”€â”€ Loan match action row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-                def _create_pipeline_loan_from_scan() -> dict | None:
-                    _pcd = (_r.get("extracted_data") or {})
-                    _txn = _pcd.get("transaction", {}) if isinstance(_pcd, dict) else {}
-                    _pf_contacts = _r.get("contacts", {}) or {}
-                    _buyer = _pcd.get("buyer", {}) if isinstance(_pcd, dict) else {}
-                    _borrower = _buyer.get("name", "") if isinstance(_buyer, dict) else ""
-                    if not _borrower and isinstance(_pf_contacts, dict):
-                        for _cv in _pf_contacts.values():
-                            if isinstance(_cv, dict) and _cv.get("name"):
-                                _borrower = _cv["name"]
-                                break
-                    if not _borrower:
-                        st.error("I parsed the document, but I do not have a borrower name to create the loan.")
-                        return None
-                    _closing = (_txn.get("closing_date", "") if isinstance(_txn, dict) else "") or ""
-                    _new = _al(
-                        loan_num=_r.get("loan_num", "") or "TBD",
-                        borrower=_borrower,
-                        status="Pending",
-                        due_date=_closing,
-                        missing_docs="",
-                        folder_path="",
-                        closing_date=_closing,
-                        conditions=_normalize_scanned_conditions(_r.get("conditions", [])),
-                        contacts=_pf_contacts,
-                        created_by=st.session_state.get("user_name", ""),
-                    )
-                    _stamp_current_user_on_loan(_new, assigned=True)
-                    _la(_new["id"], "created", f"Loan created from scanned {_batch['type']}",
-                        user=st.session_state.get("user_name", ""))
-                    return _new
-
                 if _lm_suggestion == "match":
                     st.markdown(
                         f'<div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:4px;'
