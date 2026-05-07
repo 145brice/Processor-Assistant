@@ -3,7 +3,6 @@ import json
 import os
 import re
 from datetime import datetime
-from docx import Document
 
 TEMPLATES_DIR = r"c:\Users\user\OneDrive\Desktop\Templates"
 OUTPUT_ROOT = r"c:\Users\user\OneDrive\Desktop\processor-traien\Processor-Assistant\generated_docs"
@@ -140,6 +139,8 @@ def _replace_after_label(paragraph, label: str, value: str):
 
 
 def fill_template(template_name: str, context: dict, output_path: str):
+    from docx import Document
+
     src = os.path.join(TEMPLATES_DIR, template_name)
     doc = Document(src)
     field_map = TEMPLATE_FIELDS[template_name]
