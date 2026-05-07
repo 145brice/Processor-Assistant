@@ -3123,7 +3123,7 @@ def show_dashboard():
                                             extracted=_r.get("extracted_data"))
                                 _la(_lm_loan_id, "upload", _msg, user=st.session_state.get("user_name", ""))
                                 _toast_msg = f"Purchase Contract merged into Loan {_lm_loan_num}" if _batch["type"] == "Purchase Contract" else f"{_added} condition(s) merged into Loan {_lm_loan_num}"
-                                st.toast(_toast_msg, icon="âœ…")
+                                st.toast(_toast_msg)
                 elif _lm_suggestion == "possible":
                     st.markdown(
                         f'<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:4px;'
@@ -3135,6 +3135,13 @@ def show_dashboard():
                     _pa1, _pa2 = st.columns([1, 1])
                     with _pa1:
                         if st.button("Open & Verify", key=f"ds_popen_{_bidx}"):
+                            st.session_state.pending_scan_merge = {
+                                "loan_id": _lm_loan_id,
+                                "batch_index": _bidx,
+                                "file": _batch.get("file", ""),
+                                "type": _batch.get("type", ""),
+                                "result": _r,
+                            }
                             st.session_state.detail_loan_id = _lm_loan_id
                             st.session_state.page = "loan_detail"
                             st.rerun()
@@ -7846,6 +7853,64 @@ def show_loan_detail():
     my_name = st.session_state.get("user_name", "")
     status = loan.get("status", "Pending")
     border_color = STATUS_COLORS.get(status, "#444")
+
+    _pending_scan = st.session_state.get("pending_scan_merge")
+    if isinstance(_pending_scan, dict) and _pending_scan.get("loan_id") == lid:
+        _ps_result = _pending_scan.get("result") or {}
+        _ps_type = _pending_scan.get("type") or "Document"
+        _ps_file = _pending_scan.get("file") or "scanned document"
+        st.markdown(
+            f'<div style="background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);'
+            f'border-radius:6px;padding:10px 12px;margin:8px 0;color:#fbbf24;font-size:13px;">'
+            f'<b>Pending scanned {_ps_type}:</b> {_ps_file}<br>'
+            f'<span style="color:#d1d5db;">You opened this loan to verify the possible match. Merge it here to save parsed contacts and dates to this loan.</span>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        _pm1, _pm2 = st.columns([1, 1])
+        with _pm1:
+            if st.button("Merge Scanned Contract Into This Loan", key=f"detail_pending_merge_{lid}", type="primary", use_container_width=True):
+                from crm import attach_document as _attach_doc
+                _existing_conds = loan.get("conditions", []) or []
+                _existing_contacts = loan.get("contacts", {}) or {}
+                if not isinstance(_existing_contacts, dict):
+                    _existing_contacts = {}
+                _new_conds = _normalize_scanned_conditions(_ps_result.get("conditions", []))
+                _new_contacts = _ps_result.get("contacts", {}) or {}
+                _upd = {}
+                for _nc in _new_conds:
+                    if not any(_nc.get("desc") == _ec.get("desc") for _ec in _existing_conds):
+                        _existing_conds.append(_nc)
+                _upd["conditions"] = _existing_conds
+                if isinstance(_new_contacts, dict):
+                    _existing_contacts.update({k: v for k, v in _new_contacts.items() if v})
+                if _ps_type == "Purchase Contract":
+                    _pcd = (_ps_result.get("extracted_data") or {})
+                    _txn = _pcd.get("transaction", {}) if isinstance(_pcd, dict) else {}
+                    if _txn.get("closing_date") and not loan.get("closing_date"):
+                        _upd["closing_date"] = _txn["closing_date"]
+                        _upd["due_date"] = _txn["closing_date"]
+                    for _ak, _av in [
+                        ("listing_agent", _pcd.get("listing_agent", {}) if isinstance(_pcd, dict) else {}),
+                        ("selling_agent", _pcd.get("selling_agent", {}) if isinstance(_pcd, dict) else {}),
+                        ("title", _pcd.get("title", {}) if isinstance(_pcd, dict) else {}),
+                    ]:
+                        if isinstance(_av, dict) and any(v for v in _av.values()):
+                            _existing_contacts[_ak] = _av
+                _upd["contacts"] = _existing_contacts
+                update_loan(lid, **_upd)
+                _attach_doc(lid, _ps_file, _ps_type, extracted=_ps_result.get("extracted_data"))
+                log_activity(lid, "upload", f"{_ps_type} merged from scanner", user=my_name)
+                _bi = _pending_scan.get("batch_index")
+                if isinstance(_bi, int) and 0 <= _bi < len(st.session_state.get("scan_batches", [])):
+                    st.session_state.scan_batches.pop(_bi)
+                st.session_state.pop("pending_scan_merge", None)
+                st.toast(f"{_ps_type} merged into loan")
+                st.rerun()
+        with _pm2:
+            if st.button("Dismiss Pending Scan", key=f"detail_pending_dismiss_{lid}", use_container_width=True):
+                st.session_state.pop("pending_scan_merge", None)
+                st.rerun()
 
     # â”€â”€ Back button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if st.button("Back to Pipeline", key="back_to_pipeline"):
