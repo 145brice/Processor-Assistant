@@ -1,5 +1,5 @@
 """
-Prompt Templates for Processor Assistant (Offline Mode)
+Prompt Templates for Processor Assistant (Local Fallback Mode)
 These are no longer sent to an AI API - they are kept here as reference
 for the regex patterns and document type context used in ai_engine.py.
 """

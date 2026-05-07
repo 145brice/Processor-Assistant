@@ -1,6 +1,6 @@
 """
-Offline Processing Engine for Processor Assistant
-100% local - no API calls, no cloud, no AI.
+Local Fallback Processing Engine for Processor Assistant
+Local regex and pattern-matching tools for fallback processing.
 Uses regex + pattern matching to analyze mortgage documents.
 Spaced out processing to be easy on the CPU.
 """
@@ -769,7 +769,7 @@ def cross_reference_approval(bank_text: str, approval_notes: str) -> list:
 
 
 # ---------------------------------------------------------------------------
-# Bank Statement Analysis (50-rule offline check)
+# Bank Statement Analysis (50-rule local check)
 # ---------------------------------------------------------------------------
 
 def check_bank_rules(pdf_text: str, user_history=None) -> str:
@@ -1061,7 +1061,7 @@ def check_bank_rules(pdf_text: str, user_history=None) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Risk Flags (offline pattern scan)
+# Risk Flags (local pattern scan)
 # ---------------------------------------------------------------------------
 
 def flag_risks(pdf_text: str, user_history=None) -> str:
@@ -1134,9 +1134,9 @@ def flag_risks(pdf_text: str, user_history=None) -> str:
         flags.append("**Compliance:** Missing disclosure/signature - **Severity:** MEDIUM - Need before closing.")
 
     if not flags:
-        return "No significant risk flags detected in this document.\n\n*Note: Offline pattern scan - manual review recommended.*"
+        return "No significant risk flags detected in this document.\n\n*Note: Local pattern scan - manual review recommended.*"
 
-    return "\n\n".join(f"* {f}" for f in flags) + "\n\n*Note: Offline risk scan based on keyword detection. Always verify manually.*"
+    return "\n\n".join(f"* {f}" for f in flags) + "\n\n*Note: Local risk scan based on keyword detection. Always verify manually.*"
 
 
 # ---------------------------------------------------------------------------
@@ -1427,7 +1427,7 @@ def auto_draft_emails(conditions: str, user_history=None) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Web Research (offline - just provides search links, no actual web calls)
+# Web Research (local fallback - just provides search links, no actual web calls)
 # ---------------------------------------------------------------------------
 
 _RESEARCH_LINKS = {
@@ -1746,7 +1746,7 @@ def run_mega_checklist(pdf_text: str, user_history=None) -> str:
             time.sleep(0.02)  # micro-pause
 
     output += f"\n*Scanned {num} key items from mega checklist. Full 250-item scan available on demand.*\n"
-    output += "*This is an offline pattern scan. Manual review recommended for accuracy.*"
+    output += "*This is a local pattern scan. Manual review recommended for accuracy.*"
 
     return output
 
@@ -1759,7 +1759,7 @@ def extract_1003(text: str) -> dict:
     """
     Extract structured fields from a Uniform Residential Loan Application (1003).
     Returns a dict with borrower, co-borrower, employment, loan, and missing_required.
-    100% offline — regex only.
+    Local regex only.
     """
     import re
 
@@ -2514,7 +2514,7 @@ def extract_purchase_contract(text: str) -> dict:
     """
     Extract structured fields from a residential purchase contract.
     Returns parties, transaction terms, agents, title, and contingencies.
-    100% offline — regex only.
+    Local regex only.
 
     Handles real-world PDF extraction output from common contract forms:
     MN STAR, WI WB, AZ REALTORS, CA CAR, and standard REALTORS forms.
@@ -4123,7 +4123,7 @@ def extract_credit_report(text: str) -> dict:
     """
     Extract structured data from a tri-merge or single-bureau credit report.
     Pulls borrower info, all 3 scores, tradelines, collections, public records.
-    100% offline — regex only.
+    Local regex only.
     """
     import re
 
@@ -4285,7 +4285,7 @@ def extract_credit_report(text: str) -> dict:
 def extract_1099(text: str) -> dict:
     """
     Extract structured fields from a 1099 (NEC, MISC, INT, DIV, R, etc.).
-    100% offline — regex only.
+    Local regex only.
     """
     import re
 
@@ -4689,7 +4689,7 @@ def _has_sensitive_content(text: str) -> bool:
 def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_approved_cloud: bool = False) -> dict:
     """
     Main processing function. Takes PDF bytes, returns structured results.
-    100% offline - no API calls. PDF is ONLY in memory.
+    Local fallback path. PDF is only held in memory for processing.
 
     Args:
         pdf_bytes: PDF content as bytes
@@ -4759,7 +4759,7 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
             }
         return {
             "success": False,
-            "error": "Could not extract enough text from this PDF. It may be a scanned image (OCR not yet supported in offline mode).",
+            "error": "Could not extract enough text from this PDF. It may be a scanned image requiring OCR.",
             "conditions": "",
             "risks": "",
             "text_length": len(text) if text else 0,

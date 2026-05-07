@@ -1,7 +1,7 @@
 """
 Ollama Integration — Processor Assistant
 Optional local LLM enhancement. Connects to a locally running Ollama instance.
-All offline — no internet, no API keys, no cloud.
+Optional local LLM enhancement for fallback AI tasks.
 
 Install Ollama: https://ollama.com  (download runs locally on your machine)
 Pull a model:   ollama pull llama3.2   (in your terminal)
@@ -171,7 +171,7 @@ def enhance_conditions(text: str, doc_type: str, script_conditions: str) -> tupl
 
     ok, msg = ping(cfg["endpoint"])
     if not ok:
-        return script_conditions, _log("SCRIPT", "condition_extraction", f"offline — {msg}")
+        return script_conditions, _log("SCRIPT", "condition_extraction", f"local fallback — {msg}")
 
     prompt = f"""You are an expert mortgage processor. Review this {doc_type} and the conditions a script already extracted.
 
@@ -248,7 +248,7 @@ def interpret_guidelines(condition_text: str, chunks: list[dict]) -> tuple[str, 
 
     ok, msg = ping(cfg["endpoint"])
     if not ok:
-        return "", _log("SCRIPT", "guideline_search", f"offline — {msg}")
+        return "", _log("SCRIPT", "guideline_search", f"local fallback — {msg}")
 
     chunk_text = ""
     for chunk in chunks[:6]:
@@ -297,7 +297,7 @@ def draft_email_enhanced(conditions: list[dict], recipient_type: str,
 
     ok, msg = ping(cfg["endpoint"])
     if not ok:
-        return "", _log("SCRIPT", "email_draft", f"offline — {msg}")
+        return "", _log("SCRIPT", "email_draft", f"local fallback — {msg}")
 
     cond_list = "\n".join(
         f"- {c.get('desc', c.get('num', 'Item'))}" for c in conditions
@@ -348,7 +348,7 @@ def summarize_document(text: str, doc_type: str) -> tuple[str, str]:
 
     ok, msg = ping(cfg["endpoint"])
     if not ok:
-        return "", _log("SCRIPT", "doc_summary", f"offline — {msg}")
+        return "", _log("SCRIPT", "doc_summary", f"local fallback — {msg}")
 
     prompt = f"""You are a mortgage expert. Summarize this {doc_type} for a processor who needs a quick overview.
 
@@ -443,7 +443,7 @@ def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
 
     ok, msg = ping(cfg["endpoint"])
     if not ok:
-        return {}, _log("SCRIPT", "pc_extract", f"offline — {msg}")
+        return {}, _log("SCRIPT", "pc_extract", f"local fallback — {msg}")
 
     prompt = f"""Extract ONLY genuine contract values from this purchase contract. Return ONLY a JSON object matching this exact structure:
 

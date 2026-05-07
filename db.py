@@ -1,6 +1,6 @@
 """
 Local SQLite Database for Processor Assistant
-Fully offline - no cloud, no Supabase.
+Local fallback storage helpers.
 Stores user accounts and scan history locally.
 """
 

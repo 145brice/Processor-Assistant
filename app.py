@@ -2114,7 +2114,7 @@ def show_login_page():
         Processor Assistant
       </div>
       <div style="font-size:11px;color:#9ca3af;margin-top:5px;letter-spacing:0.3px;">
-        OFFLINE MORTGAGE PROCESSING
+        ONLINE MORTGAGE PROCESSING
       </div>
     </div>
     """, unsafe_allow_html=True)
@@ -2224,7 +2224,7 @@ def show_login_page():
 
     st.markdown("""
     <div style="text-align:center;margin-top:20px;font-size:10px;color:#d1d5db;">
-      100% offline &nbsp;-&nbsp; No cloud &nbsp;-&nbsp; No API keys required
+      Online workspace &nbsp;-&nbsp; Secure access &nbsp;-&nbsp; Cloud AI ready
     </div>
     """, unsafe_allow_html=True)
 
@@ -3975,7 +3975,7 @@ def show_dashboard():
                     st.markdown(
                         f'<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);'
                         f'border-radius:4px;padding:8px 12px;font-size:12px;color:#fbbf24;margin-top:4px;">'
-                        f'ðŸ“„ Scanned image PDF â€” text extraction not available in offline mode.<br>'
+                        f'ðŸ“„ Scanned image PDF â€” text extraction not available for this scanned image.<br>'
                         f'<span style="color:#9ca3af;">{_img_msg}</span>'
                         + (f'<br><span style="color:#f59e0b;">AI log: {(_r.get("ai_log","") or "none")}</span>' if _batch.get("type") == "Purchase Contract" else "")
                         + '</div>',
@@ -7353,7 +7353,7 @@ def show_email_watch_controls_page():
 **Privacy:**
 - Your credentials are saved locally in `email_config.json` in the app folder
 - The app connects to your IMAP server, downloads attachments, then disconnects
-- Nothing is sent anywhere â€” reads only, no cloud
+- Uses your configured IMAP connection to read matching messages and attachments
 
 **Toggle:**
 - On: background thread checks every N minutes, then sleeps
@@ -9716,4 +9716,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

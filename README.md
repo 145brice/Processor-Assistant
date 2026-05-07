@@ -1,10 +1,10 @@
-# Pipeline Manager — Offline Mortgage Processing App
+# Pipeline Manager — Online Mortgage Processing App
 
-**100% offline. No cloud required. No internet required after setup.**
-Runs on your local Windows machine. Opens in your browser like a website — but everything stays on your computer.
+**Online mortgage processing workspace with cloud AI support and local fallback tools.**
+Runs in your browser as a processing workspace for mortgage teams.
 Built for mortgage processors, loan officers, processing managers, and their teams.
 
-Optional cloud AI and local LLM integrations available for enhanced features — the core app works fully offline without them.
+Cloud AI and local fallback tools are available for enhanced processing features.
 
 ---
 
@@ -73,7 +73,7 @@ Processor-Assistant/
 |                          and generic statement formats.
 |
 |-- ai_router.py           Single entry point for all AI-enhanced features.
-|                          Routes requests to Cloud AI, Ollama, or the offline
+|                          Routes requests to Cloud AI, Ollama, or the local fallback
 |                          engine based on user config. Falls back gracefully
 |                          if a backend is unavailable.
 |
@@ -84,7 +84,7 @@ Processor-Assistant/
 |
 |-- ollama_client.py       Optional local LLM enhancement. Connects to a locally
 |                          running Ollama instance (e.g., Llama, Mistral).
-|                          All offline — no internet, no API keys, no cloud.
+|                          Local fallback tools for script-based processing.
 |
 |-- doc_verify.py          Quick Doc Verify engine. Identifies document type,
 |                          counts pages, checks date freshness, fuzzy-matches
@@ -107,7 +107,7 @@ Processor-Assistant/
 |
 |-- fraud_check.py         Fraud detection engine. Scans W-2, pay stub, and
 |                          bank statement PDFs for common fraud indicators.
-|                          Flags when 2+ clues found. 100% offline — regex only.
+|                          Flags when 2+ clues found using local regex checks.
 |
 |-- export.py              Export module. Generates downloadable outputs from
 |                          scan results: CSV condition tables and HTML condition
@@ -248,7 +248,7 @@ Works with PNC, Chase, Bank of America, Wells Fargo, and generic statement forma
 
 **Purchase Contract** — Three-column extraction (parties, transaction/title, agents). Includes contingencies and addendums. Draft Title Email generates a ready-to-send email with all transaction details.
 
-**Fraud Check** — Available for W-2, pay stubs, and bank statements. Scans for common fraud indicators using regex pattern matching. Flags when 2+ clues detected. 100% offline.
+**Fraud Check** — Available for W-2, pay stubs, and bank statements. Scans for common fraud indicators using regex pattern matching and flags when 2+ clues are detected.
 
 ---
 
@@ -330,7 +330,7 @@ One-time setup for private loan sharing. No server. No hub.
 
 1. Set your inbox folder path
 2. Add teammates: name, role, their inbox path
-3. Green dot = reachable. Red dot = offline or wrong path.
+3. Green dot = reachable. Red dot = unreachable or wrong path.
 
 **How sharing works:**
 1. Share on any loan — pick teammates — Share Now
@@ -384,9 +384,9 @@ Configure optional AI backends and app preferences.
 
 **Cloud AI** — Connect Anthropic Claude or OpenAI for enhanced document analysis, smarter email drafting, and AI-powered condition extraction. Requires API key and internet.
 
-**Ollama (Local LLM)** — Connect to a locally running Ollama instance for AI features without cloud dependency. No internet, no API keys.
+**Ollama (Local LLM)** — Connect to a locally running Ollama instance for AI features with local model support.
 
-**AI Router** — Automatically routes AI requests to the best available backend (Cloud > Ollama > Offline engine). Falls back gracefully.
+**AI Router** — Automatically routes AI requests to the best available backend (Cloud > Ollama > Local fallback engine). Falls back gracefully.
 
 **Billing** — Track monthly scan usage per user against pricing tiers.
 
@@ -398,11 +398,11 @@ Pipeline Manager works in three modes:
 
 | Mode | Requirements | What it does |
 |---|---|---|
-| **Offline (default)** | Nothing extra | Full app with regex-based extraction, pattern matching, rule engines |
-| **Ollama (local LLM)** | Ollama installed + running locally | Enhanced extraction, smarter drafting, local AI — still no internet |
+| **Local fallback** | Nothing extra | Full app with regex-based extraction, pattern matching, rule engines |
+| **Ollama (local LLM)** | Ollama installed + running locally | Enhanced extraction, smarter drafting, local AI support |
 | **Cloud AI** | API key + internet | Anthropic Claude or OpenAI for highest-quality AI features |
 
-The AI router (`ai_router.py`) manages backend selection and fallback. You can configure priority in the Settings page. The offline engine is always available as the final fallback.
+The AI router (`ai_router.py`) manages backend selection and fallback. You can configure priority in the Settings page. The local fallback engine is always available as the final fallback.
 
 ---
 
@@ -508,13 +508,13 @@ Anyone on the team can create a loan. You choose exactly who to share each one w
 | **Email Watch says "Login failed"** | Use an App Password, not your real password. Follow setup steps in Email Watch page. |
 | **Email Watch says "Connection refused"** | Enable IMAP access in your email provider settings. |
 | **Share button says "not in team list"** | Go to My Team and add that person with their inbox folder path. |
-| **Teammate's inbox shows red dot** | Their machine is offline or the path is wrong. |
+| **Teammate's inbox shows red dot** | Their machine is unreachable or the path is wrong. |
 | **Fetch finds nothing** | Folder may have image PDFs with no text. Try "All PDFs" scope or search parent folder. |
 | **Guidelines indexing freezes** | Reopen at http://localhost:8501, click Check Guidelines again — resumes from cache. |
 | **Port 8501 already in use** | Another Streamlit is running. Ctrl+C in that terminal, or use `--server.port 8502` |
 | **pipeline.json got wiped** | Run `git checkout pipeline.json` to restore last committed version. |
 | **Ollama not connecting** | Make sure Ollama is running locally (`ollama serve`). Check Settings page for connection status. |
-| **Cloud AI not working** | Verify your API key in Settings. Check internet connection. The app falls back to offline mode automatically. |
+| **Cloud AI not working** | Verify your API key in Settings. Check internet connection. The app uses local fallback tools automatically. |
 | **Duplicate file warning on upload** | Two identical files were uploaded. Remove the duplicate before scanning. |
 
 ---
@@ -546,32 +546,32 @@ git push
 
 ---
 
-## WHAT'S OFFLINE vs WHAT NEEDS INTERNET
+## WHAT RUNS LOCALLY vs WHAT NEEDS INTERNET
 
 | Feature | Status |
 |---|---|
-| Scan any mortgage PDF | 100% offline |
-| Quick Doc Verify (type, pages, dates, borrower match) | 100% offline |
-| Auto-detect doc type on upload | 100% offline |
-| Duplicate file detection on bulk upload | 100% offline |
-| PDF merge for same-type multi-page docs | 100% offline |
-| Bank statement 50-rule analysis | 100% offline |
-| Bank statement Account Summary extraction | 100% offline |
-| Fraud check (W-2, pay stub, bank statement) | 100% offline |
-| Draft email — English + Spanish, all 6 recipient types | 100% offline |
-| Condition export (CSV + HTML snapshot) | 100% offline |
-| Fetch from folder / Find bank statements | 100% offline |
-| Check Fannie/Freddie Guidelines | 100% offline (after PDFs placed on Desktop) |
-| Document Reader | 100% offline |
-| My Pipeline (compact, scrollable, Excel-thin rows) | 100% offline |
-| Interactive conditions in loan detail | 100% offline |
-| Email Draft in loan detail (auto-fill from stored contacts) | 100% offline |
-| 1003 field extraction | 100% offline |
-| Purchase Contract extraction + title email | 100% offline |
-| Team sharing (loan handoff between teammates) | 100% offline (needs same network or shared drive) |
-| Login / Signup | 100% offline (local SQLite) |
-| Email Watch (inbox polling) | Offline — uses local IMAP connection, no cloud |
-| Ollama local LLM | Offline — runs on your machine |
+| Scan any mortgage PDF | Online workspace with local fallback |
+| Quick Doc Verify (type, pages, dates, borrower match) | Online workspace with local fallback |
+| Auto-detect doc type on upload | Online workspace with local fallback |
+| Duplicate file detection on bulk upload | Online workspace with local fallback |
+| PDF merge for same-type multi-page docs | Online workspace with local fallback |
+| Bank statement 50-rule analysis | Online workspace with local fallback |
+| Bank statement Account Summary extraction | Online workspace with local fallback |
+| Fraud check (W-2, pay stub, bank statement) | Online workspace with local fallback |
+| Draft email — English + Spanish, all 6 recipient types | Online workspace with local fallback |
+| Condition export (CSV + HTML snapshot) | Online workspace with local fallback |
+| Fetch from folder / Find bank statements | Online workspace with local fallback |
+| Check Fannie/Freddie Guidelines | Online workspace with local fallback |
+| Document Reader | Online workspace with local fallback |
+| My Pipeline (compact, scrollable, Excel-thin rows) | Online workspace with local fallback |
+| Interactive conditions in loan detail | Online workspace with local fallback |
+| Email Draft in loan detail (auto-fill from stored contacts) | Online workspace with local fallback |
+| 1003 field extraction | Online workspace with local fallback |
+| Purchase Contract extraction + title email | Online workspace with local fallback |
+| Team sharing (loan handoff between teammates) | Online workspace |
+| Login / Signup | Online access |
+| Email Watch (inbox polling) | Mail server connection |
+| Ollama local LLM | Runs on your machine |
 | Cloud AI (Claude / OpenAI) | Needs internet + API key |
 | Push to GitHub | Needs internet (backup only — your choice) |
 
@@ -585,5 +585,5 @@ git push
 - API keys for cloud AI are stored in `ai_config.json` locally — never shared.
 - Shared loans travel as JSON files directly between personal inbox folders — no central server.
 - Your pipeline, history, activity logs, and team list are stored locally only.
-- Fraud checks run entirely offline using regex — no data leaves your machine.
+- Fraud checks use local regex checks unless you explicitly use Cloud AI.
 - Nothing leaves your computer except when you explicitly use Cloud AI or push to GitHub.

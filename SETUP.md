@@ -1,6 +1,6 @@
 # Pipeline Manager — Setup Guide
 
-Complete installation and configuration guide. Everything runs locally on your machine. No cloud account required.
+Complete installation and configuration guide for the online workspace, local development, and fallback tooling.
 
 ---
 
@@ -12,7 +12,7 @@ Complete installation and configuration guide. Everything runs locally on your m
 4. [Optional: Cloud AI (Claude / OpenAI)](#4-optional-cloud-ai-claude--openai)
 5. [Optional: Ollama (Local AI)](#5-optional-ollama-local-ai)
 6. [Optional: Email Watch (IMAP)](#6-optional-email-watch-imap)
-7. [Team Sharing (Offline Network)](#7-team-sharing-offline-network)
+7. [Team Sharing (Network)](#7-team-sharing-network)
 8. [Billing & Usage Tracking](#8-billing--usage-tracking)
 9. [Running the Test Suite](#9-running-the-test-suite)
 10. [Troubleshooting](#10-troubleshooting)
@@ -66,7 +66,7 @@ pip install -r requirements.txt
 - `thefuzz` — fuzzy string matching for borrower name lookup
 - `python-Levenshtein` — speeds up thefuzz
 
-**No API keys needed for core functionality.** The app works fully offline after this step.
+**API keys are optional for enhanced AI functionality.**
 
 ### Step 4 — Verify installation
 
@@ -154,7 +154,7 @@ Still in **AI Settings**, under **Preferred Backend**:
 
 ## 5. Optional: Ollama (Local AI)
 
-Runs AI models entirely on your machine. No internet, no API key, no cost.
+Runs AI models on your machine for optional local model support.
 
 **Trade-off:** Slower than Cloud AI; response times depend on your hardware.
 
@@ -200,7 +200,7 @@ You should see a JSON response with your installed models.
 ### Step 4 — Configure in the app
 
 1. Click **🤖 AI Settings** in the sidebar
-2. Under **Ollama (Local — 100% Offline)**:
+2. Under **Ollama (Local Model)**:
    - Toggle **Enable Ollama** on
    - Endpoint: `http://localhost:11434` (default — don't change unless running on a remote machine)
    - Select your model from the dropdown
@@ -212,7 +212,7 @@ You should see a JSON response with your installed models.
 
 Automatically checks your inbox for PDF attachments, extracts borrower names, and matches them to your pipeline.
 
-**Privacy:** Only your machine connects to your email server. No relay, no cloud.
+**Privacy:** The app uses your configured mail server connection.
 
 ### Gmail setup
 
@@ -252,7 +252,7 @@ Gmail requires an **App Password** (not your regular password):
 
 ---
 
-## 7. Team Sharing (Offline Network)
+## 7. Team Sharing (Network)
 
 Share loans with team members over your office WiFi — no central server needed.
 
@@ -435,7 +435,7 @@ The scanner adds a small delay per page to avoid CPU spikes. For large documents
 | File | Purpose |
 |------|---------|
 | `app.py` | Main Streamlit application (all pages) |
-| `ai_engine.py` | Core offline processing engine — regex, condition extraction |
+| `ai_engine.py` | Core local fallback processing engine — regex, condition extraction |
 | `db.py` | Local SQLite database — users, scan history |
 | `billing.py` | Monthly usage tracking and cost calculation |
 | `crm.py` | Pipeline loan management (CRUD) |
@@ -457,4 +457,4 @@ The scanner adds a small delay per page to avoid CPU spikes. For large documents
 
 ---
 
-*Pipeline Manager — 100% local, no cloud required.*
+*Pipeline Manager - online mortgage processing workspace.*
