@@ -1663,6 +1663,21 @@ def _normalize_contact_value(value) -> dict:
     return {}
 
 
+def _clean_display_text(value) -> str:
+    text = str(value or "")
+    replacements = {
+        "Â·": "·",
+        "Â—": "-",
+        "â€”": "-",
+        "â€“": "-",
+        "Â": "",
+        "ï¸": "",
+    }
+    for bad, good in replacements.items():
+        text = text.replace(bad, good)
+    return " ".join(text.split())
+
+
 def _infer_condition_party(desc: str) -> str:
     text = str(desc or "").lower()
     if any(k in text for k in ["insurance", "hoi", "hazard", "flood"]):
@@ -2179,9 +2194,10 @@ def show_sidebar():
         # â”€â”€ Who's logged in â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if is_sandbox:
             st.markdown(
-                '<div style="display:flex;align-items:center;justify-content:center;text-align:center;'
-                'font-size:12px;color:#3b82f6;margin:8px 0 12px 0;letter-spacing:1px;'
-                'font-weight:600;text-transform:uppercase;">Sandbox Mode</div>',
+                '<div style="width:100%;display:flex;align-items:center;justify-content:center;'
+                'text-align:center;margin:8px 0 12px 0;">'
+                '<span style="display:block;width:100%;font-size:12px;color:#3b82f6;letter-spacing:1px;'
+                'font-weight:600;text-transform:uppercase;text-align:center;">Sandbox Mode</span></div>',
                 unsafe_allow_html=True,
             )
         elif user_name:
@@ -3535,15 +3551,15 @@ def show_dashboard():
                     for _k, _v in _r.get("contacts", {}).items():
                         if not isinstance(_v, dict):
                             continue
-                        _name = _v.get("name", "") or _v.get("company", "")
-                        _parts = [p for p in [_name, _v.get("phone", ""), _v.get("email", "")] if p]
+                        _name = _clean_display_text(_v.get("name", "") or _v.get("company", ""))
+                        _parts = [_clean_display_text(p) for p in [_name, _v.get("phone", ""), _v.get("email", "")] if p]
                         if _parts:
                             _cchips.append(
                                 f'<span style="display:inline-block;font-size:11px;'
                                 f'background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);'
                                 f'border-radius:10px;padding:2px 8px;margin:2px 4px 2px 0;color:#e5e7eb;">'
-                                f'<b style="color:#3b82f6;">{_k.replace("_"," ").title()}</b> Â· '
-                                f'{" Â· ".join(_parts)}</span>'
+                                f'<b style="color:#3b82f6;">{_clean_display_text(_k.replace("_"," ").title())}</b>: '
+                                f'{" · ".join(_parts)}</span>'
                             )
                     if _cchips:
                         st.markdown('<div class="pa-section" style="margin-top:8px;">Contacts</div>', unsafe_allow_html=True)
@@ -3563,27 +3579,18 @@ def show_dashboard():
                     if _txn.get("earnest_money"):      _rows.append(("Earnest Money", f"${_txn['earnest_money']}"))
                     if _txn.get("down_payment"):       _rows.append(("Down Payment", f"${_txn['down_payment']}"))
                     if _la_info.get("name"):
-                        _la_str = _la_info["name"]
-                        if _la_info.get("brokerage"): _la_str += f" Â· {_la_info['brokerage']}"
-                        if _la_info.get("phone"):     _la_str += f" Â· {_la_info['phone']}"
-                        if _la_info.get("email"):     _la_str += f" Â· {_la_info['email']}"
+                        _la_str = " · ".join(_clean_display_text(v) for v in [_la_info.get("name"), _la_info.get("brokerage"), _la_info.get("phone"), _la_info.get("email")] if v)
                         _rows.append(("Listing Agent", _la_str))
                     if _sa_info.get("name"):
-                        _sa_str = _sa_info["name"]
-                        if _sa_info.get("brokerage"): _sa_str += f" Â· {_sa_info['brokerage']}"
-                        if _sa_info.get("phone"):     _sa_str += f" Â· {_sa_info['phone']}"
-                        if _sa_info.get("email"):     _sa_str += f" Â· {_sa_info['email']}"
+                        _sa_str = " · ".join(_clean_display_text(v) for v in [_sa_info.get("name"), _sa_info.get("brokerage"), _sa_info.get("phone"), _sa_info.get("email")] if v)
                         _rows.append(("Selling Agent", _sa_str))
                     if _title_info.get("company"):
-                        _tc_str = _title_info["company"]
-                        if _title_info.get("contact"): _tc_str += f" Â· {_title_info['contact']}"
-                        if _title_info.get("phone"):   _tc_str += f" Â· {_title_info['phone']}"
-                        if _title_info.get("email"):   _tc_str += f" Â· {_title_info['email']}"
+                        _tc_str = " · ".join(_clean_display_text(v) for v in [_title_info.get("company"), _title_info.get("contact"), _title_info.get("phone"), _title_info.get("email")] if v)
                         _rows.append(("Title Company", _tc_str))
                     if _rows:
                         st.markdown("**Purchase Contract Details**")
                         for _lbl, _val in _rows:
-                            st.markdown(f"- **{_lbl}**: {_val}")
+                            st.markdown(f"- **{_clean_display_text(_lbl)}**: {_clean_display_text(_val)}")
 
                 # â”€â”€ 1003 Application extended fields â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if _batch.get("type") == "1003 Application":
