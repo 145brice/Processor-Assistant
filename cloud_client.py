@@ -15,6 +15,7 @@ Logs every call mode to cloud_log.txt alongside the Ollama log.
 import json
 import os
 import re
+import base64
 import urllib.request
 import urllib.error
 from datetime import datetime
@@ -775,3 +776,71 @@ CONTRACT TEXT:
         return data, log
     except Exception as e:
         return {}, _log("SCRIPT", "pc_extract", f"Cloud error: {str(e)[:80]}")
+
+
+def extract_purchase_contract_ai_from_pdf(pdf_bytes: bytes) -> tuple[dict, str, str]:
+    """
+    OCR + extraction path for scanned/image-only Purchase Contracts.
+    Uses Gemini inline PDF understanding to return structured JSON directly.
+    Returns: (extracted_dict, log_line, ocr_text_hint)
+    """
+    cfg = get_config()
+    if not cfg.get("enabled") or not cfg.get("api_key"):
+        return {}, _log("SCRIPT", "pc_pdf_extract", "Cloud disabled"), ""
+
+    provider = cfg.get("provider", DEFAULT_PROVIDER)
+    if provider != "gemini":
+        return {}, _log("SCRIPT", "pc_pdf_extract", f"{provider} does not support inline PDF in this client"), ""
+
+    system = (
+        "You analyze residential purchase contracts from PDF documents and return a structured JSON object. "
+        "Output only valid JSON with no markdown and no commentary."
+    )
+    prompt = f"""Read this purchase contract PDF (including scanned/image pages) and extract:
+
+- Purchase Price
+- Property Address
+- Closing Date
+- Listing Agent Name (name, brokerage, phone, email)
+- Selling Agent Name (name, brokerage, phone, email)
+- Title Company
+- Buyer Name(s)
+- Seller Name(s)
+- Earnest Money Deposit
+- Down Payment Amount
+- Loan Amount
+- Any special conditions or contingencies
+
+Return valid JSON in EXACTLY this shape (empty string "" if not present):
+
+{_PC_JSON_TEMPLATE}
+
+For amounts use digits only ("474500"). Never place a phone/email inside a name field.
+"""
+    try:
+        model = cfg.get("model") or DEFAULT_MODELS["gemini"]
+        payload = json.dumps({
+            "system_instruction": {
+                "parts": [{"text": system}]
+            },
+            "contents": [{
+                "parts": [
+                    {"inline_data": {"mime_type": "application/pdf", "data": base64.b64encode(pdf_bytes).decode("utf-8")}},
+                    {"text": prompt},
+                ]
+            }],
+            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 2048},
+        }).encode("utf-8")
+        url = GEMINI_ENDPOINT.format(model=model, key=cfg["api_key"])
+        req = urllib.request.Request(
+            url, data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        parsed = _clean_extracted_contract_data(_parse_ai_json(txt))
+        return parsed, _log("CLOUD", "pc_pdf_extract", f"gemini · {model}"), ""
+    except Exception as e:
+        return {}, _log("SCRIPT", "pc_pdf_extract", f"Cloud error: {str(e)[:120]}"), ""

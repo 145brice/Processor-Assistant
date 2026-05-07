@@ -480,6 +480,18 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .scan-scroll [data-baseweb="select"] * { font-size: 11px !important; }
 .scan-scroll div[data-testid="stVerticalBlock"] { gap: 2px !important; }
 .scan-scroll div[data-testid="stHorizontalBlock"] { gap: 4px !important; align-items: center !important; }
+.scan-scroll div[data-testid="stHorizontalBlock"] > div[data-testid="column"] { min-width: 0 !important; }
+.scan-scroll [class*="st-key-scan_"][class*="_stat"] { min-width: 118px !important; }
+.scan-scroll [class*="st-key-scan_"][class*="_party"] { min-width: 156px !important; }
+.scan-scroll [class*="st-key-scan_"][class*="_fetch"] { min-width: 70px !important; }
+.scan-scroll [class*="st-key-scan_"][class*="_guide"] { min-width: 70px !important; }
+.scan-scroll [class*="st-key-scan_"] [data-baseweb="select"] {
+    min-width: 100% !important;
+    white-space: nowrap !important;
+}
+.scan-scroll [class*="st-key-scan_"] [data-baseweb="select"] * {
+    white-space: nowrap !important;
+}
 .scan-scroll .cond-row { display:flex; align-items:center; gap:6px; padding:3px 0; border-bottom:1px dashed rgba(255,255,255,0.06); }
 .scan-scroll .cond-num { color:#3b82f6; font-weight:800; font-size:11px; min-width:22px; }
 .scan-scroll .cond-desc { color:#e5e7eb; font-size:12px; line-height:1.35; flex:1; }
@@ -3143,7 +3155,7 @@ def show_dashboard():
                     for _c in _norm_conds:
                         _uid = f"{_scan_fkey}_{_c['num']}"
                         # Single tight row: checkbox, full description, status, parties, tools.
-                        _r1, _r2, _r3, _r4, _r6, _r7 = st.columns([0.5, 5.4, 1.2, 1.6, 0.5, 0.5])
+                        _r1, _r2, _r3, _r4, _r6, _r7 = st.columns([0.45, 6.9, 1.65, 2.2, 0.9, 0.9])
                         with _r1:
                             _chk = st.checkbox("", value=False, key=f"{_uid}_chk",
                                                label_visibility="collapsed")

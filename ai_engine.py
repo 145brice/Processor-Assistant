@@ -4706,6 +4706,46 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         "Government ID", "Appraisal", "Purchase Contract",
     }
     if not text or len(text.strip()) < 50:
+        # For scanned/image-only Purchase Contracts, try cloud PDF extraction
+        # before falling back to image-only logging.
+        if doc_type == "Purchase Contract" and user_approved_cloud:
+            try:
+                import cloud_client as _cc
+                if _cc.is_enabled():
+                    _pdf_ai_data, _pdf_ai_log, _pdf_ocr_text = _cc.extract_purchase_contract_ai_from_pdf(pdf_bytes)
+                    if _pdf_ai_data:
+                        result = {
+                            "success": True,
+                            "text_length": len(_pdf_ocr_text or ""),
+                            "doc_type": doc_type,
+                            "bank_rules": "",
+                            "conditions": "",
+                            "extracted_data": _pdf_ai_data,
+                            "raw_text": (_pdf_ocr_text or "")[:12000],
+                            "ai_raw": _pdf_ai_data,
+                            "ai_log": _pdf_ai_log,
+                            "image_only": False,
+                            "ocr_via_cloud": True,
+                        }
+                        # Keep contact-building behavior identical to normal flow
+                        extracted = result.get("extracted_data", {})
+                        contacts = {}
+                        if isinstance(extracted, dict):
+                            if extracted.get("buyer", {}).get("name"):
+                                contacts["buyer"] = extracted["buyer"]
+                            if extracted.get("seller", {}).get("name"):
+                                contacts["seller"] = extracted["seller"]
+                            if extracted.get("listing_agent", {}).get("name"):
+                                contacts["listing_agent"] = extracted["listing_agent"]
+                            if extracted.get("selling_agent", {}).get("name"):
+                                contacts["selling_agent"] = extracted["selling_agent"]
+                            if extracted.get("title", {}).get("name"):
+                                contacts["title"] = extracted["title"]
+                        if contacts:
+                            result["contacts"] = contacts
+                        return result
+            except Exception:
+                pass
         if doc_type in _image_ok_types:
             return {
                 "success": True,
