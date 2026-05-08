@@ -3578,9 +3578,29 @@ def show_dashboard():
                             with _ctrl2:
                                 if _is_primary_row:
                                     _default_parties = _scan_sections_for_condition(_c)
-                                    _cparties = st.multiselect("Responsible parties", _PARTY_OPTS_SCAN,
-                                                               default=[p for p in _default_parties if p in _PARTY_OPTS_SCAN],
-                                                               key=f"{_base_uid}_party", label_visibility="collapsed")
+                                    _party_key = f"{_base_uid}_party"
+                                    _current_parties = st.session_state.get(_party_key)
+                                    if not isinstance(_current_parties, list):
+                                        _current_parties = [p for p in _default_parties if p in _PARTY_OPTS_SCAN]
+                                    if len(_current_parties) > 1:
+                                        _party_cols = st.columns([3.4, 1])
+                                        with _party_cols[1]:
+                                            if st.button("Unselect All", key=f"{_base_uid}_party_clear",
+                                                         use_container_width=True):
+                                                st.session_state[_party_key] = []
+                                                st.rerun()
+                                        with _party_cols[0]:
+                                            _cparties = st.multiselect(
+                                                "Responsible parties", _PARTY_OPTS_SCAN,
+                                                default=[p for p in _default_parties if p in _PARTY_OPTS_SCAN],
+                                                key=_party_key, label_visibility="collapsed",
+                                            )
+                                    else:
+                                        _cparties = st.multiselect(
+                                            "Responsible parties", _PARTY_OPTS_SCAN,
+                                            default=[p for p in _default_parties if p in _PARTY_OPTS_SCAN],
+                                            key=_party_key, label_visibility="collapsed",
+                                        )
                                 else:
                                     st.caption(f"Also included in {_SECTION_LABEL_SCAN.get(_section_party_for_row, _section_party_for_row)}")
                             with _ctrl3:
@@ -3642,6 +3662,18 @@ def show_dashboard():
                                     'No relevant guideline sections found.</div>',
                                     unsafe_allow_html=True,
                                 )
+
+                    def _scan_condition_checked_for_section(_cond, _section_party):
+                        _num = _cond["num"]
+                        if st.session_state.get(f"{_scan_fkey}_{_num}_{_section_party}_chk", False):
+                            return True
+                        if st.session_state.get(f"{_scan_fkey}_{_num}_chk", False):
+                            return True
+                        for _party in _scan_sections_for_condition(_cond):
+                            if st.session_state.get(f"{_scan_fkey}_{_num}_{_party}_chk", False):
+                                return True
+                        return False
+
                     for _section_party in _SECTION_ORDER_SCAN:
                         _section_conds = _conds_by_section.get(_section_party, [])
                         if not _section_conds:
@@ -3653,12 +3685,12 @@ def show_dashboard():
                                          use_container_width=True):
                                 _checked_for_email = [
                                     c for c in _section_conds
-                                    if st.session_state.get(f"{_scan_fkey}_{c['num']}_{_section_party}_chk", False)
+                                    if _scan_condition_checked_for_section(c, _section_party)
                                 ]
                                 if _checked_for_email:
                                     st.session_state[f"{_scan_fkey}_email_group_open"] = _section_party
                                 else:
-                                    st.toast(f"Check one or more {_section_party.lower()} conditions first.")
+                                    st.toast(f"Check one or more {_SECTION_LABEL_SCAN.get(_section_party, _section_party).lower()} first.")
                         with _send_cols[1]:
                             st.selectbox(
                                 "Language", ["English", "Spanish"],
@@ -3669,7 +3701,7 @@ def show_dashboard():
                         _draft_party = st.session_state.get(f"{_scan_fkey}_email_group_open")
                         _checked_for_email = [
                             c for c in _conds_by_section.get(_draft_party, [])
-                            if st.session_state.get(f"{_scan_fkey}_{c['num']}_{_draft_party}_chk", False)
+                            if _scan_condition_checked_for_section(c, _draft_party)
                         ]
                         _group_to = _draft_party or "Borrower"
                         _group_lang = st.session_state.get(f"{_scan_fkey}_{_draft_party}_email_group_lang", "English")
