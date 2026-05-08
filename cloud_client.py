@@ -18,6 +18,7 @@ import re
 import base64
 import urllib.request
 import urllib.error
+import time
 from datetime import datetime
 
 _APP_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -244,14 +245,43 @@ def ping(provider: str | None = None, api_key: str | None = None,
 
 def _generate(prompt: str, system: str, provider: str, api_key: str,
               model: str, timeout: int = 60) -> str:
-    if provider == "claude":
-        return _generate_claude(prompt, system, model, api_key, timeout)
-    elif provider == "gemini":
-        return _generate_gemini(prompt, system, model, api_key, timeout)
-    elif provider == "openai":
-        return _generate_openai(prompt, system, model, api_key, timeout)
-    else:
-        raise ValueError(f"Unknown provider: {provider}")
+    last_error = None
+    for attempt in range(3):
+        try:
+            if provider == "claude":
+                return _generate_claude(prompt, system, model, api_key, timeout)
+            elif provider == "gemini":
+                return _generate_gemini(prompt, system, model, api_key, timeout)
+            elif provider == "openai":
+                return _generate_openai(prompt, system, model, api_key, timeout)
+            else:
+                raise ValueError(f"Unknown provider: {provider}")
+        except urllib.error.HTTPError as e:
+            last_error = e
+            if e.code not in (429, 500, 502, 503, 504) or attempt == 2:
+                raise
+        except urllib.error.URLError as e:
+            last_error = e
+            if attempt == 2:
+                raise
+        time.sleep(1.2 * (attempt + 1))
+    if last_error:
+        raise last_error
+    return ""
+
+
+def _friendly_cloud_error(e: Exception) -> str:
+    if isinstance(e, urllib.error.HTTPError):
+        if e.code in (500, 502, 503, 504):
+            return f"temporary cloud API unavailable ({e.code}); used local fallback"
+        if e.code == 429:
+            return "cloud API rate limited (429); used local fallback"
+        if e.code in (401, 403):
+            return f"cloud API authorization failed ({e.code}); used local fallback"
+        return f"cloud API HTTP {e.code}; used local fallback"
+    if isinstance(e, urllib.error.URLError):
+        return "cloud API unreachable; used local fallback"
+    return f"cloud fallback used: {str(e)[:80]}"
 
 
 def _generate_claude(prompt: str, system: str, model: str,
@@ -458,7 +488,7 @@ Confidence options: High Confidence, Best Guess"""
             return merged, _log("CLOUD+SCRIPT", "condition_extraction", "merged — Cloud returned few")
     except Exception as e:
         return script_conditions, _log("SCRIPT", "condition_extraction",
-                                       f"Cloud error: {str(e)[:60]}")
+                                       _friendly_cloud_error(e))
 
 
 # ─────────────────────────────────────────────────────────────────────────────

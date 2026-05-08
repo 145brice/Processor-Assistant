@@ -3437,7 +3437,7 @@ def show_dashboard():
 
                     _scan_fkey = f"scan_{_bidx}"
 
-                    _email_bar_cols = st.columns([1.7, 1, 0.8, 2.8])
+                    _email_bar_cols = st.columns([1.6, 1.2, 1.2])
                     with _email_bar_cols[0]:
                         if st.button("Email Checked", key=f"{_scan_fkey}_email_checked", use_container_width=True):
                             _checked_for_email = [
@@ -3463,51 +3463,55 @@ def show_dashboard():
 
                     for _c in _norm_conds:
                         _uid = f"{_scan_fkey}_{_c['num']}"
-                        # Single tight row: checkbox, full description, status, parties, tools.
-                        _r1, _r2, _r3, _r4, _r6, _r7 = st.columns([0.45, 6.9, 1.65, 2.2, 0.9, 0.9])
-                        with _r1:
-                            _chk = st.checkbox("", value=False, key=f"{_uid}_chk",
-                                               label_visibility="collapsed")
-                        with _r2:
-                            _conf = (_c.get("confidence") or "").strip()
-                            _conf_badge = (
-                                f' <span style="color:#93c5fd;font-size:10px;opacity:0.8;">{_conf}</span>'
-                                if _conf else ""
-                            )
-                            st.markdown(
-                                f'<div style="font-size:12px;line-height:1.3;padding-top:3px;">'
-                                f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
-                                f'<span style="color:#e5e7eb;">{_c["desc"]}</span>{_conf_badge}</div>',
-                                unsafe_allow_html=True,
-                            )
-                        with _r3:
-                            _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c["status"] in _COND_STATS_SCAN else 0
-                            _cstat = st.selectbox("s", _COND_STATS_SCAN, index=_sidx,
-                                                  key=f"{_uid}_stat", label_visibility="collapsed")
-                        with _r4:
-                            _cparties = st.multiselect("p", _PARTY_OPTS_SCAN,
-                                                       default=[_c["party"]] if _c["party"] in _PARTY_OPTS_SCAN else [],
-                                                       key=f"{_uid}_party", label_visibility="collapsed")
-                        with _r6:
-                            _fd = not (_lm_suggestion == "match" and _lm_loan_id)
-                            if st.button("Fetch", key=f"{_uid}_fetch", disabled=_fd,
-                                         help="Match to loan first" if _fd else "Fetch from folder"):
-                                try:
-                                    from pathlib import Path as _P
-                                    from folder_manager import fetch_for_condition as _ffc
-                                    _ml = next((l for l in _gl() if l.get("id") == _lm_loan_id), None)
-                                    _fp = (_ml or {}).get("folder_path", "")
-                                    if _fp:
-                                        st.session_state[f"{_uid}_fetch_hits"] = _ffc(_P(_fp), int(_c["num"]))
-                                    else:
-                                        st.session_state[f"{_uid}_fetch_hits"] = []
-                                        st.toast("No folder path on loan", icon="âš ï¸")
-                                except Exception as _e:
-                                    st.toast(f"Fetch failed: {_e}", icon="âš ï¸")
-                        with _r7:
-                            if st.button("Guide", key=f"{_uid}_guide", help="Check vs. Fannie/Freddie guidelines"):
-                                st.session_state[f"{_uid}_guide_open"] = True
-                                st.session_state.pop(f"{_uid}_guide_results", None)
+                        with st.container(border=True):
+                            _top1, _top2 = st.columns([0.35, 8])
+                            with _top1:
+                                _chk = st.checkbox("", value=False, key=f"{_uid}_chk",
+                                                   label_visibility="collapsed")
+                            with _top2:
+                                _conf = (_c.get("confidence") or "").strip()
+                                _conf_badge = (
+                                    f' <span style="color:#93c5fd;font-size:10px;opacity:0.8;">{_conf}</span>'
+                                    if _conf else ""
+                                )
+                                st.markdown(
+                                    f'<div style="font-size:13px;line-height:1.38;padding:1px 0 4px;">'
+                                    f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
+                                    f'<span style="color:#e5e7eb;">{_c["desc"]}</span>{_conf_badge}</div>',
+                                    unsafe_allow_html=True,
+                                )
+
+                            _ctrl1, _ctrl2, _ctrl3, _ctrl4 = st.columns([1.5, 3.4, 1.15, 1.15])
+                            with _ctrl1:
+                                _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c["status"] in _COND_STATS_SCAN else 0
+                                _cstat = st.selectbox("Status", _COND_STATS_SCAN, index=_sidx,
+                                                      key=f"{_uid}_stat", label_visibility="collapsed")
+                            with _ctrl2:
+                                _cparties = st.multiselect("Responsible parties", _PARTY_OPTS_SCAN,
+                                                           default=[_c["party"]] if _c["party"] in _PARTY_OPTS_SCAN else [],
+                                                           key=f"{_uid}_party", label_visibility="collapsed")
+                            with _ctrl3:
+                                _fd = not (_lm_suggestion == "match" and _lm_loan_id)
+                                if st.button("Fetch", key=f"{_uid}_fetch", disabled=_fd,
+                                             use_container_width=True,
+                                             help="Match to loan first" if _fd else "Fetch from folder"):
+                                    try:
+                                        from pathlib import Path as _P
+                                        from folder_manager import fetch_for_condition as _ffc
+                                        _ml = next((l for l in _gl() if l.get("id") == _lm_loan_id), None)
+                                        _fp = (_ml or {}).get("folder_path", "")
+                                        if _fp:
+                                            st.session_state[f"{_uid}_fetch_hits"] = _ffc(_P(_fp), int(_c["num"]))
+                                        else:
+                                            st.session_state[f"{_uid}_fetch_hits"] = []
+                                            st.toast("No folder path on loan", icon="âš ï¸")
+                                    except Exception as _e:
+                                        st.toast(f"Fetch failed: {_e}", icon="âš ï¸")
+                            with _ctrl4:
+                                if st.button("Guide", key=f"{_uid}_guide", use_container_width=True,
+                                             help="Check vs. Fannie/Freddie guidelines"):
+                                    st.session_state[f"{_uid}_guide_open"] = True
+                                    st.session_state.pop(f"{_uid}_guide_results", None)
 
                         _hits = st.session_state.get(f"{_uid}_fetch_hits")
                         if _hits is not None:
