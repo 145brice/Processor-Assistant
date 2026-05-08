@@ -4776,6 +4776,14 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
                         return result
             except Exception:
                 pass
+        if doc_type in {"Purchase Contract", "Approval Letter"}:
+            return {
+                "success": False,
+                "error": f"{doc_type} parsing requires Cloud AI PDF understanding. Turn Cloud AI on and scan again.",
+                "conditions": "",
+                "risks": "",
+                "text_length": len(text) if text else 0,
+            }
         if doc_type in _image_ok_types:
             return {
                 "success": True,
@@ -4833,8 +4841,7 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         result["extracted_data"] = extract_government_id(text)
     elif doc_type == "Purchase Contract":
         result["conditions"] = ""
-        regex_data = extract_purchase_contract(text)
-        result["extracted_data"] = regex_data
+        result["extracted_data"] = {}
         result["raw_text"] = text[:12000]  # retained for optional AI re-extraction
 
         # ── Cloud AI extraction ────────────────────────────────────────────
@@ -4845,6 +4852,12 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         if user_approved_cloud and _has_sensitive_content(text):
             result["ai_log"] = "Cloud AI blocked — document contains sensitive identifiers (SSN/DOB/Account/Routing)"
             user_approved_cloud = False
+        if not user_approved_cloud:
+            result.update({
+                "success": False,
+                "error": "Purchase Contract parsing requires Cloud AI. Turn Cloud AI on and scan again.",
+            })
+            return result
         if user_approved_cloud:
             try:
                 import cloud_client as _cc
@@ -4854,17 +4867,29 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
                     result["ai_raw"] = ai_data
                     if ai_data:
                         # AI takes priority — pass AI first so its values win
-                        result["extracted_data"] = _merge_pc_data(ai_data, regex_data)
+                        result["extracted_data"] = ai_data
                         result["ai_log"] = ai_log
                     else:
-                        result["ai_log"] = ai_log or "Cloud returned no data"
+                        result.update({
+                            "success": False,
+                            "error": f"Cloud AI did not return purchase contract fields. {ai_log or 'Cloud returned no data'}",
+                        })
+                        return result
                 else:
-                    result["ai_log"] = "Cloud not enabled (sidebar toggle)"
+                    result.update({
+                        "success": False,
+                        "error": "Purchase Contract parsing requires Cloud AI. Add/save your Gemini or Claude key and scan again.",
+                        "ai_log": "Cloud not enabled",
+                    })
+                    return result
             except Exception as _e:
-                # Never let cloud failure block local extraction
-                result["ai_log"] = f"Cloud augmentation FAILED: {type(_e).__name__}: {str(_e)[:120]}"
+                result.update({
+                    "success": False,
+                    "error": f"Cloud AI purchase contract parsing failed: {type(_e).__name__}: {str(_e)[:120]}",
+                })
+                return result
     elif doc_type == "Approval Letter":
-        result["conditions"] = extract_conditions(text, doc_type, user_history)
+        result["conditions"] = ""
         result["extracted_data"] = {}
         result["raw_text"] = text[:12000]  # retained for optional AI re-extraction
 
@@ -4872,19 +4897,41 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         if user_approved_cloud and _has_sensitive_content(text):
             result["ai_log"] = "Cloud AI blocked — document contains sensitive identifiers (SSN/DOB/Account/Routing)"
             user_approved_cloud = False
+        if not user_approved_cloud:
+            result.update({
+                "success": False,
+                "error": "Approval Letter parsing requires Cloud AI. Turn Cloud AI on and scan again.",
+            })
+            return result
         if user_approved_cloud:
             try:
                 import cloud_client as _cc
                 if _cc.is_enabled():
                     enhanced_conditions, ai_log = _cc.enhance_conditions(
-                        text, doc_type, result["conditions"]
+                        text, doc_type, ""
                     )
                     if enhanced_conditions:
                         result["conditions"] = enhanced_conditions
                     result["ai_log"] = ai_log
+                    if not enhanced_conditions:
+                        result.update({
+                            "success": False,
+                            "error": f"Cloud AI did not return approval conditions. {ai_log or 'Cloud returned no data'}",
+                        })
+                        return result
+                else:
+                    result.update({
+                        "success": False,
+                        "error": "Approval Letter parsing requires Cloud AI. Add/save your Gemini or Claude key and scan again.",
+                        "ai_log": "Cloud not enabled",
+                    })
+                    return result
             except Exception as _e:
-                # Never let cloud failure block local extraction
-                result["ai_log"] = f"Cloud augmentation skipped: {str(_e)[:80]}"
+                result.update({
+                    "success": False,
+                    "error": f"Cloud AI approval parsing failed: {type(_e).__name__}: {str(_e)[:120]}",
+                })
+                return result
     elif doc_type in ("Loan Estimate (LE)", "Loan Estimate"):
         result["conditions"] = ""
         result["extracted_data"] = extract_loan_estimate(text)
