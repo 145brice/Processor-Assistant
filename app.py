@@ -3674,6 +3674,59 @@ def show_dashboard():
                                 return True
                         return False
 
+                    def _render_scan_email_draft(_draft_party):
+                        _checked_for_email = [
+                            c for c in _conds_by_section.get(_draft_party, [])
+                            if _scan_condition_checked_for_section(c, _draft_party)
+                        ]
+                        _group_to = _draft_party or "Borrower"
+                        _group_lang = st.session_state.get(f"{_scan_fkey}_{_draft_party}_email_group_lang", "English")
+                        if not _checked_for_email:
+                            return
+                        try:
+                            from ai_engine import draft_email as _draft
+                            import urllib.parse as _uparse
+                            _cond_text = "\n".join(
+                                f"- #{c['num']}: {c['desc']}" for c in _checked_for_email
+                            )
+                            _ebody = _draft(_cond_text, _group_to, _group_lang)
+                        except Exception as _e:
+                            _ebody = f"(Draft failed: {_e})"
+                            import urllib.parse as _uparse
+                        st.markdown(
+                            f'<div style="margin:10px 0;padding:10px;border:1px solid rgba(59,130,246,0.35);'
+                            f'border-radius:10px;background:rgba(59,130,246,0.07);">',
+                            unsafe_allow_html=True,
+                        )
+                        st.markdown(f"**Draft for {_SECTION_LABEL_SCAN.get(_group_to, _group_to)}**")
+                        _recipient_email = _scan_contact_email_for_section(_group_to)
+                        if _recipient_email:
+                            st.caption(f"Recipient: {_recipient_email}")
+                        else:
+                            st.caption("Recipient: no parsed email found for this section yet")
+                        st.code(_ebody, language=None)
+                        _compose_params = {
+                            "su": f"{_SEND_LABEL_SCAN.get(_group_to, 'Conditions request')} - {_batch['type']}",
+                            "body": _ebody,
+                        }
+                        if _recipient_email:
+                            _compose_params["to"] = _recipient_email
+                        _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode(_compose_params)
+                        _draft_cols = st.columns([1, 4])
+                        with _draft_cols[0]:
+                            if st.button("Close Draft", key=f"{_scan_fkey}_{_draft_party}_email_group_close"):
+                                st.session_state.pop(f"{_scan_fkey}_email_group_open", None)
+                                st.rerun()
+                        with _draft_cols[1]:
+                            st.markdown(
+                                f'<a href="{_gmail_compose}" target="_blank" style="display:inline-block;'
+                                f'margin-top:4px;padding:4px 12px;background:rgba(66,133,244,0.12);'
+                                f'border:1px solid rgba(66,133,244,0.4);border-radius:6px;color:#4285f4;'
+                                f'font-size:11px;font-weight:700;text-decoration:none;">Compose in Gmail</a>',
+                                unsafe_allow_html=True,
+                            )
+                        st.markdown('</div>', unsafe_allow_html=True)
+
                     for _section_party in _SECTION_ORDER_SCAN:
                         _section_conds = _conds_by_section.get(_section_party, [])
                         if not _section_conds:
@@ -3697,50 +3750,8 @@ def show_dashboard():
                                 key=f"{_scan_fkey}_{_section_party}_email_group_lang",
                                 label_visibility="collapsed",
                             )
-                    if st.session_state.get(f"{_scan_fkey}_email_group_open"):
-                        _draft_party = st.session_state.get(f"{_scan_fkey}_email_group_open")
-                        _checked_for_email = [
-                            c for c in _conds_by_section.get(_draft_party, [])
-                            if _scan_condition_checked_for_section(c, _draft_party)
-                        ]
-                        _group_to = _draft_party or "Borrower"
-                        _group_lang = st.session_state.get(f"{_scan_fkey}_{_draft_party}_email_group_lang", "English")
-                        if _checked_for_email:
-                            try:
-                                from ai_engine import draft_email as _draft
-                                import urllib.parse as _uparse
-                                _cond_text = "\n".join(
-                                    f"- #{c['num']}: {c['desc']}" for c in _checked_for_email
-                                )
-                                _ebody = _draft(_cond_text, _group_to, _group_lang)
-                            except Exception as _e:
-                                _ebody = f"(Draft failed: {_e})"
-                            st.markdown(f"**Draft for {_SECTION_LABEL_SCAN.get(_group_to, _group_to)}**")
-                            st.code(_ebody, language=None)
-                            _compose_params = {
-                                "su": f"{_SEND_LABEL_SCAN.get(_group_to, 'Conditions request')} - {_batch['type']}",
-                                "body": _ebody,
-                            }
-                            _recipient_email = _scan_contact_email_for_section(_group_to)
-                            if _recipient_email:
-                                _compose_params["to"] = _recipient_email
-                                st.caption(f"Recipient: {_recipient_email}")
-                            else:
-                                st.caption("Recipient: no parsed email found for this section yet")
-                            _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode(_compose_params)
-                            _draft_cols = st.columns([1, 4])
-                            with _draft_cols[0]:
-                                if st.button("Close Draft", key=f"{_scan_fkey}_email_group_close"):
-                                    st.session_state.pop(f"{_scan_fkey}_email_group_open", None)
-                                    st.rerun()
-                            with _draft_cols[1]:
-                                st.markdown(
-                                    f'<a href="{_gmail_compose}" target="_blank" style="display:inline-block;'
-                                    f'margin-top:4px;padding:4px 12px;background:rgba(66,133,244,0.12);'
-                                    f'border:1px solid rgba(66,133,244,0.4);border-radius:6px;color:#4285f4;'
-                                    f'font-size:11px;font-weight:700;text-decoration:none;">Compose in Gmail</a>',
-                                    unsafe_allow_html=True,
-                                )
+                        if st.session_state.get(f"{_scan_fkey}_email_group_open") == _section_party:
+                            _render_scan_email_draft(_section_party)
                     st.markdown('</div>', unsafe_allow_html=True)
                 elif _cond_count and "No specific conditions found in this document" not in str(_raw_c):
                     st.markdown(
