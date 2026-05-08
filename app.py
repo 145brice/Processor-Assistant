@@ -3437,31 +3437,72 @@ def show_dashboard():
 
                     _scan_fkey = f"scan_{_bidx}"
 
-                    _email_bar_cols = st.columns([1.6, 1.2, 1.2])
-                    with _email_bar_cols[0]:
-                        if st.button("Email Checked", key=f"{_scan_fkey}_email_checked", use_container_width=True):
-                            _checked_for_email = [
-                                c for c in _norm_conds
-                                if st.session_state.get(f"{_scan_fkey}_{c['num']}_chk", False)
-                            ]
-                            if _checked_for_email:
-                                st.session_state[f"{_scan_fkey}_email_group_open"] = True
-                            else:
-                                st.toast("Check one or more conditions first.")
-                    with _email_bar_cols[1]:
-                        _group_to = st.selectbox(
-                            "To", _PARTY_OPTS_SCAN,
-                            key=f"{_scan_fkey}_email_group_to",
-                            label_visibility="collapsed",
-                        )
-                    with _email_bar_cols[2]:
-                        _group_lang = st.selectbox(
-                            "Language", ["English", "Spanish"],
-                            key=f"{_scan_fkey}_email_group_lang",
-                            label_visibility="collapsed",
-                        )
+                    _SECTION_ORDER_SCAN = [
+                        "Borrower", "Title", "Insurance", "Appraiser",
+                        "Employer", "Realtor", "Seller", "Closer",
+                        "Underwriter",
+                    ]
+                    _SECTION_LABEL_SCAN = {
+                        "Borrower": "Client Conditions",
+                        "Title": "Title Conditions",
+                        "Insurance": "Insurance Conditions",
+                        "Appraiser": "Appraisal Conditions",
+                        "Employer": "Employment Conditions",
+                        "Realtor": "Realtor Conditions",
+                        "Seller": "Seller Conditions",
+                        "Closer": "Closer Conditions",
+                        "Underwriter": "Underwriting Conditions",
+                    }
+                    _SEND_LABEL_SCAN = {
+                        "Borrower": "Send to Borrower",
+                        "Title": "Send to Title",
+                        "Insurance": "Send to Insurance",
+                        "Appraiser": "Send to Appraisal",
+                        "Employer": "Send to Employer",
+                        "Realtor": "Send to Realtor",
+                        "Seller": "Send to Seller",
+                        "Closer": "Send to Closer",
+                        "Underwriter": "Send to Underwriter",
+                    }
 
-                    for _c in _norm_conds:
+                    def _scan_section_for_condition(_cond):
+                        _uid_local = f"{_scan_fkey}_{_cond['num']}"
+                        _selected = st.session_state.get(f"{_uid_local}_party")
+                        if isinstance(_selected, list) and _selected:
+                            _party = _selected[0]
+                        else:
+                            _party = _cond.get("party") or _infer_party(_cond.get("desc", ""))
+                        _party = {
+                            "Co-Borrower": "Borrower",
+                            "Jr Underwriter": "Underwriter",
+                            "Loan Officer": "Underwriter",
+                            "Manager": "Underwriter",
+                        }.get(_party, _party)
+                        return _party if _party in _SECTION_ORDER_SCAN else "Borrower"
+
+                    _conds_by_section = {p: [] for p in _SECTION_ORDER_SCAN}
+                    for _cond in _norm_conds:
+                        _conds_by_section.setdefault(_scan_section_for_condition(_cond), []).append(_cond)
+
+                    _norm_conds_grouped = []
+                    for _party in _SECTION_ORDER_SCAN:
+                        _section_conds = _conds_by_section.get(_party, [])
+                        if _section_conds:
+                            _norm_conds_grouped.append({"_section": _party, "_count": len(_section_conds)})
+                            _norm_conds_grouped.extend(_section_conds)
+
+                    for _c in _norm_conds_grouped:
+                        if _c.get("_section"):
+                            _section_party = _c["_section"]
+                            _section_count = _c["_count"]
+                            st.markdown(
+                                f'<div class="pa-section" style="margin-top:12px;">'
+                                f'{_SECTION_LABEL_SCAN.get(_section_party, _section_party + " Conditions")} '
+                                f'<span style="color:#64748b;font-size:11px;font-weight:600;">'
+                                f'{_section_count} item{"s" if _section_count != 1 else ""}</span></div>',
+                                unsafe_allow_html=True,
+                            )
+                            continue
                         _uid = f"{_scan_fkey}_{_c['num']}"
                         with st.container(border=True):
                             _top1, _top2 = st.columns([0.35, 8])
@@ -3481,7 +3522,7 @@ def show_dashboard():
                                     unsafe_allow_html=True,
                                 )
 
-                            _ctrl1, _ctrl2, _ctrl3, _ctrl4 = st.columns([1.5, 3.4, 1.15, 1.15])
+                            _ctrl1, _ctrl2, _ctrl3 = st.columns([1.5, 3.4, 1.15])
                             with _ctrl1:
                                 _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c["status"] in _COND_STATS_SCAN else 0
                                 _cstat = st.selectbox("Status", _COND_STATS_SCAN, index=_sidx,
@@ -3491,44 +3532,10 @@ def show_dashboard():
                                                            default=[_c["party"]] if _c["party"] in _PARTY_OPTS_SCAN else [],
                                                            key=f"{_uid}_party", label_visibility="collapsed")
                             with _ctrl3:
-                                _fd = not (_lm_suggestion == "match" and _lm_loan_id)
-                                if st.button("Fetch", key=f"{_uid}_fetch", disabled=_fd,
-                                             use_container_width=True,
-                                             help="Match to loan first" if _fd else "Fetch from folder"):
-                                    try:
-                                        from pathlib import Path as _P
-                                        from folder_manager import fetch_for_condition as _ffc
-                                        _ml = next((l for l in _gl() if l.get("id") == _lm_loan_id), None)
-                                        _fp = (_ml or {}).get("folder_path", "")
-                                        if _fp:
-                                            st.session_state[f"{_uid}_fetch_hits"] = _ffc(_P(_fp), int(_c["num"]))
-                                        else:
-                                            st.session_state[f"{_uid}_fetch_hits"] = []
-                                            st.toast("No folder path on loan", icon="âš ï¸")
-                                    except Exception as _e:
-                                        st.toast(f"Fetch failed: {_e}", icon="âš ï¸")
-                            with _ctrl4:
                                 if st.button("Guide", key=f"{_uid}_guide", use_container_width=True,
                                              help="Check vs. Fannie/Freddie guidelines"):
                                     st.session_state[f"{_uid}_guide_open"] = True
                                     st.session_state.pop(f"{_uid}_guide_results", None)
-
-                        _hits = st.session_state.get(f"{_uid}_fetch_hits")
-                        if _hits is not None:
-                            if _hits:
-                                _lines = " Â· ".join(
-                                    f"`{(_h.get('file') or _h.get('path') or '?')}`"
-                                    for _h in _hits[:5]
-                                )
-                                st.markdown(
-                                    f'<div style="font-size:11px;color:#9ca3af;padding:2px 0 4px 32px;">{_lines}</div>',
-                                    unsafe_allow_html=True,
-                                )
-                            else:
-                                st.markdown(
-                                    '<div style="font-size:11px;color:#6b7280;padding:2px 0 4px 32px;">No matching docs.</div>',
-                                    unsafe_allow_html=True,
-                                )
 
                         # â”€â”€ Guidelines panel (toggled by ðŸ“–) â”€â”€
                         if st.session_state.get(f"{_uid}_guide_open"):
@@ -3583,11 +3590,37 @@ def show_dashboard():
                                     'No relevant guideline sections found.</div>',
                                     unsafe_allow_html=True,
                                 )
+                    for _section_party in _SECTION_ORDER_SCAN:
+                        _section_conds = _conds_by_section.get(_section_party, [])
+                        if not _section_conds:
+                            continue
+                        _send_cols = st.columns([1.6, 1.1, 4])
+                        with _send_cols[0]:
+                            if st.button(_SEND_LABEL_SCAN.get(_section_party, f"Send to {_section_party}"),
+                                         key=f"{_scan_fkey}_{_section_party}_email_checked",
+                                         use_container_width=True):
+                                _checked_for_email = [
+                                    c for c in _section_conds
+                                    if st.session_state.get(f"{_scan_fkey}_{c['num']}_chk", False)
+                                ]
+                                if _checked_for_email:
+                                    st.session_state[f"{_scan_fkey}_email_group_open"] = _section_party
+                                else:
+                                    st.toast(f"Check one or more {_section_party.lower()} conditions first.")
+                        with _send_cols[1]:
+                            st.selectbox(
+                                "Language", ["English", "Spanish"],
+                                key=f"{_scan_fkey}_{_section_party}_email_group_lang",
+                                label_visibility="collapsed",
+                            )
                     if st.session_state.get(f"{_scan_fkey}_email_group_open"):
+                        _draft_party = st.session_state.get(f"{_scan_fkey}_email_group_open")
                         _checked_for_email = [
-                            c for c in _norm_conds
+                            c for c in _conds_by_section.get(_draft_party, [])
                             if st.session_state.get(f"{_scan_fkey}_{c['num']}_chk", False)
                         ]
+                        _group_to = _draft_party or "Borrower"
+                        _group_lang = st.session_state.get(f"{_scan_fkey}_{_draft_party}_email_group_lang", "English")
                         if _checked_for_email:
                             try:
                                 from ai_engine import draft_email as _draft
@@ -3598,9 +3631,10 @@ def show_dashboard():
                                 _ebody = _draft(_cond_text, _group_to, _group_lang)
                             except Exception as _e:
                                 _ebody = f"(Draft failed: {_e})"
+                            st.markdown(f"**Draft for {_SECTION_LABEL_SCAN.get(_group_to, _group_to)}**")
                             st.code(_ebody, language=None)
                             _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({
-                                "su": f"Conditions request - {_batch['type']}",
+                                "su": f"{_SEND_LABEL_SCAN.get(_group_to, 'Conditions request')} - {_batch['type']}",
                                 "body": _ebody,
                             })
                             _draft_cols = st.columns([1, 4])
@@ -9042,12 +9076,8 @@ def show_loan_detail():
                 log_activity(lid, "upload", "Bank Statement scanned and reviewed", user=my_name)
 
     # â”€â”€ Approval Fetch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-        'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Approval Fetch</span>',
-        unsafe_allow_html=True,
-    )
-    with st.expander("Upload approval letter â†’ scan borrower folder â†’ see what's found vs missing", expanded=False):
+    _SHOW_APPROVAL_FETCH = False  # Legacy offline folder fetch is kept in code but hidden for now.
+    if _SHOW_APPROVAL_FETCH:
         import os as _af_os
         _af_key = f"approval_fetch_{lid}"
 
