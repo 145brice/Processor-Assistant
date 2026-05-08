@@ -107,6 +107,10 @@ def mirror_loan(loan: dict):
     redacted = _redact(loan)
     record = {
         "id": loan["id"],
+        "owner_user_key": _to_str(redacted.get("owner_user_key")),
+        "created_by_user_key": _to_str(redacted.get("created_by_user_key")),
+        "assigned_user_key": _to_str(redacted.get("assigned_user_key")),
+        "shared_with_user_keys": json.dumps(redacted.get("shared_with_user_keys", []) or []),
         "loan_num": redacted.get("loan_num"),
         "borrower": redacted.get("borrower"),
         "status": redacted.get("status"),
@@ -168,6 +172,7 @@ def mirror_activity(loan_id: int, action: str, detail: str = "", user: str = "")
         return
     record = {
         "loan_id": loan_id,
+        "owner_user_key": _current_user_key(),
         "ts": datetime.now(timezone.utc).isoformat(),
         "action": action,
         "detail": detail or "",
@@ -177,6 +182,21 @@ def mirror_activity(loan_id: int, action: str, detail: str = "", user: str = "")
     key = f"{loan_id}:{record['ts']}"
     _enqueue("activity_log", key, record)
     _ensure_flush_thread()
+
+
+def _current_user_key() -> str:
+    try:
+        import streamlit as st
+        if st.session_state.get("sandbox_mode", False):
+            return ""
+        return str(
+            st.session_state.get("supabase_user_id")
+            or st.session_state.get("user_id")
+            or st.session_state.get("user_email")
+            or ""
+        ).strip()
+    except Exception:
+        return ""
 
 
 def mirror_setting(key: str, value: Any):
@@ -193,7 +213,12 @@ def mirror_setting(key: str, value: Any):
     _ensure_flush_thread()
 
 
-def save_pipeline_snapshot(loans: list) -> dict:
+def _pipeline_snapshot_key(user_key: str | None = None) -> str:
+    user_key = str(user_key or "").strip()
+    return f"pipeline_json:{user_key}" if user_key else "pipeline_json"
+
+
+def save_pipeline_snapshot(loans: list, user_key: str | None = None) -> dict:
     """Synchronously persist the full pipeline to Supabase settings.
 
     Railway containers are ephemeral, so the local pipeline.json file cannot be
@@ -207,7 +232,7 @@ def save_pipeline_snapshot(loans: list) -> dict:
         return {"ok": False, "reason": "No client"}
     try:
         payload = {
-            "key": "pipeline_json",
+            "key": _pipeline_snapshot_key(user_key),
             "value_json": json.dumps(_redact(loans or []), ensure_ascii=False, default=str),
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
@@ -218,7 +243,7 @@ def save_pipeline_snapshot(loans: list) -> dict:
         return {"ok": False, "reason": str(e)}
 
 
-def load_pipeline_snapshot() -> dict:
+def load_pipeline_snapshot(user_key: str | None = None) -> dict:
     """Load the durable full-pipeline snapshot from Supabase settings."""
     if not is_enabled():
         return {"ok": False, "reason": "Supabase not enabled"}
@@ -226,7 +251,7 @@ def load_pipeline_snapshot() -> dict:
     if not client:
         return {"ok": False, "reason": "No client"}
     try:
-        res = client.table("settings").select("value_json").eq("key", "pipeline_json").limit(1).execute()
+        res = client.table("settings").select("value_json").eq("key", _pipeline_snapshot_key(user_key)).limit(1).execute()
         rows = res.data or []
         if not rows:
             return {"ok": False, "reason": "No pipeline snapshot"}
@@ -240,7 +265,7 @@ def load_pipeline_snapshot() -> dict:
         return {"ok": False, "reason": str(e)}
 
 
-def load_loans_backup() -> dict:
+def load_loans_backup(user_key: str | None = None) -> dict:
     """Load loans from the legacy Supabase loans mirror table."""
     if not is_enabled():
         return {"ok": False, "reason": "Supabase not enabled"}
@@ -297,13 +322,33 @@ def load_loans_backup() -> dict:
                     except Exception:
                         value = default
                 loan[loan_field] = value if isinstance(value, type(default)) else default
-            if loan.get("id"):
+            if loan.get("id") and (not user_key or _loan_belongs_to_user(loan, user_key)):
                 loans.append(loan)
         loans.sort(key=lambda x: int(x.get("id") or 0))
         return {"ok": True, "loans": loans}
     except Exception as e:
         _log_error(f"Legacy loans backup load failed: {e}")
         return {"ok": False, "reason": str(e)}
+
+
+def _loan_belongs_to_user(loan: dict, user_key: str) -> bool:
+    user_key = str(user_key or "").strip()
+    if not user_key:
+        return True
+    keys = set()
+    for field in ("owner_user_key", "created_by_user_key", "assigned_user_key"):
+        value = str(loan.get(field) or "").strip()
+        if value:
+            keys.add(value)
+    shared = loan.get("shared_with_user_keys", [])
+    if isinstance(shared, str):
+        try:
+            shared = json.loads(shared)
+        except Exception:
+            shared = [shared]
+    if isinstance(shared, list):
+        keys.update(str(v).strip() for v in shared if str(v).strip())
+    return user_key in keys
 
 
 def force_flush() -> dict:

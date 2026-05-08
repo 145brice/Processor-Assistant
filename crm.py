@@ -15,6 +15,43 @@ _REMOVED_CFG    = os.path.join(os.path.dirname(__file__), "removed_config.json")
 _DOCS_DIR       = os.path.join(os.path.dirname(__file__), "loan_docs")
 _CLOUD_LOAD_ATTEMPTED = False
 _CLOUD_LOAD_OK = False
+_CLOUD_LOADED_USER_KEY = None
+
+
+def _current_user_key() -> str:
+    """Best-effort current Streamlit user key without importing app.py."""
+    try:
+        import streamlit as st
+        if st.session_state.get("sandbox_mode", False):
+            return ""
+        return str(
+            st.session_state.get("supabase_user_id")
+            or st.session_state.get("user_id")
+            or st.session_state.get("user_email")
+            or ""
+        ).strip()
+    except Exception:
+        return ""
+
+
+def _loan_belongs_to_user(loan: dict, user_key: str) -> bool:
+    user_key = str(user_key or "").strip()
+    if not user_key:
+        return True
+    keys = set()
+    for field in ("owner_user_key", "created_by_user_key", "assigned_user_key"):
+        value = str(loan.get(field) or "").strip()
+        if value:
+            keys.add(value)
+    shared = loan.get("shared_with_user_keys", [])
+    if isinstance(shared, str):
+        try:
+            shared = json.loads(shared)
+        except Exception:
+            shared = [shared]
+    if isinstance(shared, list):
+        keys.update(str(v).strip() for v in shared if str(v).strip())
+    return user_key in keys
 
 RETENTION_OPTIONS = {
     "7 days":   7,
@@ -59,19 +96,33 @@ PARTY_COLORS = {
 
 def _load() -> list:
     """Load pipeline from durable cloud snapshot first, JSON fallback second."""
-    global _CLOUD_LOAD_ATTEMPTED, _CLOUD_LOAD_OK
+    global _CLOUD_LOAD_ATTEMPTED, _CLOUD_LOAD_OK, _CLOUD_LOADED_USER_KEY
+    user_key = _current_user_key()
+    if _CLOUD_LOADED_USER_KEY != user_key:
+        _CLOUD_LOAD_ATTEMPTED = False
+        _CLOUD_LOAD_OK = False
+        _CLOUD_LOADED_USER_KEY = user_key
     if not _CLOUD_LOAD_ATTEMPTED:
         _CLOUD_LOAD_ATTEMPTED = True
         try:
             import supabase_sync
-            snap = supabase_sync.load_pipeline_snapshot()
+            snap = supabase_sync.load_pipeline_snapshot(user_key=user_key)
             if snap.get("ok") and isinstance(snap.get("loans"), list):
                 loans = snap.get("loans") or []
                 if not loans:
-                    legacy = supabase_sync.load_loans_backup()
+                    global_snap = supabase_sync.load_pipeline_snapshot()
+                    if global_snap.get("ok") and isinstance(global_snap.get("loans"), list):
+                        loans = [
+                            l for l in (global_snap.get("loans") or [])
+                            if _loan_belongs_to_user(l, user_key)
+                        ]
+                    if loans:
+                        supabase_sync.save_pipeline_snapshot(loans, user_key=user_key)
+                if not loans:
+                    legacy = supabase_sync.load_loans_backup(user_key=user_key)
                     if legacy.get("ok") and legacy.get("loans"):
                         loans = legacy.get("loans") or []
-                        supabase_sync.save_pipeline_snapshot(loans)
+                        supabase_sync.save_pipeline_snapshot(loans, user_key=user_key)
                 _CLOUD_LOAD_OK = True
                 # Cache locally for faster reads and emergency fallback.
                 try:
@@ -80,11 +131,26 @@ def _load() -> list:
                 except OSError:
                     pass
                 return loans
-            legacy = supabase_sync.load_loans_backup()
+            global_snap = supabase_sync.load_pipeline_snapshot()
+            if user_key and global_snap.get("ok") and isinstance(global_snap.get("loans"), list):
+                loans = [
+                    l for l in (global_snap.get("loans") or [])
+                    if _loan_belongs_to_user(l, user_key)
+                ]
+                if loans:
+                    _CLOUD_LOAD_OK = True
+                    supabase_sync.save_pipeline_snapshot(loans, user_key=user_key)
+                    try:
+                        with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
+                            json.dump(loans, f, indent=2, ensure_ascii=False)
+                    except OSError:
+                        pass
+                    return loans
+            legacy = supabase_sync.load_loans_backup(user_key=user_key)
             if legacy.get("ok") and legacy.get("loans"):
                 loans = legacy.get("loans") or []
                 _CLOUD_LOAD_OK = True
-                supabase_sync.save_pipeline_snapshot(loans)
+                supabase_sync.save_pipeline_snapshot(loans, user_key=user_key)
                 try:
                     with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
                         json.dump(loans, f, indent=2, ensure_ascii=False)
@@ -112,7 +178,7 @@ def _load() -> list:
         if loans and not _CLOUD_LOAD_OK:
             try:
                 import supabase_sync
-                supabase_sync.save_pipeline_snapshot(loans)
+                supabase_sync.save_pipeline_snapshot(loans, user_key=_current_user_key())
             except Exception:
                 pass
         return loans
@@ -126,7 +192,7 @@ def _save(loans: list):
         json.dump(loans, f, indent=2, ensure_ascii=False)
     try:
         import supabase_sync
-        supabase_sync.save_pipeline_snapshot(loans)
+        supabase_sync.save_pipeline_snapshot(loans, user_key=_current_user_key())
         supabase_sync.mirror_loans_bulk(loans)
     except Exception:
         pass

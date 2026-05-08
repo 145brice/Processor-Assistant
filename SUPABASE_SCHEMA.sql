@@ -44,14 +44,9 @@ CREATE TABLE IF NOT EXISTS settings (
     updated_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Enable Row Level Security with permissive policy (anon key can read/write).
--- Tighten later if you add multi-tenant separation.
+-- Enable Row Level Security. For production user-isolation policies, run
+-- SUPABASE_SECURITY.sql after this schema file.
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE loans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE activity_log ENABLE ROW LEVEL SECURITY;
 ALTER TABLE settings ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "anon_all_users" ON users FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "anon_all_loans" ON loans FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "anon_all_activity" ON activity_log FOR ALL USING (true) WITH CHECK (true);
-CREATE POLICY "anon_all_settings" ON settings FOR ALL USING (true) WITH CHECK (true);

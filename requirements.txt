@@ -5,3 +5,4 @@ thefuzz
 supabase==2.10.0
 httpx>=0.24.0
 python-docx
+cryptography

@@ -1941,7 +1941,7 @@ def _render_gemini_key_prompt() -> None:
                         else:
                             st.session_state.user_gemini_api_key = gemini_key.strip()
                             st.warning(
-                                "Could not save Gemini key to Supabase, but it is active for this session."
+                                f"Gemini key is active for this session, but was not saved: {result.get('error', 'Supabase save failed')}"
                             )
                             st.rerun()
                     except Exception as e:
@@ -2515,6 +2515,10 @@ def show_dashboard():
                         st.rerun()
 
     # â”€â”€ File uploader (additive) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    st.info(
+        "Security note: uploaded PDFs are processed for this scan only and are not stored. "
+        "The app may save non-sensitive extracted fields, loan metadata, and recent scan history for your signed-in account."
+    )
     new_files = st.file_uploader(
         "Drop PDFs here - or click to browse" if not _has_upload else "Add more PDFs",
         type=["pdf"], accept_multiple_files=True,
@@ -7762,7 +7766,7 @@ def show_ollama_page():
                 _save_result = _sa.save_user_gemini_key(_user_key, cc_key)
                 if not _save_result.get("ok"):
                     st.warning(
-                        "Could not save Gemini key to Supabase, but it is active for this session."
+                        f"Gemini key is active for this session, but was not saved: {_save_result.get('error', 'Supabase save failed')}"
                     )
                     st.session_state.user_gemini_api_key = cc_key.strip()
                     key_to_store_locally = ""

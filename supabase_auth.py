@@ -16,6 +16,11 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+try:
+    from cryptography.fernet import Fernet
+except Exception:
+    Fernet = None
+
 
 def _supabase_url() -> str:
     return os.getenv("SUPABASE_URL", "").strip().rstrip("/")
@@ -165,6 +170,38 @@ def _setting_key(user_key: str) -> str:
     return f"user_ai:{user_key}"
 
 
+def _encryption_secret() -> str:
+    return (
+        os.getenv("PA_SETTINGS_ENCRYPTION_KEY", "").strip()
+        or os.getenv("GEMINI_KEY_ENCRYPTION_SECRET", "").strip()
+    )
+
+
+def _fernet():
+    secret = _encryption_secret()
+    if not secret or Fernet is None:
+        return None
+    key = base64.urlsafe_b64encode(hashlib.sha256(secret.encode("utf-8")).digest())
+    return Fernet(key)
+
+
+def _encrypt_secret(value: str) -> str:
+    f = _fernet()
+    if not f:
+        return ""
+    return f.encrypt(value.encode("utf-8")).decode("utf-8")
+
+
+def _decrypt_secret(value: str) -> str:
+    f = _fernet()
+    if not f:
+        return ""
+    try:
+        return f.decrypt(value.encode("utf-8")).decode("utf-8").strip()
+    except Exception:
+        return ""
+
+
 def _settings_table_error(data: dict | str) -> str:
     text = json.dumps(data) if isinstance(data, dict) else str(data)
     if "public.settings" in text or "schema cache" in text or "PGRST205" in text:
@@ -199,6 +236,9 @@ def load_user_gemini_key(user_key: str) -> str:
         except Exception:
             return ""
     if isinstance(raw, dict):
+        if raw.get("gemini_api_key_enc"):
+            return _decrypt_secret(str(raw.get("gemini_api_key_enc") or ""))
+        # Backward compatibility for keys saved before app-side encryption.
         return str(raw.get("gemini_api_key", "")).strip()
     return ""
 
@@ -210,9 +250,19 @@ def save_user_gemini_key(user_key: str, gemini_api_key: str) -> dict:
     if not _supabase_url() or not api_key:
         return {"ok": False, "error": "Supabase settings storage is not configured."}
 
+    encrypted_key = _encrypt_secret(gemini_api_key.strip())
+    if not encrypted_key:
+        return {
+            "ok": False,
+            "error": "Encrypted key storage is not configured. Set PA_SETTINGS_ENCRYPTION_KEY in Railway variables.",
+        }
+
     payload = {
         "key": _setting_key(user_key),
-        "value_json": json.dumps({"gemini_api_key": gemini_api_key.strip()}),
+        "value_json": json.dumps({
+            "enc": "fernet-sha256-v1",
+            "gemini_api_key_enc": encrypted_key,
+        }),
     }
     url = f"{_supabase_url()}/rest/v1/settings"
     req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), method="POST")
