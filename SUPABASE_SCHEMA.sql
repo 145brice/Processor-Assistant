@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS activity_log (
 
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
+    user_key TEXT,
+    user_email TEXT,
     value_json TEXT,
     updated_at TIMESTAMPTZ DEFAULT now()
 );

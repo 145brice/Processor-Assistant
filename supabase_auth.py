@@ -170,6 +170,14 @@ def _setting_key(user_key: str) -> str:
     return f"user_ai:{user_key}"
 
 
+def _current_user_email() -> str:
+    try:
+        import streamlit as st
+        return str(st.session_state.get("user_email") or "").strip()
+    except Exception:
+        return ""
+
+
 def _encryption_secret() -> str:
     return (
         os.getenv("PA_SETTINGS_ENCRYPTION_KEY", "").strip()
@@ -259,19 +267,16 @@ def save_user_gemini_key(user_key: str, gemini_api_key: str) -> dict:
 
     payload = {
         "key": _setting_key(user_key),
+        "user_key": user_key,
+        "user_email": _current_user_email(),
         "value_json": json.dumps({
             "enc": "fernet-sha256-v1",
             "gemini_api_key_enc": encrypted_key,
         }),
     }
     url = f"{_supabase_url()}/rest/v1/settings"
-    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), method="POST")
-    req.add_header("apikey", api_key)
-    req.add_header("Authorization", f"Bearer {api_key}")
-    req.add_header("Content-Type", "application/json")
-    req.add_header("Prefer", "resolution=merge-duplicates")
     try:
-        with urllib.request.urlopen(req, timeout=20):
+        if _upsert_setting(url, api_key, payload):
             return {"ok": True}
     except urllib.error.HTTPError as e:
         raw = e.read().decode("utf-8", errors="ignore")
@@ -279,6 +284,26 @@ def save_user_gemini_key(user_key: str, gemini_api_key: str) -> dict:
             data = json.loads(raw) if raw else {}
         except Exception:
             data = raw or str(e)
+        text = json.dumps(data) if isinstance(data, dict) else str(data)
+        if "user_email" in text or "user_key" in text or "schema cache" in text:
+            fallback = dict(payload)
+            fallback.pop("user_key", None)
+            fallback.pop("user_email", None)
+            try:
+                if _upsert_setting(url, api_key, fallback):
+                    return {"ok": True, "warning": "settings user columns missing"}
+            except Exception:
+                pass
         return {"ok": False, "error": _settings_table_error(data)}
     except Exception as e:
         return {"ok": False, "error": str(e)}
+
+
+def _upsert_setting(url: str, api_key: str, payload: dict) -> bool:
+    req = urllib.request.Request(url, data=json.dumps(payload).encode("utf-8"), method="POST")
+    req.add_header("apikey", api_key)
+    req.add_header("Authorization", f"Bearer {api_key}")
+    req.add_header("Content-Type", "application/json")
+    req.add_header("Prefer", "resolution=merge-duplicates")
+    with urllib.request.urlopen(req, timeout=20):
+        return True

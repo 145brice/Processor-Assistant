@@ -62,6 +62,8 @@ CREATE TABLE IF NOT EXISTS activity_log (
 
 CREATE TABLE IF NOT EXISTS settings (
     key TEXT PRIMARY KEY,
+    user_key TEXT,
+    user_email TEXT,
     value_json TEXT,
     updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -93,6 +95,8 @@ ALTER TABLE loans ADD COLUMN IF NOT EXISTS raw_json TEXT;
 ALTER TABLE loans ADD COLUMN IF NOT EXISTS created TEXT;
 ALTER TABLE loans ADD COLUMN IF NOT EXISTS updated TEXT;
 ALTER TABLE activity_log ADD COLUMN IF NOT EXISTS owner_user_key TEXT;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_key TEXT;
+ALTER TABLE settings ADD COLUMN IF NOT EXISTS user_email TEXT;
 
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 ALTER TABLE loans ENABLE ROW LEVEL SECURITY;
@@ -162,3 +166,5 @@ CREATE INDEX IF NOT EXISTS idx_loans_created_by_user_key ON loans(created_by_use
 CREATE INDEX IF NOT EXISTS idx_loans_assigned_user_key ON loans(assigned_user_key);
 CREATE INDEX IF NOT EXISTS idx_activity_owner_user_key ON activity_log(owner_user_key);
 CREATE INDEX IF NOT EXISTS idx_parsed_results_owner_user_key ON parsed_results(owner_user_key);
+CREATE INDEX IF NOT EXISTS idx_settings_user_key ON settings(user_key);
+CREATE INDEX IF NOT EXISTS idx_settings_user_email ON settings(user_email);

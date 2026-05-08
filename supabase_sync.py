@@ -199,6 +199,14 @@ def _current_user_key() -> str:
         return ""
 
 
+def _current_user_email() -> str:
+    try:
+        import streamlit as st
+        return str(st.session_state.get("user_email") or "").strip()
+    except Exception:
+        return ""
+
+
 def mirror_setting(key: str, value: Any):
     """Queue a settings entry (lender clauses, email config, etc.)."""
     if not is_enabled() or not key:
@@ -206,6 +214,8 @@ def mirror_setting(key: str, value: Any):
     redacted = _redact(value) if isinstance(value, dict) else value
     record = {
         "key": key,
+        "user_key": _current_user_key(),
+        "user_email": _current_user_email(),
         "value_json": json.dumps(redacted),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -233,12 +243,22 @@ def save_pipeline_snapshot(loans: list, user_key: str | None = None) -> dict:
     try:
         payload = {
             "key": _pipeline_snapshot_key(user_key),
+            "user_key": str(user_key or "").strip(),
+            "user_email": _current_user_email(),
             "value_json": json.dumps(_redact(loans or []), ensure_ascii=False, default=str),
             "updated_at": datetime.now(timezone.utc).isoformat(),
         }
         client.table("settings").upsert(payload).execute()
         return {"ok": True, "count": len(loans or [])}
     except Exception as e:
+        if "user_email" in str(e) or "user_key" in str(e) or "schema cache" in str(e):
+            try:
+                payload.pop("user_key", None)
+                payload.pop("user_email", None)
+                client.table("settings").upsert(payload).execute()
+                return {"ok": True, "count": len(loans or []), "warning": "settings user columns missing"}
+            except Exception:
+                pass
         _log_error(f"Pipeline snapshot save failed: {e}")
         return {"ok": False, "reason": str(e)}
 
