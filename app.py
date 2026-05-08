@@ -3464,25 +3464,67 @@ def show_dashboard():
                         "Closer": "Send to Closer",
                         "Underwriter": "Send to Underwriter",
                     }
+                    _SECTION_CONTACT_KEYS_SCAN = {
+                        "Borrower": ["borrower", "buyer", "co_borrower", "client"],
+                        "Title": ["title", "title_company", "settlement_agent"],
+                        "Insurance": ["insurance", "hoi", "hazard_insurance"],
+                        "Appraiser": ["appraiser", "appraisal"],
+                        "Employer": ["employer", "employment"],
+                        "Realtor": ["selling_agent", "listing_agent", "realtor", "agent"],
+                        "Seller": ["seller"],
+                        "Closer": ["closer", "title", "settlement_agent"],
+                        "Underwriter": ["underwriter", "loan_officer", "processor"],
+                    }
 
-                    def _scan_section_for_condition(_cond):
+                    def _scan_contact_email_for_section(_section_party):
+                        _contacts = _r.get("contacts", {}) if isinstance(_r, dict) else {}
+                        if not isinstance(_contacts, dict):
+                            return ""
+                        for _key in _SECTION_CONTACT_KEYS_SCAN.get(_section_party, []):
+                            _cv = _contacts.get(_key)
+                            if isinstance(_cv, dict) and _cv.get("email"):
+                                return _clean_display_text(_cv.get("email", ""))
+                        return ""
+
+                    def _scan_sections_for_condition(_cond):
                         _uid_local = f"{_scan_fkey}_{_cond['num']}"
                         _selected = st.session_state.get(f"{_uid_local}_party")
-                        if isinstance(_selected, list) and _selected:
-                            _party = _selected[0]
+                        if isinstance(_selected, list):
+                            _raw_parties = _selected
                         else:
-                            _party = _cond.get("party") or _infer_party(_cond.get("desc", ""))
-                        _party = {
+                            _parsed = _cond.get("parties") or _cond.get("party") or _infer_party(_cond.get("desc", ""))
+                            _raw_parties = _parsed if isinstance(_parsed, list) else [_parsed]
+
+                        _aliases = {
+                            "Buyer": "Borrower",
+                            "Client": "Borrower",
                             "Co-Borrower": "Borrower",
+                            "HOI": "Insurance",
+                            "Hazard Insurance": "Insurance",
+                            "Insurance Agent": "Insurance",
+                            "Title Company": "Title",
+                            "Escrow": "Title",
+                            "Appraisal": "Appraiser",
                             "Jr Underwriter": "Underwriter",
                             "Loan Officer": "Underwriter",
                             "Manager": "Underwriter",
-                        }.get(_party, _party)
-                        return _party if _party in _SECTION_ORDER_SCAN else "Borrower"
+                        }
+                        _sections = []
+                        for _party in _raw_parties:
+                            _party = _aliases.get(str(_party).strip(), str(_party).strip())
+                            if _party in _SECTION_ORDER_SCAN and _party not in _sections:
+                                _sections.append(_party)
+                        return _sections or ["Borrower"]
 
                     _conds_by_section = {p: [] for p in _SECTION_ORDER_SCAN}
                     for _cond in _norm_conds:
-                        _conds_by_section.setdefault(_scan_section_for_condition(_cond), []).append(_cond)
+                        _sections = _scan_sections_for_condition(_cond)
+                        _primary_section = _sections[0]
+                        for _section in _sections:
+                            _cond_view = dict(_cond)
+                            _cond_view["_section_party"] = _section
+                            _cond_view["_primary_section"] = _primary_section
+                            _conds_by_section.setdefault(_section, []).append(_cond_view)
 
                     _norm_conds_grouped = []
                     for _party in _SECTION_ORDER_SCAN:
@@ -3503,7 +3545,10 @@ def show_dashboard():
                                 unsafe_allow_html=True,
                             )
                             continue
-                        _uid = f"{_scan_fkey}_{_c['num']}"
+                        _section_party_for_row = _c.get("_section_party") or "Borrower"
+                        _is_primary_row = _section_party_for_row == (_c.get("_primary_section") or _section_party_for_row)
+                        _base_uid = f"{_scan_fkey}_{_c['num']}"
+                        _uid = f"{_base_uid}_{_section_party_for_row}"
                         with st.container(border=True):
                             _top1, _top2 = st.columns([0.35, 8])
                             with _top1:
@@ -3524,13 +3569,20 @@ def show_dashboard():
 
                             _ctrl1, _ctrl2, _ctrl3 = st.columns([1.5, 3.4, 1.15])
                             with _ctrl1:
-                                _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c["status"] in _COND_STATS_SCAN else 0
-                                _cstat = st.selectbox("Status", _COND_STATS_SCAN, index=_sidx,
-                                                      key=f"{_uid}_stat", label_visibility="collapsed")
+                                if _is_primary_row:
+                                    _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c["status"] in _COND_STATS_SCAN else 0
+                                    _cstat = st.selectbox("Status", _COND_STATS_SCAN, index=_sidx,
+                                                          key=f"{_base_uid}_stat", label_visibility="collapsed")
+                                else:
+                                    st.caption("Shared")
                             with _ctrl2:
-                                _cparties = st.multiselect("Responsible parties", _PARTY_OPTS_SCAN,
-                                                           default=[_c["party"]] if _c["party"] in _PARTY_OPTS_SCAN else [],
-                                                           key=f"{_uid}_party", label_visibility="collapsed")
+                                if _is_primary_row:
+                                    _default_parties = _scan_sections_for_condition(_c)
+                                    _cparties = st.multiselect("Responsible parties", _PARTY_OPTS_SCAN,
+                                                               default=[p for p in _default_parties if p in _PARTY_OPTS_SCAN],
+                                                               key=f"{_base_uid}_party", label_visibility="collapsed")
+                                else:
+                                    st.caption(f"Also included in {_SECTION_LABEL_SCAN.get(_section_party_for_row, _section_party_for_row)}")
                             with _ctrl3:
                                 if st.button("Guide", key=f"{_uid}_guide", use_container_width=True,
                                              help="Check vs. Fannie/Freddie guidelines"):
@@ -3601,7 +3653,7 @@ def show_dashboard():
                                          use_container_width=True):
                                 _checked_for_email = [
                                     c for c in _section_conds
-                                    if st.session_state.get(f"{_scan_fkey}_{c['num']}_chk", False)
+                                    if st.session_state.get(f"{_scan_fkey}_{c['num']}_{_section_party}_chk", False)
                                 ]
                                 if _checked_for_email:
                                     st.session_state[f"{_scan_fkey}_email_group_open"] = _section_party
@@ -3617,7 +3669,7 @@ def show_dashboard():
                         _draft_party = st.session_state.get(f"{_scan_fkey}_email_group_open")
                         _checked_for_email = [
                             c for c in _conds_by_section.get(_draft_party, [])
-                            if st.session_state.get(f"{_scan_fkey}_{c['num']}_chk", False)
+                            if st.session_state.get(f"{_scan_fkey}_{c['num']}_{_draft_party}_chk", False)
                         ]
                         _group_to = _draft_party or "Borrower"
                         _group_lang = st.session_state.get(f"{_scan_fkey}_{_draft_party}_email_group_lang", "English")
@@ -3633,10 +3685,17 @@ def show_dashboard():
                                 _ebody = f"(Draft failed: {_e})"
                             st.markdown(f"**Draft for {_SECTION_LABEL_SCAN.get(_group_to, _group_to)}**")
                             st.code(_ebody, language=None)
-                            _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({
+                            _compose_params = {
                                 "su": f"{_SEND_LABEL_SCAN.get(_group_to, 'Conditions request')} - {_batch['type']}",
                                 "body": _ebody,
-                            })
+                            }
+                            _recipient_email = _scan_contact_email_for_section(_group_to)
+                            if _recipient_email:
+                                _compose_params["to"] = _recipient_email
+                                st.caption(f"Recipient: {_recipient_email}")
+                            else:
+                                st.caption("Recipient: no parsed email found for this section yet")
+                            _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode(_compose_params)
                             _draft_cols = st.columns([1, 4])
                             with _draft_cols[0]:
                                 if st.button("Close Draft", key=f"{_scan_fkey}_email_group_close"):
