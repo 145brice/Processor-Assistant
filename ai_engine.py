@@ -4708,6 +4708,36 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
     if not text or len(text.strip()) < 50:
         # For scanned/image-only Purchase Contracts, try cloud PDF extraction
         # before falling back to image-only logging.
+        if doc_type == "Approval Letter" and user_approved_cloud:
+            try:
+                import cloud_client as _cc
+                if _cc.is_enabled():
+                    _pdf_conditions, _pdf_ai_log, _pdf_text = _cc.extract_approval_conditions_ai_from_pdf(pdf_bytes)
+                    if _pdf_conditions:
+                        return {
+                            "success": True,
+                            "text_length": len(_pdf_text or ""),
+                            "doc_type": doc_type,
+                            "bank_rules": "",
+                            "conditions": _pdf_conditions,
+                            "extracted_data": {},
+                            "raw_text": (_pdf_text or "")[:12000],
+                            "ai_log": _pdf_ai_log,
+                            "image_only": False,
+                            "ocr_via_cloud": True,
+                        }
+                    if _pdf_ai_log:
+                        return {
+                            "success": False,
+                            "error": f"Could not extract approval conditions from this PDF. {_pdf_ai_log}",
+                            "conditions": "",
+                            "risks": "",
+                            "text_length": len(text) if text else 0,
+                            "ai_log": _pdf_ai_log,
+                        }
+            except Exception:
+                pass
+
         if doc_type == "Purchase Contract" and user_approved_cloud:
             try:
                 import cloud_client as _cc

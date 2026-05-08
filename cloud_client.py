@@ -926,3 +926,78 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
         return parsed, _log("CLOUD", "pc_pdf_extract", _note), ""
     except Exception as e:
         return {}, _log("SCRIPT", "pc_pdf_extract", f"Cloud error: {str(e)[:120]}"), ""
+
+
+def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes) -> tuple[str, str, str]:
+    """
+    OCR + extraction path for scanned/image-only Approval Letters.
+    Uses Gemini inline PDF understanding to return condition rows directly.
+    Returns: (pipe_delimited_conditions, log_line, text_hint)
+    """
+    cfg = get_config()
+    if not cfg.get("enabled") or not cfg.get("api_key"):
+        return "", _log("SCRIPT", "approval_pdf_extract", "Cloud disabled"), ""
+
+    provider = cfg.get("provider", DEFAULT_PROVIDER)
+    system = (
+        "You read mortgage approval letters and extract only real prior-to-doc, "
+        "prior-to-funding, prior-to-closing, underwriting, credit, income, asset, "
+        "appraisal, title, insurance, and property conditions. Output only rows in "
+        "the requested pipe-delimited format. No markdown and no commentary."
+    )
+    prompt = """Read this approval letter PDF, including scanned/image pages.
+
+Extract every numbered approval condition. Keep each original numbered condition as ONE row,
+including wrapped continuation text. Ignore headers, borrower summaries, dates, addresses,
+loan terms, signatures, and general boilerplate.
+
+Use this exact format, one condition per line:
+| 1 | Full description of the condition | Borrower | Needed | High Confidence |
+| 2 | Full description of the condition | Title | Needed | High Confidence |
+
+Responsible party options: Borrower, Title, Underwriter, Insurance, Closer, Appraiser, Employer, Realtor, Seller
+Status must always be Needed.
+Confidence options: High Confidence, Best Guess
+"""
+    try:
+        # Gemini is the only inline PDF understanding path this client supports.
+        if provider == "gemini":
+            api_key = cfg.get("api_key", "")
+            model = cfg.get("model") or DEFAULT_MODELS["gemini"]
+        else:
+            api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
+            model = DEFAULT_MODELS["gemini"]
+        if not api_key:
+            return "", _log("SCRIPT", "approval_pdf_extract", "Gemini key missing for PDF OCR fallback"), ""
+
+        payload = json.dumps({
+            "system_instruction": {"parts": [{"text": system}]},
+            "contents": [{
+                "parts": [
+                    {"inline_data": {"mime_type": "application/pdf", "data": base64.b64encode(pdf_bytes).decode("utf-8")}},
+                    {"text": prompt},
+                ]
+            }],
+            "generationConfig": {
+                "temperature": 0.0,
+                "maxOutputTokens": 8192,
+            },
+        }).encode("utf-8")
+        url = GEMINI_ENDPOINT.format(model=model, key=api_key)
+        req = urllib.request.Request(
+            url, data=payload,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        with urllib.request.urlopen(req, timeout=75) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        valid = [
+            ln.strip() for ln in txt.splitlines()
+            if ln.strip().startswith("|") and ln.count("|") >= 4
+        ]
+        conditions = "\n".join(valid)
+        _note = f"gemini - {model}" if provider == "gemini" else f"gemini_fallback - {model}"
+        return conditions, _log("CLOUD", "approval_pdf_extract", f"{len(valid)} conditions - {_note}"), txt[:12000]
+    except Exception as e:
+        return "", _log("SCRIPT", "approval_pdf_extract", _friendly_cloud_error(e)), ""
