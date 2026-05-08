@@ -3487,7 +3487,7 @@ def show_dashboard():
                         return ""
 
                     def _scan_sections_for_condition(_cond):
-                        _uid_local = f"{_scan_fkey}_{_cond['num']}"
+                        _uid_local = f"{_scan_fkey}_{_cond.get('_scan_uid', _cond['num'])}"
                         _selected = st.session_state.get(f"{_uid_local}_party")
                         if isinstance(_selected, list):
                             _raw_parties = _selected
@@ -3517,11 +3517,13 @@ def show_dashboard():
                         return _sections or ["Borrower"]
 
                     _conds_by_section = {p: [] for p in _SECTION_ORDER_SCAN}
-                    for _cond in _norm_conds:
+                    for _cond_idx, _cond in enumerate(_norm_conds):
+                        _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
                         _sections = _scan_sections_for_condition(_cond)
                         _primary_section = _sections[0]
                         for _section in _sections:
                             _cond_view = dict(_cond)
+                            _cond_view["_scan_uid"] = _cond_uid
                             _cond_view["_section_party"] = _section
                             _cond_view["_primary_section"] = _primary_section
                             _conds_by_section.setdefault(_section, []).append(_cond_view)
@@ -3547,7 +3549,7 @@ def show_dashboard():
                             continue
                         _section_party_for_row = _c.get("_section_party") or "Borrower"
                         _is_primary_row = _section_party_for_row == (_c.get("_primary_section") or _section_party_for_row)
-                        _base_uid = f"{_scan_fkey}_{_c['num']}"
+                        _base_uid = f"{_scan_fkey}_{_c.get('_scan_uid', _c['num'])}"
                         _uid = f"{_base_uid}_{_section_party_for_row}"
                         with st.container(border=True):
                             _top1, _top2 = st.columns([0.35, 8])
@@ -3664,13 +3666,13 @@ def show_dashboard():
                                 )
 
                     def _scan_condition_checked_for_section(_cond, _section_party):
-                        _num = _cond["num"]
-                        if st.session_state.get(f"{_scan_fkey}_{_num}_{_section_party}_chk", False):
+                        _cond_key = _cond.get("_scan_uid", _cond["num"])
+                        if st.session_state.get(f"{_scan_fkey}_{_cond_key}_{_section_party}_chk", False):
                             return True
-                        if st.session_state.get(f"{_scan_fkey}_{_num}_chk", False):
+                        if st.session_state.get(f"{_scan_fkey}_{_cond_key}_chk", False):
                             return True
                         for _party in _scan_sections_for_condition(_cond):
-                            if st.session_state.get(f"{_scan_fkey}_{_num}_{_party}_chk", False):
+                            if st.session_state.get(f"{_scan_fkey}_{_cond_key}_{_party}_chk", False):
                                 return True
                         return False
 
