@@ -252,13 +252,13 @@ def save_pipeline_snapshot(loans: list, user_key: str | None = None) -> dict:
         return {"ok": True, "count": len(loans or [])}
     except Exception as e:
         if "user_email" in str(e) or "user_key" in str(e) or "schema cache" in str(e):
-            try:
-                payload.pop("user_key", None)
-                payload.pop("user_email", None)
-                client.table("settings").upsert(payload).execute()
-                return {"ok": True, "count": len(loans or []), "warning": "settings user columns missing"}
-            except Exception:
-                pass
+            return {
+                "ok": False,
+                "reason": (
+                    "Supabase settings columns exist in SQL but the API schema cache has not reloaded yet. "
+                    "Run: notify pgrst, 'reload schema'; then save again."
+                ),
+            }
         _log_error(f"Pipeline snapshot save failed: {e}")
         return {"ok": False, "reason": str(e)}
 

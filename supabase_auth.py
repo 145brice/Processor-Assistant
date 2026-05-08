@@ -15,6 +15,7 @@ import secrets
 import urllib.error
 import urllib.parse
 import urllib.request
+from datetime import datetime, timezone
 
 try:
     from cryptography.fernet import Fernet
@@ -273,6 +274,7 @@ def save_user_gemini_key(user_key: str, gemini_api_key: str) -> dict:
             "enc": "fernet-sha256-v1",
             "gemini_api_key_enc": encrypted_key,
         }),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     url = f"{_supabase_url()}/rest/v1/settings"
     try:
@@ -286,14 +288,13 @@ def save_user_gemini_key(user_key: str, gemini_api_key: str) -> dict:
             data = raw or str(e)
         text = json.dumps(data) if isinstance(data, dict) else str(data)
         if "user_email" in text or "user_key" in text or "schema cache" in text:
-            fallback = dict(payload)
-            fallback.pop("user_key", None)
-            fallback.pop("user_email", None)
-            try:
-                if _upsert_setting(url, api_key, fallback):
-                    return {"ok": True, "warning": "settings user columns missing"}
-            except Exception:
-                pass
+            return {
+                "ok": False,
+                "error": (
+                    "Supabase settings columns exist in SQL but the API schema cache has not reloaded yet. "
+                    "Run: notify pgrst, 'reload schema'; then save again."
+                ),
+            }
         return {"ok": False, "error": _settings_table_error(data)}
     except Exception as e:
         return {"ok": False, "error": str(e)}
