@@ -2307,6 +2307,7 @@ def show_sidebar():
         # â•â•â•â•â•â•â•â•â•â•â• PRIMARY NAV: Scanner + Pipeline (always visible) â•â•â•â•â•â•â•
         _nav_btn("Scanner",  "dashboard")
         _nav_btn("Pipeline", "pipeline")
+        _nav_btn("Pricing",  "pricing")
 
         # â•â•â•â•â•â•â•â•â•â•â• WORKSPACE: Reader / Email Watch / Team / Billing â•â•â•â•â•â•â•â•
         if _section_header("Workspace", "_sec_open_workspace", default_open=False):
@@ -8049,6 +8050,88 @@ def show_ollama_page():
 
 
 # --- Billing & Usage Page ---
+def show_pricing_page():
+    from crm import get_all_loans
+
+    st.title("Pricing")
+    st.caption("Simple beta pricing while Processor Assistant is still early-access.")
+
+    tab_pricing, tab_account, tab_pipeline = st.tabs(["Pricing", "Account", "Pipeline"])
+
+    with tab_pricing:
+        c1, c2 = st.columns([1, 1])
+        with c1:
+            st.markdown(
+                """
+                <div style="border:1px solid rgba(59,130,246,0.45);border-radius:14px;
+                padding:18px;background:rgba(59,130,246,0.08);">
+                  <div style="font-size:12px;font-weight:800;color:#3b82f6;text-transform:uppercase;">Available Now</div>
+                  <div style="font-size:24px;font-weight:900;color:#fff;margin-top:6px;">Beta</div>
+                  <div style="font-size:34px;font-weight:900;color:#fff;margin:10px 0;">$49<span style="font-size:14px;color:#9ca3af;">/mo</span></div>
+                  <div style="font-size:13px;color:#d1d5db;">Includes a 7-day free trial.</div>
+                  <hr style="border-color:rgba(255,255,255,0.08);margin:16px 0;">
+                  <div style="font-size:13px;color:#e5e7eb;line-height:1.7;">
+                    Scanner, pipeline, recent scan history, saved non-sensitive loan data, and user account settings.
+                  </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with c2:
+            st.markdown(
+                """
+                <div style="border:1px solid rgba(255,255,255,0.12);border-radius:14px;
+                padding:18px;background:rgba(255,255,255,0.035);opacity:0.78;">
+                  <div style="font-size:12px;font-weight:800;color:#9ca3af;text-transform:uppercase;">After Beta</div>
+                  <div style="font-size:24px;font-weight:900;color:#fff;margin-top:6px;">Standard</div>
+                  <div style="font-size:34px;font-weight:900;color:#fff;margin:10px 0;">$99<span style="font-size:14px;color:#9ca3af;">/mo</span></div>
+                  <div style="font-size:13px;color:#d1d5db;">Planned with a 7-day free trial. Timing TBA.</div>
+                  <hr style="border-color:rgba(255,255,255,0.08);margin:16px 0;">
+                  <div style="font-size:13px;color:#e5e7eb;line-height:1.7;">
+                    Not available yet. Beta pricing is the only active plan right now.
+                  </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        st.info("Beta pricing is available right now. Standard pricing is shown for transparency only.")
+
+    with tab_account:
+        user_name = st.session_state.get("user_name", "") or "Signed-in user"
+        user_email = st.session_state.get("user_email", "") or "No email on session"
+        user_role = st.session_state.get("user_role", "") or "Processor"
+        sandbox = "Yes" if st.session_state.get("sandbox_mode") else "No"
+
+        a1, a2, a3, a4 = st.columns(4)
+        a1.metric("Name", user_name)
+        a2.metric("Role", user_role)
+        a3.metric("Sandbox", sandbox)
+        a4.metric("Plan", "Beta")
+        st.markdown(f"**Email:** {user_email}")
+        st.caption("Account settings and saved non-sensitive app data are tied to this signed-in account.")
+
+    with tab_pipeline:
+        try:
+            loans = _visible_account_loans(get_all_loans() or [])
+        except Exception:
+            loans = []
+        pending = sum(1 for l in loans if l.get("status") == "Pending")
+        requested = sum(1 for l in loans if l.get("status") == "Requested")
+        cleared = sum(1 for l in loans if l.get("status") == "Cleared")
+        closed = sum(1 for l in loans if l.get("status") == "Closed")
+
+        p1, p2, p3, p4, p5 = st.columns(5)
+        p1.metric("All", len(loans))
+        p2.metric("Pending", pending)
+        p3.metric("Requested", requested)
+        p4.metric("Cleared", cleared)
+        p5.metric("Closed", closed)
+        if st.button("Open Pipeline", use_container_width=True):
+            st.session_state.page = "pipeline"
+            _save_session()
+            st.rerun()
+
+
 def show_billing_page():
     import billing as _bl
 
@@ -9862,6 +9945,8 @@ def main():
             show_ollama_page()
         elif page == "billing":
             show_billing_page()
+        elif page == "pricing":
+            show_pricing_page()
         elif page == "history":
             show_history()
         elif page == "reader":
