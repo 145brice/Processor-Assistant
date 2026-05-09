@@ -171,6 +171,10 @@ def _setting_key(user_key: str) -> str:
     return f"user_ai:{user_key}"
 
 
+def _profile_key(user_key: str) -> str:
+    return f"user_profile:{user_key}"
+
+
 def _current_user_email() -> str:
     try:
         import streamlit as st
@@ -250,6 +254,81 @@ def load_user_gemini_key(user_key: str) -> str:
         # Backward compatibility for keys saved before app-side encryption.
         return str(raw.get("gemini_api_key", "")).strip()
     return ""
+
+
+def _load_setting_json(setting_key: str) -> dict:
+    api_key = _service_key() or _public_key()
+    if not setting_key or not _supabase_url() or not api_key:
+        return {}
+    params = urllib.parse.urlencode({"key": f"eq.{setting_key}", "select": "value_json"})
+    url = f"{_supabase_url()}/rest/v1/settings?{params}"
+    result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
+    if not result.get("ok"):
+        return {}
+    rows = result.get("data") or []
+    if not rows:
+        return {}
+    raw = rows[0].get("value_json")
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except Exception:
+            return {}
+    return raw if isinstance(raw, dict) else {}
+
+
+def _save_setting_json(setting_key: str, value: dict, *, user_key: str = "", user_email: str = "") -> dict:
+    api_key = _service_key() or _public_key()
+    if not setting_key:
+        return {"ok": False, "error": "Missing setting key."}
+    if not _supabase_url() or not api_key:
+        return {"ok": False, "error": "Supabase settings storage is not configured."}
+
+    payload = {
+        "key": setting_key,
+        "user_key": user_key,
+        "user_email": user_email or _current_user_email(),
+        "value_json": json.dumps(value),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+    url = f"{_supabase_url()}/rest/v1/settings"
+    try:
+        _upsert_setting(url, api_key, payload)
+        return {"ok": True}
+    except Exception as e:
+        return {"ok": False, "error": str(e)}
+
+
+def ensure_user_profile(user_key: str, *, email: str = "", display_name: str = "", role: str = "") -> dict:
+    """Create or refresh the app-level user profile used for trial/subscription state."""
+    if not user_key:
+        return {}
+    now = datetime.now(timezone.utc).isoformat()
+    profile = _load_setting_json(_profile_key(user_key))
+    if not profile:
+        profile = {
+            "trial_started_at": now,
+            "trial_days": 7,
+            "subscription_status": "trialing",
+            "plan": "beta",
+            "terms_accepted_at": "",
+        }
+    profile.update({
+        "user_key": user_key,
+        "email": email or profile.get("email", ""),
+        "display_name": display_name or profile.get("display_name", ""),
+        "role": role or profile.get("role", ""),
+        "last_seen_at": now,
+    })
+    _save_setting_json(_profile_key(user_key), profile, user_key=user_key, user_email=profile.get("email", ""))
+    return profile
+
+
+def accept_terms(user_key: str, *, email: str = "", display_name: str = "", role: str = "") -> dict:
+    profile = ensure_user_profile(user_key, email=email, display_name=display_name, role=role)
+    profile["terms_accepted_at"] = datetime.now(timezone.utc).isoformat()
+    _save_setting_json(_profile_key(user_key), profile, user_key=user_key, user_email=profile.get("email", email))
+    return profile
 
 
 def save_user_gemini_key(user_key: str, gemini_api_key: str) -> dict:

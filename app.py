@@ -1691,12 +1691,75 @@ def _clean_display_text(value) -> str:
         "Â—": "-",
         "â€”": "-",
         "â€“": "-",
+        "â†’": "->",
+        "âœ…": "OK",
+        "âœ“": "OK",
+        "âœ—": "Error",
+        "â—": "",
+        "â—‹": "",
+        "âš ": "Warning",
+        "â¸": "Paused",
         "Â": "",
         "ï¸": "",
     }
     for bad, good in replacements.items():
         text = text.replace(bad, good)
     return " ".join(text.split())
+
+
+def _user_trial_profile() -> dict:
+    """Load/create app profile used for 7-day trial gating."""
+    if not st.session_state.get("authenticated") or st.session_state.get("sandbox_mode"):
+        return {}
+    user_key = _current_auth_user_key()
+    if not user_key:
+        return {}
+    try:
+        import supabase_auth as _sa
+        return _sa.ensure_user_profile(
+            user_key,
+            email=st.session_state.get("user_email", ""),
+            display_name=st.session_state.get("user_name", ""),
+            role=st.session_state.get("user_role", ""),
+        )
+    except Exception:
+        return {}
+
+
+def _trial_days_left(profile: dict) -> int:
+    from datetime import datetime, timezone
+    started = str((profile or {}).get("trial_started_at") or "")
+    trial_days = int((profile or {}).get("trial_days") or 7)
+    try:
+        start_dt = datetime.fromisoformat(started.replace("Z", "+00:00"))
+        if start_dt.tzinfo is None:
+            start_dt = start_dt.replace(tzinfo=timezone.utc)
+        used = (datetime.now(timezone.utc) - start_dt).days
+        return max(0, trial_days - used)
+    except Exception:
+        return trial_days
+
+
+def _has_paid_access(profile: dict) -> bool:
+    status = str((profile or {}).get("subscription_status") or "").lower()
+    if status in {"active", "paid", "beta_active"}:
+        return True
+    if status == "trialing":
+        return _trial_days_left(profile) > 0
+    return False
+
+
+def _render_trial_gate(profile: dict) -> None:
+    st.title("Trial Ended")
+    st.markdown(
+        """
+        Your 7-day beta trial has ended. To keep using Processor Assistant, start the beta plan.
+
+        Beta is **$49/mo** with a 7-day free trial.
+        """
+    )
+    st.link_button("Start Beta Plan", "https://buy.stripe.com/bJe7sLdx87xM6mtaOSdfG00", type="primary")
+    st.caption("If you already paid, your Stripe webhook may not be connected yet. Once connected, this unlocks automatically.")
 
 
 def _infer_condition_party(desc: str) -> str:
@@ -1891,6 +1954,15 @@ def _handle_google_oauth_callback() -> bool:
             sandbox_mode=False,
             page="dashboard",
         )
+        try:
+            _sa.accept_terms(
+                _current_auth_user_key(),
+                email=oauth_result.get("email", ""),
+                display_name=local_user.get("display_name") or oauth_result.get("display_name", ""),
+                role=local_user.get("role") or oauth_result.get("role", "Processor"),
+            )
+        except Exception:
+            pass
         st.session_state.pop("oauth_google_verifier", None)
         st.session_state.pop("oauth_google_flow_id", None)
         st.session_state.pop("oauth_error_message", None)
@@ -1916,14 +1988,14 @@ def _render_gemini_key_prompt() -> None:
         return
 
     with st.container(border=True):
-        st.markdown("### Add Your Gemini 1.5 Flash API Key")
-        st.caption("We’ll save it to your account in Supabase so it auto-loads the next time you sign in.")
+        st.markdown("### Add Your Gemini 2.5 Flash API Key")
+        st.caption("Processor Assistant needs your Gemini 2.5 Flash API key for smart document parsing. We save it encrypted to your signed-in account.")
         with st.form("gemini_key_bootstrap_form"):
             gemini_key = st.text_input(
                 "Gemini API Key",
                 type="password",
                 placeholder="Paste your Gemini API key here",
-                help="Get one at https://aistudio.google.com/app/apikey",
+                help="Create one at https://aistudio.google.com/app/apikey",
             )
             save_key = st.form_submit_button("Save Gemini Key", type="primary")
             if save_key:
@@ -2131,6 +2203,23 @@ def show_login_page():
     )
 
     st.markdown('<div style="margin:10px 0 8px 0;">', unsafe_allow_html=True)
+    st.markdown(
+        """
+        <div style="background:rgba(15,23,42,0.72);border:1px solid rgba(59,130,246,0.22);
+        border-radius:12px;padding:12px 14px;margin:10px 0;color:#cbd5e1;font-size:12px;line-height:1.45;">
+          <b style="color:#fff;">Before you continue:</b> Processor Assistant uses AI to help read mortgage documents.
+          AI can make mistakes. You are responsible for reviewing all extracted data, conditions, contacts, generated
+          drafts, and compliance-related output before using it. Uploaded PDFs are processed for the scan; the app may
+          save non-sensitive extracted fields, loan metadata, settings, and recent scan history for your account.
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    accepted_terms = st.checkbox(
+        "I understand this tool uses AI, outputs must be reviewed, and I agree to use it responsibly.",
+        key="login_terms_ack",
+        value=False,
+    )
     try:
         import supabase_auth as _sa
 
@@ -2140,9 +2229,10 @@ def show_login_page():
                 st.session_state["oauth_google_verifier"] = oauth_info["verifier"]
                 st.session_state["oauth_google_flow_id"] = oauth_info.get("flow_id", "")
                 _cache_oauth_verifier(str(oauth_info.get("flow_id", "")), oauth_info["verifier"])
-                st.markdown(
-                    f"""
-                    <a href="{oauth_info['url']}" target="_self" style="
+                if accepted_terms:
+                    st.markdown(
+                        f"""
+                        <a href="{oauth_info['url']}" target="_self" style="
                         display:flex;
                         width:100%;
                         align-items:center;
@@ -2159,8 +2249,11 @@ def show_login_page():
                       Sign in with Google
                     </a>
                     """,
-                    unsafe_allow_html=True,
-                )
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.button("Sign in with Google", disabled=True, use_container_width=True)
+                    st.caption("Please accept the AI/review disclaimer to continue.")
             else:
                 st.caption(oauth_info.get("error", "Google sign-in is unavailable right now."))
         else:
@@ -3696,26 +3789,42 @@ def show_dashboard():
                         except Exception as _e:
                             _ebody = f"(Draft failed: {_e})"
                             import urllib.parse as _uparse
-                        st.markdown(
-                            f'<div style="margin:10px 0;padding:10px;border:1px solid rgba(59,130,246,0.35);'
-                            f'border-radius:10px;background:rgba(59,130,246,0.07);">',
-                            unsafe_allow_html=True,
-                        )
-                        st.markdown(f"**Draft for {_SECTION_LABEL_SCAN.get(_group_to, _group_to)}**")
+                        _subject = f"{_SEND_LABEL_SCAN.get(_group_to, 'Conditions request')} - {_batch['type']}"
                         _recipient_email = _scan_contact_email_for_section(_group_to)
-                        if _recipient_email:
-                            st.caption(f"Recipient: {_recipient_email}")
-                        else:
-                            st.caption("Recipient: no parsed email found for this section yet")
-                        st.code(_ebody, language=None)
-                        _compose_params = {
-                            "su": f"{_SEND_LABEL_SCAN.get(_group_to, 'Conditions request')} - {_batch['type']}",
-                            "body": _ebody,
-                        }
+                        _compose_params = {"su": _subject, "body": _ebody}
                         if _recipient_email:
                             _compose_params["to"] = _recipient_email
                         _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode(_compose_params)
-                        _draft_cols = st.columns([1, 4])
+                        import html as _html
+                        _preview_body = _html.escape(_ebody).replace("\n", "<br>")
+                        st.markdown(
+                            f'<div style="margin:12px 0;padding:14px 16px;border:1px solid rgba(59,130,246,0.30);'
+                            f'border-radius:14px;background:#161b2b;box-shadow:0 10px 24px rgba(0,0,0,0.20);">',
+                            unsafe_allow_html=True,
+                        )
+                        st.markdown(
+                            f'<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:8px;">'
+                            f'Draft for {_SECTION_LABEL_SCAN.get(_group_to, _group_to)}</div>'
+                            f'<div style="display:grid;grid-template-columns:90px 1fr;gap:6px 10px;font-size:12px;margin-bottom:12px;">'
+                            f'<div style="color:#9ca3af;">To</div><div style="color:#e5e7eb;">{_recipient_email or "No parsed email found yet"}</div>'
+                            f'<div style="color:#9ca3af;">Subject</div><div style="color:#e5e7eb;">{_subject}</div>'
+                            f'</div>'
+                            f'<div style="background:#0f172a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;'
+                            f'padding:14px 16px;color:#e5e7eb;font-size:13px;line-height:1.55;">'
+                            f'{_preview_body}</div>',
+                            unsafe_allow_html=True,
+                        )
+                        st.text_area(
+                            "Edit draft before composing",
+                            value=_ebody,
+                            height=180,
+                            key=f"{_scan_fkey}_{_draft_party}_email_body_edit",
+                            label_visibility="collapsed",
+                        )
+                        _edited_body = st.session_state.get(f"{_scan_fkey}_{_draft_party}_email_body_edit", _ebody)
+                        _compose_params["body"] = _edited_body
+                        _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode(_compose_params)
+                        _draft_cols = st.columns([1, 2, 3])
                         with _draft_cols[0]:
                             if st.button("Close Draft", key=f"{_scan_fkey}_{_draft_party}_email_group_close"):
                                 st.session_state.pop(f"{_scan_fkey}_email_group_open", None)
@@ -3728,6 +3837,12 @@ def show_dashboard():
                                 f'font-size:11px;font-weight:700;text-decoration:none;">Compose in Gmail</a>',
                                 unsafe_allow_html=True,
                             )
+                        with _draft_cols[2]:
+                            if st.button("Translate / Spanish Reply", key=f"{_scan_fkey}_{_draft_party}_translate"):
+                                st.session_state["spanish_reply_data"] = {"subject": _subject, "body": _edited_body}
+                                st.session_state.page = "spanish_reply"
+                                st.rerun()
+                            st.caption("Gmail opens ready to review. It will not send automatically.")
                         st.markdown('</div>', unsafe_allow_html=True)
 
                     for _section_party in _SECTION_ORDER_SCAN:
@@ -3749,7 +3864,7 @@ def show_dashboard():
                                     st.toast(f"Check one or more {_SECTION_LABEL_SCAN.get(_section_party, _section_party).lower()} first.")
                         with _send_cols[1]:
                             st.selectbox(
-                                "Language", ["English", "Spanish"],
+                                "Draft language", ["English", "Spanish"],
                                 key=f"{_scan_fkey}_{_section_party}_email_group_lang",
                                 label_visibility="collapsed",
                             )
@@ -7810,7 +7925,7 @@ def show_email_watch_page():
                                 pass
                             st.rerun()
 
-    st.caption("Go to **Email Watch â†’ Controls** to start/stop watching or update credentials.")
+    st.caption("Go to **Email Watch > Controls** to start/stop watching or update credentials.")
 
 
 # --- AI Settings Page ---
@@ -7818,7 +7933,7 @@ def show_ollama_page():
     import cloud_client  as _cc
 
     st.title("AI Settings")
-    st.caption("Cloud AI for enhanced document extraction - choose your provider below.")
+    st.caption("Smart document extraction uses Google Gemini 2.5 Flash.")
 
     # â”€â”€ Cloud AI settings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.markdown("### Cloud AI")
@@ -7838,58 +7953,32 @@ def show_ollama_page():
     if cc_enabled_now != bool(cc_cfg.get("enabled")):
         _cc.save_config(
             cc_enabled_now,
-            cc_cfg.get("provider", "claude"),
+            "gemini",
             cc_cfg.get("api_key", ""),
-            cc_cfg.get("model", ""),
+            "gemini-2.5-flash",
         )
         st.rerun()
 
-    # â”€â”€ Provider selector (outside the form so model options update live) â”€â”€
-    _provider_options = ["gemini", "claude", "openai"]
-    _provider_labels  = {
-        "gemini": "Google Gemini Flash (free tier)",
-        "claude": "Anthropic Claude",
-        "openai": "OpenAI (GPT)",
-    }
-    _saved_provider = cc_cfg.get("provider", "claude")
-    _provider_idx   = _provider_options.index(_saved_provider) if _saved_provider in _provider_options else 1
-    cc_provider = st.selectbox(
-        "Provider",
-        _provider_options,
-        index=_provider_idx,
-        format_func=lambda x: _provider_labels.get(x, x),
-        key="cc_provider",
+    cc_provider = "gemini"
+    cc_model = "gemini-2.5-flash"
+    st.markdown(
+        """
+        <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);
+        border-radius:12px;padding:12px 14px;margin:10px 0 14px 0;color:#dbeafe;font-size:13px;">
+          <b>Required:</b> Create a Google AI Studio API key and paste it below.
+          Without a Gemini 2.5 Flash key, smart parsing will not work correctly.
+        </div>
+        """,
+        unsafe_allow_html=True,
     )
-
-    # Pricing note under provider selector
-    if cc_provider == "gemini":
-        st.caption("âœ… Free tier â€” up to 1,500 requests/day at no cost. Requires a Google AI API key.")
-    elif cc_provider == "claude":
-        st.caption("ðŸ’³ Paid â€” requires a $5 minimum deposit at console.anthropic.com to get started. ~$0.15â€“0.25 per document.")
-    else:
-        st.caption("ðŸ’³ Paid â€” requires billing enabled at platform.openai.com.")
-
-    _default_models = {
-        "gemini": ["gemini-2.5-flash", "gemini-2.5-flash-lite", "gemini-2.5-pro"],
-        "claude": ["claude-haiku-4-5-20251001", "claude-sonnet-4-6", "claude-opus-4-7"],
-        "openai": ["gpt-4o-mini", "gpt-4o", "gpt-3.5-turbo"],
-    }
-    _model_options = _default_models.get(cc_provider, ["gemini-2.5-flash"])
-    _saved_model   = cc_cfg.get("model", "")
-    _model_idx     = _model_options.index(_saved_model) if _saved_model in _model_options else 0
-    cc_model = st.selectbox(
-        "Model",
-        _model_options,
-        index=_model_idx,
-        key="cc_model",
-    )
+    st.text_input("Provider", value="Google Gemini", disabled=True)
+    st.text_input("Model", value=cc_model, disabled=True)
+    st.caption("Gemini 2.5 Flash is the only enabled model for now.")
 
     # Key + Save inside a form so a half-typed key doesn't auto-save
     with st.form("cloud_settings_form"):
         _key_help = {
-            "gemini": "Get free key at aistudio.google.com/app/apikey",
-            "claude": "Get key at console.anthropic.com (requires $5 deposit)",
-            "openai": "Get key at platform.openai.com/api-keys",
+            "gemini": "Create a key at aistudio.google.com/app/apikey",
         }
         cc_key = st.text_input(
             "API Key",
@@ -7902,7 +7991,7 @@ def show_ollama_page():
 
     if cc_save:
         key_to_store_locally = cc_key
-        if cc_provider == "gemini" and _real_user and _user_key:
+        if _real_user and _user_key:
             try:
                 import supabase_auth as _sa
 
@@ -7922,7 +8011,7 @@ def show_ollama_page():
                 key_to_store_locally = ""
 
         _cc.save_config(cc_enabled_now, cc_provider, key_to_store_locally, cc_model)
-        if cc_provider == "gemini" and _real_user:
+        if _real_user:
             st.success("Cloud AI settings saved. Your Gemini key is linked to your account.")
         else:
             st.success("Cloud AI settings saved.")
@@ -7932,33 +8021,23 @@ def show_ollama_page():
         if not cc_cfg.get("api_key"):
             st.warning("Save an API key first.")
         else:
-            with st.spinner("Testingâ€¦"):
+            with st.spinner("Testing..."):
                 ok, msg = _cc.ping()
             if ok:
-                st.success(f"âœ“ {msg}")
+                st.success(f"OK: {msg}")
             else:
-                st.error(f"âœ— {msg}")
+                st.error(f"Error: {msg}")
 
     with st.expander("How to get an API key"):
         st.markdown("""
-**Google Gemini Flash** â€” Free tier (recommended to start)
+**Google Gemini 2.5 Flash**
 1. Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
-2. Sign in with a Google account â†’ Create API key
-3. Paste above â€” no credit card required
-- Free: 1,500 requests/day, 1 million tokens/min
-- Cost: $0 for most users
+2. Sign in with your Google account.
+3. Click **Create API key**.
+4. Copy the key and paste it into the API Key box above.
+5. Click **Save Provider / Model / Key**.
 
-**Anthropic Claude** â€” Paid
-1. Go to [console.anthropic.com](https://console.anthropic.com)
-2. Create account â†’ Billing â†’ Add $5 minimum deposit
-3. Go to API Keys â†’ Create Key â†’ paste above
-- Cost: ~$0.15â€“$0.25 per document scan (Sonnet)
-- `claude-haiku-4-5-20251001` is cheaper for lighter tasks
-
-**OpenAI (GPT)** â€” Paid
-1. Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-2. Enable billing â†’ create key â†’ paste above
-- `gpt-4o-mini` is the most affordable option
+Keep this key private. Processor Assistant stores it encrypted for your signed-in account.
         """)
 
     # â”€â”€ Processing log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -7976,12 +8055,12 @@ def show_ollama_page():
                 st.rerun()
         st.code("\n".join(sorted(cc_lines, reverse=True)), language=None)
     else:
-        st.info("No processing log yet â€” scan a Purchase Contract or Approval Letter to see entries here.")
+        st.info("No processing log yet - scan a Purchase Contract or Approval Letter to see entries here.")
 
     # â”€â”€ Cloud Backup (Supabase) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.markdown("---")
     st.markdown("### Cloud Backup (Supabase)")
-    st.caption("Local SQLite is the primary store. Supabase is a backup mirror â€” batched every 60s, "
+    st.caption("Local SQLite is the primary store. Supabase is a backup mirror - batched every 60s, "
                "scanned PDFs and sensitive fields (SSN, DOB, account #s) are never uploaded.")
 
     try:
@@ -7991,13 +8070,13 @@ def show_ollama_page():
         sc1, sc2, sc3 = st.columns(3)
         with sc1:
             if sb_status["enabled"]:
-                st.success("â— Connected")
+                st.success("Connected")
             elif sb_status["paused"]:
-                st.warning("â¸ Paused")
+                st.warning("Paused")
             elif sb_status["configured"]:
-                st.error("âš  Config error")
+                st.error("Config error")
             else:
-                st.info("â—‹ Not configured (set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY env vars)")
+                st.info("Not configured (set SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY env vars)")
         with sc2:
             st.metric("Calls (last hour)", f"{sb_status['calls_last_hour']} / {sb_status['hourly_cap']}")
         with sc3:
@@ -8006,7 +8085,7 @@ def show_ollama_page():
         if sb_status.get("last_flush"):
             st.caption(f"Last sync: {sb_status['last_flush']}")
         if sb_status.get("last_error"):
-            st.caption(f"âš  Last error: {sb_status['last_error']}")
+            st.caption(f"Last error: {sb_status['last_error']}")
 
         bc1, bc2, bc3 = st.columns(3)
         with bc1:
@@ -8029,7 +8108,7 @@ def show_ollama_page():
                 st.session_state["sb_show_restore_confirm"] = True
 
         if st.session_state.get("sb_show_restore_confirm"):
-            st.warning("âš  This will OVERWRITE your local pipeline.json with cloud data. "
+            st.warning("This will OVERWRITE your local pipeline.json with cloud data. "
                        "A backup will be saved as pipeline.json.pre_restore_backup. Continue?")
             rc1, rc2 = st.columns(2)
             with rc1:
@@ -8103,6 +8182,33 @@ def show_pricing_page():
             unsafe_allow_html=True,
         )
     st.info("Beta pricing is available right now. Standard pricing is shown for transparency only.")
+    with st.expander("Stripe setup notes"):
+        st.markdown(
+            """
+**For now:** the payment link is live, but automatic account unlocking needs a Stripe webhook.
+
+Create a webhook endpoint in Stripe Developers > Webhooks:
+
+`https://processor-assistant-production.up.railway.app/stripe/webhook`
+
+Listen for these events:
+
+- `checkout.session.completed`
+- `customer.subscription.created`
+- `customer.subscription.updated`
+- `customer.subscription.deleted`
+- `invoice.payment_succeeded`
+- `invoice.payment_failed`
+
+Put these Railway variables in the app service:
+
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `STRIPE_BETA_PRICE_ID`
+
+Until that webhook route is added, paid users may need to be marked active manually in Supabase.
+            """
+        )
 
 
 def show_billing_page():
@@ -9893,6 +9999,12 @@ def main():
         show_login_page()
     else:
         _load_user_gemini_key_into_session()
+        _profile = _user_trial_profile()
+        if _profile and not _has_paid_access(_profile):
+            show_sidebar()
+            show_persistent_header()
+            _render_trial_gate(_profile)
+            return
         _qp_page = st.query_params.get("page", "")
         if isinstance(_qp_page, list):
             _qp_page = _qp_page[0] if _qp_page else ""
