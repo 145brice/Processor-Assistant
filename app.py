@@ -5074,7 +5074,7 @@ def show_pipeline():
                 parts.append(f"+{created_by}")
             if assigned_to:
                 parts.append(f"{assigned_to}")
-            team_line = f'<div style="font-size:9px;color:#9ca3af;margin-top:0px;">{" Â· ".join(parts)}</div>'
+            team_line = f'<div style="font-size:9px;color:#9ca3af;margin-top:0px;">{" | ".join(parts)}</div>'
 
         # Lock expiry badge
         _lock_exp = loan.get("lock_expiry", "")
@@ -5099,10 +5099,10 @@ def show_pipeline():
             except Exception:
                 pass
 
-        _closing_dt = loan.get("closing_date") or loan.get("due_date") or "â€”"
+        _closing_dt = loan.get("closing_date") or loan.get("due_date") or "-"
         _lock_dt = loan.get("lock_expiry") or ""
         _dates_html = f'Closing: {_closing_dt}'
-        _dates_html += f' &nbsp;Â·&nbsp; Lock: {_lock_dt if _lock_dt else "Not set"}'
+        _dates_html += f' &nbsp;|&nbsp; Lock: {_lock_dt if _lock_dt else "Not set"}'
         _missing_txt = loan.get("missing_docs", "") or "None"
 
         # â”€â”€ Progress calculation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -5191,9 +5191,9 @@ def show_pipeline():
             if _ccompany:
                 _tip_rows.append(f'<div style="color:#9ca3af;font-size:11px;">{_ccompany}</div>')
             if _cphone:
-                _tip_rows.append(f'<div style="color:#d1d5db;font-size:12px;">ðŸ“ž {_cphone}</div>')
+                _tip_rows.append(f'<div style="color:#d1d5db;font-size:12px;">Phone: {_cphone}</div>')
             if _cemail:
-                _tip_rows.append(f'<div style="color:#d1d5db;font-size:12px;">âœ‰ï¸ {_cemail}</div>')
+                _tip_rows.append(f'<div style="color:#d1d5db;font-size:12px;">Email: {_cemail}</div>')
             _tip_html = "".join(_tip_rows) if _tip_rows else '<div style="color:#9ca3af;font-size:11px;">No contact details</div>'
             _tooltip = (
                 f'<span class="pa-tip-box">'
@@ -5209,13 +5209,13 @@ def show_pipeline():
         if _contact_chips:
             _contacts_line = (
                 f'<div style="font-size:9px;color:#9ca3af;margin-top:2px;margin-bottom:4px;">'
-                + " Â· ".join(_contact_chips) + '</div>'
+                + " | ".join(_contact_chips) + '</div>'
             )
 
         _orders_line = ""
 
-        _loan_num = loan.get('loan_num', 'â€”')
-        _borrower = loan.get('borrower', 'â€”')
+        _loan_num = loan.get('loan_num', '-')
+        _borrower = loan.get('borrower', '-')
         _status_clr = border_color
 
         # â”€â”€ Delete query param handling â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -5278,7 +5278,7 @@ def show_pipeline():
             # Line 2: Close and Lock on their own line
             f'<div style="display:flex;gap:16px;min-height:16px;padding:2px 0 1px 0;">'
             f'<span style="font-size:10px;color:#6b7280;">Close: <span style="color:#9ca3af;">{_closing_dt}</span></span>'
-            f'<span style="font-size:10px;color:#6b7280;">Lock: <span style="color:#9ca3af;">{_lock_dt if _lock_dt else "â€”"}</span></span>'
+            f'<span style="font-size:10px;color:#6b7280;">Lock: <span style="color:#9ca3af;">{_lock_dt if _lock_dt else "-"}</span></span>'
             f'</div>'
             + (f'<div style="font-size:9px;color:#9ca3af;padding:1px 0 0 0;">{_contacts_line}</div>' if _contacts_line else '')
             + f'</div>',
@@ -5288,7 +5288,7 @@ def show_pipeline():
         # â”€â”€ Compact action row: Open | Status | Assign â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         ac1, ac2, ac3 = st.columns([1, 1.5, 2])
         with ac1:
-            if st.button(f"â–¸ OPEN", key=f"open_{lid}", type="primary", use_container_width=True):
+            if st.button("OPEN", key=f"open_{lid}", type="primary", use_container_width=True):
                 from sharing import notify_shared_members as _nsm
                 _nsm(loan, my_name, "opened")
                 st.session_state.detail_loan_id = lid
@@ -5318,7 +5318,7 @@ def show_pipeline():
             with _cf2:
                 if st.button("Yes", key=f"st_yes_{lid}", type="primary", use_container_width=True):
                     set_status(lid, _pending)
-                    log_activity(lid, "status_manual", f"Status manually changed â†’ {_pending}", user=my_name or "Unknown")
+                    log_activity(lid, "status_manual", f"Status manually changed -> {_pending}", user=my_name or "Unknown")
                     from sharing import notify_shared_members as _nsm
                     _nsm(loan, my_name, "status_changed")
                     st.session_state.pop(_status_confirm_key, None)
@@ -5350,12 +5350,12 @@ def show_pipeline():
         _docs_open = st.session_state.get(_docs_key, False)
         _nb1, _nb2 = st.columns(2)
         with _nb1:
-            _notes_lbl = f"ðŸ“‹ Notes & Conditions  {'â–²' if _notes_open else 'â–¼'}"
+            _notes_lbl = f"Notes & Conditions - {'Hide' if _notes_open else 'Show'}"
             if st.button(_notes_lbl, key=f"notesbtn_{lid}", use_container_width=True):
                 st.session_state[_notes_key] = not _notes_open
                 st.rerun()
         with _nb2:
-            _docs_lbl = f"ðŸ“„ Docs & Contacts  {'â–²' if _docs_open else 'â–¼'}"
+            _docs_lbl = f"Docs & Contacts - {'Hide' if _docs_open else 'Show'}"
             if st.button(_docs_lbl, key=f"docsbtn_{lid}", use_container_width=True):
                 st.session_state[_docs_key] = not _docs_open
                 st.rerun()
@@ -5375,7 +5375,7 @@ def show_pipeline():
                         f'<div style="display:flex;gap:10px;padding:2px 0;font-size:10px;border-bottom:1px solid rgba(255,255,255,0.04);">'
                         f'<span style="color:#6b7280;white-space:nowrap;">{a["ts"]}</span>'
                         f'<span style="color:#d1d5db;">{a.get("detail","")}</span>'
-                        f'<span style="color:#9ca3af;margin-left:auto;white-space:nowrap;">{a.get("user","") or "â€”"}</span>'
+                        f'<span style="color:#9ca3af;margin-left:auto;white-space:nowrap;">{a.get("user","") or "-"}</span>'
                         f'</div>'
                         for a in reversed(_status_changes[:10])
                     ])
@@ -5592,7 +5592,7 @@ def show_pipeline():
     trash_items = get_trash()
     _cur_retention = get_retention_days()
     _ret_label = "Forever" if _cur_retention == 0 else f"{_cur_retention} days"
-    _trash_label = f"Removeï¸ Removed ({len(trash_items)})" if trash_items else "Removeï¸ Removed"
+    _trash_label = f"Removed Loans ({len(trash_items)})" if trash_items else "Removed Loans"
     with st.expander(_trash_label, expanded=False):
         # Retention picker
         rt1, rt2, rt3 = st.columns([2, 2, 2])
@@ -5613,9 +5613,9 @@ def show_pipeline():
                 st.toast(f"Retention set to {_new_ret}", icon="âœ…")
                 st.rerun()
         with rt3:
-            if trash_items and st.button("Removeï¸ Empty All", key="empty_trash", use_container_width=True):
+            if trash_items and st.button("Empty Removed", key="empty_trash", use_container_width=True):
                 empty_trash()
-                st.toast("All removed loans permanently deleted", icon="Removeï¸")
+                st.toast("All removed loans permanently deleted")
                 st.rerun()
 
         if not trash_items:
@@ -5637,14 +5637,14 @@ def show_pipeline():
                 tc1, tc2, tc3 = st.columns([4, 1, 1])
                 with tc1:
                     st.markdown(
-                        f'<span style="font-weight:700;color:#3b82f6;">#{tl.get("loan_num", "â€”")}</span>'
-                        f' &nbsp;{tl.get("borrower", "â€”")}'
+                        f'<span style="font-weight:700;color:#3b82f6;">#{tl.get("loan_num", "-")}</span>'
+                        f' &nbsp;{tl.get("borrower", "-")}'
                         f' &nbsp;<span style="color:#9ca3af;font-size:10px;">removed {tl.get("deleted_on", "?")}</span>'
                         f' &nbsp;{_exp_tag}',
                         unsafe_allow_html=True,
                     )
                 with tc2:
-                    if st.button("Resetï¸ Restore", key=f"restore_{t_lid}", use_container_width=True):
+                    if st.button("Restore", key=f"restore_{t_lid}", use_container_width=True):
                         restore_loan(t_lid)
                         st.toast(f"Restored #{tl.get('loan_num', '')}", icon="Resetï¸")
                         st.rerun()
@@ -9873,7 +9873,6 @@ def show_persistent_header():
             <div style="background:#f59e0b;width:{pct_ip}%;"></div>
             <div style="background:#ef4444;width:{pct_pen}%;"></div>
           </div>
-          <span class="pa-pipe-dash-meta">{closed} cleared | {in_prog} in progress | {total} total</span>
         </div>
         """,
         unsafe_allow_html=True,
@@ -9882,7 +9881,6 @@ def show_persistent_header():
 
 def main():
     _handle_google_oauth_callback()
-    _render_auth_debug()
     if not st.session_state.authenticated:
         # If user explicitly logged out, show login once, then stop forcing it.
         if st.session_state.get("force_login", False):
