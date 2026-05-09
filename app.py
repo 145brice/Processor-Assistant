@@ -8051,6 +8051,8 @@ def show_ollama_page():
 
 # --- Billing & Usage Page ---
 def show_pricing_page():
+    beta_payment_link = "https://buy.stripe.com/bJe7sLdx87xM6mtaOSdfG00"
+
     st.title("Pricing")
     st.caption("Simple beta pricing while Processor Assistant is still early-access.")
 
@@ -8069,6 +8071,17 @@ def show_pricing_page():
                 Scanner, pipeline, recent scan history, saved non-sensitive loan data, and user account settings.
               </div>
             </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f"""
+            <a href="{beta_payment_link}" target="_blank" rel="noopener noreferrer"
+               style="display:block;text-align:center;margin-top:12px;padding:12px 16px;
+               border-radius:10px;background:#2563eb;color:#fff;font-size:14px;
+               font-weight:800;text-decoration:none;">
+              Start Beta - 7 Day Free Trial
+            </a>
             """,
             unsafe_allow_html=True,
         )
