@@ -71,14 +71,7 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
     display: none !important;
 }
 /* Sidebar always rendered as expanded â€” override Streamlit's aria-expanded="false" hiding */
-[data-testid="stAppViewContainer"] {
-    display: flex !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
-    overflow-x: hidden !important;
-}
 [data-testid="stSidebar"] {
-    flex: 0 0 var(--pa-sidebar-w) !important;
     min-width: var(--pa-sidebar-w) !important;
     width: var(--pa-sidebar-w) !important;
     max-width: var(--pa-sidebar-w) !important;
@@ -89,9 +82,8 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
 }
 /* Let Streamlit place main content; only add inner gutter to avoid edge touch */
 [data-testid="stMain"] {
-    flex: 1 1 auto !important;
     min-width: 0 !important;
-    margin-left: 0 !important;
+    margin-left: var(--pa-sidebar-w) !important;
     width: calc(100vw - var(--pa-sidebar-w)) !important;
     max-width: 100% !important;
     padding-left: 0 !important;
@@ -155,7 +147,6 @@ header[data-testid="stHeader"], [data-testid="stHeader"], .stAppHeader {
 #pa-sidebar-toggle:hover { background: #5fff3a !important; }
 body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
 body.pa-sidebar-hidden [data-testid="stSidebar"] {
-    flex-basis: 0 !important;
     width: 0 !important;
     min-width: 0 !important;
     max-width: 0 !important;
@@ -163,7 +154,6 @@ body.pa-sidebar-hidden [data-testid="stSidebar"] {
     visibility: hidden !important;
 }
 body.pa-sidebar-hidden [data-testid="stMain"] {
-    flex: 1 1 100% !important;
     margin-left: 0 !important;
     padding-left: 0 !important;
     width: 100vw !important;
