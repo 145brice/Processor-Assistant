@@ -2782,6 +2782,28 @@ def show_dashboard():
                         st.toast(f"Restored {_restored.get('file', 'scan')}")
                         st.rerun()
 
+    # â”€â”€ Gemini key warning (scanner needs it) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    if (not st.session_state.get("sandbox_mode", False)
+            and not st.session_state.get("user_gemini_api_key")):
+        _warn_c1, _warn_c2 = st.columns([4, 1])
+        with _warn_c1:
+            st.markdown(
+                '<div style="background:rgba(245,158,11,0.1);border:1px solid rgba(245,158,11,0.4);'
+                'border-radius:8px;padding:12px 14px;margin:8px 0;">'
+                '<div style="font-size:13px;font-weight:700;color:#f59e0b;margin-bottom:4px;">'
+                'Gemini API Key Required</div>'
+                '<div style="font-size:12px;color:#fcd34d;line-height:1.5;">'
+                'The scanner uses Gemini 2.5 Flash to read your documents. '
+                'Add your free API key to start scanning — takes about 60 seconds.</div>'
+                '</div>',
+                unsafe_allow_html=True,
+            )
+        with _warn_c2:
+            if st.button("Set up key →", type="primary", use_container_width=True, key="scanner_gem_setup"):
+                st.session_state.pop("gemini_onboarding_skipped", None)
+                st.session_state["gemini_onboarding_step"] = 1
+                st.rerun()
+
     # â”€â”€ File uploader (additive) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.info(
         "Security note: uploaded PDFs are processed for this scan only and are not stored. "
