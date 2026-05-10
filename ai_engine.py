@@ -310,14 +310,35 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
             found_code_format = True
             _flush_condition(current_cond)
             rest = line[loan_m.end():].strip()
-            # Strip category tags and dates
-            rest = re.sub(r'(?i)\s*(?:Legal|Property|Credit|Income|Asset|Compliance|Closing|Appraisal|Insurance|Title|Misc)\s*(?:Docs?)?\s*$', '', rest).strip()
-            rest = re.sub(r'\s*\d{1,2}/\d{1,2}/\d{2,4}.*$', '', rest).strip()
+            # Capture the Prior To column (Docs / Closing / Funding) before stripping.
+            # Format: "{description} {Category} {Prior To} {Date} {Age} {Borrower} {Status} {Date}"
+            prior_to = ""
+            pt_match = re.search(
+                r'(?i)\s+(Legal|Property|Credit|Income|Asset|Compliance|Misc|Closing|Title|Insurance|Appraisal)\s+(Docs?|Closing|Funding)\s+\d{1,2}/\d{1,2}/\d{2,4}',
+                rest,
+            )
+            if pt_match:
+                _pt = pt_match.group(2).lower()
+                if _pt.startswith("doc"):
+                    prior_to = "PTD"
+                elif _pt == "closing":
+                    prior_to = "PTC"
+                elif _pt == "funding":
+                    prior_to = "PTF"
+                # Strip from the category onwards
+                rest = rest[:pt_match.start()].strip()
+            else:
+                # Fallback: strip trailing category-only or date-onwards as before
+                rest = re.sub(r'(?i)\s*(?:Legal|Property|Credit|Income|Asset|Compliance|Closing|Appraisal|Insurance|Title|Misc)\s*(?:Docs?)?\s*$', '', rest).strip()
+                rest = re.sub(r'\s*\d{1,2}/\d{1,2}/\d{2,4}.*$', '', rest).strip()
             status = "Needed"
             sm = re.search(r'(?i)\b(Needed|Received|Cleared|Waived|Pending|Satisfied)\b', line)
             if sm:
                 status = sm.group(1).capitalize()
-            current_cond = {"desc": rest, "party": _guess_party(rest), "status": status, "code": ""}
+            # Prepend the Prior To tag to the description so it's visible in the UI
+            if prior_to:
+                rest = f"[{prior_to}] {rest}"
+            current_cond = {"desc": rest, "party": _guess_party(rest), "status": status, "code": "", "prior_to": prior_to}
             continue
 
         # If we're inside a code-format condition, this line is a continuation
