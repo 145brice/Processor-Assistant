@@ -2438,6 +2438,7 @@ def show_sidebar():
                             st.rerun()
 
             _nav_btn("Team",    "team")
+            _nav_btn("Chat",    "chat")
             _nav_btn("Billing", "billing")
             if not is_sandbox:
                 _nav_btn("History", "history")
@@ -8217,6 +8218,85 @@ Leave the main Processor Assistant app service on its normal Streamlit start com
         )
 
 
+def show_chat_page():
+    """Simple in-app chat for signed-in Processor Assistant users."""
+    import html as _html
+    from datetime import datetime as _dt
+    import chat_store as _chat
+
+    st.title("Chat")
+    st.caption("Shared app chat for signed-in Processor Assistant users. Do not paste full documents, SSNs, bank account numbers, or other sensitive borrower data.")
+
+    if st.session_state.get("sandbox_mode", False):
+        st.info("Sandbox chat is local-only. Sign in with Google to use shared team chat.")
+
+    top1, top2 = st.columns([1, 5])
+    with top1:
+        if st.button("Refresh", use_container_width=True, key="chat_refresh"):
+            st.rerun()
+
+    messages = _chat.load_messages(limit=80)
+    if not messages:
+        st.info("No messages yet. Start the room.")
+    else:
+        st.markdown(
+            """
+            <div style="display:flex;flex-direction:column;gap:10px;margin:8px 0 18px 0;">
+            """,
+            unsafe_allow_html=True,
+        )
+        current_user = str(st.session_state.get("user_email") or st.session_state.get("user_id") or "")
+        for msg in messages:
+            user_name = _html.escape(str(msg.get("user_name") or "User"))
+            user_email = _html.escape(str(msg.get("user_email") or ""))
+            text = _html.escape(str(msg.get("text") or "")).replace("\n", "<br>")
+            ts_raw = str(msg.get("ts") or "")
+            try:
+                ts = _dt.fromisoformat(ts_raw.replace("Z", "+00:00")).strftime("%m/%d %I:%M %p")
+            except Exception:
+                ts = ts_raw[:16].replace("T", " ")
+            own = current_user and current_user.lower() == str(msg.get("user_email") or "").lower()
+            align = "margin-left:auto;" if own else "margin-right:auto;"
+            bg = "rgba(37,99,235,0.22)" if own else "rgba(30,41,59,0.82)"
+            border = "rgba(96,165,250,0.35)" if own else "rgba(148,163,184,0.22)"
+            st.markdown(
+                f"""
+                <div style="{align}max-width:78%;border:1px solid {border};border-radius:14px;
+                            background:{bg};padding:10px 12px;">
+                  <div style="display:flex;gap:10px;align-items:baseline;margin-bottom:5px;">
+                    <span style="font-weight:800;color:#fff;font-size:13px;">{user_name}</span>
+                    <span style="font-size:11px;color:#94a3b8;">{ts}</span>
+                  </div>
+                  <div style="font-size:14px;line-height:1.45;color:#e5e7eb;">{text}</div>
+                  <div style="font-size:10px;color:#64748b;margin-top:5px;">{user_email}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with st.form("app_chat_form", clear_on_submit=True):
+        message = st.text_area(
+            "Message",
+            placeholder="Type a quick team update...",
+            height=95,
+            label_visibility="collapsed",
+            key="chat_message_text",
+        )
+        send = st.form_submit_button("Send Message", use_container_width=True)
+        if send:
+            result = _chat.save_message(
+                user_key=_current_auth_user_key(),
+                user_name=str(st.session_state.get("user_name") or ""),
+                user_email=str(st.session_state.get("user_email") or ""),
+                text=message,
+            )
+            if result.get("ok"):
+                st.rerun()
+            else:
+                st.error(result.get("error", "Could not save message."))
+
+
 def show_billing_page():
     import billing as _bl
 
@@ -10036,6 +10116,8 @@ def main():
             show_billing_page()
         elif page == "pricing":
             show_pricing_page()
+        elif page == "chat":
+            show_chat_page()
         elif page == "history":
             show_history()
         elif page == "reader":
