@@ -1793,7 +1793,28 @@ def _render_trial_gate(profile: dict) -> None:
         """
     )
     st.link_button("Start Beta Plan", "https://buy.stripe.com/bJe7sLdx87xM6mtaOSdfG00", type="primary")
-    st.caption("If you already paid, your Stripe webhook may not be connected yet. Once connected, this unlocks automatically.")
+
+    st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
+    with st.expander("Already paid with a different email?"):
+        st.caption("Enter the exact email address you used when you paid on Stripe. We'll link that subscription to your account.")
+        stripe_email = st.text_input("Stripe payment email", key="claim_stripe_email", placeholder="you@example.com")
+        if st.button("Link My Subscription", key="claim_sub_btn"):
+            user_key = st.session_state.get("user_key", "")
+            if not stripe_email.strip():
+                st.warning("Please enter your Stripe email.")
+            elif not user_key:
+                st.error("Could not detect your account. Try signing out and back in.")
+            else:
+                try:
+                    import supabase_auth as _sa
+                    result = _sa.claim_subscription_by_email(stripe_email.strip(), user_key)
+                    if result.get("ok"):
+                        st.success("Subscription linked! Reloading...")
+                        st.rerun()
+                    else:
+                        st.error(result.get("error", "Could not link subscription."))
+                except Exception as e:
+                    st.error(f"Error: {e}")
 
 
 def _infer_condition_party(desc: str) -> str:

@@ -392,6 +392,81 @@ def update_subscription_by_email(
     return {"ok": bool(updated), "updated": updated}
 
 
+def claim_subscription_by_email(stripe_email: str, current_user_key: str) -> dict:
+    """Copy an active Stripe subscription from stripe_email's profile to current_user_key's profile.
+
+    Used when someone paid with a different email than their Google sign-in.
+    """
+    stripe_email = (stripe_email or "").strip().lower()
+    current_user_key = (current_user_key or "").strip()
+    if not stripe_email or not current_user_key:
+        return {"ok": False, "error": "Missing email or user key."}
+
+    api_key = _service_key() or _public_key()
+    if not _supabase_url() or not api_key:
+        return {"ok": False, "error": "Supabase not configured."}
+
+    # Look up the profile stored under the Stripe email
+    params = urllib.parse.urlencode({"user_email": f"eq.{stripe_email}", "select": "key,value_json,user_key,user_email"})
+    url = f"{_supabase_url()}/rest/v1/settings?{params}"
+    result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
+    if not result.get("ok"):
+        return {"ok": False, "error": "Could not reach Supabase."}
+
+    rows = [r for r in (result.get("data") or []) if str(r.get("key", "")).startswith("user_profile:")]
+    if not rows:
+        return {"ok": False, "error": f"No account found for {stripe_email}. Make sure you use the exact email you paid with."}
+
+    source_profile = {}
+    for row in rows:
+        raw = row.get("value_json") or {}
+        if isinstance(raw, str):
+            try:
+                raw = json.loads(raw)
+            except Exception:
+                raw = {}
+        if isinstance(raw, dict):
+            source_profile = raw
+            break
+
+    status = str(source_profile.get("subscription_status") or "").lower()
+    if status not in {"active", "paid", "beta_active", "trialing"}:
+        return {"ok": False, "error": f"That account's subscription status is '{status or 'none'}' — not active. Contact support if you think this is wrong."}
+
+    # Load current user's profile and merge subscription fields into it
+    profile_key = _profile_key(current_user_key)
+    params2 = urllib.parse.urlencode({"key": f"eq.{profile_key}", "select": "key,value_json,user_key,user_email"})
+    url2 = f"{_supabase_url()}/rest/v1/settings?{params2}"
+    result2 = _json_request("GET", url2, None, api_key=api_key, bearer=api_key)
+    current_rows = (result2.get("data") or []) if result2.get("ok") else []
+    current_profile = {}
+    if current_rows:
+        raw2 = current_rows[0].get("value_json") or {}
+        if isinstance(raw2, str):
+            try:
+                raw2 = json.loads(raw2)
+            except Exception:
+                raw2 = {}
+        current_profile = raw2 if isinstance(raw2, dict) else {}
+
+    now = datetime.now(timezone.utc).isoformat()
+    current_profile.update({
+        "subscription_status": source_profile.get("subscription_status", status),
+        "plan": source_profile.get("plan", "beta"),
+        "stripe_customer_id": source_profile.get("stripe_customer_id", ""),
+        "stripe_subscription_id": source_profile.get("stripe_subscription_id", ""),
+        "subscription_updated_at": now,
+        "claimed_from_email": stripe_email,
+    })
+
+    current_email = current_profile.get("email") or ""
+    save_result = _save_setting_json(profile_key, current_profile, user_key=current_user_key, user_email=current_email)
+    if not save_result.get("ok"):
+        return {"ok": False, "error": f"Found your subscription but could not save it: {save_result.get('error', 'unknown')}"}
+
+    return {"ok": True, "status": status}
+
+
 def save_user_gemini_key(user_key: str, gemini_api_key: str) -> dict:
     if not user_key:
         return {"ok": False, "error": "Missing user key."}
