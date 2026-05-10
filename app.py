@@ -351,6 +351,19 @@ hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
 [data-testid="stHorizontalBlock"] { gap: 0.3rem !important; }
 [data-testid="stHorizontalBlock"] > div > div { margin-bottom: 2px !important; }
 [data-testid="stVerticalBlock"] { gap: 6px !important; }
+
+/* Pipeline top action bar — tight spacing especially when stacked on narrow screens */
+.pa-pipe-controls + div [data-testid="stHorizontalBlock"] { gap: 4px !important; row-gap: 4px !important; margin-bottom: 6px !important; }
+.pa-pipe-controls + div [data-testid="stHorizontalBlock"] > [data-testid="column"] { padding: 0 !important; }
+.pa-pipe-controls + div [data-testid="stElementContainer"] { margin-bottom: 0 !important; }
+.pa-pipe-controls + div [data-testid="stVerticalBlock"] { gap: 0 !important; }
+.pa-pipe-controls + div .stButton > button,
+.pa-pipe-controls + div [data-baseweb="select"] > div,
+.pa-pipe-controls + div [data-testid="stTextInput"] input { height: 36px !important; min-height: 36px !important; }
+@media (max-width: 768px) {
+    .pa-pipe-controls + div [data-testid="stHorizontalBlock"] { gap: 4px !important; row-gap: 4px !important; }
+    .pa-pipe-controls + div [data-testid="stHorizontalBlock"] > [data-testid="column"] { margin-bottom: 0 !important; }
+}
 [data-testid="stMultiSelect"] > div { background: var(--bg-subtle) !important; border: 1px solid var(--slate-300) !important; }
 [data-testid="stMultiSelect"] span[data-baseweb="tag"] { background: var(--accent-light) !important; color: var(--accent) !important; border: 1px solid var(--green-border) !important; }
 [data-testid="stMarkdownContainer"] table { width: 100% !important; border-collapse: collapse !important; background: var(--bg-white) !important; border: 1px solid var(--slate-200) !important; box-shadow: var(--shadow-card) !important; }
@@ -4518,6 +4531,7 @@ def show_pipeline():
     my_name = st.session_state.get("user_name", "")
 
     # â”€â”€ Top action bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    st.markdown('<div class="pa-pipe-controls">', unsafe_allow_html=True)
     tb1, tb2, tb3, tb4, tb5 = st.columns([1.45, 1.9, 2.4, 1.8, 1.0])
     with tb1:
         if st.button("+Add Loan", use_container_width=True, type="primary"):
@@ -4561,7 +4575,7 @@ def show_pipeline():
     with tb5:
         st.markdown('<div class="pa-myloans-toggle">', unsafe_allow_html=True)
         my_loans_only = st.checkbox("My loans", key="pipeline_myloans")
-    st.markdown('</div>', unsafe_allow_html=True)
+    st.markdown('</div></div>', unsafe_allow_html=True)
 
     # â”€â”€ Add Loan form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if st.session_state.get("pipeline_add_open"):
