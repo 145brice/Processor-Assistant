@@ -303,24 +303,44 @@ def ensure_user_profile(user_key: str, *, email: str = "", display_name: str = "
     """Create or refresh the app-level user profile used for trial/subscription state."""
     if not user_key:
         return {}
-    now = datetime.now(timezone.utc).isoformat()
+    from datetime import timedelta
+    now = datetime.now(timezone.utc)
+    now_iso = now.isoformat()
     profile = _load_setting_json(_profile_key(user_key))
-    if not profile:
+    is_new = not profile
+    if is_new:
+        trial_end = (now + timedelta(days=7)).isoformat()
         profile = {
-            "trial_started_at": now,
+            "trial_started_at": now_iso,
+            "trial_start_date": now.date().isoformat(),
+            "trial_end_date": (now + timedelta(days=7)).date().isoformat(),
             "trial_days": 7,
             "subscription_status": "trialing",
             "plan": "beta",
             "terms_accepted_at": "",
         }
+    else:
+        # Back-fill trial_end_date for older profiles that don't have it
+        if not profile.get("trial_end_date") and profile.get("trial_started_at"):
+            try:
+                start = datetime.fromisoformat(str(profile["trial_started_at"]).replace("Z", "+00:00"))
+                if start.tzinfo is None:
+                    start = start.replace(tzinfo=timezone.utc)
+                profile["trial_start_date"] = start.date().isoformat()
+                profile["trial_end_date"] = (start + timedelta(days=7)).date().isoformat()
+            except Exception:
+                pass
+
+    google_email = email or profile.get("google_email", "") or profile.get("email", "")
     profile.update({
         "user_key": user_key,
-        "email": email or profile.get("email", ""),
+        "email": google_email,
+        "google_email": google_email,
         "display_name": display_name or profile.get("display_name", ""),
         "role": role or profile.get("role", ""),
-        "last_seen_at": now,
+        "last_seen_at": now_iso,
     })
-    _save_setting_json(_profile_key(user_key), profile, user_key=user_key, user_email=profile.get("email", ""))
+    _save_setting_json(_profile_key(user_key), profile, user_key=user_key, user_email=google_email)
     return profile
 
 
@@ -375,6 +395,7 @@ def update_subscription_by_email(
         profile = raw if isinstance(raw, dict) else {}
         profile.update({
             "email": email,
+            "stripe_email": email,
             "subscription_status": status,
             "plan": plan,
             "stripe_customer_id": stripe_customer_id or profile.get("stripe_customer_id", ""),
@@ -456,6 +477,7 @@ def claim_subscription_by_email(stripe_email: str, current_user_key: str) -> dic
         "stripe_customer_id": source_profile.get("stripe_customer_id", ""),
         "stripe_subscription_id": source_profile.get("stripe_subscription_id", ""),
         "subscription_updated_at": now,
+        "stripe_email": stripe_email,
         "claimed_from_email": stripe_email,
     })
 

@@ -1761,9 +1761,19 @@ def _user_trial_profile() -> dict:
 
 
 def _trial_days_left(profile: dict) -> int:
-    from datetime import datetime, timezone
-    started = str((profile or {}).get("trial_started_at") or "")
-    trial_days = int((profile or {}).get("trial_days") or 7)
+    from datetime import datetime, timezone, date
+    p = profile or {}
+    # Prefer explicit trial_end_date if present
+    end_date_str = str(p.get("trial_end_date") or "")
+    if end_date_str:
+        try:
+            end = date.fromisoformat(end_date_str)
+            return max(0, (end - date.today()).days)
+        except Exception:
+            pass
+    # Fall back to trial_started_at + trial_days
+    started = str(p.get("trial_started_at") or "")
+    trial_days = int(p.get("trial_days") or 7)
     try:
         start_dt = datetime.fromisoformat(started.replace("Z", "+00:00"))
         if start_dt.tzinfo is None:
