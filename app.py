@@ -352,17 +352,33 @@ hr { border-color: var(--slate-200) !important; margin: 12px 0 !important; }
 [data-testid="stHorizontalBlock"] > div > div { margin-bottom: 2px !important; }
 [data-testid="stVerticalBlock"] { gap: 6px !important; }
 
-/* Pipeline top action bar — tight spacing especially when stacked on narrow screens */
-.pa-pipe-controls + div [data-testid="stHorizontalBlock"] { gap: 4px !important; row-gap: 4px !important; margin-bottom: 6px !important; }
-.pa-pipe-controls + div [data-testid="stHorizontalBlock"] > [data-testid="column"] { padding: 0 !important; }
-.pa-pipe-controls + div [data-testid="stElementContainer"] { margin-bottom: 0 !important; }
-.pa-pipe-controls + div [data-testid="stVerticalBlock"] { gap: 0 !important; }
-.pa-pipe-controls + div .stButton > button,
-.pa-pipe-controls + div [data-baseweb="select"] > div,
-.pa-pipe-controls + div [data-testid="stTextInput"] input { height: 36px !important; min-height: 36px !important; }
-@media (max-width: 768px) {
-    .pa-pipe-controls + div [data-testid="stHorizontalBlock"] { gap: 4px !important; row-gap: 4px !important; }
-    .pa-pipe-controls + div [data-testid="stHorizontalBlock"] > [data-testid="column"] { margin-bottom: 0 !important; }
+/* Pipeline top action bar — tight spacing especially when stacked on narrow screens.
+   Uses :has() because Streamlit wraps the marker div in a stElementContainer,
+   so the + sibling combinator can't find the columns block directly. */
+[data-testid="stElementContainer"]:has(.pa-pipe-controls) {
+    margin-bottom: 0 !important;
+}
+[data-testid="stElementContainer"]:has(.pa-pipe-controls) + [data-testid="stElementContainer"] [data-testid="stHorizontalBlock"],
+[data-testid="stElementContainer"]:has(.pa-pipe-controls) ~ [data-testid="stElementContainer"]:first-of-type [data-testid="stHorizontalBlock"] {
+    gap: 4px !important;
+    row-gap: 4px !important;
+    margin-bottom: 6px !important;
+}
+[data-testid="stElementContainer"]:has(.pa-pipe-controls) ~ [data-testid="stElementContainer"] [data-testid="stHorizontalBlock"] [data-testid="column"] {
+    padding: 0 !important;
+    margin-bottom: 0 !important;
+}
+[data-testid="stElementContainer"]:has(.pa-pipe-controls) ~ [data-testid="stElementContainer"] [data-testid="stElementContainer"] {
+    margin-bottom: 0 !important;
+}
+[data-testid="stElementContainer"]:has(.pa-pipe-controls) ~ [data-testid="stElementContainer"] [data-testid="stVerticalBlock"] {
+    gap: 4px !important;
+}
+[data-testid="stElementContainer"]:has(.pa-pipe-controls) ~ [data-testid="stElementContainer"] .stButton > button,
+[data-testid="stElementContainer"]:has(.pa-pipe-controls) ~ [data-testid="stElementContainer"] [data-baseweb="select"] > div,
+[data-testid="stElementContainer"]:has(.pa-pipe-controls) ~ [data-testid="stElementContainer"] [data-testid="stTextInput"] input {
+    height: 36px !important;
+    min-height: 36px !important;
 }
 [data-testid="stMultiSelect"] > div { background: var(--bg-subtle) !important; border: 1px solid var(--slate-300) !important; }
 [data-testid="stMultiSelect"] span[data-baseweb="tag"] { background: var(--accent-light) !important; color: var(--accent) !important; border: 1px solid var(--green-border) !important; }
@@ -2287,7 +2303,7 @@ def show_login_page():
 
     st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
     if st.button("Try Sandbox - No Account Needed", type="primary", use_container_width=True):
-        _enter_sandbox(page="dashboard")
+        _enter_sandbox(page="pipeline")
         st.rerun()
     st.markdown('</div>', unsafe_allow_html=True)
     st.markdown(
