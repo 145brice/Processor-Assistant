@@ -6321,7 +6321,7 @@ def show_report_issue_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'âš ï¸ Report Issue</div>',
+        'Report Issue</div>',
         unsafe_allow_html=True,
     )
 
@@ -8232,39 +8232,6 @@ def show_pricing_page():
             unsafe_allow_html=True,
         )
     st.info("Beta pricing is available right now. Standard pricing is shown for transparency only.")
-    with st.expander("Stripe setup notes"):
-        st.markdown(
-            """
-The payment link is live. Automatic account unlocking uses the Stripe webhook service.
-
-Create a second Railway service from this same repo for Stripe webhooks:
-
-Start command:
-
-`python stripe_webhook_server.py`
-
-Then create a webhook endpoint in Stripe Developers > Webhooks using that service URL:
-
-`https://YOUR-WEBHOOK-SERVICE.up.railway.app/stripe/webhook`
-
-Listen for these events:
-
-- `checkout.session.completed`
-- `customer.subscription.created`
-- `customer.subscription.updated`
-- `customer.subscription.deleted`
-- `invoice.payment_succeeded`
-- `invoice.payment_failed`
-
-Put these Railway variables in the webhook service:
-
-- `STRIPE_WEBHOOK_SECRET`
-- `SUPABASE_URL`
-- `SUPABASE_SERVICE_ROLE_KEY`
-
-Leave the main Processor Assistant app service on its normal Streamlit start command.
-            """
-        )
 
 
 def show_chat_page():
