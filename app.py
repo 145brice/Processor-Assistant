@@ -293,7 +293,12 @@ button { text-align: left !important; justify-content: flex-start !important; }
 button * { text-align: left !important; }
 button p { text-align: left !important; width: 100% !important; }
 button > div { justify-content: flex-start !important; text-align: left !important; }
-.block-container { padding: 4.5rem 2rem 3rem 2rem !important; max-width: 1200px !important; }
+.block-container {
+    padding: 4.5rem 2rem 3rem 2rem !important;
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+}
 h1 { font-size: 24px !important; font-weight: 800 !important; color: var(--slate-900) !important; }
 h2, [data-testid="stMarkdownContainer"] h2, .main h2, .block-container h2 { font-size: 42px !important; font-weight: 800 !important; color: var(--accent) !important; padding: 8px 0 8px 14px !important; border-left: 4px solid var(--accent) !important; text-shadow: 0 0 16px rgba(59,130,246,0.5) !important; margin-bottom: 14px !important; line-height: 1.2 !important; }
 h2 span, [data-testid="stMarkdownContainer"] h2 span { font-size: inherit !important; color: var(--accent) !important; font-weight: inherit !important; }
@@ -1058,19 +1063,21 @@ hr { border-color: #1e293b !important; }
 .pa-pipe-dash {
     position: fixed;
     top: 0;
-    left: calc(var(--pa-sidebar-w) + 52px);
+    left: var(--pa-sidebar-w);
     right: 0;
     z-index: 9000;
     height: 56px;
     background: #0f1117;
     border-bottom: 1px solid #334155;
-    padding: 10px 32px 10px 14px;
+    padding: 10px 16px 10px 72px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.6);
     display: flex;
     align-items: center;
     gap: 14px;
-    overflow-x: auto;
+    overflow: hidden;
     white-space: nowrap;
+    min-width: 0;
+    box-sizing: border-box;
 }
 /* Solid backdrop strip covering the entire top so nothing scrolls through */
 .pa-pipe-dash::before {
@@ -1083,15 +1090,15 @@ hr { border-color: #1e293b !important; }
     background: #0f1117;
     z-index: -1;
 }
-body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
+body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
 body.pa-sidebar-hidden .pa-pipe-dash::before { left: 0; }
 @media (max-width: 768px) {
-    .pa-pipe-dash { left: calc(var(--pa-sidebar-w) + 52px); right: 12px; }
-    body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
+    .pa-pipe-dash { left: var(--pa-sidebar-w); right: 0; padding-left: 58px; }
+    body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 58px; }
 }
 @media (max-width: 480px) {
-    .pa-pipe-dash { left: calc(var(--pa-sidebar-w) + 52px); right: 8px; }
-    body.pa-sidebar-hidden .pa-pipe-dash { left: 60px; }
+    .pa-pipe-dash { left: var(--pa-sidebar-w); right: 0; padding-left: 58px; }
+    body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 58px; }
 }
 .pa-pipe-dash-title {
     font-size: 11px; font-weight: 700; color: #3b82f6;
@@ -1106,7 +1113,11 @@ body.pa-sidebar-hidden .pa-pipe-dash::before { left: 0; }
 }
 .pa-pipe-dash-row {
     display: flex; gap: 4px; align-items: center;
-    flex-shrink: 0;
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
 }
 .pa-pchip {
     display: inline-flex; align-items: baseline; gap: 4px;
@@ -1131,9 +1142,9 @@ body.pa-sidebar-hidden .pa-pipe-dash::before { left: 0; }
     text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
 }
 .pa-pipe-dash-bar {
-    height: 4px; width: 120px; background: #1e293b; border-radius: 2px;
+    height: 4px; width: 120px; max-width: 12vw; background: #1e293b; border-radius: 2px;
     overflow: hidden; display: flex;
-    flex-shrink: 0;
+    flex: 0 1 120px;
 }
 .pa-pipe-dash-bar > div { height: 100%; transition: width 0.3s; }
 /* Push main content down so it starts below the fixed header bar */
