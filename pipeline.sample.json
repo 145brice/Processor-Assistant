@@ -11,11 +11,79 @@
     "loan_type": "Conventional",
     "notes": "Waiting on 2 months bank statements from borrower.",
     "conditions": [
-      {"text": "Provide 2 most recent bank statements", "status": "Needed", "party": ["Borrower"]},
-      {"text": "VOE from employer — Allied Industries", "status": "Requested", "party": ["Borrower"]},
-      {"text": "Explanation letter for large deposit 3/12", "status": "Needed", "party": ["Borrower"]}
+      {
+        "text": "Provide 2 most recent bank statements",
+        "status": "Needed",
+        "party": [
+          "Borrower"
+        ]
+      },
+      {
+        "text": "VOE from employer — Allied Industries",
+        "status": "Requested",
+        "party": [
+          "Borrower"
+        ]
+      },
+      {
+        "text": "Explanation letter for large deposit 3/12",
+        "status": "Needed",
+        "party": [
+          "Borrower"
+        ]
+      }
     ],
-    "contacts": {"borrower_email": "carlos.reyes@email.com", "title": "Lone Star Title Co"},
+    "contacts": {
+      "borrower": {
+        "name": "Carlos Reyes",
+        "phone": "615-482-3301",
+        "email": "carlos.reyes@gmail.com"
+      },
+      "co_borrower": {
+        "name": "Diana Reyes",
+        "phone": "615-482-3302",
+        "email": "diana.reyes@gmail.com"
+      },
+      "loan_officer": {
+        "name": "Sarah Johnson",
+        "phone": "615-800-1001",
+        "email": "sjohnson@firsthomemtg.com"
+      },
+      "loan_processor": {
+        "name": "Brice Leasure",
+        "phone": "615-555-0100",
+        "email": "brice@processorassistant.com"
+      },
+      "realtor": {
+        "name": "Jake Whitfield",
+        "phone": "615-555-2211",
+        "email": "jake@nashvillehomes.com"
+      },
+      "insurance": {
+        "name": "Diane Pruitt",
+        "phone": "615-448-7700",
+        "email": "dpruitt@statefarm.com",
+        "company": "State Farm Insurance"
+      },
+      "title": {
+        "name": "Linda Carmichael",
+        "phone": "615-321-4400",
+        "email": "lcarmichael@titleworks.com",
+        "company": "TitleWorks of Tennessee"
+      },
+      "appraiser": {
+        "name": "Greg Holden",
+        "phone": "615-555-8833",
+        "email": "gholden@midstateappraisal.com",
+        "company": "Mid-State Appraisal Group"
+      },
+      "employer": {
+        "name": "HR Dept – Amazon",
+        "phone": "888-280-4331",
+        "email": "hr-verify@amazon.com",
+        "company": "Amazon Logistics"
+      }
+    },
     "created_by": "Sandbox",
     "assigned_to": ""
   },
@@ -31,11 +99,79 @@
     "loan_type": "FHA",
     "notes": "All docs requested. Title has commitment ready.",
     "conditions": [
-      {"text": "Copy of divorce decree", "status": "Requested", "party": ["Borrower"]},
-      {"text": "12 months cancelled rent checks or VOR", "status": "Requested", "party": ["Borrower"]},
-      {"text": "Title commitment — exception items", "status": "Ready to Clear", "party": ["Title"]}
+      {
+        "text": "Copy of divorce decree",
+        "status": "Requested",
+        "party": [
+          "Borrower"
+        ]
+      },
+      {
+        "text": "12 months cancelled rent checks or VOR",
+        "status": "Requested",
+        "party": [
+          "Borrower"
+        ]
+      },
+      {
+        "text": "Title commitment — exception items",
+        "status": "Ready to Clear",
+        "party": [
+          "Title"
+        ]
+      }
     ],
-    "contacts": {"borrower_email": "tjohnson@email.com", "title": "Texas Premier Title"},
+    "contacts": {
+      "borrower": {
+        "name": "Marcus Johnson",
+        "phone": "901-772-5540",
+        "email": "marcusj82@yahoo.com"
+      },
+      "co_borrower": {
+        "name": "Tina Johnson",
+        "phone": "901-772-5541",
+        "email": "tinaj82@yahoo.com"
+      },
+      "loan_officer": {
+        "name": "David Smith",
+        "phone": "901-800-2002",
+        "email": "dsmith@memphismortgage.com"
+      },
+      "loan_processor": {
+        "name": "Brice Leasure",
+        "phone": "615-555-0100",
+        "email": "brice@processorassistant.com"
+      },
+      "realtor": {
+        "name": "Carol Simmons",
+        "phone": "901-555-4422",
+        "email": "csimmons@bluffcityrealty.com"
+      },
+      "insurance": {
+        "name": "Tony Ferrara",
+        "phone": "901-334-9900",
+        "email": "tferrara@allstate.com",
+        "company": "Allstate Insurance"
+      },
+      "title": {
+        "name": "Paula Reeves",
+        "phone": "901-210-5500",
+        "email": "preeves@shelbyco-title.com",
+        "company": "Shelby County Title Co."
+      },
+      "appraiser": {
+        "name": "Kevin Marsh",
+        "phone": "901-555-7744",
+        "email": "kmarsh@tristateval.com",
+        "company": "Tri-State Valuation"
+      },
+      "employer": {
+        "name": "HR – FedEx Corp",
+        "phone": "800-463-3339",
+        "email": "employment@fedex.com",
+        "company": "FedEx Corporation"
+      }
+    },
     "created_by": "Sandbox",
     "assigned_to": ""
   },
@@ -51,11 +187,74 @@
     "loan_type": "Conventional",
     "notes": "CTC issued. Scheduling closing with title.",
     "conditions": [
-      {"text": "Final pay stub within 30 days of closing", "status": "Cleared", "party": ["Borrower"]},
-      {"text": "Homeowner insurance binder", "status": "Cleared", "party": ["Borrower"]},
-      {"text": "Title clear to close", "status": "Cleared", "party": ["Title"]}
+      {
+        "text": "Final pay stub within 30 days of closing",
+        "status": "Cleared",
+        "party": [
+          "Borrower"
+        ]
+      },
+      {
+        "text": "Homeowner insurance binder",
+        "status": "Cleared",
+        "party": [
+          "Borrower"
+        ]
+      },
+      {
+        "text": "Title clear to close",
+        "status": "Cleared",
+        "party": [
+          "Title"
+        ]
+      }
     ],
-    "contacts": {"borrower_email": "aisha.patel@email.com", "title": "Gulf Coast Title"},
+    "contacts": {
+      "borrower": {
+        "name": "Aisha Patel",
+        "phone": "404-881-6610",
+        "email": "aisha.patel@outlook.com"
+      },
+      "loan_officer": {
+        "name": "Maria Rodriguez",
+        "phone": "404-800-3003",
+        "email": "mrodriguez@atlantamtg.com"
+      },
+      "loan_processor": {
+        "name": "Brice Leasure",
+        "phone": "615-555-0100",
+        "email": "brice@processorassistant.com"
+      },
+      "realtor": {
+        "name": "Brandon Holt",
+        "phone": "404-555-6633",
+        "email": "bholt@peachstaterealty.com"
+      },
+      "insurance": {
+        "name": "Sandra Yates",
+        "phone": "404-229-8800",
+        "email": "syates@progressiveins.com",
+        "company": "Progressive Insurance"
+      },
+      "title": {
+        "name": "James Wilder",
+        "phone": "404-510-3300",
+        "email": "jwilder@fulcotitle.com",
+        "company": "Fulco Title & Escrow"
+      },
+      "appraiser": {
+        "name": "Rhonda Price",
+        "phone": "404-555-9900",
+        "email": "rprice@atlantaappraisals.com",
+        "company": "Atlanta Appraisal Assoc."
+      },
+      "employer": {
+        "name": "HR – Emory Healthcare",
+        "phone": "404-778-7777",
+        "email": "employment@emoryhealthcare.org",
+        "company": "Emory Healthcare"
+      }
+    },
     "created_by": "Sandbox",
     "assigned_to": ""
   },
@@ -71,10 +270,72 @@
     "loan_type": "VA",
     "notes": "Lock expired. Borrower unresponsive. Need to extend or cancel.",
     "conditions": [
-      {"text": "Updated COE — Certificate of Eligibility", "status": "Needed", "party": ["Borrower"]},
-      {"text": "Pest inspection report", "status": "Needed", "party": ["Borrower"]}
+      {
+        "text": "Updated COE — Certificate of Eligibility",
+        "status": "Needed",
+        "party": [
+          "Borrower"
+        ]
+      },
+      {
+        "text": "Pest inspection report",
+        "status": "Needed",
+        "party": [
+          "Borrower"
+        ]
+      }
     ],
-    "contacts": {"borrower_email": "rkim@email.com"},
+    "contacts": {
+      "borrower": {
+        "name": "Robert Kim",
+        "phone": "206-554-3310",
+        "email": "robertkim@gmail.com"
+      },
+      "co_borrower": {
+        "name": "Sandra Kim",
+        "phone": "206-554-3311",
+        "email": "sandrakim@gmail.com"
+      },
+      "loan_officer": {
+        "name": "Tom Wilson",
+        "phone": "206-800-4004",
+        "email": "twilson@pugetsoundmtg.com"
+      },
+      "loan_processor": {
+        "name": "Brice Leasure",
+        "phone": "615-555-0100",
+        "email": "brice@processorassistant.com"
+      },
+      "realtor": {
+        "name": "Amy Thornton",
+        "phone": "206-555-8811",
+        "email": "athornton@emeraldcityrealty.com"
+      },
+      "insurance": {
+        "name": "Mark Dugan",
+        "phone": "206-441-5500",
+        "email": "mdugan@nationwideins.com",
+        "company": "Nationwide Insurance"
+      },
+      "title": {
+        "name": "Rachel Stern",
+        "phone": "206-382-4400",
+        "email": "rstern@pnwtitle.com",
+        "company": "Pacific NW Title Co."
+      },
+      "appraiser": {
+        "name": "Daniel Foss",
+        "phone": "206-555-7722",
+        "email": "dfoss@seattleappraisers.com",
+        "company": "Seattle Appraisal Group"
+      },
+      "employer": {
+        "name": "HR – Boeing",
+        "phone": "425-965-1234",
+        "email": "employment@boeing.com",
+        "company": "The Boeing Company"
+      }
+    },
     "created_by": "Sandbox",
     "assigned_to": ""
   },
@@ -82,7 +343,7 @@
     "id": 5,
     "loan_num": "LN-2024-088",
     "borrower": "Jennifer Morales",
-    "status": "Closed",
+    "status": "Cleared",
     "closing_date": "2024-12-20",
     "lock_expiry": "2024-12-18",
     "loan_amount": 375000,
@@ -90,10 +351,559 @@
     "loan_type": "Conventional",
     "notes": "Funded 12/20/2024. All docs in file.",
     "conditions": [
-      {"text": "All conditions cleared", "status": "Cleared", "party": ["Borrower"]}
+      {
+        "text": "All conditions cleared",
+        "status": "Cleared",
+        "party": [
+          "Borrower"
+        ]
+      }
     ],
-    "contacts": {"borrower_email": "j.morales@email.com", "title": "DFW Title Group"},
+    "contacts": {
+      "borrower": {
+        "name": "Jennifer Morales",
+        "phone": "602-334-4420",
+        "email": "jmorales@hotmail.com"
+      },
+      "loan_officer": {
+        "name": "Chris Lee",
+        "phone": "602-800-5005",
+        "email": "clee@desertmtg.com"
+      },
+      "loan_processor": {
+        "name": "Brice Leasure",
+        "phone": "615-555-0100",
+        "email": "brice@processorassistant.com"
+      },
+      "realtor": {
+        "name": "Steven Nunez",
+        "phone": "602-555-3344",
+        "email": "snunez@arizonarealty.com"
+      },
+      "insurance": {
+        "name": "Carla Webb",
+        "phone": "602-771-3300",
+        "email": "cwebb@libertymutual.com",
+        "company": "Liberty Mutual Insurance"
+      },
+      "title": {
+        "name": "Oscar Delaney",
+        "phone": "602-252-7700",
+        "email": "odelaney@arizonatitle.com",
+        "company": "Arizona Title Agency"
+      },
+      "appraiser": {
+        "name": "Faye Huang",
+        "phone": "602-555-6611",
+        "email": "fhuang@valleyvalu.com",
+        "company": "Valley Valuation LLC"
+      },
+      "employer": {
+        "name": "HR – Banner Health",
+        "phone": "602-747-4000",
+        "email": "hr@bannerhealth.com",
+        "company": "Banner Health"
+      }
+    },
     "created_by": "Sandbox",
-    "assigned_to": ""
+    "assigned_to": "",
+    "updated": "2026-04-18"
+  },
+  {
+    "id": 11,
+    "loan_num": "LN-2025-005",
+    "borrower": "David & Sarah Kim",
+    "status": "Closed",
+    "due_date": "2026-04-05",
+    "closing_date": "2026-04-05",
+    "lock_expiry": "2026-04-10",
+    "commitment_date": "2026-03-31",
+    "missing_docs": "",
+    "folder_path": "loan_docs/LN-2025-005",
+    "created_by": "test_processor",
+    "assigned_to": "",
+    "created": "2026-04-20",
+    "updated": "2026-04-20",
+    "notes": "",
+    "conditions": [
+      {
+        "description": "All conditions cleared - loan funded",
+        "status": "cleared",
+        "due_date": "2026-04-05"
+      }
+    ],
+    "contacts": {
+      "borrower": {
+        "name": "David Kim",
+        "phone": "555-567-8901",
+        "email": "david@email.com"
+      },
+      "co_borrower": {
+        "name": "Sarah Kim",
+        "phone": "555-567-8902",
+        "email": "sarah@email.com"
+      },
+      "loan_officer": {
+        "name": "Chris Lee",
+        "phone": "555-999-0005",
+        "email": "chris@broker.com"
+      }
+    }
+  },
+  {
+    "id": 17,
+    "loan_num": "LN-2026-006",
+    "borrower": "Priya & Anand Patel",
+    "status": "Pending",
+    "due_date": "2026-05-13",
+    "closing_date": "2026-05-28",
+    "lock_expiry": "2026-05-31",
+    "commitment_date": "2026-05-08",
+    "missing_docs": "Gift letter, Explanation letter for large deposit",
+    "folder_path": "loan_docs/LN-2026-006",
+    "created_by": "test_processor",
+    "assigned_to": "",
+    "created": "2026-05-10",
+    "updated": "2026-05-10",
+    "notes": "",
+    "conditions": [
+      {
+        "description": "Gift letter from borrower's parents",
+        "status": "Pending",
+        "due_date": "2026-05-12"
+      },
+      {
+        "description": "Letter of explanation for $12,000 deposit on 04/15",
+        "status": "Pending",
+        "due_date": "2026-05-13"
+      },
+      {
+        "description": "Copy of earnest money check and proof of funds",
+        "status": "Cleared",
+        "due_date": "2026-05-09"
+      },
+      {
+        "description": "Homeowners insurance binder",
+        "status": "Requested",
+        "due_date": "2026-05-15"
+      }
+    ],
+    "contacts": {
+      "borrower": {
+        "name": "Priya Patel",
+        "phone": "615-201-4433",
+        "email": "priya.patel@gmail.com"
+      },
+      "co_borrower": {
+        "name": "Anand Patel",
+        "phone": "615-201-4434",
+        "email": "anand.patel@gmail.com"
+      },
+      "loan_officer": {
+        "name": "Rachel Monroe",
+        "phone": "615-800-1122",
+        "email": "rmonroe@firsthome.com"
+      },
+      "loan_processor": {
+        "name": "Brice Leasure",
+        "phone": "615-555-0100",
+        "email": "brice@processorassistant.com"
+      },
+      "realtor": {
+        "name": "Greg Schultz",
+        "phone": "615-555-7788",
+        "email": "greg@nashvillerealty.com"
+      },
+      "insurance": {
+        "name": "Pam Hollingsworth",
+        "phone": "615-383-9900",
+        "email": "phollingsworth@farmersins.com",
+        "company": "Farmers Insurance"
+      },
+      "title": {
+        "name": "Nancy Booker",
+        "phone": "615-244-5500",
+        "email": "nbooker@volunteerstatetitle.com",
+        "company": "Volunteer State Title"
+      },
+      "appraiser": {
+        "name": "Marcus Webb",
+        "phone": "615-555-4466",
+        "email": "mwebb@nashappraisals.com",
+        "company": "Nashville Appraisal Group"
+      },
+      "employer": {
+        "name": "HR – Vanderbilt Univ",
+        "phone": "615-322-7311",
+        "email": "hr@vanderbilt.edu",
+        "company": "Vanderbilt University"
+      }
+    }
+  },
+  {
+    "id": 18,
+    "loan_num": "LN-2026-007",
+    "borrower": "Marcus Johnson",
+    "status": "Requested",
+    "due_date": "2026-05-20",
+    "closing_date": "2026-06-11",
+    "lock_expiry": "2026-06-14",
+    "commitment_date": "2026-05-09",
+    "missing_docs": "VOE from employer, 12-month rental history",
+    "folder_path": "loan_docs/LN-2026-007",
+    "created_by": "test_processor",
+    "assigned_to": "",
+    "created": "2026-05-10",
+    "updated": "2026-05-10",
+    "notes": "",
+    "conditions": [
+      {
+        "description": "Verbal verification of employment",
+        "status": "Requested",
+        "due_date": "2026-05-12"
+      },
+      {
+        "description": "12-month rental history from landlord",
+        "status": "Requested",
+        "due_date": "2026-05-15"
+      },
+      {
+        "description": "Most recent 30-day pay stubs",
+        "status": "Cleared",
+        "due_date": "2026-05-07"
+      },
+      {
+        "description": "2023 and 2024 W-2s",
+        "status": "Cleared",
+        "due_date": "2026-05-06"
+      },
+      {
+        "description": "60-day bank statements",
+        "status": "Pending",
+        "due_date": "2026-05-17"
+      }
+    ],
+    "contacts": {
+      "borrower": {
+        "name": "Marcus Johnson",
+        "phone": "901-338-2291",
+        "email": "marcusj@outlook.com"
+      },
+      "loan_officer": {
+        "name": "Tanya Brooks",
+        "phone": "901-800-5533",
+        "email": "tbrooks@mortgagepro.com"
+      },
+      "loan_processor": {
+        "name": "Brice Leasure",
+        "phone": "615-555-0100",
+        "email": "brice@processorassistant.com"
+      },
+      "realtor": {
+        "name": "Denise Carr",
+        "phone": "901-555-4411",
+        "email": "denise@midsouthrealty.com"
+      },
+      "insurance": {
+        "name": "Victor Okafor",
+        "phone": "901-522-7700",
+        "email": "vokafor@travelerins.com",
+        "company": "Travelers Insurance"
+      },
+      "title": {
+        "name": "Beth Cranford",
+        "phone": "901-525-3300",
+        "email": "bcranford@midtownsettle.com",
+        "company": "Midtown Settlement Services"
+      },
+      "appraiser": {
+        "name": "Lee Atkinson",
+        "phone": "901-555-8833",
+        "email": "latkinson@midsouthappr.com",
+        "company": "Mid-South Appraisers"
+      },
+      "employer": {
+        "name": "HR – Methodist Hospital",
+        "phone": "901-516-8274",
+        "email": "hr@methodisthealth.org",
+        "company": "Methodist Le Bonheur Healthcare"
+      }
+    }
+  },
+  {
+    "id": 19,
+    "loan_num": "LN-2026-008",
+    "borrower": "Helen & Frank Kowalski",
+    "status": "Overdue",
+    "due_date": "2026-05-07",
+    "closing_date": "2026-05-24",
+    "lock_expiry": "2026-05-22",
+    "commitment_date": "2026-05-02",
+    "missing_docs": "2024 tax returns (still outstanding)",
+    "folder_path": "loan_docs/LN-2026-008",
+    "created_by": "test_processor",
+    "assigned_to": "",
+    "created": "2026-05-10",
+    "updated": "2026-05-10",
+    "notes": "",
+    "conditions": [
+      {
+        "description": "2024 federal tax returns (both borrowers)",
+        "status": "Overdue",
+        "due_date": "2026-05-07"
+      },
+      {
+        "description": "Signed 4506-C for 2023 and 2024",
+        "status": "Overdue",
+        "due_date": "2026-05-05"
+      },
+      {
+        "description": "Current mortgage statement",
+        "status": "Cleared",
+        "due_date": "2026-05-04"
+      },
+      {
+        "description": "HOI renewal declaration page",
+        "status": "Requested",
+        "due_date": "2026-05-13"
+      }
+    ],
+    "contacts": {
+      "borrower": {
+        "name": "Helen Kowalski",
+        "phone": "414-772-0093",
+        "email": "helen.k@yahoo.com"
+      },
+      "co_borrower": {
+        "name": "Frank Kowalski",
+        "phone": "414-772-0094",
+        "email": "frank.k@yahoo.com"
+      },
+      "loan_officer": {
+        "name": "Steve Paulson",
+        "phone": "414-800-3344",
+        "email": "spaulson@refiplus.com"
+      },
+      "loan_processor": {
+        "name": "Brice Leasure",
+        "phone": "615-555-0100",
+        "email": "brice@processorassistant.com"
+      },
+      "insurance": {
+        "name": "Gail Hoffman",
+        "phone": "414-276-5500",
+        "email": "ghoffman@ericksonnins.com",
+        "company": "Erickson Insurance Group"
+      },
+      "title": {
+        "name": "Tom Czerwinski",
+        "phone": "414-224-6600",
+        "email": "tczerwinski@milwaukeetitle.com",
+        "company": "Milwaukee Title LLC"
+      },
+      "appraiser": {
+        "name": "Janet Kopp",
+        "phone": "414-555-2277",
+        "email": "jkopp@greatlakesval.com",
+        "company": "Great Lakes Valuation"
+      },
+      "employer": {
+        "name": "HR – Johnson Controls",
+        "phone": "414-524-1200",
+        "email": "hr@johnsoncontrols.com",
+        "company": "Johnson Controls"
+      }
+    }
+  },
+  {
+    "id": 20,
+    "loan_num": "LN-2026-009",
+    "borrower": "Aaliyah Washington",
+    "status": "Cleared",
+    "due_date": "2026-05-14",
+    "closing_date": "2026-05-16",
+    "lock_expiry": "2026-05-18",
+    "commitment_date": "2026-04-28",
+    "missing_docs": "",
+    "folder_path": "loan_docs/LN-2026-009",
+    "created_by": "test_processor",
+    "assigned_to": "",
+    "created": "2026-05-10",
+    "updated": "2026-05-10",
+    "notes": "",
+    "conditions": [
+      {
+        "description": "USDA Conditional Commitment received",
+        "status": "Cleared",
+        "due_date": "2026-05-05"
+      },
+      {
+        "description": "Final inspection certificate",
+        "status": "Cleared",
+        "due_date": "2026-05-08"
+      },
+      {
+        "description": "Homeowners insurance binder",
+        "status": "Cleared",
+        "due_date": "2026-05-07"
+      },
+      {
+        "description": "Title commitment",
+        "status": "Cleared",
+        "due_date": "2026-05-03"
+      }
+    ],
+    "contacts": {
+      "borrower": {
+        "name": "Aaliyah Washington",
+        "phone": "731-445-8820",
+        "email": "aaliyah.w@gmail.com"
+      },
+      "loan_officer": {
+        "name": "Kim Tran",
+        "phone": "731-800-6677",
+        "email": "ktran@ruralloans.com"
+      },
+      "loan_processor": {
+        "name": "Brice Leasure",
+        "phone": "615-555-0100",
+        "email": "brice@processorassistant.com"
+      },
+      "realtor": {
+        "name": "Paul Gibbs",
+        "phone": "731-555-9901",
+        "email": "pgibbs@homesteadrealty.com"
+      },
+      "insurance": {
+        "name": "Donna Treadwell",
+        "phone": "731-668-4400",
+        "email": "dtreadwell@countryins.com",
+        "company": "Country Insurance & Financial"
+      },
+      "title": {
+        "name": "First American Title – Jackson",
+        "phone": "731-424-5500",
+        "email": "closing@firstamjackson.com",
+        "company": "First American Title"
+      },
+      "appraiser": {
+        "name": "Clint Harper",
+        "phone": "731-555-3366",
+        "email": "charper@westtnappraiser.com",
+        "company": "West TN Appraisal Services"
+      },
+      "employer": {
+        "name": "HR – Jackson-Madison County School",
+        "phone": "731-664-2510",
+        "email": "hr@jmcss.org",
+        "company": "Jackson-Madison County Schools"
+      }
+    }
+  },
+  {
+    "id": 21,
+    "loan_num": "LN-2026-010",
+    "borrower": "Derek & Monica Ruiz",
+    "status": "Pending",
+    "due_date": "2026-05-24",
+    "closing_date": "2026-06-21",
+    "lock_expiry": "2026-06-24",
+    "commitment_date": "2026-05-10",
+    "missing_docs": "CPA-prepared P&L, Business bank statements (12 mo), Self-employment docs",
+    "folder_path": "loan_docs/LN-2026-010",
+    "created_by": "test_processor",
+    "assigned_to": "",
+    "created": "2026-05-10",
+    "updated": "2026-05-10",
+    "notes": "",
+    "conditions": [
+      {
+        "description": "CPA-prepared profit & loss statement (YTD)",
+        "status": "Pending",
+        "due_date": "2026-05-17"
+      },
+      {
+        "description": "12 months business bank statements",
+        "status": "Pending",
+        "due_date": "2026-05-20"
+      },
+      {
+        "description": "Business license / articles of incorporation",
+        "status": "Requested",
+        "due_date": "2026-05-15"
+      },
+      {
+        "description": "2022, 2023, 2024 personal tax returns",
+        "status": "Cleared",
+        "due_date": "2026-05-09"
+      },
+      {
+        "description": "Asset statements (investment + reserve accounts)",
+        "status": "Cleared",
+        "due_date": "2026-05-08"
+      },
+      {
+        "description": "Signed purchase contract with all addenda",
+        "status": "Cleared",
+        "due_date": "2026-05-05"
+      }
+    ],
+    "contacts": {
+      "borrower": {
+        "name": "Derek Ruiz",
+        "phone": "512-881-6640",
+        "email": "derek.ruiz@ruizventures.com"
+      },
+      "co_borrower": {
+        "name": "Monica Ruiz",
+        "phone": "512-881-6641",
+        "email": "monica.ruiz@gmail.com"
+      },
+      "loan_officer": {
+        "name": "Amanda Pierce",
+        "phone": "512-800-9988",
+        "email": "apierce@jumbohome.com"
+      },
+      "loan_processor": {
+        "name": "Brice Leasure",
+        "phone": "615-555-0100",
+        "email": "brice@processorassistant.com"
+      },
+      "realtor": {
+        "name": "Carlos Vega",
+        "phone": "512-555-3310",
+        "email": "cvega@luxerealty.com"
+      },
+      "insurance": {
+        "name": "Patricia Nguyen",
+        "phone": "512-474-8800",
+        "email": "pnguyen@chubbrealty.com",
+        "company": "Chubb Insurance"
+      },
+      "title": {
+        "name": "Lone Star Title – Austin",
+        "phone": "512-555-7700",
+        "email": "escrow@lonestartitle.com",
+        "company": "Lone Star Title Company"
+      },
+      "appraiser": {
+        "name": "Harold Quinn",
+        "phone": "512-555-5544",
+        "email": "hquinn@texashighappr.com",
+        "company": "Texas High-End Appraisals"
+      },
+      "employer": {
+        "name": "Ruiz Ventures LLC (self)",
+        "phone": "512-881-6640",
+        "email": "derek.ruiz@ruizventures.com",
+        "company": "Ruiz Ventures LLC"
+      },
+      "cpa": {
+        "name": "Sylvia Moreno CPA",
+        "phone": "512-476-3300",
+        "email": "smoreno@austincpa.com",
+        "company": "Moreno & Associates CPA"
+      }
+    }
   }
 ]
