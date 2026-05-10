@@ -5264,9 +5264,8 @@ def show_pipeline():
 
     # â”€â”€ Visual break between header section and loan rows â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.markdown(
-        '<div style="height:28px;"></div>'
-        '<div style="height:2px;background:linear-gradient(90deg,rgba(59,130,246,0.35) 0%,rgba(59,130,246,0.08) 60%,transparent 100%);margin-bottom:0;"></div>'
-        '<div style="display:flex;align-items:center;gap:14px;margin:22px 0 18px 0;">'
+        '<div style="height:2px;background:linear-gradient(90deg,rgba(59,130,246,0.35) 0%,rgba(59,130,246,0.08) 60%,transparent 100%);margin:8px 0 0 0;"></div>'
+        '<div style="display:flex;align-items:center;gap:14px;margin:6px 0 6px 0;">'
         '<div style="font-size:13px;font-weight:800;color:#3b82f6;text-transform:uppercase;letter-spacing:2px;'
         'padding:4px 12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:4px;">Loans</div>'
         '<div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>'
