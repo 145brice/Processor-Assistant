@@ -3585,7 +3585,7 @@ def show_dashboard():
                             _stamp_current_user_on_loan(_new_lid, assigned=True)
                             _la(_new_lid, "created", f"Loan created from scanned {_batch['type']}",
                                 user=st.session_state.get("user_name", ""))
-                            st.toast(f"Loan created for {_nl_borrower}", icon="âœ…")
+                            st.toast(f"Loan created for {_nl_borrower}")
                             st.session_state.pop(f"ds_start_new_{_bidx}", None)
                             st.rerun()
 
@@ -5434,7 +5434,7 @@ def show_pipeline():
             delete_loan(lid)
             st.session_state.pop(_del_key, None)
             st.query_params.clear()
-            st.toast("Moved to Trash", icon="ðŸ—‘ï¸")
+            st.toast("Moved to Trash")
             st.rerun()
         _qp_cancel = _qp.get("cancel_del", "")
         if isinstance(_qp_cancel, list):
@@ -5610,7 +5610,7 @@ def show_pipeline():
                         fill_template("HOI Request.docx", _ctx, _out)
                         log_activity(lid, "generated", "HOI Request generated", user=my_name)
                         st.session_state[f"_pl_hoi_path_{lid}"] = _out
-                        st.toast("HOI Request generated", icon="âœ…")
+                        st.toast("HOI Request generated")
                         st.rerun()
                     except Exception as _e:
                         st.error(f"HOI gen failed: {_e}")
@@ -5619,7 +5619,7 @@ def show_pipeline():
                     try:
                         with open(_p_hoi, "rb") as _fh:
                             st.download_button(
-                                "â¬‡ Download HOI",
+                                "Download HOI",
                                 _fh.read(),
                                 file_name=_p_hoi.split(chr(92))[-1] if chr(92) in _p_hoi else _p_hoi.split("/")[-1],
                                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -5662,7 +5662,7 @@ def show_pipeline():
                         fill_template("Title Request copy.docx", _ctx, _out)
                         log_activity(lid, "generated", "Title Request generated", user=my_name)
                         st.session_state[f"_pl_title_path_{lid}"] = _out
-                        st.toast("Title Request generated", icon="âœ…")
+                        st.toast("Title Request generated")
                         st.rerun()
                     except Exception as _e:
                         st.error(f"Title gen failed: {_e}")
@@ -5671,7 +5671,7 @@ def show_pipeline():
                     try:
                         with open(_p_ttl, "rb") as _fh:
                             st.download_button(
-                                "â¬‡ Download Title",
+                                "Download Title",
                                 _fh.read(),
                                 file_name=_p_ttl.split(chr(92))[-1] if chr(92) in _p_ttl else _p_ttl.split("/")[-1],
                                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -5807,7 +5807,7 @@ def show_pipeline():
             _new_ret_days = RETENTION_OPTIONS[_new_ret]
             if _new_ret_days != _cur_retention:
                 set_retention_days(_new_ret_days)
-                st.toast(f"Retention set to {_new_ret}", icon="âœ…")
+                st.toast(f"Retention set to {_new_ret}")
                 st.rerun()
         with rt3:
             if trash_items and st.button("Empty Removed", key="empty_trash", use_container_width=True):
@@ -5843,12 +5843,12 @@ def show_pipeline():
                 with tc2:
                     if st.button("Restore", key=f"restore_{t_lid}", use_container_width=True):
                         restore_loan(t_lid)
-                        st.toast(f"Restored #{tl.get('loan_num', '')}", icon="Resetï¸")
+                        st.toast(f"Restored #{tl.get('loan_num', '')}")
                         st.rerun()
                 with tc3:
                     if st.button("Delete", key=f"permdel_{t_lid}", use_container_width=True):
                         permanently_delete(t_lid)
-                        st.toast("Permanently deleted", icon="âœ—")
+                        st.toast("Permanently deleted")
                         st.rerun()
 
 
@@ -8833,7 +8833,7 @@ def show_loan_detail():
                     f"Thank you,\n{_ctx['loan_processor']}"
                 )
                 st.session_state[f"_gen_hoi_email_{lid}"] = _build_gmail_compose_url(_to, _subject, _body)
-                st.toast("HOI Request generated", icon="âœ…")
+                st.toast("HOI Request generated")
                 st.rerun()
             except Exception as _e:
                 st.error(f"Generation failed: {_e}")
@@ -8868,7 +8868,7 @@ def show_loan_detail():
                     f"Thank you,\n{_ctx['loan_processor']}"
                 )
                 st.session_state[f"_gen_title_email_{lid}"] = _build_gmail_compose_url(_to, _subject, _body)
-                st.toast("Title Request generated", icon="âœ…")
+                st.toast("Title Request generated")
                 st.rerun()
             except Exception as _e:
                 st.error(f"Generation failed: {_e}")
@@ -9378,7 +9378,7 @@ def show_loan_detail():
                     update_loan(lid, **_upd)
                     log_activity(lid, "upload", f"Purchase Contract scanned â€” contacts merged", user=my_name)
                     st.session_state.pop(_scan_key, None)
-                    st.toast("Contacts merged into loan", icon="âœ…")
+                    st.toast("Contacts merged into loan")
                     st.rerun()
 
             # â”€â”€ 1003 Application â†’ merge contacts â”€â”€
@@ -9412,7 +9412,7 @@ def show_loan_detail():
                     update_loan(lid, contacts=_new_contacts)
                     log_activity(lid, "upload", f"1003 Application scanned â€” contacts merged", user=my_name)
                     st.session_state.pop(_scan_key, None)
-                    st.toast("Contacts merged into loan", icon="âœ…")
+                    st.toast("Contacts merged into loan")
                     st.rerun()
 
             # â”€â”€ All other doc types â†’ merge conditions â”€â”€
@@ -9459,7 +9459,7 @@ def show_loan_detail():
                         update_loan(lid, conditions=_existing)
                         log_activity(lid, "upload", f"{_sr_dtype} scanned â€” {_added} condition(s) added", user=my_name)
                         st.session_state.pop(_scan_key, None)
-                        st.toast(f"{_added} condition(s) merged", icon="âœ…")
+                        st.toast(f"{_added} condition(s) merged")
                         st.rerun()
                 else:
                     st.info("No conditions extracted from this document.")
@@ -9816,7 +9816,7 @@ def show_loan_detail():
                                 f"{len(_af_found)} found, {len(_af_missing)} missing",
                                 user=my_name)
                             st.session_state.pop(_af_key, None)
-                            st.toast(f"{_added} conditions merged into loan", icon="âœ…")
+                            st.toast(f"{_added} conditions merged into loan")
                             st.rerun()
                     with _mc2:
                         if st.button("Merge conditions only (skip folder results)",
@@ -9836,7 +9836,7 @@ def show_loan_detail():
                                 f"Approval letter scanned â€” {_added} condition(s) merged",
                                 user=my_name)
                             st.session_state.pop(_af_key, None)
-                            st.toast(f"{_added} conditions merged", icon="âœ…")
+                            st.toast(f"{_added} conditions merged")
                             st.rerun()
 
                 elif _af_scan_res and _af_scan_res.get("error"):
@@ -9857,7 +9857,7 @@ def show_loan_detail():
         log_activity(lid, "note", f"Note updated: {_new_notes[:80]}", user=my_name)
         from sharing import notify_shared_members as _nsm
         _nsm(loan, my_name, "updated")
-        st.toast("Notes saved", icon="âœ…")
+        st.toast("Notes saved")
         st.rerun()
 
     # â”€â”€ Quick Actions â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
