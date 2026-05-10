@@ -2070,51 +2070,113 @@ def _handle_google_oauth_callback() -> bool:
 
 
 def _render_gemini_key_prompt() -> None:
-    """Prompt signed-in users to save a Gemini key if none is stored yet."""
+    """3-step onboarding wizard for new signed-in users without a Gemini key."""
     if not st.session_state.get("authenticated"):
         return
     if st.session_state.get("sandbox_mode", False):
         return
     if st.session_state.get("user_gemini_api_key"):
         return
+    if st.session_state.get("gemini_onboarding_skipped"):
+        return
 
     user_key = _current_auth_user_key()
     if not user_key:
         return
 
-    with st.container(border=True):
-        st.markdown("### Add Your Gemini 2.5 Flash API Key")
-        st.caption("Processor Assistant needs your Gemini 2.5 Flash API key for smart document parsing. We save it encrypted to your signed-in account.")
-        with st.form("gemini_key_bootstrap_form"):
-            gemini_key = st.text_input(
-                "Gemini API Key",
-                type="password",
-                placeholder="Paste your Gemini API key here",
-                help="Create one at https://aistudio.google.com/app/apikey",
-            )
-            save_key = st.form_submit_button("Save Gemini Key", type="primary")
-            if save_key:
-                if not gemini_key.strip():
-                    st.error("Please paste a Gemini API key first.")
-                else:
-                    try:
-                        import supabase_auth as _sa
+    step = int(st.session_state.get("gemini_onboarding_step", 1))
 
-                        result = _sa.save_user_gemini_key(user_key, gemini_key)
-                        if result.get("ok"):
-                            st.session_state.user_gemini_api_key = gemini_key.strip()
-                            st.success("Gemini API key saved to your account.")
-                            st.rerun()
-                        else:
-                            st.session_state.user_gemini_api_key = gemini_key.strip()
-                            st.warning(
-                                f"Gemini key is active for this session, but was not saved: {result.get('error', 'Supabase save failed')}"
-                            )
-                            st.rerun()
-                    except Exception as e:
+    def _go(n: int):
+        st.session_state["gemini_onboarding_step"] = n
+        st.rerun()
+
+    # Step indicator
+    _dots = ""
+    for i in (1, 2, 3):
+        _active = "#3b82f6" if i <= step else "#334155"
+        _dots += f'<div style="width:32px;height:4px;border-radius:2px;background:{_active};"></div>'
+
+    with st.container(border=True):
+        st.markdown(
+            f'<div style="display:flex;gap:6px;justify-content:center;margin-bottom:14px;">{_dots}</div>'
+            f'<div style="text-align:center;font-size:11px;color:#94a3b8;margin-bottom:4px;letter-spacing:0.5px;">'
+            f'STEP {step} OF 3</div>',
+            unsafe_allow_html=True,
+        )
+
+        if step == 1:
+            st.markdown("### Welcome to Processor Assistant")
+            st.markdown(
+                "Before you start, you'll need a **free Gemini 2.5 Flash API key** from Google. "
+                "It's what powers document scanning, condition extraction, and contact pulls. "
+                "Google gives generous free usage and the key takes about 60 seconds to set up."
+            )
+            st.caption("We save your key encrypted to your account — only you can see it.")
+            c1, c2 = st.columns([1, 1])
+            with c1:
+                if st.button("Skip for now", use_container_width=True, key="gem_step1_skip"):
+                    st.session_state["gemini_onboarding_skipped"] = True
+                    st.rerun()
+            with c2:
+                if st.button("Let's set it up →", type="primary", use_container_width=True, key="gem_step1_next"):
+                    _go(2)
+
+        elif step == 2:
+            st.markdown("### Get your free Gemini API key")
+            st.markdown(
+                "1. Click **Open Google AI Studio** below — opens in a new tab\n"
+                "2. Sign in with the same Google account you just used\n"
+                "3. Click **Create API key** → **Create API key in new project**\n"
+                "4. Copy the key (starts with `AIza…`) and come back here"
+            )
+            st.link_button("Open Google AI Studio →", "https://aistudio.google.com/app/apikey", use_container_width=True)
+            c1, c2 = st.columns([1, 1])
+            with c1:
+                if st.button("← Back", use_container_width=True, key="gem_step2_back"):
+                    _go(1)
+            with c2:
+                if st.button("I have my key →", type="primary", use_container_width=True, key="gem_step2_next"):
+                    _go(3)
+
+        else:  # step 3
+            st.markdown("### Paste your Gemini API key")
+            with st.form("gemini_key_bootstrap_form"):
+                gemini_key = st.text_input(
+                    "Gemini API Key",
+                    type="password",
+                    placeholder="AIza...",
+                    help="Starts with AIza. Get one at https://aistudio.google.com/app/apikey",
+                )
+                c1, c2 = st.columns([1, 1])
+                with c1:
+                    back = st.form_submit_button("← Back", use_container_width=True)
+                with c2:
+                    save_key = st.form_submit_button("Save & Continue", type="primary", use_container_width=True)
+                if back:
+                    _go(2)
+                if save_key:
+                    if not gemini_key.strip():
+                        st.error("Please paste a Gemini API key first.")
+                    elif not gemini_key.strip().startswith("AIza"):
+                        st.warning("That doesn't look like a Gemini key (should start with 'AIza'). Save anyway?")
                         st.session_state.user_gemini_api_key = gemini_key.strip()
-                        st.warning(f"Gemini key is active for this session. Supabase save failed: {e}")
-                        st.rerun()
+                    else:
+                        try:
+                            import supabase_auth as _sa
+                            result = _sa.save_user_gemini_key(user_key, gemini_key)
+                            if result.get("ok"):
+                                st.session_state.user_gemini_api_key = gemini_key.strip()
+                                st.session_state.pop("gemini_onboarding_step", None)
+                                st.success("Saved! You're all set.")
+                                st.rerun()
+                            else:
+                                st.session_state.user_gemini_api_key = gemini_key.strip()
+                                st.warning(f"Active for this session, but not saved: {result.get('error', 'Supabase save failed')}")
+                                st.rerun()
+                        except Exception as e:
+                            st.session_state.user_gemini_api_key = gemini_key.strip()
+                            st.warning(f"Active for this session. Supabase save failed: {e}")
+                            st.rerun()
 
 
 def _render_auth_debug():
@@ -2301,16 +2363,17 @@ def show_login_page():
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
-    if st.button("Try Sandbox - No Account Needed", type="primary", use_container_width=True):
-        _enter_sandbox(page="pipeline")
-        st.rerun()
-    st.markdown('</div>', unsafe_allow_html=True)
-    st.markdown(
-        '<div style="text-align:center;font-size:10px;color:#9ca3af;margin-top:4px;margin-bottom:4px;">'
-        'Full access - Docs not saved; non-sensitive data and recent scan history may persist</div>',
-        unsafe_allow_html=True
-    )
+    if _env_truthy("PA_SHOW_SANDBOX", "0"):
+        st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
+        if st.button("Try Sandbox - No Account Needed", type="primary", use_container_width=True):
+            _enter_sandbox(page="pipeline")
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
+        st.markdown(
+            '<div style="text-align:center;font-size:10px;color:#9ca3af;margin-top:4px;margin-bottom:4px;">'
+            'Full access - Docs not saved; non-sensitive data and recent scan history may persist</div>',
+            unsafe_allow_html=True
+        )
 
     st.markdown('<div style="margin:10px 0 8px 0;">', unsafe_allow_html=True)
     st.markdown(
