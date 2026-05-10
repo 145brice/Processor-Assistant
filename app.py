@@ -92,8 +92,8 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
     transition: none !important;
 }
 [data-testid="stAppViewContainer"]:has([data-testid="stSidebar"]) [data-testid="stMain"] {
-    margin-left: var(--pa-sidebar-w) !important;
-    width: calc(100vw - var(--pa-sidebar-w)) !important;
+    margin-left: 0 !important;
+    width: 100% !important;
 }
 [data-testid="stMain"] section[data-testid="stMain"],
 [data-testid="stMain"] > div[data-testid="stMainBlockContainer"],
@@ -1066,32 +1066,31 @@ hr { border-color: #1e293b !important; }
     left: var(--pa-sidebar-w);
     right: 0;
     z-index: 9000;
-    height: 56px;
+    min-height: 56px;
+    height: auto;
     background: #0f1117;
     border-bottom: 1px solid #334155;
-    padding: 10px 16px 10px 72px;
+    padding: 8px 16px 8px 72px;
     box-shadow: 0 2px 12px rgba(0,0,0,0.6);
     display: flex;
     align-items: center;
-    gap: 14px;
-    overflow: hidden;
-    white-space: nowrap;
+    align-content: flex-start;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+    overflow: visible;
+    white-space: normal;
     min-width: 0;
     box-sizing: border-box;
 }
-/* Solid backdrop strip covering the entire top so nothing scrolls through */
+/* Backdrop fills the full header height as it wraps */
 .pa-pipe-dash::before {
     content: '';
-    position: fixed;
-    top: 0;
-    left: var(--pa-sidebar-w);
-    right: 0;
-    height: 56px;
+    position: absolute;
+    inset: 0;
     background: #0f1117;
     z-index: -1;
 }
 body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
-body.pa-sidebar-hidden .pa-pipe-dash::before { left: 0; }
 @media (max-width: 768px) {
     .pa-pipe-dash { left: var(--pa-sidebar-w); right: 0; padding-left: 58px; }
     body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 58px; }
@@ -1114,9 +1113,9 @@ body.pa-sidebar-hidden .pa-pipe-dash::before { left: 0; }
 .pa-pipe-dash-row {
     display: flex; gap: 4px; align-items: center;
     flex: 1 1 auto;
+    flex-wrap: wrap;
     min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: visible;
     scrollbar-width: thin;
 }
 .pa-pchip {
@@ -1127,7 +1126,8 @@ body.pa-sidebar-hidden .pa-pipe-dash::before { left: 0; }
     border-radius: 4px;
     transition: background 0.12s, border-color 0.12s;
     line-height: 1.4;
-    flex-shrink: 0;
+    flex: 0 0 auto;
+    white-space: nowrap;
 }
 .pa-pchip:hover {
     background: rgba(59,130,246,0.06);
@@ -1151,6 +1151,21 @@ body.pa-sidebar-hidden .pa-pipe-dash::before { left: 0; }
 [data-testid="stMain"] .block-container,
 [data-testid="stAppViewContainer"] .main .block-container {
     padding-top: 60px !important;
+}
+@media (max-width: 1280px) {
+    [data-testid="stMain"] .block-container,
+    [data-testid="stAppViewContainer"] .main .block-container {
+        padding-top: 92px !important;
+    }
+}
+@media (max-width: 900px) {
+    [data-testid="stMain"] .block-container,
+    [data-testid="stAppViewContainer"] .main .block-container {
+        padding-top: 116px !important;
+    }
+    .pa-pipe-dash-title {
+        flex-basis: calc(100% - 160px);
+    }
 }
 
 /* â•â•â•â• Dense loan table â€” Tax-Delinquencies row density (~22px each) â•â•â•â• */
