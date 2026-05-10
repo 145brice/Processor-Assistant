@@ -1,4 +1,4 @@
-﻿"""
+"""
 Processor Assistant - Mortgage Document Processing App
 Main Streamlit application.
 """
