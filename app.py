@@ -83,13 +83,17 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
 /* Let Streamlit place main content; only add inner gutter to avoid edge touch */
 [data-testid="stMain"] {
     min-width: 0 !important;
-    margin-left: var(--pa-sidebar-w) !important;
-    width: calc(100vw - var(--pa-sidebar-w)) !important;
+    margin-left: 0 !important;
+    width: 100vw !important;
     max-width: 100% !important;
     padding-left: 0 !important;
     box-sizing: border-box !important;
     overflow-x: hidden !important;
     transition: none !important;
+}
+[data-testid="stAppViewContainer"]:has([data-testid="stSidebar"]) [data-testid="stMain"] {
+    margin-left: var(--pa-sidebar-w) !important;
+    width: calc(100vw - var(--pa-sidebar-w)) !important;
 }
 [data-testid="stMain"] section[data-testid="stMain"],
 [data-testid="stMain"] > div[data-testid="stMainBlockContainer"],
@@ -2142,6 +2146,21 @@ def show_login_page():
     st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
     st.markdown("""
     <style>
+    [data-testid="stMainBlockContainer"],
+    [data-testid="stAppViewContainer"] .main .block-container {
+        width: min(720px, calc(100vw - 32px)) !important;
+        max-width: min(720px, calc(100vw - 32px)) !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        padding-left: 16px !important;
+        padding-right: 16px !important;
+    }
+    .login-page-wrap {
+        width: 100% !important;
+        max-width: 720px !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
     button[kind="primary"],
     div[data-testid="stButton"] > button,
     .stButton > button {
