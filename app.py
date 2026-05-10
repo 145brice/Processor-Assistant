@@ -8185,11 +8185,17 @@ def show_pricing_page():
     with st.expander("Stripe setup notes"):
         st.markdown(
             """
-**For now:** the payment link is live, but automatic account unlocking needs a Stripe webhook.
+The payment link is live. Automatic account unlocking uses the Stripe webhook service.
 
-Create a webhook endpoint in Stripe Developers > Webhooks:
+Create a second Railway service from this same repo for Stripe webhooks:
 
-`https://processor-assistant-production.up.railway.app/stripe/webhook`
+Start command:
+
+`python stripe_webhook_server.py`
+
+Then create a webhook endpoint in Stripe Developers > Webhooks using that service URL:
+
+`https://YOUR-WEBHOOK-SERVICE.up.railway.app/stripe/webhook`
 
 Listen for these events:
 
@@ -8200,13 +8206,13 @@ Listen for these events:
 - `invoice.payment_succeeded`
 - `invoice.payment_failed`
 
-Put these Railway variables in the app service:
+Put these Railway variables in the webhook service:
 
-- `STRIPE_SECRET_KEY`
 - `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_BETA_PRICE_ID`
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
 
-Until that webhook route is added, paid users may need to be marked active manually in Supabase.
+Leave the main Processor Assistant app service on its normal Streamlit start command.
             """
         )
 

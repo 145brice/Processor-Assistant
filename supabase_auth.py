@@ -331,6 +331,67 @@ def accept_terms(user_key: str, *, email: str = "", display_name: str = "", role
     return profile
 
 
+def update_subscription_by_email(
+    email: str,
+    *,
+    status: str,
+    stripe_customer_id: str = "",
+    stripe_subscription_id: str = "",
+    plan: str = "beta",
+) -> dict:
+    """Update the app profile for a Stripe customer email."""
+    email = (email or "").strip().lower()
+    if not email:
+        return {"ok": False, "error": "Missing customer email."}
+    api_key = _service_key() or _public_key()
+    if not _supabase_url() or not api_key:
+        return {"ok": False, "error": "Supabase settings storage is not configured."}
+
+    params = urllib.parse.urlencode({
+        "user_email": f"eq.{email}",
+        "select": "key,value_json,user_key,user_email",
+    })
+    url = f"{_supabase_url()}/rest/v1/settings?{params}"
+    result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
+    if not result.get("ok"):
+        return {"ok": False, "error": _settings_table_error(result.get("data") or {})}
+
+    rows = [
+        row for row in (result.get("data") or [])
+        if str(row.get("key", "")).startswith("user_profile:")
+    ]
+    if not rows:
+        return {"ok": False, "error": f"No Processor Assistant profile found for {email}."}
+
+    now = datetime.now(timezone.utc).isoformat()
+    updated = 0
+    for row in rows:
+        raw = row.get("value_json") or {}
+        if isinstance(raw, str):
+            try:
+                raw = json.loads(raw)
+            except Exception:
+                raw = {}
+        profile = raw if isinstance(raw, dict) else {}
+        profile.update({
+            "email": email,
+            "subscription_status": status,
+            "plan": plan,
+            "stripe_customer_id": stripe_customer_id or profile.get("stripe_customer_id", ""),
+            "stripe_subscription_id": stripe_subscription_id or profile.get("stripe_subscription_id", ""),
+            "subscription_updated_at": now,
+        })
+        save_result = _save_setting_json(
+            row["key"],
+            profile,
+            user_key=row.get("user_key", ""),
+            user_email=email,
+        )
+        if save_result.get("ok"):
+            updated += 1
+    return {"ok": bool(updated), "updated": updated}
+
+
 def save_user_gemini_key(user_key: str, gemini_api_key: str) -> dict:
     if not user_key:
         return {"ok": False, "error": "Missing user key."}

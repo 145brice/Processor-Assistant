@@ -53,6 +53,32 @@ def _loan_belongs_to_user(loan: dict, user_key: str) -> bool:
         keys.update(str(v).strip() for v in shared if str(v).strip())
     return user_key in keys
 
+
+def _loan_user_scoped(loan: dict) -> bool:
+    if not isinstance(loan, dict):
+        return False
+    for field in ("owner_user_key", "created_by_user_key", "assigned_user_key"):
+        if str(loan.get(field) or "").strip():
+            return True
+    shared = loan.get("shared_with_user_keys", [])
+    if isinstance(shared, str):
+        return bool(shared.strip())
+    return isinstance(shared, list) and bool(shared)
+
+
+def _stamp_missing_user_keys(loans: list, user_key: str) -> list:
+    """Tag legacy per-user snapshot loans that predate owner_user_key."""
+    user_key = str(user_key or "").strip()
+    if not user_key:
+        return loans
+    for loan in loans:
+        if not isinstance(loan, dict):
+            continue
+        if not _loan_user_scoped(loan):
+            loan["owner_user_key"] = user_key
+            loan["created_by_user_key"] = user_key
+    return loans
+
 RETENTION_OPTIONS = {
     "7 days":   7,
     "14 days":  14,
@@ -108,7 +134,7 @@ def _load() -> list:
             import supabase_sync
             snap = supabase_sync.load_pipeline_snapshot(user_key=user_key)
             if snap.get("ok") and isinstance(snap.get("loans"), list):
-                loans = snap.get("loans") or []
+                loans = _stamp_missing_user_keys(snap.get("loans") or [], user_key)
                 if not loans:
                     global_snap = supabase_sync.load_pipeline_snapshot()
                     if global_snap.get("ok") and isinstance(global_snap.get("loans"), list):
@@ -116,12 +142,13 @@ def _load() -> list:
                             l for l in (global_snap.get("loans") or [])
                             if _loan_belongs_to_user(l, user_key)
                         ]
+                    loans = _stamp_missing_user_keys(loans, user_key)
                     if loans:
                         supabase_sync.save_pipeline_snapshot(loans, user_key=user_key)
                 if not loans:
                     legacy = supabase_sync.load_loans_backup(user_key=user_key)
                     if legacy.get("ok") and legacy.get("loans"):
-                        loans = legacy.get("loans") or []
+                        loans = _stamp_missing_user_keys(legacy.get("loans") or [], user_key)
                         supabase_sync.save_pipeline_snapshot(loans, user_key=user_key)
                 _CLOUD_LOAD_OK = True
                 # Cache locally for faster reads and emergency fallback.
@@ -137,6 +164,7 @@ def _load() -> list:
                     l for l in (global_snap.get("loans") or [])
                     if _loan_belongs_to_user(l, user_key)
                 ]
+                loans = _stamp_missing_user_keys(loans, user_key)
                 if loans:
                     _CLOUD_LOAD_OK = True
                     supabase_sync.save_pipeline_snapshot(loans, user_key=user_key)
@@ -148,7 +176,7 @@ def _load() -> list:
                     return loans
             legacy = supabase_sync.load_loans_backup(user_key=user_key)
             if legacy.get("ok") and legacy.get("loans"):
-                loans = legacy.get("loans") or []
+                loans = _stamp_missing_user_keys(legacy.get("loans") or [], user_key)
                 _CLOUD_LOAD_OK = True
                 supabase_sync.save_pipeline_snapshot(loans, user_key=user_key)
                 try:
@@ -173,6 +201,12 @@ def _load() -> list:
     try:
         with open(_PIPELINE_FILE, "r", encoding="utf-8") as f:
             loans = json.load(f)
+        user_key = _current_user_key()
+        if user_key:
+            loans = _stamp_missing_user_keys(
+                [loan for loan in loans if _loan_belongs_to_user(loan, user_key) or not _loan_user_scoped(loan)],
+                user_key,
+            )
         # If Supabase is configured but has no snapshot yet, seed it from the
         # current JSON file instead of letting the next deploy lose the data.
         if loans and not _CLOUD_LOAD_OK:
@@ -188,6 +222,7 @@ def _load() -> list:
 
 def _save(loans: list):
     """Save pipeline to JSON and durable Supabase snapshot when configured."""
+    loans = _stamp_missing_user_keys(loans, _current_user_key())
     with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
         json.dump(loans, f, indent=2, ensure_ascii=False)
     try:
@@ -228,6 +263,7 @@ def add_loan(loan_num: str, borrower: str, status: str, due_date: str,
              conditions: list = None, contacts: dict = None) -> dict:
     """Add a new loan to the pipeline. Returns the new loan dict."""
     loans = _load()
+    user_key = _current_user_key()
     new_loan = {
         "id": _next_id(loans),
         "loan_num": loan_num.strip(),
@@ -247,6 +283,9 @@ def add_loan(loan_num: str, borrower: str, status: str, due_date: str,
         "conditions": conditions or [],
         "contacts": contacts or {},
     }
+    if user_key:
+        new_loan.setdefault("owner_user_key", user_key)
+        new_loan.setdefault("created_by_user_key", user_key)
     loans.append(new_loan)
     _save(loans)
     return new_loan
@@ -255,8 +294,12 @@ def add_loan(loan_num: str, borrower: str, status: str, due_date: str,
 def update_loan(loan_id: int, **kwargs):
     """Update fields on a loan by ID."""
     loans = _load()
+    user_key = _current_user_key()
+    updated = False
     for loan in loans:
         if loan.get("id") == loan_id:
+            if not _loan_belongs_to_user(loan, user_key):
+                return
             # Stamp requested_at on any condition newly set to Requested
             if "conditions" in kwargs:
                 existing = {c.get("text", c.get("desc", "")): c for c in loan.get("conditions", [])}
@@ -271,8 +314,10 @@ def update_loan(loan_id: int, **kwargs):
                         cond.pop("requested_at", None)
             loan.update(kwargs)
             loan["updated"] = datetime.now().isoformat()[:10]
+            updated = True
             break
-    _save(loans)
+    if updated:
+        _save(loans)
 
 
 def attach_document(loan_id: int, filename: str, doc_type: str,
@@ -297,8 +342,12 @@ def attach_document(loan_id: int, filename: str, doc_type: str,
     promoted = _promote_fields(doc_type, extracted or {})
 
     loans = _load()
+    user_key = _current_user_key()
+    updated = False
     for loan in loans:
         if loan.get("id") == loan_id:
+            if not _loan_belongs_to_user(loan, user_key):
+                return {}
             docs = loan.get("documents", [])
             docs = [d for d in docs if d.get("filename") != safe_name]
             docs.append(doc_record)
@@ -307,9 +356,12 @@ def attach_document(loan_id: int, filename: str, doc_type: str,
                 if v and not loan.get(k):
                     loan[k] = v
             loan["updated"] = datetime.now().isoformat()[:10]
+            updated = True
             break
-    _save(loans)
-    return doc_record
+    if updated:
+        _save(loans)
+        return doc_record
+    return {}
 
 
 def _promote_fields(doc_type: str, extracted: dict) -> dict:
@@ -354,8 +406,11 @@ def _promote_fields(doc_type: str, extracted: dict) -> dict:
 def get_documents(loan_id: int) -> list:
     """Return the documents list for a loan."""
     loans = _load()
+    user_key = _current_user_key()
     for loan in loans:
         if loan.get("id") == loan_id:
+            if not _loan_belongs_to_user(loan, user_key):
+                return []
             return loan.get("documents", [])
     return []
 
@@ -363,7 +418,10 @@ def get_documents(loan_id: int) -> list:
 def delete_loan(loan_id: int):
     """Move a loan to the removed/ folder. Auto-expires based on retention setting."""
     loans = _load()
-    removed = [l for l in loans if l.get("id") == loan_id]
+    user_key = _current_user_key()
+    removed = [l for l in loans if l.get("id") == loan_id and _loan_belongs_to_user(l, user_key)]
+    if not removed:
+        return
     kept    = [l for l in loans if l.get("id") != loan_id]
     _save(kept)
     if removed:
@@ -462,6 +520,8 @@ def restore_loan(loan_id: int):
     try:
         with open(path, "r", encoding="utf-8") as f:
             loan = json.load(f)
+        if not _loan_belongs_to_user(loan, _current_user_key()):
+            return
         loan.pop("deleted_on", None)
         loan.pop("expires_on", None)
         loan["status"] = "Pending"
@@ -478,6 +538,13 @@ def permanently_delete(loan_id: int):
     """Permanently remove a loan file from removed/."""
     path = os.path.join(_REMOVED_DIR, f"loan_{loan_id}.json")
     if os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                loan = json.load(f)
+            if not _loan_belongs_to_user(loan, _current_user_key()):
+                return
+        except Exception:
+            return
         os.remove(path)
 
 
@@ -511,22 +578,31 @@ def set_retention_days(days: int):
 def set_status(loan_id: int, status: str):
     """Quick status update. Stamps requested_at when moving to Requested."""
     loans = _load()
+    user_key = _current_user_key()
+    updated = False
     for loan in loans:
         if loan.get("id") == loan_id:
+            if not _loan_belongs_to_user(loan, user_key):
+                return
             if status == "Requested" and loan.get("status") != "Requested":
                 loan["requested_at"] = datetime.now().isoformat()
             elif status != "Requested":
                 loan.pop("requested_at", None)
             loan["status"] = status
             loan["updated"] = datetime.now().isoformat()[:10]
+            updated = True
             break
-    _save(loans)
+    if updated:
+        _save(loans)
 
 
 def get_loan(loan_id: int) -> dict | None:
     """Return a single loan by ID, or None."""
+    user_key = _current_user_key()
     for loan in _load():
         if loan.get("id") == loan_id:
+            if not _loan_belongs_to_user(loan, user_key):
+                return None
             return loan
     return None
 
