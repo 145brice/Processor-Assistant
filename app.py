@@ -8309,8 +8309,8 @@ def show_pricing_page():
     st.title("Pricing")
     st.caption("Simple beta pricing while Processor Assistant is still early-access.")
 
-    c1, c2 = st.columns([1, 1])
-    with c1:
+    _lo, _mid, _ro = st.columns([1, 2, 1])
+    with _mid:
         st.markdown(
             """
             <div style="border:1px solid rgba(59,130,246,0.45);border-radius:14px;
@@ -8338,24 +8338,6 @@ def show_pricing_page():
             """,
             unsafe_allow_html=True,
         )
-    with c2:
-        st.markdown(
-            """
-            <div style="border:1px solid rgba(255,255,255,0.12);border-radius:14px;
-            padding:18px;background:rgba(255,255,255,0.035);opacity:0.78;">
-              <div style="font-size:12px;font-weight:800;color:#9ca3af;text-transform:uppercase;">After Beta</div>
-              <div style="font-size:24px;font-weight:900;color:#fff;margin-top:6px;">Standard</div>
-              <div style="font-size:34px;font-weight:900;color:#fff;margin:10px 0;">$99<span style="font-size:14px;color:#9ca3af;">/mo</span></div>
-              <div style="font-size:13px;color:#d1d5db;">Planned with a 7-day free trial. Timing TBA.</div>
-              <hr style="border-color:rgba(255,255,255,0.08);margin:16px 0;">
-              <div style="font-size:13px;color:#e5e7eb;line-height:1.7;">
-                Not available yet. Beta pricing is the only active plan right now.
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
-    st.info("Beta pricing is available right now. Standard pricing is shown for transparency only.")
 
 
 def show_chat_page():
