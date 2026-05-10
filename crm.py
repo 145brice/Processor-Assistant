@@ -120,9 +120,31 @@ PARTY_COLORS = {
 }
 
 
+def _is_sandbox() -> bool:
+    try:
+        import streamlit as st
+        return bool(st.session_state.get("sandbox_mode", False))
+    except Exception:
+        return False
+
+
 def _load() -> list:
-    """Load pipeline from durable cloud snapshot first, JSON fallback second."""
+    """Load pipeline from durable cloud snapshot first, JSON fallback second.
+    Sandbox mode always loads fresh from pipeline.sample.json (skips Supabase)
+    so demo users always see the curated seed data."""
     global _CLOUD_LOAD_ATTEMPTED, _CLOUD_LOAD_OK, _CLOUD_LOADED_USER_KEY
+
+    if _is_sandbox():
+        sample = os.path.join(os.path.dirname(_PIPELINE_FILE), "pipeline.sample.json")
+        path = sample if os.path.exists(sample) else _PIPELINE_FILE
+        if os.path.exists(path):
+            try:
+                with open(path, "r", encoding="utf-8") as f:
+                    return json.load(f) or []
+            except (json.JSONDecodeError, OSError):
+                return []
+        return []
+
     user_key = _current_user_key()
     if _CLOUD_LOADED_USER_KEY != user_key:
         _CLOUD_LOAD_ATTEMPTED = False
@@ -221,10 +243,13 @@ def _load() -> list:
 
 
 def _save(loans: list):
-    """Save pipeline to JSON and durable Supabase snapshot when configured."""
+    """Save pipeline to JSON and durable Supabase snapshot when configured.
+    Sandbox mode skips Supabase writes so demo edits stay session-local."""
     loans = _stamp_missing_user_keys(loans, _current_user_key())
     with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
         json.dump(loans, f, indent=2, ensure_ascii=False)
+    if _is_sandbox():
+        return
     try:
         import supabase_sync
         supabase_sync.save_pipeline_snapshot(loans, user_key=_current_user_key())
