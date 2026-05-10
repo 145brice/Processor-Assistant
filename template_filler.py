@@ -4,8 +4,8 @@ import os
 import re
 from datetime import datetime
 
-TEMPLATES_DIR = r"c:\Users\user\OneDrive\Desktop\Templates"
-OUTPUT_ROOT = r"c:\Users\user\OneDrive\Desktop\processor-traien\Processor-Assistant\generated_docs"
+TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
+OUTPUT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "generated_docs")
 _CLAUSES_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "mortgagee_clauses.json")
 
 
