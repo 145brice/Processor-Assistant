@@ -131,25 +131,26 @@ header[data-testid="stHeader"], [data-testid="stHeader"], .stAppHeader {
     top: 12px !important;
     left: 252px !important;
     z-index: 999999 !important;
-    width: 36px !important;
+    width: 44px !important;
     height: 36px !important;
     border-radius: 8px !important;
     background: #3b82f6 !important;
-    color: #000 !important;
+    color: #fff !important;
     border: 2px solid #000 !important;
     font-size: 18px !important;
     font-weight: 900 !important;
     cursor: pointer !important;
     box-shadow: 0 0 14px rgba(59,130,246,0.7), 0 2px 6px rgba(0,0,0,0.4) !important;
     display: flex !important;
+    flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
-    transition: left 0.25s ease !important;
-    padding: 0 !important;
+    transition: left 0.25s ease, height 0.2s ease !important;
+    padding: 4px 0 !important;
     line-height: 1 !important;
 }
-#pa-sidebar-toggle:hover { background: #5fff3a !important; }
-body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; }
+#pa-sidebar-toggle:hover { background: #2563eb !important; }
+body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; height: 48px !important; }
 body.pa-sidebar-hidden [data-testid="stSidebar"] {
     width: 0 !important;
     min-width: 0 !important;
@@ -1376,7 +1377,7 @@ _components.html("""
     const hidden = localStorage.getItem(STORAGE_KEY) === '1';
     doc.body.classList.toggle(BODY_CLASS, hidden);
     const btn = doc.getElementById(BTN_ID);
-    if (btn) btn.textContent = hidden ? '>' : 'X';
+    if (btn) btn.innerHTML = hidden ? '<span style="font-size:16px;line-height:1;">&#9776;</span><span style="font-size:7px;letter-spacing:0.6px;font-weight:800;display:block;margin-top:1px;">MENU</span>' : '&#10005;';
   }
 
   function sidebarExists() {
