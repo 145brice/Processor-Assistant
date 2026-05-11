@@ -3890,9 +3890,21 @@ def show_dashboard():
                             _cond_view["_primary_section"] = _primary_section
                             _norm_conds_grouped.append(_cond_view)
 
-                    # Sort toggle (small, top of conditions list)
-                    _sort_c1, _sort_c2 = st.columns([3, 1])
+                    # Sort + Plain English toggle row
+                    _plain_key = f"{_scan_fkey}_plain_english"
+                    _plain_map_key = f"{_scan_fkey}_plain_map"
+                    _sort_c1, _sort_c2, _sort_c3 = st.columns([2.2, 1.4, 1.4])
                     with _sort_c2:
+                        _plain_on = st.toggle(
+                            "Plain English",
+                            value=bool(st.session_state.get(_plain_key, False)),
+                            key=f"{_plain_key}_toggle",
+                            help="Translate underwriter jargon into everyday language using Gemini",
+                        )
+                        if _plain_on != bool(st.session_state.get(_plain_key, False)):
+                            st.session_state[_plain_key] = _plain_on
+                            st.rerun()
+                    with _sort_c3:
                         _new_sort = st.selectbox(
                             "Sort", ["PDF order", "By party"],
                             index=0 if _sort_mode == "PDF order" else 1,
@@ -3902,6 +3914,19 @@ def show_dashboard():
                         if _new_sort != _sort_mode:
                             st.session_state[_scan_sort_key] = _new_sort
                             st.rerun()
+
+                    # If toggle is ON and we don't have a cached translation map yet, fetch it
+                    if _plain_on and not st.session_state.get(_plain_map_key):
+                        _gem_key = st.session_state.get("user_gemini_api_key", "")
+                        _originals = [str(c.get("desc", "")) for c in _norm_conds]
+                        with st.spinner("Translating conditions to plain English..."):
+                            try:
+                                import cloud_client as _cc_tr
+                                _translated, _tr_log = _cc_tr.translate_conditions_to_plain(_originals, api_key_override=_gem_key)
+                                st.session_state[_plain_map_key] = dict(zip(_originals, _translated))
+                            except Exception as _tr_e:
+                                st.warning(f"Could not translate: {_tr_e}")
+                                st.session_state[_plain_map_key] = {}
 
                     for _c in _norm_conds_grouped:
                         if _c.get("_section"):
@@ -3930,10 +3955,14 @@ def show_dashboard():
                                     f' <span style="color:#93c5fd;font-size:10px;opacity:0.8;">{_conf}</span>'
                                     if _conf else ""
                                 )
+                                _display_desc = _c["desc"]
+                                if _plain_on:
+                                    _pmap = st.session_state.get(_plain_map_key, {})
+                                    _display_desc = _pmap.get(_c["desc"], _c["desc"])
                                 st.markdown(
                                     f'<div style="font-size:13px;line-height:1.38;padding:1px 0 4px;">'
                                     f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
-                                    f'<span style="color:#e5e7eb;">{_c["desc"]}</span>{_conf_badge}</div>',
+                                    f'<span style="color:#e5e7eb;">{_display_desc}</span>{_conf_badge}</div>',
                                     unsafe_allow_html=True,
                                 )
 

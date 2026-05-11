@@ -1037,3 +1037,72 @@ Skip these (do NOT output rows for them):
         return conditions, _log("CLOUD", "approval_pdf_extract", f"{len(valid)} conditions - {_note}"), txt[:12000]
     except Exception as e:
         return "", _log("SCRIPT", "approval_pdf_extract", _friendly_cloud_error(e)), ""
+
+
+def translate_conditions_to_plain(descriptions: list[str], api_key_override: str = "") -> tuple[list[str], str]:
+    """Translate a list of mortgage condition descriptions into plain English.
+    Returns (translated_list_same_length, log_line). If translation fails, falls
+    back to the original list so the UI never blanks out."""
+    if not descriptions:
+        return [], _log("SCRIPT", "translate_plain", "Empty input")
+
+    if api_key_override:
+        api_key = api_key_override
+        model = DEFAULT_MODELS["gemini"]
+    else:
+        cfg = get_config()
+        if cfg.get("provider") == "gemini" and cfg.get("api_key"):
+            api_key = cfg["api_key"]
+            model = cfg.get("model") or DEFAULT_MODELS["gemini"]
+        else:
+            api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
+            model = DEFAULT_MODELS["gemini"]
+    if not api_key:
+        return list(descriptions), _log("SCRIPT", "translate_plain", "No Gemini key")
+
+    system = (
+        "You translate mortgage underwriting conditions into plain English for "
+        "homebuyers who are not in the industry. You preserve every fact and "
+        "every dollar amount but use everyday words instead of underwriter jargon."
+    )
+    # Number each condition and request a JSON array back, preserving order.
+    numbered_input = "\n".join(f"{i+1}. {d}" for i, d in enumerate(descriptions))
+    prompt = (
+        "Translate these mortgage approval conditions into plain, friendly English "
+        "for a homebuyer. Keep every fact, dollar amount, date, and document name. "
+        "Drop acronyms in favor of full phrases (e.g. 'VOM' -> 'verification of "
+        "mortgage payment history', 'LQI' -> 'Loan Quality Initiative re-check', "
+        "'LOE' -> 'letter of explanation', 'SLR' -> 'second-level review', "
+        "'4506C' -> 'IRS form 4506-C income verification'). Drop section tags like "
+        "[PTD-1] / [PTF-1] — those will be re-added later. Output ONLY a JSON array "
+        "of strings, one per input, in the exact same order, same length.\n\n"
+        f"Input:\n{numbered_input}\n\n"
+        'Output format: ["plain text 1", "plain text 2", ...]'
+    )
+
+    try:
+        payload = json.dumps({
+            "system_instruction": {"parts": [{"text": system}]},
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 8192},
+        }).encode("utf-8")
+        url = GEMINI_ENDPOINT.format(model=model, key=api_key)
+        req = urllib.request.Request(url, data=payload,
+                                     headers={"Content-Type": "application/json"},
+                                     method="POST")
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        # Strip ```json fences if present
+        if txt.startswith("```"):
+            txt = re.sub(r"^```(?:json)?\s*", "", txt)
+            txt = re.sub(r"\s*```$", "", txt).strip()
+        out = json.loads(txt)
+        if not isinstance(out, list) or len(out) != len(descriptions):
+            # Length mismatch — fall back to originals to keep UI consistent
+            return list(descriptions), _log("CLOUD", "translate_plain",
+                                            f"Length mismatch: got {len(out) if isinstance(out, list) else '?'} expected {len(descriptions)}")
+        cleaned = [str(s).strip() or descriptions[i] for i, s in enumerate(out)]
+        return cleaned, _log("CLOUD", "translate_plain", f"{len(cleaned)} translated - gemini - {model}")
+    except Exception as e:
+        return list(descriptions), _log("SCRIPT", "translate_plain", _friendly_cloud_error(e))
