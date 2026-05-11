@@ -315,6 +315,26 @@ button[kind="secondary"] { background: linear-gradient(135deg, #2a2a2a 0%, #2222
 button[kind="secondary"]:hover { border-color: var(--accent) !important; color: var(--accent) !important; background: var(--accent-light) !important; box-shadow: var(--neon-glow) !important; }
 button[kind="secondary"] p { color: var(--slate-600) !important; }
 button[kind="secondary"]:hover p { color: var(--accent) !important; }
+/* Streamlit form submit buttons can render bright defaults before hover/focus.
+   Force dark base state for all form buttons immediately on paint. */
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] button,
+[data-testid="stForm"] [data-testid="stButton"] button {
+    background: linear-gradient(135deg, #2a2a2a 0%, #222222 100%) !important;
+    color: #c0c0c0 !important;
+    border: 1px solid rgba(255,255,255,0.15) !important;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4) !important;
+}
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] button[kind="primary"],
+[data-testid="stForm"] [data-testid="stButton"] button[kind="primary"] {
+    background: rgba(59,130,246,0.10) !important;
+    color: var(--accent) !important;
+    border: 1px solid var(--accent) !important;
+    box-shadow: 0 0 10px rgba(59,130,246,0.20) !important;
+}
+[data-testid="stForm"] [data-testid="stFormSubmitButton"] button p,
+[data-testid="stForm"] [data-testid="stButton"] button p {
+    color: inherit !important;
+}
 [data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea, [data-testid="stSelectbox"] > div > div, [data-testid="stNumberInput"] input { background: var(--bg-subtle) !important; border: 1px solid var(--slate-300) !important; border-radius: var(--radius-sm) !important; color: var(--slate-900) !important; font-size: 13px !important; }
 [data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important; }
 [data-testid="stFileUploader"] { background: rgba(255,255,255,0.02) !important; border: 1.5px dashed rgba(59,130,246,0.3) !important; border-radius: 14px !important; padding: 8px !important; transition: all 0.18s ease-in-out !important; }
