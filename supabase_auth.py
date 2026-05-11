@@ -309,12 +309,12 @@ def ensure_user_profile(user_key: str, *, email: str = "", display_name: str = "
     profile = _load_setting_json(_profile_key(user_key))
     is_new = not profile
     if is_new:
-        trial_end = (now + timedelta(days=7)).isoformat()
+        trial_end = (now + timedelta(days=14)).isoformat()
         profile = {
             "trial_started_at": now_iso,
             "trial_start_date": now.date().isoformat(),
-            "trial_end_date": (now + timedelta(days=7)).date().isoformat(),
-            "trial_days": 7,
+            "trial_end_date": (now + timedelta(days=14)).date().isoformat(),
+            "trial_days": 14,
             "subscription_status": "trialing",
             "plan": "beta",
             "terms_accepted_at": "",
@@ -327,7 +327,7 @@ def ensure_user_profile(user_key: str, *, email: str = "", display_name: str = "
                 if start.tzinfo is None:
                     start = start.replace(tzinfo=timezone.utc)
                 profile["trial_start_date"] = start.date().isoformat()
-                profile["trial_end_date"] = (start + timedelta(days=7)).date().isoformat()
+                profile["trial_end_date"] = (start + timedelta(days=14)).date().isoformat()
             except Exception:
                 pass
 

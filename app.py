@@ -1804,7 +1804,7 @@ def _clean_display_text(value) -> str:
 
 
 def _user_trial_profile() -> dict:
-    """Load/create app profile used for 7-day trial gating."""
+    """Load/create app profile used for 14-day trial gating."""
     if not st.session_state.get("authenticated") or st.session_state.get("sandbox_mode"):
         return {}
     user_key = _current_auth_user_key()
@@ -1835,7 +1835,7 @@ def _trial_days_left(profile: dict) -> int:
             pass
     # Fall back to trial_started_at + trial_days
     started = str(p.get("trial_started_at") or "")
-    trial_days = int(p.get("trial_days") or 7)
+    trial_days = int(p.get("trial_days") or 14)
     try:
         start_dt = datetime.fromisoformat(started.replace("Z", "+00:00"))
         if start_dt.tzinfo is None:
@@ -1859,9 +1859,9 @@ def _render_trial_gate(profile: dict) -> None:
     st.title("Trial Ended")
     st.markdown(
         """
-        Your 7-day beta trial has ended. To keep using Processor Assistant, start the beta plan.
+        Your 14-day beta trial has ended. To keep using Processor Assistant, start the beta plan.
 
-        Beta is **$49/mo** with a 7-day free trial.
+        Beta is **$49/mo** with a 14-day free trial.
         """
     )
     st.link_button("Start Beta Plan", "https://buy.stripe.com/bJe7sLdx87xM6mtaOSdfG00", type="primary")
@@ -8436,7 +8436,7 @@ def show_pricing_page():
               <div style="font-size:12px;font-weight:800;color:#3b82f6;text-transform:uppercase;">Available Now</div>
               <div style="font-size:24px;font-weight:900;color:#fff;margin-top:6px;">Beta</div>
               <div style="font-size:34px;font-weight:900;color:#fff;margin:10px 0;">$49<span style="font-size:14px;color:#9ca3af;">/mo</span></div>
-              <div style="font-size:13px;color:#d1d5db;">Includes a 7-day free trial.</div>
+              <div style="font-size:13px;color:#d1d5db;">Includes a 14-day free trial.</div>
               <hr style="border-color:rgba(255,255,255,0.08);margin:16px 0;">
               <div style="font-size:13px;color:#e5e7eb;line-height:1.7;">
                 Scanner, pipeline, recent scan history, saved non-sensitive loan data, and user account settings.
@@ -8451,7 +8451,7 @@ def show_pricing_page():
                style="display:block;text-align:center;margin-top:12px;padding:12px 16px;
                border-radius:10px;background:#2563eb;color:#fff;font-size:14px;
                font-weight:800;text-decoration:none;">
-              Start Beta - 7 Day Free Trial
+              Start Beta - 14 Day Free Trial
             </a>
             """,
             unsafe_allow_html=True,
