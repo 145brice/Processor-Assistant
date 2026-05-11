@@ -1982,7 +1982,10 @@ def _load_user_gemini_key_into_session(force: bool = False) -> str:
 
 
 def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: str = "dashboard") -> None:
-    """Normalize all successful auth paths into one session update."""
+    """Normalize all successful auth paths into one session update.
+    If the user already has a saved Gemini key, default landing page becomes
+    'pipeline' (skip the scanner/onboarding entry point) regardless of the
+    caller's requested page."""
     st.session_state.authenticated = True
     st.session_state.user_id = result.get("user_id")
     st.session_state.supabase_user_id = result.get("supabase_user_id")
@@ -1991,9 +1994,13 @@ def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: s
     st.session_state.user_role = result.get("role", "Processor")
     st.session_state.sandbox_mode = sandbox_mode
     st.session_state.force_login = False
-    st.session_state.page = page
     st.session_state.user_gemini_api_key = ""
     _load_user_gemini_key_into_session(force=True)
+    # Returning users with a saved Gemini key land on pipeline; new users go
+    # to dashboard so they hit the onboarding wizard banner.
+    if not sandbox_mode and st.session_state.get("user_gemini_api_key"):
+        page = "pipeline"
+    st.session_state.page = page
     _save_session()
 
 
