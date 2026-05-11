@@ -2654,7 +2654,12 @@ def show_sidebar():
                 _sb_has_key = bool(_sb_cfg.get("api_key"))
                 _sb_on = bool(_sb_cfg.get("enabled")) and _sb_has_key
                 if _sb_has_key:
-                    _sb_label = f"Cloud AI: {'ON' if _sb_on else 'OFF'} - Gemini"
+                    _sb_provider = (_sb_cfg.get("provider") or "gemini").lower()
+                    _sb_model = _sb_cfg.get("model") or ""
+                    _provider_name = {"gemini": "Gemini", "claude": "Claude", "openai": "OpenAI"}.get(_sb_provider, _sb_provider.title())
+                    _model_short = _sb_model.replace("gemini-", "").replace("claude-", "").replace("-latest", "")
+                    _sb_label_text = f"{_provider_name} - {_model_short}" if _model_short else _provider_name
+                    _sb_label = f"Cloud AI: {'ON' if _sb_on else 'OFF'} - {_sb_label_text}"
                     _sb_color = "#3b82f6" if _sb_on else "#9ca3af"
                     st.markdown(
                         f'<div style="font-size:11px;color:{_sb_color};margin:4px 0 6px 4px;font-weight:600;">'
@@ -2663,8 +2668,9 @@ def show_sidebar():
                     )
                     _sb_btn_label = "Turn Cloud AI OFF" if _sb_on else "Turn Cloud AI ON"
                     if st.button(_sb_btn_label, key="sb_cc_toggle", use_container_width=True, type="secondary"):
-                        _sb_cc.save_config(not _sb_on, "gemini",
-                                           _sb_cfg.get("api_key",""), "gemini-2.5-flash")
+                        # Preserve provider/model on toggle; save_config backfills if either is blank
+                        _sb_cc.save_config(not _sb_on, _sb_provider,
+                                           _sb_cfg.get("api_key",""), _sb_model)
                         st.rerun()
                 else:
                     st.markdown(
