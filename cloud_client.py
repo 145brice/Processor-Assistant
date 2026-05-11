@@ -1061,23 +1061,35 @@ def translate_conditions_to_plain(descriptions: list[str], api_key_override: str
         return list(descriptions), _log("SCRIPT", "translate_plain", "No Gemini key")
 
     system = (
-        "You translate mortgage underwriting conditions into plain English for "
-        "homebuyers who are not in the industry. You preserve every fact and "
-        "every dollar amount but use everyday words instead of underwriter jargon."
+        "You translate mortgage underwriting conditions into short, polite, "
+        "plain-English requests for homebuyers. You preserve every fact, dollar "
+        "amount, date, address, and document name. You drop industry jargon and "
+        "acronyms but keep the request specific and actionable."
     )
     # Number each condition and request a JSON array back, preserving order.
     numbered_input = "\n".join(f"{i+1}. {d}" for i, d in enumerate(descriptions))
     prompt = (
-        "Translate these mortgage approval conditions into plain, friendly English "
-        "for a homebuyer. Keep every fact, dollar amount, date, and document name. "
-        "Drop acronyms in favor of full phrases (e.g. 'VOM' -> 'verification of "
-        "mortgage payment history', 'LQI' -> 'Loan Quality Initiative re-check', "
-        "'LOE' -> 'letter of explanation', 'SLR' -> 'second-level review', "
-        "'4506C' -> 'IRS form 4506-C income verification'). Drop section tags like "
-        "[PTD-1] / [PTF-1] — those will be re-added later. Output ONLY a JSON array "
-        "of strings, one per input, in the exact same order, same length.\n\n"
+        "Rewrite each mortgage approval condition as a short, polite request a "
+        "homebuyer can act on. RULES:\n\n"
+        "1. Keep every fact: dollar amounts, dates, addresses, document names, "
+        "counts, percentages. Never omit specifics.\n"
+        "2. Be concise. Target 1-2 short sentences per condition. Aim for fewer "
+        "words than the original.\n"
+        "3. Start each one with a friendly opener (vary them — don't repeat the "
+        "same phrase). Examples: 'Please send', 'We need', 'Could you provide', "
+        "'Quick request:', 'One more thing —', 'Almost there —', 'To wrap up,'.\n"
+        "4. Drop section tags like [PTD-1], [PTF-1], [AC-1].\n"
+        "5. Replace acronyms with everyday phrases: VOM = mortgage payment "
+        "history, LQI = loan quality re-check, LOE = letter of explanation, "
+        "SLR = second-level review, VOE/WVOE = employer verification, 4506C = "
+        "IRS income verification form, HOI = homeowner's insurance, CTC = "
+        "clear-to-close, CD = closing disclosure, AKA = also-known-as / former "
+        "name, P&L = profit and loss statement.\n"
+        "6. Drop boilerplate phrases like 'Provide updated', 'must be received', "
+        "'in compliance', 'for qualifying purposes' — those are filler.\n"
+        "7. Output ONLY a JSON array of strings, same order, same length as input.\n\n"
         f"Input:\n{numbered_input}\n\n"
-        'Output format: ["plain text 1", "plain text 2", ...]'
+        'Output format: ["short polite request 1", "short polite request 2", ...]'
     )
 
     try:
