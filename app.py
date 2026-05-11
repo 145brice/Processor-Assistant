@@ -1685,6 +1685,55 @@ def _current_auth_user_key() -> str:
     ).strip()
 
 
+def _auth_user_key_candidates() -> list[str]:
+    """Possible stable keys for this account, in preferred order."""
+    raw = [
+        st.session_state.get("supabase_user_id"),
+        st.session_state.get("user_id"),
+        st.session_state.get("user_email"),
+    ]
+    out = []
+    seen = set()
+    for value in raw:
+        key = str(value or "").strip()
+        if not key:
+            continue
+        lk = key.lower()
+        if lk in seen:
+            continue
+        seen.add(lk)
+        out.append(key)
+    return out
+
+
+def _save_user_gemini_key_for_account(gemini_key: str) -> dict:
+    """Save Gemini key across user-key aliases to survive ID changes."""
+    clean = str(gemini_key or "").strip()
+    if not clean:
+        return {"ok": False, "error": "Missing Gemini key."}
+    try:
+        import supabase_auth as _sa
+    except Exception as e:
+        return {"ok": False, "error": f"Supabase auth unavailable: {e}"}
+
+    any_ok = False
+    errors = []
+    for user_key in _auth_user_key_candidates():
+        try:
+            result = _sa.save_user_gemini_key(user_key, clean)
+            if result.get("ok"):
+                any_ok = True
+            else:
+                errors.append(f"{user_key}: {result.get('error', 'save failed')}")
+        except Exception as e:
+            errors.append(f"{user_key}: {e}")
+    if any_ok:
+        return {"ok": True}
+    if not errors:
+        return {"ok": False, "error": "No account key available for save."}
+    return {"ok": False, "error": " | ".join(errors)}
+
+
 def _loan_user_keys(loan: dict) -> set[str]:
     keys = set()
     for field in ("owner_user_key", "created_by_user_key", "assigned_user_key"):
@@ -1988,14 +2037,19 @@ def _load_user_gemini_key_into_session(force: bool = False) -> str:
     if st.session_state.get("user_gemini_api_key") and not force:
         return st.session_state.user_gemini_api_key
 
-    user_key = _current_auth_user_key()
-    if not user_key:
+    user_keys = _auth_user_key_candidates()
+    if not user_keys:
         st.session_state.user_gemini_api_key = ""
         return ""
 
     try:
         import supabase_auth as _sa
-        st.session_state.user_gemini_api_key = _sa.load_user_gemini_key(user_key)
+        loaded = ""
+        for user_key in user_keys:
+            loaded = _sa.load_user_gemini_key(user_key)
+            if loaded:
+                break
+        st.session_state.user_gemini_api_key = loaded
     except Exception:
         st.session_state.user_gemini_api_key = ""
     return st.session_state.user_gemini_api_key
@@ -2171,12 +2225,15 @@ def _render_gemini_key_prompt() -> None:
                 "Google gives generous free usage and the key takes about 60 seconds to set up."
             )
             st.caption("We save your key encrypted to your account — only you can see it.")
-            c1, c2 = st.columns([1, 1])
+            c1, c2, c3 = st.columns([1, 1, 1])
             with c1:
                 if st.button("Skip for now", use_container_width=True, key="gem_step1_skip"):
                     st.session_state["gemini_onboarding_skipped"] = True
                     st.rerun()
             with c2:
+                if st.button("I already have a key", use_container_width=True, key="gem_step1_have"):
+                    _go(3)
+            with c3:
                 if st.button("Let's set it up →", type="primary", use_container_width=True, key="gem_step1_next"):
                     _go(2)
 
@@ -2221,8 +2278,7 @@ def _render_gemini_key_prompt() -> None:
                         st.session_state.user_gemini_api_key = gemini_key.strip()
                     else:
                         try:
-                            import supabase_auth as _sa
-                            result = _sa.save_user_gemini_key(user_key, gemini_key)
+                            result = _save_user_gemini_key_for_account(gemini_key)
                             if result.get("ok"):
                                 st.session_state.user_gemini_api_key = gemini_key.strip()
                                 st.session_state.pop("gemini_onboarding_step", None)
@@ -8341,9 +8397,7 @@ def show_ollama_page():
         key_to_store_locally = cc_key
         if _real_user and _user_key:
             try:
-                import supabase_auth as _sa
-
-                _save_result = _sa.save_user_gemini_key(_user_key, cc_key)
+                _save_result = _save_user_gemini_key_for_account(cc_key)
                 if not _save_result.get("ok"):
                     st.warning(
                         f"Gemini key is active for this session, but was not saved: {_save_result.get('error', 'Supabase save failed')}"
