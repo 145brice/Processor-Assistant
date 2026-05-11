@@ -16,7 +16,7 @@ load_dotenv(os.path.join(os.path.dirname(_APP_DIR), ".env"), override=False)
 # --- Page Config ---
 st.set_page_config(
     page_title="Processor Assistant",
-    page_icon="â€”",
+    page_icon="",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -63,14 +63,14 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
 }
 [data-testid="stAppViewContainer"] > div:first-child { background: transparent !important; }
 #MainMenu, footer { visibility: hidden; height: 0; }
-/* Hide ONLY the sidebar collapse/expand toggle controls â€” keep nav buttons visible */
+/* Hide ONLY the sidebar collapse/expand toggle controls keep nav buttons visible */
 [data-testid="stSidebarCollapsedControl"],
 [data-testid="stExpandSidebarButton"],
 [data-testid="stSidebarHeader"] [data-testid="stBaseButton-headerNoPadding"],
 [data-testid="stSidebarCollapseButton"] {
     display: none !important;
 }
-/* Sidebar always rendered as expanded â€” override Streamlit's aria-expanded="false" hiding */
+/* Sidebar always rendered as expanded override Streamlit's aria-expanded="false" hiding */
 [data-testid="stSidebar"] {
     min-width: var(--pa-sidebar-w) !important;
     width: var(--pa-sidebar-w) !important;
@@ -106,7 +106,7 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
     padding-right: var(--pa-main-gutter) !important;
     box-sizing: border-box !important;
 }
-/* Force just the user-content visible â€” leave header/content default so scrolling works */
+/* Force just the user-content visible leave header/content default so scrolling works */
 [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] {
     visibility: visible !important;
     opacity: 1 !important;
@@ -187,7 +187,7 @@ body.pa-sidebar-hidden [data-testid="stMain"] > div[data-testid="stMainBlockCont
 
 /* â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ Mobile responsiveness â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 
-/* Tablet & phone: wider sidebar so nav text isn't cramped â€” collapse via toggle for content room */
+/* Tablet & phone: wider sidebar so nav text isn't cramped collapse via toggle for content room */
 @media (max-width: 768px) {
     [data-testid="stSidebar"] {
         min-width: 200px !important;
@@ -237,7 +237,7 @@ body.pa-sidebar-hidden [data-testid="stMain"] > div[data-testid="stMainBlockCont
     h1 { font-size: 20px !important; }
 }
 
-/* Phone-only: even tighter â€” narrower sidebar, smaller buttons */
+/* Phone-only: even tighter narrower sidebar, smaller buttons */
 @media (max-width: 480px) {
     [data-testid="stSidebar"] {
         min-width: 180px !important;
@@ -251,7 +251,7 @@ body.pa-sidebar-hidden [data-testid="stMain"] > div[data-testid="stMainBlockCont
     .block-container {
         padding: 0.5rem !important;
     }
-    /* Date inputs and selectboxes â€” full width, taller for touch */
+    /* Date inputs and selectboxes full width, taller for touch */
     [data-testid="stDateInput"], [data-testid="stSelectbox"],
     [data-testid="stTextInput"], [data-testid="stTextArea"],
     [data-testid="stNumberInput"], [data-testid="stMultiSelect"] {
@@ -269,7 +269,7 @@ body.pa-sidebar-hidden [data-testid="stMain"] > div[data-testid="stMainBlockCont
     .loan-card { padding: 10px 12px !important; }
     /* Hide the progress nav step labels, keep just the numbers */
     .pn-step { font-size: 9px !important; padding: 4px !important; min-width: 40px !important; }
-    /* Custom sidebar toggle arrows â€” easier to hit */
+    /* Custom sidebar toggle arrows easier to hit */
     button[kind="secondary"], button[kind="primary"] {
         min-height: 40px !important;
         font-size: 13px !important;
@@ -465,14 +465,14 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .pipeline-scroll [data-testid="stExpander"] { margin-bottom: 2px !important; margin-top: 0 !important; }
 .pipeline-scroll [data-testid="stExpander"] summary { padding: 4px 10px !important; font-size: 11px !important; }
 .pipeline-scroll [data-testid="stVerticalBlockBorderWrapper"] { padding: 4px 8px !important; margin-bottom: 4px !important; }
-/* Tabbed alignment for loan rows â€” every field lines up across all rows */
-/* Marker class for loan rows â€” used by :has() selectors below.
-   No display:grid here â€” the row uses inline flexbox. */
+/* Tabbed alignment for loan rows every field lines up across all rows */
+/* Marker class for loan rows used by :has() selectors below.
+   No display:grid here the row uses inline flexbox. */
 .pa-loan-grid {
     display: block;
     width: 100%;
 }
-/* My loans toggle â€” styled to match top control row */
+/* My loans toggle styled to match top control row */
 .pa-myloans-toggle + div [data-testid="stCheckbox"] {
     background: rgba(255,255,255,0.04) !important;
     border: 1px solid rgba(255,255,255,0.15) !important;
@@ -526,7 +526,7 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     font-weight: 500 !important;
     white-space: nowrap !important;
 }
-/* Primary (Open) button inside pipeline â€” neon-green, more prominent */
+/* Primary (Open) button inside pipeline neon-green, more prominent */
 .pipeline-scroll [data-testid="stButton"] button,
 .pipeline-scroll [data-testid="stButton"] button[kind="primary"],
 .pipeline-scroll button[kind="primary"] {
@@ -581,7 +581,7 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .scan-scroll .cond-num { color:#3b82f6; font-weight:800; font-size:11px; min-width:22px; }
 .scan-scroll .cond-desc { color:#e5e7eb; font-size:12px; line-height:1.35; flex:1; }
 .scan-scroll .pa-section { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.6px; margin:6px 0 2px 0; }
-/* Sidebar section collapse toggle buttons â€” green label style */
+/* Sidebar section collapse toggle buttons green label style */
 [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(hr) + [data-testid="stElementContainer"] button,
 [data-testid="stSidebar"] hr + * button,
 [data-testid="stSidebar"] .pa-sec-btn button {
@@ -789,7 +789,7 @@ button[kind="secondary"]:hover p { color: #ffffff !important; }
     box-shadow: none !important;
 }
 
-/* File uploader â€” compact, less obnoxious */
+/* File uploader compact, less obnoxious */
 [data-testid="stFileUploader"] {
     background: #161b2b !important;
     border: 1px dashed #334155 !important;
@@ -1121,7 +1121,7 @@ hr { border-color: #1e293b !important; }
 .scan-scroll .cond-num { color: #3b82f6 !important; }
 .scan-scroll .pa-section { color: #94a3b8 !important; }
 
-/* â•â•â•â• My Pipeline header â€” fixed at top:12px, 36px tall, aligned with blue X â•â•â•â• */
+/* â•â•â•â• My Pipeline header fixed at top:12px, 36px tall, aligned with blue X â•â•â•â• */
 .pa-pipe-dash {
     position: fixed;
     top: 0;
@@ -1230,7 +1230,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
     }
 }
 
-/* â•â•â•â• Dense loan table â€” Tax-Delinquencies row density (~22px each) â•â•â•â• */
+/* â•â•â•â• Dense loan table Tax-Delinquencies row density (~22px each) â•â•â•â• */
 .pa-loan-row {
     background: #1a1f2e !important;
     border-radius: 0 !important;
@@ -1238,7 +1238,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
     line-height: 1.2 !important;
 }
 .pa-loan-row:hover { background: #1e2532 !important; }
-/* Pipeline action row â€” compact buttons & selects */
+/* Pipeline action row compact buttons & selects */
 .pipeline-scroll [data-testid="stButton"] > button[data-testid*="open_"],
 .pipeline-scroll [data-testid="stButton"] > button[data-testid*="notesbtn_"],
 .pipeline-scroll [data-testid="stButton"] > button[data-testid*="docsbtn_"] {
@@ -1785,15 +1785,15 @@ def _clean_display_text(value) -> str:
     replacements = {
         "Â·": "·",
         "Â—": "-",
-        "â€”": "-",
-        "â€“": "-",
+        "": "-",
+        "": "-",
         "â†’": "->",
-        "âœ…": "OK",
-        "âœ“": "OK",
-        "âœ—": "Error",
-        "â—": "",
-        "â—‹": "",
-        "âš ": "Warning",
+        "": "OK",
+        "": "OK",
+        "": "Error",
+        "": "",
+        "": "",
+        "": "Warning",
         "â¸": "Paused",
         "Â": "",
         "ï¸": "",
@@ -2276,7 +2276,7 @@ def _render_condition(_c, _fkey, _party_options, _cond_statuses):
     """Render a single condition row with checkbox, status, and party selector.
     Returns (checked_bool, status_str, parties_list)."""
     _cnum = _c.get("num", "?")
-    _cdesc = _c.get("desc", "â€”")
+    _cdesc = _c.get("desc", "")
     _cparty = _c.get("party", "Borrower")
     _cstatus = _c.get("status", "Needed")
 
@@ -2531,7 +2531,7 @@ def show_login_page():
 
 def show_sidebar():
     """Sidebar navigation. Hide/show is handled by Streamlit's native collapse control
-    (the chevron arrow in the sidebar header) â€” pinned automatically, no JS needed."""
+    (the chevron arrow in the sidebar header) pinned automatically, no JS needed."""
     with st.sidebar:
         user_name = st.session_state.get("user_name", "")
         user_role = st.session_state.get("user_role", "")
@@ -2648,7 +2648,7 @@ def show_sidebar():
             if not is_sandbox:
                 _nav_btn("History", "history")
 
-        # â•â•â•â•â•â•â•â•â•â•â• TOOLS â€” flat top-level collapses (no parent wrapper) â•â•â•
+        # â•â•â•â•â•â•â•â•â•â•â• TOOLS flat top-level collapses (no parent wrapper) â•â•â•
         if _section_header("Quick Tools", "_sec_open_quick", default_open=False):
             _nav_btn("Loan Snapshot",  "snapshot",      "nav_snapshot")
             _nav_btn("Report Issue",   "report_issue",  "nav_report_issue")
@@ -2731,7 +2731,7 @@ def show_sidebar():
 
 
 def show_dashboard():
-    """Compact document scanning page â€” always auto-detect, additive scanning."""
+    """Compact document scanning page always auto-detect, additive scanning."""
     _BULK_DOC_TYPES = [
         "Approval Letter", "Loan Estimate (LE)",
         "1003 Application", "Purchase Contract", "Credit Report",
@@ -2874,7 +2874,7 @@ def show_dashboard():
                     except Exception:
                         pass
 
-                # Account number â€” digits/dashes, often masked with X or *
+                # Account number digits/dashes, often masked with X or *
                 _acct = _re.search(r'(?:account\s*(?:number|#|no\.?)[:\s]*)([\dX*\-]{6,20})', _text, _re.I)
                 if not _acct:
                     _acct = _re.search(r'(?:Primary account number[:\s]*)([\d\-]{6,20})', _text, _re.I)
@@ -2884,7 +2884,7 @@ def show_dashboard():
                 if _acct:
                     fp["account"] = _re.sub(r'[\s]', '', _acct.group(1)).upper()
 
-                # Names â€” ALL CAPS lines in first 40 lines (borrower name style)
+                # Names ALL CAPS lines in first 40 lines (borrower name style)
                 _lines = _text.split("\n")
                 _skip = {"STATEMENT", "BANK", "ACCOUNT", "BALANCE", "SUMMARY", "PAGE",
                          "DATE", "PERIOD", "DEPOSITS", "WITHDRAWALS", "BEGINNING", "ENDING",
@@ -2901,7 +2901,7 @@ def show_dashboard():
 
                 # Statement period
                 _period = _re.search(
-                    r'(?:for\s+the\s+period|statement\s+period|period)[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})\s*(?:to|through|[-â€“])\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
+                    r'(?:for\s+the\s+period|statement\s+period|period)[:\s]+(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})\s*(?:to|through|[-])\s*(\d{1,2}[/\-]\d{1,2}[/\-]\d{2,4})',
                     _text, _re.I
                 )
                 if _period:
@@ -2941,10 +2941,10 @@ def show_dashboard():
             for _fh, _fidxs in _hash_to_indices.items():
                 if len(_fidxs) > 1:
                     _dupe_fnames = [new_files[i].name for i in _fidxs]
-                    st.warning(f"Identical file uploaded {len(_fidxs)}x: {', '.join(_dupe_fnames)} â€” only the first will be scanned.")
+                    st.warning(f"Identical file uploaded {len(_fidxs)}x: {', '.join(_dupe_fnames)} only the first will be scanned.")
 
         # â”€â”€ Auto-detect + fingerprint every file â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        # Order matters â€” first match wins. Most-specific tokens first so
+        # Order matters first match wins. Most-specific tokens first so
         # ambiguous matches (e.g. "approval" containing nothing HOI-related)
         # aren't hijacked by generic keywords further down.
         _FILENAME_FALLBACKS = [
@@ -2968,7 +2968,7 @@ def show_dashboard():
             (["mortgage statement", "loan statement"], "Mortgage Statement"),
             (["paystub", "pay stub", "paycheck", "pay check", "earnings statement"], "Pay Stub"),
             (["tax return", "1040", "tax transcript"], "Tax Return"),
-            # HOI last + tightened keywords â€” "insurance dec" / "declarations"
+            # HOI last + tightened keywords "insurance dec" / "declarations"
             # alone are too broad (appear in many loan docs). Require real
             # HOI-instance tokens.
             (["hoi", "hazard insurance", "homeowner insurance", "home owner insurance",
@@ -3002,7 +3002,7 @@ def show_dashboard():
 
         # â”€â”€ Page grouping: find files that belong together â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         # STRICT RULE: only suggest merge when files are clearly pages of the
-        # SAME statement â€” same period dates OR consecutive page X-of-Y numbering.
+        # SAME statement same period dates OR consecutive page X-of-Y numbering.
         # Different period dates = different months = NEVER merge, always separate.
         _groups = []  # list of sets of indices
         _assigned = set()
@@ -3021,7 +3021,7 @@ def show_dashboard():
             return False
 
         def _different_periods(a, b):
-            """Both have periods but they differ â€” definitely different months."""
+            """Both have periods but they differ definitely different months."""
             return (a["period"] and b["period"] and a["period"] != b["period"])
 
         def _fingerprints_match(i, j):
@@ -3069,7 +3069,7 @@ def show_dashboard():
                 # conditions can be either list[dict] (newer) or list[str] /
                 # a single multiline str (older / markdown-style). Normalize.
                 if isinstance(_raw_conds, str):
-                    _raw_conds = [ln.strip(" -â€¢\t") for ln in _raw_conds.splitlines() if ln.strip()]
+                    _raw_conds = [ln.strip(" -\t") for ln in _raw_conds.splitlines() if ln.strip()]
                 for _c in _raw_conds:
                     if isinstance(_c, dict):
                         _desc = (_c.get("desc") or "").lower()
@@ -3091,7 +3091,7 @@ def show_dashboard():
         for _bi in _bank_indices:
             _fp = _fingerprints[_bi]
             if _fp["page_total"] and _fp["page_num"]:
-                # We have one page of a multi-page statement â€” check if others are present
+                # We have one page of a multi-page statement check if others are present
                 _total = _fp["page_total"]
                 _present_pages = set()
                 for _oi in _bank_indices:
@@ -3134,7 +3134,7 @@ def show_dashboard():
             st.markdown(
                 f'<div style="background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.3);border-radius:4px;'
                 f'padding:8px 12px;margin-bottom:4px;font-size:12px;color:#3b82f6;">'
-                f'<b>Approval cross-reference</b> â€” from <i>{_approval_source}</i>:'
+                f'<b>Approval cross-reference</b> from <i>{_approval_source}</i>:'
                 f'</div>',
                 unsafe_allow_html=True
             )
@@ -3152,19 +3152,19 @@ def show_dashboard():
                     if _fp["period"]:
                         _uploaded_periods.add(_fp["period"])
                     elif _fp["account"]:
-                        # no period detected â€” count as 1 unknown
+                        # no period detected count as 1 unknown
                         _uploaded_periods.add(("unknown", _fp["account"]))
                 _months_have = len(_uploaded_periods)
                 _ok = _months_have >= _months_req
-                _icon = "âœ“" if _ok else "âœ—"
+                _icon = "" if _ok else ""
                 _color = "#3b82f6" if _ok else "#ef4444"
                 _bg = "rgba(59,130,246,0.1)" if _ok else "rgba(239,68,68,0.1)"
                 _border = "rgba(59,130,246,0.3)" if _ok else "rgba(239,68,68,0.3)"
-                _note = f"{_months_have} of {_months_req} month(s) uploaded" if not _ok else f"{_months_have} month(s) â€” OK"
+                _note = f"{_months_have} of {_months_req} month(s) uploaded" if not _ok else f"{_months_have} month(s) OK"
                 st.markdown(
                     f'<div style="background:{_bg};border:1px solid {_border};border-radius:3px;'
                     f'padding:5px 10px;margin-bottom:4px;font-size:11px;color:{_color};">'
-                    f'<b>{_icon}</b> {_ac[:120]} <span style="opacity:0.7;">â€” {_note}</span>'
+                    f'<b>{_icon}</b> {_ac[:120]} <span style="opacity:0.7;">{_note}</span>'
                     f'</div>',
                     unsafe_allow_html=True
                 )
@@ -3174,7 +3174,7 @@ def show_dashboard():
         _merge_selections = {}  # group_id -> set of indices to include in merge
         if _groups:
             st.markdown("---")
-            st.markdown("**Page grouping detected** â€” select pages to merge:")
+            st.markdown("**Page grouping detected** select pages to merge:")
             for _gi, _grp in enumerate(_groups):
                 _grp_type = _detections[sorted(_grp)[0]]["detected_type"]
                 _rep_fp = _fingerprints[sorted(_grp)[0]]
@@ -3183,14 +3183,14 @@ def show_dashboard():
                 if _rep_fp["account"]:
                     _match_reasons.append(f"acct #{_rep_fp['account']}")
                 if _rep_fp["period"]:
-                    _match_reasons.append(f"{_rep_fp['period'][0]}â€“{_rep_fp['period'][1]}")
+                    _match_reasons.append(f"{_rep_fp['period'][0]}{_rep_fp['period'][1]}")
                 elif _rep_fp["names"]:
                     _match_reasons.append(_rep_fp["names"][0])
                 _reason_str = " Â· ".join(_match_reasons) if _match_reasons else _grp_type
 
                 st.markdown(
                     f'<div style="font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:4px;">'
-                    f'Group {_gi+1} â€” {_grp_type} <span style="font-weight:400;color:#9ca3af;">({_reason_str})</span>'
+                    f'Group {_gi+1} {_grp_type} <span style="font-weight:400;color:#9ca3af;">({_reason_str})</span>'
                     f'</div>',
                     unsafe_allow_html=True
                 )
@@ -3198,7 +3198,7 @@ def show_dashboard():
                 for _idx in sorted(_grp, key=lambda i: _fingerprints[i]["page_num"] or 999):
                     _fp = _fingerprints[_idx]
                     _pg_label = f"pg {_fp['page_num']} of {_fp['page_total']}" if _fp["page_num"] else ""
-                    _period_label = f"{_fp['period'][0]}â€“{_fp['period'][1]}" if _fp["period"] else ""
+                    _period_label = f"{_fp['period'][0]}{_fp['period'][1]}" if _fp["period"] else ""
                     _label_parts = [new_files[_idx].name]
                     if _pg_label: _label_parts.append(_pg_label)
                     if _period_label: _label_parts.append(_period_label)
@@ -3211,9 +3211,9 @@ def show_dashboard():
                 if len(_selected) >= 2:
                     st.caption(f"Will merge {len(_selected)} file(s) into one PDF before scanning.")
                 elif len(_selected) == 1:
-                    st.caption("Only 1 file selected â€” will scan individually.")
+                    st.caption("Only 1 file selected will scan individually.")
                 else:
-                    st.caption("No files selected â€” group will be skipped.")
+                    st.caption("No files selected group will be skipped.")
             st.markdown("---")
 
         # â”€â”€ File list with checkboxes, type dropdowns, delete â”€â”€â”€â”€â”€â”€â”€â”€
@@ -3315,7 +3315,7 @@ def show_dashboard():
                 _bf_type = _overrides.get(_bi, _detections[_bi]["detected_type"])
                 _scan_queue.append((_file_bytes_cache[_bi], _bf.name, _bf_type))
 
-            # â”€â”€ Cloud AI: auto-enable when cloud is on â€” no consent prompt needed â”€
+            # â”€â”€ Cloud AI: auto-enable when cloud is on no consent prompt needed â”€
             _dash_cloud_doc_types = {"Purchase Contract", "Approval Letter"}
             _dash_user_approved_cloud = _try_cloud
 
@@ -3340,7 +3340,7 @@ def show_dashboard():
                     text=_sq_status,
                 )
                 if _sq_type == "Unknown":
-                    st.warning(f"{_sq_name}: Unknown type â€” override the dropdown to scan")
+                    st.warning(f"{_sq_name}: Unknown type override the dropdown to scan")
                     continue
                 _sq_approved = _dash_user_approved_cloud if _sq_type in _dash_cloud_doc_types else False
                 if _sq_will_use_cloud:
@@ -3632,7 +3632,7 @@ def show_dashboard():
                                 # Merge contacts
                                 _existing_contacts.update({k: v for k, v in _new_contacts.items() if v})
                                 _upd["contacts"] = _existing_contacts
-                                # Purchase contract extras â€” closing date, transaction data
+                                # Purchase contract extras closing date, transaction data
                                 if _batch["type"] == "Purchase Contract":
                                     _pcd = (_r.get("extracted_data") or {})
                                     _txn = _pcd.get("transaction", {})
@@ -3646,11 +3646,11 @@ def show_dashboard():
                                         if _av and any(v for v in _av.values()):
                                             _existing_contacts[_ak] = _av
                                     _upd["contacts"] = _existing_contacts
-                                    _msg = f"Purchase Contract merged â€” contacts & dates updated"
+                                    _msg = f"Purchase Contract merged contacts & dates updated"
                                 else:
-                                    _msg = f"{_batch['type']} scanned â€” {_added} condition(s) merged"
+                                    _msg = f"{_batch['type']} scanned {_added} condition(s) merged"
                                 _ul(_lm_loan_id, **_upd)
-                                # Record the scan (metadata only â€” no PDF stored)
+                                # Record the scan (metadata only no PDF stored)
                                 _attach_doc(_lm_loan_id, _batch["file"], _batch["type"],
                                             extracted=_r.get("extracted_data"))
                                 _la(_lm_loan_id, "upload", _msg, user=st.session_state.get("user_name", ""))
@@ -3660,7 +3660,7 @@ def show_dashboard():
                     st.markdown(
                         f'<div style="background:rgba(251,191,36,0.1);border:1px solid rgba(251,191,36,0.3);border-radius:4px;'
                         f'padding:6px 10px;margin-bottom:8px;font-size:12px;color:#fbbf24;">'
-                        f'<b>Possible match:</b> {_lm_borrower} (Loan {_lm_loan_num}) â€” '
+                        f'<b>Possible match:</b> {_lm_borrower} (Loan {_lm_loan_num}) '
                         f'<span style="opacity:0.7;">{_lm_conf}% confidence, verify before merging</span>'
                         f'</div>', unsafe_allow_html=True
                     )
@@ -3686,7 +3686,7 @@ def show_dashboard():
                                 st.toast(f"Loan created for {_new_loan.get('borrower', '')}")
                             st.rerun()
                 else:
-                    # No match â€” offer to start a new loan pre-filled from scan
+                    # No match offer to start a new loan pre-filled from scan
                     _extracted_borrower = ""
                     _contacts = _r.get("contacts", {})
                     if isinstance(_contacts, dict):
@@ -3972,7 +3972,7 @@ def show_dashboard():
                                     st.session_state[f"{_uid}_guide_open"] = True
                                     st.session_state.pop(f"{_uid}_guide_results", None)
 
-                        # â”€â”€ Guidelines panel (toggled by ðŸ“–) â”€â”€
+                        # â”€â”€ Guidelines panel (toggled by ) â”€â”€
                         if st.session_state.get(f"{_uid}_guide_open"):
                             _gc1, _gc2 = st.columns([9, 0.5])
                             with _gc2:
@@ -3982,7 +3982,7 @@ def show_dashboard():
                                     st.rerun()
                             _gres = st.session_state.get(f"{_uid}_guide_results")
                             if _gres is None:
-                                with st.spinner("Searching Fannie Mae & Freddie Macâ€¦"):
+                                with st.spinner("Searching Fannie Mae & Freddie Mac"):
                                     try:
                                         from guidelines import check_conditions_against_guidelines as _cag
                                         _out = _cag([{"num": _c["num"], "desc": _c["desc"]}])
@@ -3997,7 +3997,7 @@ def show_dashboard():
                                 st.markdown(
                                     f'<div style="font-size:11px;color:#fbbf24;padding:4px 8px;'
                                     f'background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);'
-                                    f'border-radius:6px;margin:4px 0 4px 32px;">âš ï¸ {_gres["error"]}</div>',
+                                    f'border-radius:6px;margin:4px 0 4px 32px;">{_gres["error"]}</div>',
                                     unsafe_allow_html=True,
                                 )
                             elif isinstance(_gres, list) and _gres:
@@ -4015,7 +4015,7 @@ def show_dashboard():
                                         f'<span style="color:#3b82f6;font-weight:700;">{_src}</span>'
                                         f'{_sec_part}'
                                         f' <span style="color:#9ca3af;">p.{_pg} Â· {_sc}% match</span><br/>'
-                                        f'<span style="color:#cbd5e1;font-size:10.5px;">{_ex}â€¦</span>'
+                                        f'<span style="color:#cbd5e1;font-size:10.5px;">{_ex}</span>'
                                         f'</div>',
                                         unsafe_allow_html=True,
                                     )
@@ -4234,7 +4234,7 @@ def show_dashboard():
 
                     def _ssn_html(ssn):
                         last4 = _mask_ssn(ssn)
-                        if not last4: return "â€”"
+                        if not last4: return ""
                         return (
                             f'<span style="filter:blur(3px);color:#9ca3af;user-select:none;">***-**-</span>'
                             f'<span style="color:#e5e7eb;">{last4}</span>'
@@ -4325,10 +4325,10 @@ def show_dashboard():
                         try:
                             return f"${float(val):,.2f}"
                         except Exception:
-                            return str(val) if val else "â€”"
+                            return str(val) if val else ""
 
                     def _w2_ssn_html(ssn):
-                        if not ssn: return "â€”"
+                        if not ssn: return ""
                         import re as _re2
                         digits = _re2.sub(r'\D', '', str(ssn))
                         last4 = digits[-4:] if len(digits) >= 4 else digits
@@ -4346,14 +4346,14 @@ def show_dashboard():
                             if _wr.get("employee_ssn"):  _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">SSN</td><td style="color:#e5e7eb;font-size:12px;">{_w2_ssn_html(_wr["employee_ssn"])}</td></tr>'
                             if _wr.get("employer_name"): _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Employer</td><td style="color:#e5e7eb;font-size:12px;">{_wr["employer_name"]}</td></tr>'
                             if _wr.get("employer_ein"):  _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">EIN</td><td style="color:#e5e7eb;font-size:12px;">{_wr["employer_ein"]}</td></tr>'
-                            if _wr.get("box1_wages"):    _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 1 â€” Wages</td><td style="color:#3b82f6;font-size:12px;font-weight:700;">{_fmt_money(_wr["box1_wages"])}</td></tr>'
-                            if _wr.get("box2_fed_tax"):  _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 2 â€” Fed Tax W/H</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_money(_wr["box2_fed_tax"])}</td></tr>'
-                            if _wr.get("box3_ss_wages"): _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 3 â€” SS Wages</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_money(_wr["box3_ss_wages"])}</td></tr>'
-                            if _wr.get("box5_medicare_wages"): _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 5 â€” Medicare Wages</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_money(_wr["box5_medicare_wages"])}</td></tr>'
+                            if _wr.get("box1_wages"):    _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 1 Wages</td><td style="color:#3b82f6;font-size:12px;font-weight:700;">{_fmt_money(_wr["box1_wages"])}</td></tr>'
+                            if _wr.get("box2_fed_tax"):  _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 2 Fed Tax W/H</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_money(_wr["box2_fed_tax"])}</td></tr>'
+                            if _wr.get("box3_ss_wages"): _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 3 SS Wages</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_money(_wr["box3_ss_wages"])}</td></tr>'
+                            if _wr.get("box5_medicare_wages"): _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 5 Medicare Wages</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_money(_wr["box5_medicare_wages"])}</td></tr>'
                             if _wr.get("state"):         _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">State</td><td style="color:#e5e7eb;font-size:12px;">{_wr["state"]}</td></tr>'
                             if _wr.get("state_wages"):   _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">State Wages</td><td style="color:#e5e7eb;font-size:12px;">{_fmt_money(_wr["state_wages"])}</td></tr>'
                             if _wr.get("box12"):         _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 12</td><td style="color:#e5e7eb;font-size:12px;">{_wr["box12"]}</td></tr>'
-                            if _wr.get("box14"):         _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 14 â€” Other</td><td style="color:#e5e7eb;font-size:12px;">{_wr["box14"]}</td></tr>'
+                            if _wr.get("box14"):         _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Box 14 Other</td><td style="color:#e5e7eb;font-size:12px;">{_wr["box14"]}</td></tr>'
                             st.markdown(
                                 f'<div style="margin-bottom:10px;">'
                                 f'<div style="font-size:11px;font-weight:700;color:#3b82f6;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">Tax Year {_yr}</div>'
@@ -4397,7 +4397,7 @@ def show_dashboard():
                     _cr_past_due = _cr.get("total_past_due", 0)
 
                     def _cr_ssn_html(ssn):
-                        if not ssn: return "â€”"
+                        if not ssn: return ""
                         import re as _re3
                         digits = _re3.sub(r'\D', '', str(ssn))
                         last4 = digits[-4:] if len(digits) >= 4 else digits
@@ -4421,7 +4421,7 @@ def show_dashboard():
                             f'</div>', unsafe_allow_html=True
                         )
 
-                    # Scores â€” all 3 + middle highlighted (sort: low, MID, high so middle is center)
+                    # Scores all 3 + middle highlighted (sort: low, MID, high so middle is center)
                     if _cr_scores:
                         _score_html = '<div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:10px;">'
                         _sorted_scores = sorted(_cr_scores.items(), key=lambda x: x[1])
@@ -4452,7 +4452,7 @@ def show_dashboard():
                         _flag_html += '</div>'
                         st.markdown(_flag_html, unsafe_allow_html=True)
                     else:
-                        st.markdown('<div style="font-size:12px;color:#3b82f6;margin-bottom:8px;">âœ“ No derogatory items detected</div>', unsafe_allow_html=True)
+                        st.markdown('<div style="font-size:12px;color:#3b82f6;margin-bottom:8px;">No derogatory items detected</div>', unsafe_allow_html=True)
 
                     # Summary row
                     _sum_parts = []
@@ -4466,7 +4466,7 @@ def show_dashboard():
                     _tf = (_r.get("extracted_data") or {})
 
                     def _1099_ssn_html(ssn):
-                        if not ssn: return "â€”"
+                        if not ssn: return ""
                         import re as _re4
                         digits = _re4.sub(r'\D', '', str(ssn))
                         last4 = digits[-4:] if len(digits) >= 4 else digits
@@ -4475,11 +4475,11 @@ def show_dashboard():
 
                     def _fmt_m(val):
                         try: return f"${float(val):,.2f}"
-                        except: return str(val) if val else "â€”"
+                        except: return str(val) if val else ""
 
                     st.markdown("**1099 Details**")
                     _rows_h = ""
-                    if _tf.get("form_type"):     _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Form</td><td style="color:#e5e7eb;font-size:12px;font-weight:700;">{_tf["form_type"]} â€” Tax Year {_tf.get("year","")}</td></tr>'
+                    if _tf.get("form_type"):     _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Form</td><td style="color:#e5e7eb;font-size:12px;font-weight:700;">{_tf["form_type"]} Tax Year {_tf.get("year","")}</td></tr>'
                     if _tf.get("recipient_name"):_rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Recipient</td><td style="color:#e5e7eb;font-size:12px;"><b>{_tf["recipient_name"]}</b></td></tr>'
                     if _tf.get("recipient_ssn"): _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">SSN</td><td style="font-size:12px;">{_1099_ssn_html(_tf["recipient_ssn"])}</td></tr>'
                     if _tf.get("payer_name"):    _rows_h += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Payer</td><td style="color:#e5e7eb;font-size:12px;">{_tf["payer_name"]}</td></tr>'
@@ -4506,8 +4506,8 @@ def show_dashboard():
                 if _batch.get("type") == "Mortgage Statement":
                     _ms = (_r.get("extracted_data") or {})
                     def _fmt_ms(v):
-                        try: return f"${float(v.replace(',','')):,.2f}" if v else "â€”"
-                        except: return v or "â€”"
+                        try: return f"${float(v.replace(',','')):,.2f}" if v else ""
+                        except: return v or ""
                     _ms_rows = [
                         ("Servicer",          _ms.get("servicer")),
                         ("Borrower",          _ms.get("borrower")),
@@ -4524,7 +4524,7 @@ def show_dashboard():
                     _ms_html = "".join(
                         f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">{l}</td>'
                         f'<td style="color:#e5e7eb;font-size:12px;">{v}</td></tr>'
-                        for l, v in _ms_rows if v and v != "â€”"
+                        for l, v in _ms_rows if v and v != ""
                     )
                     if _ms_html:
                         st.markdown("**Mortgage Statement**")
@@ -4533,17 +4533,17 @@ def show_dashboard():
                 # â”€â”€ Image-only stub (scanned PDF, no text layer) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if _r.get("image_only"):
                     _img_labels = {
-                        "VA Certificate of Eligibility": ("VA Certificate of Eligibility", "Document received and logged. This is a scanned image â€” fields cannot be auto-extracted. Verify manually and attach to loan file."),
-                        "DD-214": ("DD-214 â€” Certificate of Release", "Document received and logged. This is a scanned image â€” fields cannot be auto-extracted. Verify discharge status and service dates manually."),
-                        "Hazard Insurance": ("Hazard Insurance / HOI Declarations", "Document received and logged. This is a scanned image â€” verify policy number, coverage amounts, and expiration date manually."),
-                        "Government ID": ("Government ID", "Document received and logged. This is a scanned image â€” verify name, DOB, ID number, and expiration manually."),
+                        "VA Certificate of Eligibility": ("VA Certificate of Eligibility", "Document received and logged. This is a scanned image fields cannot be auto-extracted. Verify manually and attach to loan file."),
+                        "DD-214": ("DD-214 Certificate of Release", "Document received and logged. This is a scanned image fields cannot be auto-extracted. Verify discharge status and service dates manually."),
+                        "Hazard Insurance": ("Hazard Insurance / HOI Declarations", "Document received and logged. This is a scanned image verify policy number, coverage amounts, and expiration date manually."),
+                        "Government ID": ("Government ID", "Document received and logged. This is a scanned image verify name, DOB, ID number, and expiration manually."),
                     }
-                    _img_title, _img_msg = _img_labels.get(_batch.get("type"), ("Document", "Received and logged. Scanned image â€” manual review required."))
+                    _img_title, _img_msg = _img_labels.get(_batch.get("type"), ("Document", "Received and logged. Scanned image manual review required."))
                     st.markdown(f"**{_img_title}**")
                     st.markdown(
                         f'<div style="background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.3);'
                         f'border-radius:4px;padding:8px 12px;font-size:12px;color:#fbbf24;margin-top:4px;">'
-                        f'ðŸ“„ Scanned image PDF â€” text extraction not available for this scanned image.<br>'
+                        f'Scanned image PDF text extraction not available for this scanned image.<br>'
                         f'<span style="color:#9ca3af;">{_img_msg}</span>'
                         + (f'<br><span style="color:#f59e0b;">AI log: {(_r.get("ai_log","") or "none")}</span>' if _batch.get("type") == "Purchase Contract" else "")
                         + '</div>',
@@ -4559,7 +4559,7 @@ def show_dashboard():
                         ("Entitlement Code",    _coe.get("entitlement_code")),
                         ("Remaining Entitlement",f'${_coe["remaining_entitlement"]}' if _coe.get("remaining_entitlement") else None),
                         ("Loan Guaranty",       _coe.get("loan_guaranty")),
-                        ("Funding Fee Exempt",  "YES â€” Service-Connected Disability" if _coe.get("funding_fee_exempt") else None),
+                        ("Funding Fee Exempt",  "YES Service-Connected Disability" if _coe.get("funding_fee_exempt") else None),
                         ("Funding Fee Info",    _coe.get("funding_fee_info")),
                         ("Issue Date",          _coe.get("issue_date")),
                         ("Service Number",      _coe.get("service_number")),
@@ -4573,13 +4573,13 @@ def show_dashboard():
                         st.markdown("**VA Certificate of Eligibility**")
                         st.markdown(f'<table style="border-collapse:collapse;width:100%;">{_coe_html}</table>', unsafe_allow_html=True)
                     if _coe.get("funding_fee_exempt"):
-                        st.markdown('<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:6px 10px;font-size:12px;color:#3b82f6;margin-top:6px;">âœ“ Funding fee exemption noted</div>', unsafe_allow_html=True)
+                        st.markdown('<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:6px 10px;font-size:12px;color:#3b82f6;margin-top:6px;">Funding fee exemption noted</div>', unsafe_allow_html=True)
 
                 # â”€â”€ DD-214 display â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if _batch.get("type") == "DD-214" and not _r.get("image_only"):
                     _dd = (_r.get("extracted_data") or {})
                     def _dd_ssn_html(ssn):
-                        if not ssn: return "â€”"
+                        if not ssn: return ""
                         import re as _re5
                         digits = _re5.sub(r'\D', '', str(ssn))
                         last4 = digits[-4:] if len(digits) >= 4 else digits
@@ -4596,10 +4596,10 @@ def show_dashboard():
                     if _dd.get("character_of_discharge"): _dd_rows_html += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Character of Discharge</td><td style="color:#e5e7eb;font-size:12px;">{_dd["character_of_discharge"]}</td></tr>'
                     if _dd.get("total_service"):     _dd_rows_html += f'<tr><td style="color:#9ca3af;padding:2px 12px 2px 0;font-size:12px;white-space:nowrap;">Total Service</td><td style="color:#e5e7eb;font-size:12px;">{_dd["total_service"]}</td></tr>'
                     if _dd_rows_html:
-                        st.markdown("**DD-214 â€” Certificate of Release**")
+                        st.markdown("**DD-214 Certificate of Release**")
                         st.markdown(f'<table style="border-collapse:collapse;width:100%;">{_dd_rows_html}</table>', unsafe_allow_html=True)
                     if _dd.get("disability_noted"):
-                        st.markdown('<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:6px 10px;font-size:12px;color:#3b82f6;margin-top:6px;">âœ“ Service-connected disability noted â€” verify VA funding fee exemption</div>', unsafe_allow_html=True)
+                        st.markdown('<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:4px;padding:6px 10px;font-size:12px;color:#3b82f6;margin-top:6px;">Service-connected disability noted verify VA funding fee exemption</div>', unsafe_allow_html=True)
 
                 # â”€â”€ Government ID display â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if _batch.get("type") == "Government ID" and not _r.get("image_only"):
@@ -4669,21 +4669,21 @@ def _pipeline_cond_row(c, contacts=None, loan_num="", borrower=""):
             _cond_text = c.get("text", "")
             _body = (
                 f"Hi,\n\nThis is a friendly reminder regarding the following outstanding item "
-                f"for loan #{loan_num} â€” {borrower}:\n\n"
-                f"  â€¢ {_cond_text}\n\n"
+                f"for loan #{loan_num} {borrower}:\n\n"
+                f"  {_cond_text}\n\n"
                 f"Please provide this at your earliest convenience so we can keep the file moving.\n\n"
                 f"Thank you,"
             )
             _gurl = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({
                 "to": _email,
-                "su": f"Reminder: {loan_num} â€” {_cond_text[:50]}",
+                "su": f"Reminder: {loan_num} {_cond_text[:50]}",
                 "body": _body,
             })
             _remind_btn = (
                 f'<a href="{_gurl}" target="_blank" style="margin-left:6px;padding:1px 7px;'
                 f'background:rgba(66,133,244,0.1);border:1px solid rgba(66,133,244,0.3);'
                 f'border-radius:3px;color:#4285f4;font-size:9px;font-weight:700;'
-                f'text-decoration:none;white-space:nowrap;">ðŸ“§ Remind</a>'
+                f'text-decoration:none;white-space:nowrap;">Remind</a>'
             )
 
     return (
@@ -4699,7 +4699,7 @@ def _pipeline_cond_row(c, contacts=None, loan_num="", borrower=""):
 def show_pipeline():
     """Color-coded CRM loan pipeline dashboard."""
     import os
-    # Handle dash header chip click â€” set status filter from query param
+    # Handle dash header chip click set status filter from query param
     _qp = st.query_params
     _qp_filter = _qp.get("pipefilter", "")
     if isinstance(_qp_filter, list):
@@ -4782,7 +4782,7 @@ def show_pipeline():
                 unsafe_allow_html=True,
             )
 
-            # â”€â”€ Bulk Upload â€” auto-fill from documents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            # â”€â”€ Bulk Upload auto-fill from documents â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
             _add_bulk_key = "add_loan_bulk"
             with st.expander("Upload documents to auto-fill loan details", expanded=not st.session_state.get(_add_bulk_key)):
                 _add_bulk_files = st.file_uploader(
@@ -4941,7 +4941,7 @@ def show_pipeline():
                             _al_text = ""
 
                         if _al_text:
-                            # â”€â”€ Use extract_contacts() â€” same logic as the regular scanner â”€â”€
+                            # â”€â”€ Use extract_contacts() same logic as the regular scanner â”€â”€
                             from ai_engine import extract_contacts as _ec_fn
                             _ec_result = _ec_fn(_al_text)
                             # Parse borrower from the markdown table row: | Name | Primary Borrower | ...
@@ -4960,7 +4960,7 @@ def show_pipeline():
                                     if _ec_ln and _ec_ln != "Not found":
                                         _al_loan_num = _ec_ln
 
-                            # Fallback: mine loan number with regex (relaxed â€” allow dashes, shorter numbers)
+                            # Fallback: mine loan number with regex (relaxed allow dashes, shorter numbers)
                             if not _al_loan_num:
                                 for _lp in [
                                     r'(?i)loan\s*(?:#|number|num|no\.?)\s*[:\s]*([\d][\d\-]{4,}[\d])',
@@ -4974,7 +4974,7 @@ def show_pipeline():
                                         _al_loan_num = _m.group(1).strip()
                                         break
 
-                            # Mine closing date (relaxed â€” many formats)
+                            # Mine closing date (relaxed many formats)
                             if not _al_closing:
                                 for _dp in [
                                     r'(?i)closing\s*date\s*[:\s]*(\d{1,2}[/\-\.]\d{1,2}[/\-\.]\d{2,4})',
@@ -5128,7 +5128,7 @@ def show_pipeline():
                         f'{_ok} processed, {_skip} skipped<br>'
                         + "".join(
                             f'<span style="color:{"#3b82f6" if s["status"]=="ok" else "#ef4444"};">'
-                            f'{"âœ“" if s["status"]=="ok" else "âœ—"}</span> '
+                            f'{"" if s["status"]=="ok" else ""}</span> '
                             f'{s["name"]} â†’ {s["type"]}&nbsp;&nbsp;'
                             for s in _sc
                         )
@@ -5153,7 +5153,7 @@ def show_pipeline():
                         st.markdown(
                             f'<div style="background:#0a1a0a;border:1px solid rgba(59,130,246,0.2);border-radius:8px;'
                             f'padding:10px;margin:4px 0;font-size:12px;color:#3b82f6;">'
-                            f'âœ“ Auto-filled: {" &nbsp;Â·&nbsp; ".join(_parts)}'
+                            f'Auto-filled: {" &nbsp;Â·&nbsp; ".join(_parts)}'
                             f'</div>',
                             unsafe_allow_html=True,
                         )
@@ -5171,8 +5171,8 @@ def show_pipeline():
                         st.markdown(
                             f'<div style="background:#1a1500;border:1px solid rgba(251,191,36,0.2);border-radius:8px;'
                             f'padding:8px 12px;margin:4px 0;font-size:12px;color:#fbbf24;">'
-                            f'âš ï¸ Not found in documents: <b>{", ".join(_not_found)}</b> '
-                            f'â€” fill these in manually below.</div>',
+                            f'Not found in documents: <b>{", ".join(_not_found)}</b> '
+                            f'fill these in manually below.</div>',
                             unsafe_allow_html=True,
                         )
                     if st.button("Removeï¸ Clear scan results", key="add_loan_bulk_clear"):
@@ -5275,7 +5275,7 @@ def show_pipeline():
                         _cond_note = f", {len(_bf_conds)} conditions" if _bf_conds else ""
                         _cont_note = f", {len(_bf_contacts)} contact groups" if _bf_contacts else ""
                         log_activity(_new["id"], "created",
-                            f"Loan created â€” {new_borrower} #{new_loan_num}{_cond_note}{_cont_note}",
+                            f"Loan created {new_borrower} #{new_loan_num}{_cond_note}{_cont_note}",
                             user=my_name)
                         # Clean up session state
                         st.session_state.pipeline_add_open = False
@@ -5303,7 +5303,7 @@ def show_pipeline():
     _notifs = scan_notifications()
     if _notifs:
         _event_labels = {"opened": "opened", "updated": "updated", "status_changed": "changed status", "touched": "touched"}
-        with st.expander(f"ðŸ”” {len(_notifs)} notification{'s' if len(_notifs)!=1 else ''}", expanded=True):
+        with st.expander(f"{len(_notifs)} notification{'s' if len(_notifs)!=1 else ''}", expanded=True):
             for _nf in _notifs:
                 _ev = _event_labels.get(_nf.get("event",""), _nf.get("event",""))
                 _nc1, _nc2 = st.columns([5, 1])
@@ -5311,7 +5311,7 @@ def show_pipeline():
                     st.markdown(
                         f'<div style="font-size:12px;color:#d1d5db;">'
                         f'<b style="color:#3b82f6;">{_nf.get("by","?")}</b> {_ev} '
-                        f'<b>#{_nf.get("loan_num","â€”")}</b> {_nf.get("borrower","")}'
+                        f'<b>#{_nf.get("loan_num","")}</b> {_nf.get("borrower","")}'
                         f'</div>'
                         f'<div style="font-size:10px;color:#6b7280;">{_nf.get("ts","")[:16]}</div>',
                         unsafe_allow_html=True,
@@ -5325,7 +5325,7 @@ def show_pipeline():
     inbox_items = scan_inbox()
     if inbox_items:
         n = len(inbox_items)
-        with st.expander(f"Inbox â€” {n} shared loan{'s' if n != 1 else ''} waiting", expanded=True):
+        with st.expander(f"Inbox {n} shared loan{'s' if n != 1 else ''} waiting", expanded=True):
             st.caption("Loans shared directly with you by teammates. Accept to add to your pipeline.")
             for item in inbox_items:
                 ib1, ib2, ib3, ib4 = st.columns([3, 2, 1, 1])
@@ -5333,7 +5333,7 @@ def show_pipeline():
                 with ib1:
                     st.markdown(
                         f"<div style='font-weight:700;color:#ffffff;'>"
-                        f"#{item.get('loan_num','â€”')} &nbsp; {item.get('borrower','â€”')}</div>"
+                        f"#{item.get('loan_num','')} &nbsp; {item.get('borrower','')}</div>"
                         f"<div style='font-size:12px;color:#9ca3af;'>"
                         f"From: {item.get('last_updated_by','?')} &nbsp;Â·&nbsp; "
                         f"Updated: {item.get('last_updated','')[:10]}</div>",
@@ -5343,7 +5343,7 @@ def show_pipeline():
                     shared_with_list = ", ".join(item.get("shared_with", []))
                     st.markdown(
                         f"<div style='font-size:12px;color:#d1d5db;'>"
-                        f"Status: <b>{item.get('status','â€”')}</b><br>"
+                        f"Status: <b>{item.get('status','')}</b><br>"
                         f"Shared with: {shared_with_list or 'you'}</div>",
                         unsafe_allow_html=True,
                     )
@@ -5432,7 +5432,7 @@ def show_pipeline():
         loans.sort(key=lambda l: str(l.get("loan_type") or "").lower())
     elif sort_by == "Borrower (Aâ†’Z)":
         loans.sort(key=lambda l: str(l.get("borrower") or "").lower())
-    else:  # Newest (default â€” most recently created first)
+    else:  # Newest (default most recently created first)
         loans.sort(key=lambda l: l.get("id") or 0, reverse=True)
 
     if not loans:
@@ -5523,7 +5523,7 @@ def show_pipeline():
                 _pct = 100
             _pct_label = f"{_cleared_c}/{_total_c} conditions cleared"
         else:
-            # No conditions â€” use milestone-based progress
+            # No conditions use milestone-based progress
             _milestone_pct = {"Pending": 10, "Requested": 30, "Cleared": 75, "Overdue": 20, "Closed": 100}
             _pct = _milestone_pct.get(status, 10)
             # Bonus points for key fields being set
@@ -5565,7 +5565,7 @@ def show_pipeline():
                     _inline_badges += (
                         f'&nbsp;<span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:1px 6px;'
                         f'border-radius:3px;font-size:9px;font-weight:700;border:1px solid rgba(239,68,68,0.4);">'
-                        f'âš  NO RESPONSE {int((_elapsed-86400)/3600)}h overdue</span>'
+                        f'NO RESPONSE {int((_elapsed-86400)/3600)}h overdue</span>'
                     )
                 else:
                     _inline_badges += (
@@ -5843,18 +5843,18 @@ def show_pipeline():
                 _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
                 _phone, _email = _rc.get("phone", ""), _rc.get("email", "")
                 import urllib.parse as _uparse
-                _gmail_hoi = ("https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({"to": _email, "su": f"Re: {loan.get('loan_num','')} â€” HOI"})) if _email else ""
+                _gmail_hoi = ("https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({"to": _email, "su": f"Re: {loan.get('loan_num','')} HOI"})) if _email else ""
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);'
                     'border-radius:8px;padding:10px 12px;margin-top:6px;">'
                     '<div style="font-size:10px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:6px;">HOI / Insurance</div>'
                     + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;margin-bottom:4px;">{_name}</div>' if _name else '')
-                    + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">ðŸ“ž {_phone}</div>' if _phone else '')
+                    + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">{_phone}</div>' if _phone else '')
                     + (f'<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">'
-                       f'<span style="color:#9ca3af;font-size:11px;">âœ‰ {_email}</span>'
+                       f'<span style="color:#9ca3af;font-size:11px;">{_email}</span>'
                        f'<a href="{_gmail_hoi}" target="_blank" style="padding:2px 8px;background:rgba(66,133,244,0.12);'
                        f'border:1px solid rgba(66,133,244,0.35);border-radius:4px;color:#4285f4;font-size:10px;'
-                       f'font-weight:700;text-decoration:none;">ðŸ“¬ Gmail</a></div>' if _email else '')
+                       f'font-weight:700;text-decoration:none;">Gmail</a></div>' if _email else '')
                     + ('' if (_name or _phone or _email) else '<span style="color:#9ca3af;font-size:11px;">Not set</span>')
                     + '</div>',
                     unsafe_allow_html=True,
@@ -5894,18 +5894,18 @@ def show_pipeline():
                 if isinstance(_rc, str): _rc = {"name": _rc}
                 _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
                 _phone, _email = _rc.get("phone", ""), _rc.get("email", "")
-                _gmail_ttl = ("https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({"to": _email, "su": f"Re: {loan.get('loan_num','')} â€” Title"})) if _email else ""
+                _gmail_ttl = ("https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode({"to": _email, "su": f"Re: {loan.get('loan_num','')} Title"})) if _email else ""
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);'
                     'border-radius:8px;padding:10px 12px;margin-top:6px;">'
                     '<div style="font-size:10px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Title Company</div>'
                     + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;margin-bottom:4px;">{_name}</div>' if _name else '')
-                    + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">ðŸ“ž {_phone}</div>' if _phone else '')
+                    + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">{_phone}</div>' if _phone else '')
                     + (f'<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">'
-                       f'<span style="color:#9ca3af;font-size:11px;">âœ‰ {_email}</span>'
+                       f'<span style="color:#9ca3af;font-size:11px;">{_email}</span>'
                        f'<a href="{_gmail_ttl}" target="_blank" style="padding:2px 8px;background:rgba(66,133,244,0.12);'
                        f'border:1px solid rgba(66,133,244,0.35);border-radius:4px;color:#4285f4;font-size:10px;'
-                       f'font-weight:700;text-decoration:none;">ðŸ“¬ Gmail</a></div>' if _email else '')
+                       f'font-weight:700;text-decoration:none;">Gmail</a></div>' if _email else '')
                     + ('' if (_name or _phone or _email) else '<span style="color:#9ca3af;font-size:11px;">Not set</span>')
                     + '</div>',
                     unsafe_allow_html=True,
@@ -5965,7 +5965,7 @@ def show_pipeline():
                     # Share a new loan with selected teammates
                     st.markdown(
                         "<div style='font-size:13px;color:#d1d5db;margin-bottom:6px;'>"
-                        f"Share <b>#{loan.get('loan_num')} â€” {loan.get('borrower')}</b> with:</div>",
+                        f"Share <b>#{loan.get('loan_num')} {loan.get('borrower')}</b> with:</div>",
                         unsafe_allow_html=True,
                     )
                     sp1, sp2 = st.columns([3, 1])
@@ -5984,9 +5984,9 @@ def show_pipeline():
                                 ok = [k for k, v in results.items() if v == "ok"]
                                 fail = {k: v for k, v in results.items() if v != "ok"}
                                 if ok:
-                                    st.success(f"âœ“ Shared with: {', '.join(ok)}")
+                                    st.success(f"Shared with: {', '.join(ok)}")
                                 for name, err in fail.items():
-                                    st.error(f"âœ— {name}: {err}")
+                                    st.error(f"{name}: {err}")
                                 st.session_state[share_key] = False
                             else:
                                 st.warning("Pick at least one person to share with.")
@@ -6323,7 +6323,7 @@ def show_reader():
             # Offer download for office docs / unknown types
             try:
                 with open(open_file["path"], "rb") as _ofh:
-                    st.info("This file type can't be rendered inline â€” download it below.")
+                    st.info("This file type can't be rendered inline download it below.")
                     st.download_button(
                         f"â¬‡ Download {open_file['name']}",
                         _ofh.read(),
@@ -6345,7 +6345,7 @@ def show_team_page():
     st.markdown("## My Team")
     st.caption(
         "Set your inbox folder so teammates can share loans directly with you. "
-        "Add each person once â€” after that, sharing is one click."
+        "Add each person once after that, sharing is one click."
     )
 
     config = get_team_config()
@@ -6388,7 +6388,7 @@ def show_team_page():
     # â”€â”€ Add Team Member â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.markdown("### Add a Team Member")
     st.caption(
-        "Add each person you work with. You'll need their inbox folder path â€” "
+        "Add each person you work with. You'll need their inbox folder path "
         "just ask them to open this page and copy their path."
     )
 
@@ -6411,10 +6411,10 @@ def show_team_page():
                 ok, msg = test_inbox(new_inbox)
                 add_member(new_name.strip(), new_role, new_inbox.strip())
                 if ok:
-                    st.success(f"âœ“ {new_name} added â€” inbox is reachable!")
+                    st.success(f"{new_name} added inbox is reachable!")
                 else:
                     st.warning(
-                        f"âš ï¸ {new_name} added, but can't reach their inbox right now: {msg}. "
+                        f"{new_name} added, but can't reach their inbox right now: {msg}. "
                         "You can still add them and share when the folder is accessible."
                     )
                 st.rerun()
@@ -6446,7 +6446,7 @@ def show_team_page():
             with mc3:
                 inbox_path = m.get("inbox", "")
                 reachable = os.path.isdir(inbox_path) if inbox_path else False
-                dot = "â—" if reachable else "â—"
+                dot = "" if reachable else ""
                 st.markdown(
                     f"<div style='font-size:12px;color:#9ca3af;'>{dot} "
                     f"<code style='color:#d1d5db;'>{inbox_path or '(no path)'}</code></div>",
@@ -6498,7 +6498,7 @@ def show_snapshot_page():
                 missing.append({"document": req_type, "required": True})
 
         snapshot = {
-            "loan_folder": current_loan.get("borrower", "â€”"),
+            "loan_folder": current_loan.get("borrower", ""),
             "complete": complete,
             "missing": missing,
             "stale": [],
@@ -6511,7 +6511,7 @@ def show_snapshot_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ“‹ Loan Snapshot</div>',
+        'Loan Snapshot</div>',
         unsafe_allow_html=True,
     )
 
@@ -6541,7 +6541,7 @@ def show_snapshot_page():
             st.markdown(
                 f'<div style="padding:5px 10px;margin:3px 0;background:rgba(245,158,11,0.1);'
                 f'border-left:3px solid #f59e0b;border-radius:4px;font-size:12px;color:#f59e0b;">'
-                f'{sdoc["document"]} â€” {sdoc["age_days"]}d old</div>',
+                f'{sdoc["document"]} {sdoc["age_days"]}d old</div>',
                 unsafe_allow_html=True,
             )
 
@@ -6552,7 +6552,7 @@ def show_snapshot_page():
 
 
 def show_report_issue_page():
-    """Report Issue â€” saves locally with SSN/account masking."""
+    """Report Issue saves locally with SSN/account masking."""
     from feedback_reporter import save_report
 
     st.markdown('<div id="report_issue"></div>', unsafe_allow_html=True)
@@ -6619,7 +6619,7 @@ def show_missing_docs_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ—‚ï¸ Missing Documents Checker</div>',
+        'Missing Documents Checker</div>',
         unsafe_allow_html=True,
     )
 
@@ -6681,7 +6681,7 @@ def show_doc_expiry_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ“… Document Expiry Tracker</div>',
+        'Document Expiry Tracker</div>',
         unsafe_allow_html=True,
     )
 
@@ -6720,7 +6720,7 @@ def show_doc_expiry_page():
                 st.markdown(
                     f'<div style="padding:5px 10px;margin:3px 0;background:rgba(245,158,11,0.15);'
                     f'border-left:3px solid #f59e0b;border-radius:4px;font-size:12px;color:#f59e0b;">'
-                    f'{doc.name} â€” {doc.days_until_expiry}d</div>',
+                    f'{doc.name} {doc.days_until_expiry}d</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -6730,7 +6730,7 @@ def show_doc_expiry_page():
                 st.markdown(
                     f'<div style="padding:5px 10px;margin:3px 0;background:rgba(59,130,246,0.1);'
                     f'border-left:3px solid #3b82f6;border-radius:4px;font-size:12px;color:#3b82f6;">'
-                    f'{doc.name} â€” {doc.days_until_expiry}d</div>',
+                    f'{doc.name} {doc.days_until_expiry}d</div>',
                     unsafe_allow_html=True,
                 )
 
@@ -6745,7 +6745,7 @@ def show_doc_expiry_page():
 
 
 def show_spanish_reply_page():
-    """Spanish Reply â€” auto-detect language, translate, draft."""
+    """Spanish Reply auto-detect language, translate, draft."""
     from spanish_reply import detect_language, translate_to_english, translate_to_spanish, get_spanish_template, get_english_template
 
     st.markdown('<div id="spanish_reply"></div>', unsafe_allow_html=True)
@@ -6756,7 +6756,7 @@ def show_spanish_reply_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:8px;">'
-        'ðŸŒŽ Spanish Reply Window</div>'
+        'Spanish Reply Window</div>'
         '<div style="font-size:13px;color:#9ca3af;margin-bottom:16px;">'
         'Auto-detects language and helps you reply in the borrower\'s preferred language</div>',
         unsafe_allow_html=True,
@@ -6794,7 +6794,7 @@ def show_spanish_reply_page():
             st.markdown(
                 f'<div style="padding:7px 12px;margin-bottom:14px;background:rgba(167,139,250,0.15);'
                 f'border-left:3px solid #a78bfa;border-radius:4px;font-size:12px;color:#a78bfa;">'
-                f'ðŸŒ Spanish Email Detected â€” {detection.confidence:.0%} confidence</div>',
+                f'Spanish Email Detected {detection.confidence:.0%} confidence</div>',
                 unsafe_allow_html=True,
             )
 
@@ -6802,15 +6802,15 @@ def show_spanish_reply_page():
                 english_translation = translate_to_english(original_text)
 
             if english_translation and not english_translation.startswith("[Error"):
-                st.success("âœ… Translation complete!")
-                st.markdown("**ðŸ“ English Translation:**")
+                st.success("Translation complete!")
+                st.markdown("**English Translation:**")
                 st.text_area("Translated text", value=english_translation, height=110, key="spanish_translated")
             else:
                 st.error("âŒ Translation failed. Please check your internet connection.")
-                st.markdown("**ðŸ“ Original Spanish Text:**")
+                st.markdown("**Original Spanish Text:**")
                 st.text_area("Original text", value=original_text, height=110, key="spanish_original")
 
-            st.markdown("**âœï¸ Write your reply in English:**")
+            st.markdown("**Write your reply in English:**")
             english_reply = st.text_area("Your reply in English", height=90, key="spanish_reply_en",
                                        placeholder="Type your response in English here... e.g., 'Thank you for your email. We need your bank statements and pay stubs.'")
 
@@ -6820,10 +6820,10 @@ def show_spanish_reply_page():
                         spanish_draft = translate_to_spanish(english_reply)
 
                     if spanish_draft and not spanish_draft.startswith("[Error"):
-                        st.success("âœ… Spanish translation complete!")
-                        st.markdown("**ðŸ“§ Spanish Email Draft (ready to copy to Gmail):**")
+                        st.success("Spanish translation complete!")
+                        st.markdown("**Spanish Email Draft (ready to copy to Gmail):**")
                         st.text_area("Copy this Spanish text to Gmail", value=spanish_draft, height=150, key="spanish_final_draft")
-                        st.info("ðŸ’¡ Copy the text above and paste it into Gmail to send to your Spanish-speaking borrower!")
+                        st.info("Copy the text above and paste it into Gmail to send to your Spanish-speaking borrower!")
                     else:
                         st.error("âŒ Translation failed. Please try again.")
                 else:
@@ -6832,7 +6832,7 @@ def show_spanish_reply_page():
         st.markdown(
             '<div style="padding:7px 12px;margin-bottom:14px;background:rgba(59,130,246,0.1);'
             'border-left:3px solid #3b82f6;border-radius:4px;font-size:12px;color:#3b82f6;">'
-            'ðŸ“§ English Email Detected â€” Generate Spanish Reply Templates</div>',
+            'English Email Detected Generate Spanish Reply Templates</div>',
             unsafe_allow_html=True,
         )
 
@@ -6850,9 +6850,9 @@ def show_spanish_reply_page():
                 st.text_area("English version", value=get_english_template(conditions), height=220, key="english_gen_out")
 
             if conditions.strip():
-                st.info("ðŸ’¡ Copy the Spanish draft and paste into Gmail to send to your Spanish-speaking borrower!")
+                st.info("Copy the Spanish draft and paste into Gmail to send to your Spanish-speaking borrower!")
             else:
-                st.info("ðŸ’¡ Add conditions above to generate personalized email templates.")
+                st.info("Add conditions above to generate personalized email templates.")
 
     st.markdown("---")
     col_close, col_clear = st.columns(2)
@@ -6883,7 +6883,7 @@ def show_income_verifier_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ“Š Income & Employment Verifier</div>',
+        'Income & Employment Verifier</div>',
         unsafe_allow_html=True,
     )
 
@@ -6919,12 +6919,12 @@ def show_income_verifier_page():
             if results["income_discrepancies"] or results["employment_discrepancies"]:
                 st.markdown("### Issues Requiring Attention")
                 for disc in results["income_discrepancies"] + results["employment_discrepancies"]:
-                    st.error(f"âš ï¸ {disc}")
+                    st.error(f"{disc}")
 
             if results["recommendations"]:
                 st.markdown("### Recommendations")
                 for rec in results["recommendations"]:
-                    st.info(f"ðŸ’¡ {rec}")
+                    st.info(f"{rec}")
         else:
             st.warning("No extracted data available. Please scan documents first.")
 
@@ -6935,7 +6935,7 @@ def show_auto_data_entry_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ“ Auto Data Entry</div>',
+        'Auto Data Entry</div>',
         unsafe_allow_html=True,
     )
 
@@ -6963,7 +6963,7 @@ def show_auto_data_entry_page():
         st.markdown("### Filled Form Fields")
         for field, value in filled_form.items():
             if value:
-                st.success(f"âœ… {field.replace('_', ' ').title()}: {value}")
+                st.success(f"{field.replace('_', ' ').title()}: {value}")
             else:
                 st.warning(f"âŒ {field.replace('_', ' ').title()}: Not filled")
 
@@ -6976,7 +6976,7 @@ def show_auto_data_entry_page():
         if errors:
             st.markdown("### Validation Issues")
             for error in errors:
-                st.error(f"âš ï¸ {error}")
+                st.error(f"{error}")
     else:
         st.warning("No extracted data available. Please scan documents first.")
 
@@ -6987,7 +6987,7 @@ def show_credit_summary_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ’³ Credit Report Summary</div>',
+        'Credit Report Summary</div>',
         unsafe_allow_html=True,
     )
 
@@ -7014,7 +7014,7 @@ def show_credit_summary_page():
         if summary.get("recommendations"):
             st.markdown("### Recommendations")
             for rec in summary["recommendations"]:
-                st.info(f"ðŸ’¡ {rec}")
+                st.info(f"{rec}")
 
         st.markdown(f"**Analysis:** {summary.get('analysis', 'No analysis available')}")
 
@@ -7034,7 +7034,7 @@ def show_current_loan_banner():
                     f'<div style="background:#1a1a1a;border:1px solid #3b82f6;border-radius:8px;padding:12px 16px;margin-bottom:20px;">'
                     f'<div style="color:#3b82f6;font-weight:600;font-size:14px;margin-bottom:4px;">Current Loan</div>'
                     f'<div style="color:#ffffff;font-weight:700;font-size:16px;">{current_loan["borrower"]}</div>'
-                    f'<div style="color:#9ca3af;font-size:13px;margin-top:2px;">{current_loan["loan_num"]} â€¢ {current_loan["status"]}</div>'
+                    f'<div style="color:#9ca3af;font-size:13px;margin-top:2px;">{current_loan["loan_num"]} {current_loan["status"]}</div>'
                     f'</div>',
                     unsafe_allow_html=True,
                 )
@@ -7063,7 +7063,7 @@ def show_dti_calculator_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ§® DTI & Closing Cost Calculator</div>',
+        'DTI & Closing Cost Calculator</div>',
         unsafe_allow_html=True,
     )
 
@@ -7114,10 +7114,10 @@ def show_dti_calculator_page():
         confidence = st.session_state.get("dti_confidence", "low")
 
         if data_source == "scanned_documents":
-            confidence_icon = {"high": "ðŸŸ¢", "medium": "ðŸŸ¡", "low": "ðŸ”´"}.get(confidence, "â“")
-            st.info(f"ðŸ“Š Auto-filled from scanned documents ({confidence_icon} {confidence} confidence)")
+            confidence_icon = {"high": "", "medium": "", "low": ""}.get(confidence, "â“")
+            st.info(f"Auto-filled from scanned documents ({confidence_icon} {confidence} confidence)")
         elif st.session_state.get("dti_income", 0) > 0:
-            st.info("âœï¸ Manually entered data")
+            st.info("Manually entered data")
 
         if st.button("Calculate DTI", type="primary"):
             result = calc.calculate_dti(income, debt, housing, loan_type)
@@ -7125,7 +7125,7 @@ def show_dti_calculator_page():
             # Check for errors
             if "error" in result:
                 st.error(f"âŒ Calculation Error: {result['error']}")
-                st.info("ðŸ’¡ Please ensure Monthly Gross Income is greater than $0")
+                st.info("Please ensure Monthly Gross Income is greater than $0")
                 return
 
             st.markdown(f"**Front-End DTI:** {result['front_end_dti']:.1f}% (Limit: {result['front_end_limit']}%)")
@@ -7177,10 +7177,10 @@ def show_dti_calculator_page():
         confidence = st.session_state.get("cc_confidence", "low")
 
         if data_source == "scanned_documents":
-            confidence_icon = {"high": "ðŸŸ¢", "medium": "ðŸŸ¡", "low": "ðŸ”´"}.get(confidence, "â“")
-            st.info(f"ðŸ“Š Auto-filled from scanned documents ({confidence_icon} {confidence} confidence)")
+            confidence_icon = {"high": "", "medium": "", "low": ""}.get(confidence, "â“")
+            st.info(f"Auto-filled from scanned documents ({confidence_icon} {confidence} confidence)")
         elif st.session_state.get("cc_loan_amt", 0) > 0 or st.session_state.get("cc_property_val", 0) > 0:
-            st.info("âœï¸ Manually entered data")
+            st.info("Manually entered data")
 
         if st.button("Calculate Closing Costs", type="primary"):
             result = calc.calculate_closing_costs(loan_amt, property_val, loan_type_cc)
@@ -7196,7 +7196,7 @@ def show_condition_clearer_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'âœ… Underwriting Condition Clearer</div>',
+        'Underwriting Condition Clearer</div>',
         unsafe_allow_html=True,
     )
 
@@ -7217,7 +7217,7 @@ def show_condition_clearer_page():
         if result.get("matching_docs"):
             st.markdown("### Matching Documents")
             for doc in result["matching_docs"]:
-                st.success(f"ðŸ“„ {doc['filename']} ({doc['confidence']}% match)")
+                st.success(f"{doc['filename']} ({doc['confidence']}% match)")
 
 
 def show_compliance_checker_page():
@@ -7226,7 +7226,7 @@ def show_compliance_checker_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'âš–ï¸ Compliance Checker</div>',
+        'Compliance Checker</div>',
         unsafe_allow_html=True,
     )
 
@@ -7269,7 +7269,7 @@ def show_compliance_checker_page():
                     for flag in category_results["flags"]:
                         if "âŒ" in flag:
                             st.error(flag)
-                        elif "âš ï¸" in flag:
+                        elif "" in flag:
                             st.warning(flag)
                         else:
                             st.info(flag)
@@ -7278,7 +7278,7 @@ def show_compliance_checker_page():
         if results.get("recommendations"):
             st.markdown("### Recommendations")
             for rec in results["recommendations"]:
-                st.info(f"ðŸ’¡ {rec}")
+                st.info(f"{rec}")
 
 
 # --- New Advanced Tool Pages ---
@@ -7289,7 +7289,7 @@ def show_closing_package_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ“¦ Closing Package Generator</div>',
+        'Closing Package Generator</div>',
         unsafe_allow_html=True,
     )
 
@@ -7303,7 +7303,7 @@ def show_closing_package_page():
         result = generator.generate(loan_folder, borrower_name)
 
         if result.get("success"):
-            st.success("âœ… Closing package generated successfully!")
+            st.success("Closing package generated successfully!")
             st.markdown(f"**Package Location:** {result['package_folder']}")
             st.markdown(f"**Documents Included:** {result['documents_included']}")
             st.markdown(f"**Documents Missing:** {len(result.get('missing_documents', []))}")
@@ -7311,7 +7311,7 @@ def show_closing_package_page():
             if result.get("missing_documents"):
                 st.warning("Missing documents:")
                 for doc in result["missing_documents"]:
-                    st.write(f"â€¢ {doc}")
+                    st.write(f"{doc}")
         else:
             st.error(f"âŒ Failed to generate package: {result.get('error', 'Unknown error')}")
 
@@ -7323,7 +7323,7 @@ def show_pipeline_dashboard_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ“Š Pipeline Dashboard</div>',
+        'Pipeline Dashboard</div>',
         unsafe_allow_html=True,
     )
 
@@ -7336,25 +7336,25 @@ def show_pipeline_dashboard_page():
 
     # Show alerts
     if alerts["total"] > 0:
-        st.markdown("## ðŸš¨ Pipeline Alerts")
+        st.markdown("## Pipeline Alerts")
 
         if alerts["urgent"]:
             st.error("### URGENT (Closing within 3 days)")
             for alert in alerts["urgent"]:
-                st.write(f"â€¢ {alert['message']}")
+                st.write(f"{alert['message']}")
 
         if alerts["warning"]:
             st.warning("### WARNING (Closing within 7 days)")
             for alert in alerts["warning"]:
-                st.write(f"â€¢ {alert['message']}")
+                st.write(f"{alert['message']}")
 
         if alerts["notice"]:
             st.info("### NOTICE (Closing within 14 days)")
             for alert in alerts["notice"]:
-                st.write(f"â€¢ {alert['message']}")
+                st.write(f"{alert['message']}")
 
     # Show summary
-    st.markdown("## ðŸ“ˆ Pipeline Summary")
+    st.markdown("## Pipeline Summary")
     col1, col2, col3, col4 = st.columns(4)
     with col1:
         st.metric("Total Loans", summary["total_loans"])
@@ -7372,7 +7372,7 @@ def show_guideline_checker_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ“‹ Investor Guideline Checker</div>',
+        'Investor Guideline Checker</div>',
         unsafe_allow_html=True,
     )
 
@@ -7408,7 +7408,7 @@ def show_guideline_checker_page():
                 st.warning(warning)
 
         if result["passed"]:
-            st.success("âœ… Loan meets all guidelines!")
+            st.success("Loan meets all guidelines!")
         else:
             st.error("âŒ Loan does not meet guidelines - review required")
 
@@ -7419,7 +7419,7 @@ def show_fraud_detector_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ” Fraud Detector</div>',
+        'Fraud Detector</div>',
         unsafe_allow_html=True,
     )
 
@@ -7452,7 +7452,7 @@ def show_fraud_detector_page():
                 severity_color = {"low": "blue", "medium": "orange", "high": "red", "critical": "red"}
                 st.error(f"{flag['description']} - {flag['recommendation']}")
         else:
-            st.success("âœ… No fraud indicators detected")
+            st.success("No fraud indicators detected")
 
 
 def show_multi_borrower_page():
@@ -7461,7 +7461,7 @@ def show_multi_borrower_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ‘¥ Multi-Borrower Support</div>',
+        'Multi-Borrower Support</div>',
         unsafe_allow_html=True,
     )
 
@@ -7486,7 +7486,7 @@ def show_multi_borrower_page():
         handler = MultiBorrowerHandler()
         result = handler.process(files, primary_borrower, co_borrower)
 
-        st.success("âœ… Multi-borrower processing complete!")
+        st.success("Multi-borrower processing complete!")
         st.markdown(f"**Primary Borrower:** {result['primary_borrower']}")
         if result['co_borrower']:
             st.markdown(f"**Co-Borrower:** {result['co_borrower']}")
@@ -7500,7 +7500,7 @@ def show_los_export_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ“¤ LOS Export</div>',
+        'LOS Export</div>',
         unsafe_allow_html=True,
     )
 
@@ -7529,7 +7529,7 @@ def show_los_export_page():
         result = exporter.export(loan_data, export_path, export_format)
 
         if result["success"]:
-            st.success("âœ… Export successful!")
+            st.success("Export successful!")
             st.markdown("**Files Created:**")
             for file_path in result["files_created"]:
                 st.code(file_path)
@@ -7546,7 +7546,7 @@ def show_rate_lock_monitor_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ”’ Rate Lock Monitor</div>',
+        'Rate Lock Monitor</div>',
         unsafe_allow_html=True,
     )
 
@@ -7581,11 +7581,11 @@ def show_rate_lock_monitor_page():
             st.markdown("### Alerts")
             for alert in result["alerts"]:
                 if alert["type"] == "critical":
-                    st.error(f"ðŸš¨ {alert['message']}")
+                    st.error(f"{alert['message']}")
                 elif alert["type"] == "warning":
-                    st.warning(f"âš ï¸ {alert['message']}")
+                    st.warning(f"{alert['message']}")
                 else:
-                    st.info(f"ðŸ’° {alert['message']}")
+                    st.info(f"{alert['message']}")
 
         if result.get("recommendations"):
             st.markdown("### Recommendations")
@@ -7599,7 +7599,7 @@ def show_underwriting_tracker_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ“‹ Underwriting Condition Tracker</div>',
+        'Underwriting Condition Tracker</div>',
         unsafe_allow_html=True,
     )
 
@@ -7637,12 +7637,12 @@ def show_underwriting_tracker_page():
         if results["condition_status"]:
             st.markdown("### Condition Status")
             for condition in results["condition_status"]:
-                status_icon = {"cleared": "âœ…", "pending": "â³", "overdue": "ðŸš¨"}.get(condition["status"], "â“")
+                status_icon = {"cleared": "", "pending": "â³", "overdue": ""}.get(condition["status"], "â“")
                 st.markdown(f"{status_icon} **{condition['description']}** - {condition['status'].title()}")
 
                 if condition.get("recommendations"):
                     for rec in condition["recommendations"]:
-                        st.caption(f"ðŸ’¡ {rec}")
+                        st.caption(f"{rec}")
 
 
 def show_document_classifier_page():
@@ -7654,7 +7654,7 @@ def show_document_classifier_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ·ï¸ Automated Document Classifier</div>',
+        'Automated Document Classifier</div>',
         unsafe_allow_html=True,
     )
 
@@ -7667,7 +7667,7 @@ def show_document_classifier_page():
         result = classifier.classify_document(file_path)
 
         if result["primary_classification"]:
-            st.success(f"âœ… Classified as: **{result['primary_classification'].replace('_', ' ').title()}**")
+            st.success(f"Classified as: **{result['primary_classification'].replace('_', ' ').title()}**")
             st.markdown(f"**Confidence:** {result['confidence']}%")
             st.markdown(f"**Routing Folder:** {result['routing_folder'].replace('_', ' ').title()}")
 
@@ -7681,7 +7681,7 @@ def show_document_classifier_page():
         if result.get("secondary_classifications"):
             st.markdown("### Could Also Be")
             for secondary in result["secondary_classifications"]:
-                st.caption(f"â€¢ {secondary.replace('_', ' ').title()}")
+                st.caption(f"{secondary.replace('_', ' ').title()}")
 
 
 def show_escrow_calculator_page():
@@ -7690,7 +7690,7 @@ def show_escrow_calculator_page():
 
     st.markdown(
         '<div style="font-size:18px;font-weight:800;color:#ffffff;letter-spacing:-0.3px;margin-bottom:16px;">'
-        'ðŸ’° Escrow Calculator</div>',
+        'Escrow Calculator</div>',
         unsafe_allow_html=True,
     )
 
@@ -7730,7 +7730,7 @@ def show_escrow_calculator_page():
         if "error" in result:
             st.error(result["error"])
         else:
-            st.success("âœ… Calculation Complete!")
+            st.success("Calculation Complete!")
 
             # Main results
             col1, col2, col3 = st.columns(3)
@@ -7776,12 +7776,12 @@ def show_history():
 
 
 def show_email_watch_controls_page():
-    """Email Watch â€” Controls: status, start/stop, credentials, settings."""
+    """Email Watch Controls: status, start/stop, credentials, settings."""
     import email_watch as ew
 
     st.markdown("## Email Watch Â· Controls")
     st.caption(
-        "Watch your inbox for new attachments. Runs in the background â€” "
+        "Watch your inbox for new attachments. Runs in the background "
         "you can use Scanner or Pipeline normally while it checks."
     )
 
@@ -7793,16 +7793,16 @@ def show_email_watch_controls_page():
         st.markdown(
             f'<div style="background:rgba(59,130,246,0.05);border-left:4px solid #3b82f6;border-radius:8px;'
             f'padding:10px 16px;margin-bottom:16px;">'
-            f'<span style="font-size:14px;font-weight:700;color:#a9dfbf;">â— Watching inbox</span>'
+            f'<span style="font-size:14px;font-weight:700;color:#a9dfbf;">Watching inbox</span>'
             f'<span style="font-size:12px;color:#7dcea0;margin-left:12px;">'
-            f'Last check: {status["last_time"] or "â€”"} Â· {status["last_status"]}</span></div>',
+            f'Last check: {status["last_time"] or ""} Â· {status["last_status"]}</span></div>',
             unsafe_allow_html=True,
         )
     else:
         st.markdown(
             f'<div style="background:rgba(255,255,255,0.1);border-left:4px solid rgba(255,255,255,0.05);border-radius:8px;'
             f'padding:10px 16px;margin-bottom:16px;">'
-            f'<span style="font-size:14px;font-weight:700;color:#9ca3af;">â— Inbox watch is off</span>'
+            f'<span style="font-size:14px;font-weight:700;color:#9ca3af;">Inbox watch is off</span>'
             + (f'<span style="font-size:12px;color:#d1d5db;margin-left:12px;">'
                f'Last check: {status["last_time"]} Â· {status["last_status"]}</span>'
                if status["last_time"] else "")
@@ -7830,7 +7830,7 @@ def show_email_watch_controls_page():
     with t2:
         if st.button("Check Now", use_container_width=True,
                      help="Run one check immediately without waiting for interval"):
-            with st.spinner("Checking inboxâ€¦"):
+            with st.spinner("Checking inbox"):
                 _found, _msg = ew.check_now()
             if _msg.startswith("Error"):
                 st.error(_msg)
@@ -7911,7 +7911,7 @@ def show_email_watch_controls_page():
     with st.expander("â„¹ï¸ How Email Watch works"):
         st.markdown("""
 **What it does:**
-- Checks your inbox every N minutes (runs in the background â€” you can use the rest of the app normally)
+- Checks your inbox every N minutes (runs in the background you can use the rest of the app normally)
 - Looks for **unread emails with PDF attachments**
 - Downloads each PDF to the `incoming/` folder in this app's directory
 - Reads the first 3 pages of the PDF to extract borrower names
@@ -7925,17 +7925,17 @@ def show_email_watch_controls_page():
 
 **Toggle:**
 - On: background thread checks every N minutes, then sleeps
-- Off: thread stops within a few seconds â€” no more peeking
+- Off: thread stops within a few seconds no more peeking
 
 **Borrower matching confidence:**
-- â— 80%+ = high confidence match (name found in PDF text)
-- â— 50â€“79% = possible match (partial name found)
-- â— Below 50% = no match â€” file saved to `incoming/` folder, you decide
+- 80%+ = high confidence match (name found in PDF text)
+- 5079% = possible match (partial name found)
+- Below 50% = no match file saved to `incoming/` folder, you decide
         """)
 
 
 def show_email_watch_page():
-    """Email Watch â€” Results: pending matches and incoming queue."""
+    """Email Watch Results: pending matches and incoming queue."""
     import email_watch as ew
 
     _ew_status  = ew.get_status()
@@ -7943,8 +7943,8 @@ def show_email_watch_page():
     _ew_running = _ew_status["running"]
 
     # compact status strip + Controls shortcut
-    _dot   = "â—" if _ew_running else "â—‹"
-    _state = f"Watching Â· last check {_ew_status['last_time'] or 'â€”'}" if _ew_running else "Watch is off"
+    _dot   = "" if _ew_running else ""
+    _state = f"Watching Â· last check {_ew_status['last_time'] or ''}" if _ew_running else "Watch is off"
     _rs1, _rs2 = st.columns([5, 1])
     with _rs1:
         st.markdown(
@@ -7965,7 +7965,7 @@ def show_email_watch_page():
     # â”€â”€ Pending matches â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     matches = ew.get_matches()
     if matches:
-        st.markdown(f"### {len(matches)} New Attachment(s) â€” Waiting for Action")
+        st.markdown(f"### {len(matches)} New Attachment(s) Waiting for Action")
         for i, m in enumerate(matches):
             conf  = m.get("confidence", 0)
             sugg  = m.get("suggestion", "unknown")
@@ -7974,10 +7974,10 @@ def show_email_watch_page():
 
             if sugg == "match":
                 conf_color = "#3b82f6"
-                conf_label = f"âœ“ Matched â€” {bname} Â· Loan {lnum} ({conf}% confidence)"
+                conf_label = f"Matched {bname} Â· Loan {lnum} ({conf}% confidence)"
             elif sugg == "possible":
                 conf_color = "#fbbf24"
-                conf_label = f"âš ï¸ Possible match â€” {bname} Â· Loan {lnum} ({conf}%)"
+                conf_label = f"Possible match {bname} Â· Loan {lnum} ({conf}%)"
             else:
                 conf_color = "#ef4444"
                 conf_label = "? No pipeline match found"
@@ -8009,7 +8009,7 @@ def show_email_watch_page():
 
                 with mc2:
                     if _can_preview:
-                        _icon = "ðŸ–¼ï¸" if _fname_low.endswith(_IMG_EXT) else ("ðŸ“„" if _fname_low.endswith(".pdf") else "ðŸ“‹")
+                        _icon = "" if _fname_low.endswith(_IMG_EXT) else ("" if _fname_low.endswith(".pdf") else "")
                         if st.button(f"{_icon} Preview", key=f"ew_preview_{i}", use_container_width=True):
                             _toggle = f"ew_preview_open_{i}"
                             st.session_state[_toggle] = not st.session_state.get(_toggle, False)
@@ -8032,7 +8032,7 @@ def show_email_watch_page():
                             ew.dismiss(i)
                             st.success(f"Saved to {dest}")
                             st.rerun()
-                    # Direct download â€” works for every file type
+                    # Direct download works for every file type
                     try:
                         with open(m["file_path"], "rb") as _dfh:
                             st.download_button(
@@ -8092,7 +8092,7 @@ def show_email_watch_page():
 
         st.markdown("---")
 
-    # â”€â”€ Incoming Queue â€” all files in the incoming/ folder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # â”€â”€ Incoming Queue all files in the incoming/ folder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     import email_watch as ew
     _incoming_dir = os.path.join(os.path.dirname(__file__), "incoming")
     _inbox_files  = []
@@ -8102,8 +8102,8 @@ def show_email_watch_page():
             if f.lower().endswith(".pdf")
         ]
 
-    _iq_label = f"Incoming Queue â€” {len(_inbox_files)} file(s) waiting" if _inbox_files \
-                else "Incoming Queue â€” empty"
+    _iq_label = f"Incoming Queue {len(_inbox_files)} file(s) waiting" if _inbox_files \
+                else "Incoming Queue empty"
     with st.expander(_iq_label, expanded=bool(_inbox_files)):
         if not _inbox_files:
             st.markdown(
@@ -8113,7 +8113,7 @@ def show_email_watch_page():
             )
         else:
             st.caption(
-                "These files came from your email inbox. Review each one â€” "
+                "These files came from your email inbox. Review each one "
                 "**nothing moves until you click Yes.**"
             )
             from doc_verify import verify as _dv_q
@@ -8134,7 +8134,7 @@ def show_email_watch_page():
                 _v_color = {"pass": "#3b82f6", "review": "#fbbf24", "check": "#ef4444"}.get(
                     _qv.get("verdict", "check"), "#ef4444"
                 )
-                _v_icon  = {"pass": "âœ“", "review": "â–³", "check": "?"}.get(
+                _v_icon  = {"pass": "", "review": "â–³", "check": "?"}.get(
                     _qv.get("verdict", "check"), "Search"
                 )
                 _bname = _qv.get("borrower") or "Unknown borrower"
@@ -8156,10 +8156,10 @@ def show_email_watch_page():
                     _qa, _qb, _qc, _qd = st.columns([3, 1, 1, 1])
                     with _qa:
                         for _ok in _qv.get("ok_list", []):
-                            st.markdown(f'<span style="color:#3b82f6;font-size:11px;">âœ“ {_ok}</span><br>',
+                            st.markdown(f'<span style="color:#3b82f6;font-size:11px;">{_ok}</span><br>',
                                         unsafe_allow_html=True)
                         for _fl in _qv.get("flags", []):
-                            st.markdown(f'<span style="color:#ef4444;font-size:11px;">âš‘ {_fl}</span><br>',
+                            st.markdown(f'<span style="color:#ef4444;font-size:11px;">{_fl}</span><br>',
                                         unsafe_allow_html=True)
                     _dest_folder = _qv.get("suggested_folder", "")
                     with _qb:
@@ -8617,7 +8617,7 @@ def show_billing_page():
                         + (f" Â· {h['overage']} overage" if h["overage"] else ""))
             c3.markdown(f"**${h['total_cost']:.2f}**")
     else:
-        st.info("No billing history yet â€” scan a document to start tracking.")
+        st.info("No billing history yet scan a document to start tracking.")
 
     # â”€â”€ Pricing reference â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.markdown("---")
@@ -8636,14 +8636,14 @@ Scans include all document uploads processed through the Scanner.
     # â”€â”€ Admin view (Manager role only) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if role == "Manager":
         st.markdown("---")
-        st.markdown("### All Users â€” Current Month")
+        st.markdown("### All Users Current Month")
         all_usage = _bl.get_all_users_usage()
         if all_usage:
             for u in all_usage:
                 ua1, ua2, ua3, ua4 = st.columns([3, 2, 2, 2])
                 ua1.markdown(f"**{u['display_name'] or u['email']}** Â· {u['role']}")
                 ua2.markdown(f"{u['scans']} scans")
-                ua3.markdown(f"{u['overage']} overage" if u["overage"] else "â€”")
+                ua3.markdown(f"{u['overage']} overage" if u["overage"] else "")
                 ua4.markdown(f"**${u['total_cost']:.2f}**")
         else:
             st.info("No scan data for current month.")
@@ -8651,7 +8651,7 @@ Scans include all document uploads processed through the Scanner.
 
 # --- Loan Detail Page ---
 def show_loan_detail():
-    """Full detail view for a single loan â€” all info, activity, documents."""
+    """Full detail view for a single loan all info, activity, documents."""
     from crm import (
         get_loan, add_loan, update_loan, set_status, delete_loan,
         STATUS_OPTIONS, STATUS_EMOJI, STATUS_COLORS,
@@ -8667,7 +8667,7 @@ def show_loan_detail():
 
     loan = get_loan(lid)
     if not loan:
-        st.warning("Loan not found â€” it may have been removed.")
+        st.warning("Loan not found it may have been removed.")
         if st.button("Back to Pipeline"):
             st.session_state.page = "pipeline"
             st.rerun()
@@ -8797,17 +8797,17 @@ def show_loan_detail():
         _ld_pct = {"Pending": 10, "Requested": 35, "Cleared": 80, "Overdue": 20, "Closed": 100}.get(status, 10)
         if loan.get("closing_date"): _ld_pct = min(_ld_pct + 10, 100)
         if loan.get("lock_expiry"):  _ld_pct = min(_ld_pct + 10, 100)
-        _ld_label = f"{status} â€” no conditions tracked yet"
+        _ld_label = f"{status} no conditions tracked yet"
     _ld_bar_color = "#3b82f6" if _ld_pct >= 75 else ("#f59e0b" if _ld_pct >= 40 else "#ef4444")
 
     st.markdown(
         f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-left:3px solid {border_color};'
         f'border-radius:3px;padding:12px 14px;margin:4px 0;">'
         f'<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px;">'
-        f'<span style="font-size:16px;font-weight:700;color:#3b82f6;">#{loan.get("loan_num","â€”")}</span>'
-        f'<span style="font-size:15px;font-weight:600;color:#ffffff;">{loan.get("borrower","â€”")}</span>'
+        f'<span style="font-size:16px;font-weight:700;color:#3b82f6;">#{loan.get("loan_num","")}</span>'
+        f'<span style="font-size:15px;font-weight:600;color:#ffffff;">{loan.get("borrower","")}</span>'
         f'<span class="status-chip status-{status.lower()}" style="font-size:13px;">'
-        f'<span style="color:{border_color};font-size:10px;">â—</span> {status}</span>'
+        f'<span style="color:{border_color};font-size:10px;"></span> {status}</span>'
         f'</div>'
         f'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">'
         f'<span style="font-size:11px;color:#9ca3af;">{_ld_label}</span>'
@@ -8879,14 +8879,14 @@ def show_loan_detail():
         st.markdown(
             f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;">'
             f'<div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;">Created</div>'
-            f'<div style="font-size:14px;color:#ffffff;margin-top:4px;">{_created or "â€”"}</div></div>',
+            f'<div style="font-size:14px;color:#ffffff;margin-top:4px;">{_created or ""}</div></div>',
             unsafe_allow_html=True,
         )
     with d5:
         st.markdown(
             f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;">'
             f'<div style="font-size:10px;color:#9ca3af;font-weight:700;text-transform:uppercase;">Last Updated</div>'
-            f'<div style="font-size:14px;color:#ffffff;margin-top:4px;">{_updated or "â€”"}</div></div>',
+            f'<div style="font-size:14px;color:#ffffff;margin-top:4px;">{_updated or ""}</div></div>',
             unsafe_allow_html=True,
         )
 
@@ -8899,10 +8899,10 @@ def show_loan_detail():
     ld1, ld2 = st.columns(2)
     with ld1:
         _fields_left = [
-            ("Loan #", loan.get("loan_num", "â€”")),
-            ("Borrower", loan.get("borrower", "â€”")),
+            ("Loan #", loan.get("loan_num", "")),
+            ("Borrower", loan.get("borrower", "")),
             ("Status", f'{STATUS_EMOJI.get(status,"")}  {status}'),
-            ("Created By", loan.get("created_by") or "â€”"),
+            ("Created By", loan.get("created_by") or ""),
             ("Assigned To", loan.get("assigned_to") or "Unassigned"),
         ]
         _rows_html = "".join(
@@ -8920,7 +8920,7 @@ def show_loan_detail():
             ("Closing Date", _closing or "Not set"),
             ("Lock Expiry", _lock or "Not set"),
             ("Commitment Exp.", _commitment or "Not set"),
-            ("Due Date", loan.get("due_date") or "â€”"),
+            ("Due Date", loan.get("due_date") or ""),
             ("Folder", loan.get("folder_path") or "Not set"),
         ]
         _rows_html2 = "".join(
@@ -8945,7 +8945,7 @@ def show_loan_detail():
         _docs = [d.strip() for d in _missing.split(",") if d.strip()]
         _doc_html = "".join(
             f'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">'
-            f'<span style="color:#ef4444;">â—</span>'
+            f'<span style="color:#ef4444;"></span>'
             f'<span style="color:#ffb86c;font-size:13px;">{d}</span></div>'
             for d in _docs
         )
@@ -9009,7 +9009,7 @@ def show_loan_detail():
                 # Build pre-filled Gmail compose URL targeted at the HOI/Insurance contact
                 _ins = (loan.get("contacts", {}) or {}).get("insurance", {}) or {}
                 _to = _ins.get("email", "")
-                _subject = f"HOI / Evidence of Insurance Request â€” Loan {_ctx['loan_num']} â€” {_ctx['borrower_name']}"
+                _subject = f"HOI / Evidence of Insurance Request Loan {_ctx['loan_num']} {_ctx['borrower_name']}"
                 _body = (
                     f"Hi {_ins.get('contact') or _ins.get('name') or 'there'},\n\n"
                     f"Please provide Evidence of Insurance for the following loan. "
@@ -9042,7 +9042,7 @@ def show_loan_detail():
                 st.session_state[f"_gen_title_path_{lid}"] = _out
                 _ttl = (loan.get("contacts", {}) or {}).get("title", {}) or {}
                 _to = _ttl.get("email", "")
-                _subject = f"Title Work Request â€” Loan {_ctx['loan_num']} â€” {_ctx['borrower_name']}"
+                _subject = f"Title Work Request Loan {_ctx['loan_num']} {_ctx['borrower_name']}"
                 _body = (
                     f"Hi {_ttl.get('contact') or _ttl.get('name') or 'there'},\n\n"
                     f"Please provide tax pro-rations and title docs as soon as available. "
@@ -9090,13 +9090,13 @@ def show_loan_detail():
                 pass
         with _dl_c2:
             if _e:
-                st.link_button("ðŸ“§ Open in Gmail", _e, use_container_width=True)
+                st.link_button("Open in Gmail", _e, use_container_width=True)
 
     # â”€â”€ Quick-copy Title & HOI contacts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     _qc_contacts = loan.get("contacts", {}) or {}
     st.markdown(
         '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-        'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Title &amp; HOI Contact â€” Copy</span>',
+        'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Title &amp; HOI Contact Copy</span>',
         unsafe_allow_html=True,
     )
     _qc_c1, _qc_c2 = st.columns(2)
@@ -9130,7 +9130,7 @@ def show_loan_detail():
             if _email:
                 st.code(_email, language=None)
 
-    # â”€â”€ Open Conditions (interactive â€” checkbox, status, parties, email) â”€â”€â”€â”€
+    # â”€â”€ Open Conditions (interactive checkbox, status, parties, email) â”€â”€â”€â”€
     _conditions = loan.get("conditions", [])
     st.markdown(
         '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
@@ -9144,11 +9144,11 @@ def show_loan_detail():
         "Insurance", "Appraiser", "Manager",
     ]
     COND_STATUSES_LD = {
-        "Needed":         {"label": "Needed",         "emoji": "â—"},
-        "Requested":      {"label": "Requested",      "emoji": "â—"},
-        "Important":      {"label": "Important",      "emoji": "â—"},
-        "Ready to Clear": {"label": "Ready to Clear", "emoji": "â—"},
-        "Cleared":        {"label": "Cleared",        "emoji": "âœ“"},
+        "Needed":         {"label": "Needed",         "emoji": ""},
+        "Requested":      {"label": "Requested",      "emoji": ""},
+        "Important":      {"label": "Important",      "emoji": ""},
+        "Ready to Clear": {"label": "Ready to Clear", "emoji": ""},
+        "Cleared":        {"label": "Cleared",        "emoji": ""},
     }
 
     _ld_fkey = f"ld_{lid}"
@@ -9156,7 +9156,7 @@ def show_loan_detail():
     if _conditions:
         _ld_checked = []
         for _c in _conditions:
-            _c["desc"] = _c.get("desc", _c.get("description", "â€”"))
+            _c["desc"] = _c.get("desc", _c.get("description", ""))
             if "num" not in _c:
                 _c["num"] = str(_conditions.index(_c) + 1)
             if "party" not in _c:
@@ -9165,7 +9165,7 @@ def show_loan_detail():
             if _chk:
                 _ld_checked.append({**_c, "party": _cparties[0] if _cparties else _c["party"], "all_parties": _cparties})
 
-            # â”€â”€ Per-condition ðŸ“– Guidelines check â”€â”€
+            # â”€â”€ Per-condition Guidelines check â”€â”€
             _ld_uid = f"{_ld_fkey}_{_c['num']}"
             _gb1, _gb2 = st.columns([0.5, 9.5])
             with _gb1:
@@ -9181,7 +9181,7 @@ def show_loan_detail():
                         st.rerun()
                 _gres = st.session_state.get(f"{_ld_uid}_guide_results")
                 if _gres is None:
-                    with st.spinner("Searching Fannie Mae & Freddie Macâ€¦"):
+                    with st.spinner("Searching Fannie Mae & Freddie Mac"):
                         try:
                             from guidelines import check_conditions_against_guidelines as _cag_ld
                             _out = _cag_ld([{"num": _c["num"], "desc": _c["desc"]}])
@@ -9196,7 +9196,7 @@ def show_loan_detail():
                     st.markdown(
                         f'<div style="font-size:11px;color:#fbbf24;padding:4px 8px;'
                         f'background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);'
-                        f'border-radius:6px;margin:4px 0 4px 32px;">âš ï¸ {_gres["error"]}</div>',
+                        f'border-radius:6px;margin:4px 0 4px 32px;">{_gres["error"]}</div>',
                         unsafe_allow_html=True,
                     )
                 elif isinstance(_gres, list) and _gres:
@@ -9214,7 +9214,7 @@ def show_loan_detail():
                             f'<span style="color:#3b82f6;font-weight:700;">{_src}</span>'
                             f'{_sec_part}'
                             f' <span style="color:#9ca3af;">p.{_pg} Â· {_sc}% match</span><br/>'
-                            f'<span style="color:#cbd5e1;font-size:10.5px;">{_ex}â€¦</span>'
+                            f'<span style="color:#cbd5e1;font-size:10.5px;">{_ex}</span>'
                             f'</div>',
                             unsafe_allow_html=True,
                         )
@@ -9225,7 +9225,7 @@ def show_loan_detail():
                         unsafe_allow_html=True,
                     )
 
-        # â”€â”€ Email Draft â€” below conditions, auto-populate from stored contacts â”€â”€
+        # â”€â”€ Email Draft below conditions, auto-populate from stored contacts â”€â”€
         st.markdown(
             '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
             'letter-spacing:0.5px;margin:10px 0 4px 0;display:inline-block;">Draft Email</span>',
@@ -9247,7 +9247,7 @@ def show_loan_detail():
             _clabel = _party_display_labels.get(_ck, _ck.replace("_", " ").title())
             _cname = _cv.get("name") or _cv.get("company") or ""
             _cemail = _cv.get("email", "")
-            _display = f"{_clabel}{f' â€” {_cname}' if _cname else ''}{f' ({_cemail})' if _cemail else ''}"
+            _display = f"{_clabel}{f' {_cname}' if _cname else ''}{f' ({_cemail})' if _cemail else ''}"
             _contact_party_map[_display] = _cv
 
         _party_choices = list(_contact_party_map.keys()) if _contact_party_map else PARTY_OPTIONS_LD
@@ -9274,7 +9274,7 @@ def show_loan_detail():
             if _ld_checked:
                 st.markdown(
                     f'<div style="padding-top:26px;font-size:11px;color:#3b82f6;font-weight:600;">'
-                    f'âœ“ {len(_ld_checked)} checked</div>',
+                    f'{len(_ld_checked)} checked</div>',
                     unsafe_allow_html=True,
                 )
             else:
@@ -9295,7 +9295,7 @@ def show_loan_detail():
             from ai_engine import draft_email as _de
             import urllib.parse
             _recip_contact = _normalize_contact_value(_contact_party_map.get(_ld_recipient, {}))
-            _recip_label = _recip_contact.get("name") or _ld_recipient.split("â€”")[0].strip()
+            _recip_label = _recip_contact.get("name") or _ld_recipient.split("")[0].strip()
             if _ld_checked:
                 _cond_lines = [f"- Condition #{c['num']}: {c['desc']}" for c in _ld_checked]
             else:
@@ -9310,14 +9310,14 @@ def show_loan_detail():
             st.container(border=True).markdown(_email_out)
             _gmail_url = "https://mail.google.com/mail/?view=cm&fs=1&" + urllib.parse.urlencode({
                 "to": _recip_email,
-                "su": f"Re: {loan.get('loan_num','')} â€” {loan.get('borrower','')}",
+                "su": f"Re: {loan.get('loan_num','')} {loan.get('borrower','')}",
                 "body": _email_out,
             })
             st.markdown(
                 f'<a href="{_gmail_url}" target="_blank" style="display:inline-block;margin-top:8px;'
                 f'padding:6px 16px;background:rgba(66,133,244,0.12);border:1px solid rgba(66,133,244,0.4);'
                 f'border-radius:6px;color:#4285f4;font-size:12px;font-weight:700;text-decoration:none;">'
-                f'ðŸ“¬ Compose in Gmail</a>',
+                f'Compose in Gmail</a>',
                 unsafe_allow_html=True,
             )
 
@@ -9329,9 +9329,9 @@ def show_loan_detail():
                 st.warning("AI backend not configured. Go to AI Settings.")
             else:
                 _conds_for_ai = _ld_checked if _ld_checked else _conditions[:10]
-                with st.spinner("Drafting with AIâ€¦"):
+                with st.spinner("Drafting with AI"):
                     _ld_ai_text, _ld_ai_log = _ld_ar.draft_email_enhanced(
-                        _conds_for_ai, _ld_recipient.split("â€”")[0].strip(), _ld_lang
+                        _conds_for_ai, _ld_recipient.split("")[0].strip(), _ld_lang
                     )
                 if _ld_ai_text:
                     _recip_contact2 = _normalize_contact_value(_contact_party_map.get(_ld_recipient, {}))
@@ -9339,14 +9339,14 @@ def show_loan_detail():
                     st.container(border=True).markdown(_ld_ai_text)
                     _gmail_url2 = "https://mail.google.com/mail/?view=cm&fs=1&" + urllib.parse.urlencode({
                         "to": _recip_email2,
-                        "su": f"Re: {loan.get('loan_num','')} â€” {loan.get('borrower','')}",
+                        "su": f"Re: {loan.get('loan_num','')} {loan.get('borrower','')}",
                         "body": _ld_ai_text,
                     })
                     st.markdown(
                         f'<a href="{_gmail_url2}" target="_blank" style="display:inline-block;margin-top:8px;'
                         f'padding:6px 16px;background:rgba(66,133,244,0.12);border:1px solid rgba(66,133,244,0.4);'
                         f'border-radius:6px;color:#4285f4;font-size:12px;font-weight:700;text-decoration:none;">'
-                        f'ðŸ“¬ Compose in Gmail</a>',
+                        f'Compose in Gmail</a>',
                         unsafe_allow_html=True,
                     )
     else:
@@ -9388,19 +9388,19 @@ def show_loan_detail():
             if _cemail:
                 _gurl = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse2.urlencode({
                     "to": _cemail,
-                    "su": f"Re: {loan.get('loan_num','')} â€” {loan.get('borrower','')}",
+                    "su": f"Re: {loan.get('loan_num','')} {loan.get('borrower','')}",
                 })
                 _gmail_link = (
                     f'<a href="{_gurl}" target="_blank" style="margin-left:8px;padding:1px 8px;'
                     f'background:rgba(66,133,244,0.12);border:1px solid rgba(66,133,244,0.35);'
-                    f'border-radius:4px;color:#4285f4;font-size:10px;font-weight:700;text-decoration:none;">ðŸ“¬ Gmail</a>'
+                    f'border-radius:4px;color:#4285f4;font-size:10px;font-weight:700;text-decoration:none;">Gmail</a>'
                 )
             _contact_html += (
                 f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:10px;">'
                 f'<div style="font-size:10px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
-                f'<div style="color:#ffffff;font-size:13px;font-weight:600;margin-bottom:4px;">{_cname or "â€”"}</div>'
-                + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">ðŸ“ž {_cphone}</div>' if _cphone else '')
-                + (f'<div style="display:flex;align-items:center;font-size:11px;color:#9ca3af;">âœ‰ {_cemail}{_gmail_link}</div>' if _cemail else '')
+                f'<div style="color:#ffffff;font-size:13px;font-weight:600;margin-bottom:4px;">{_cname or ""}</div>'
+                + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">{_cphone}</div>' if _cphone else '')
+                + (f'<div style="display:flex;align-items:center;font-size:11px;color:#9ca3af;">{_cemail}{_gmail_link}</div>' if _cemail else '')
                 + (f'<div style="color:#9ca3af;font-size:11px;">{_cbrok}</div>' if _cbrok else '')
                 + (f'<div style="color:#9ca3af;font-size:11px;">{_cpos}</div>' if _cpos else '')
                 + f'</div>'
@@ -9446,7 +9446,7 @@ def show_loan_detail():
         except Exception:
             pass
 
-        # Auto-approve cloud when enabled â€” user configured their key intentionally
+        # Auto-approve cloud when enabled user configured their key intentionally
         _cloud_doc_types = {"Purchase Contract", "Approval Letter"}
         _user_approved_cloud = _cloud_enabled and _scan_dtype in _cloud_doc_types
 
@@ -9471,10 +9471,10 @@ def show_loan_detail():
                 _scan_result = _proc_doc(_pdf_bytes, _scan_dtype, user_approved_cloud=_user_approved_cloud)
 
             if not _scan_result.get("success"):
-                st.error(_scan_result.get("error", "Scan failed â€” could not extract text from this PDF."))
+                st.error(_scan_result.get("error", "Scan failed could not extract text from this PDF."))
             else:
                 st.session_state[_scan_key] = _scan_result
-                st.success(f"âœ“ Scanned {_scan_dtype} â€” {_scan_result.get('text_length', 0):,} chars extracted")
+                st.success(f"Scanned {_scan_dtype} {_scan_result.get('text_length', 0):,} chars extracted")
 
         # Process scan results if available
         if _scan_key in st.session_state and st.session_state[_scan_key]:
@@ -9512,10 +9512,10 @@ def show_loan_detail():
                 _pc_txn = _pcd.get("transaction", {})
 
                 _pc_rows = [
-                    f'Buyer: {_pc_buyer.get("name","â€”")}',
-                    f'Seller: {_pc_seller.get("name","â€”")}',
-                    f'Price: ${_pc_txn.get("purchase_price","â€”")}',
-                    f'Close: {_pc_txn.get("closing_date","â€”")}',
+                    f'Buyer: {_pc_buyer.get("name","")}',
+                    f'Seller: {_pc_seller.get("name","")}',
+                    f'Price: ${_pc_txn.get("purchase_price","")}',
+                    f'Close: {_pc_txn.get("closing_date","")}',
                 ]
                 if _pc_txn.get("date_signed"):
                     _pc_rows.append(f'Date Signed: {_pc_txn["date_signed"]}')
@@ -9568,7 +9568,7 @@ def show_loan_detail():
                         _upd["closing_date"] = _pc_txn["closing_date"]
                         _upd["due_date"] = _pc_txn["closing_date"]
                     update_loan(lid, **_upd)
-                    log_activity(lid, "upload", f"Purchase Contract scanned â€” contacts merged", user=my_name)
+                    log_activity(lid, "upload", f"Purchase Contract scanned contacts merged", user=my_name)
                     st.session_state.pop(_scan_key, None)
                     st.toast("Contacts merged into loan")
                     st.rerun()
@@ -9584,8 +9584,8 @@ def show_loan_detail():
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
                     'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
                     '<b style="color:#3b82f6;">1003 Application found:</b><br>'
-                    f'Borrower: {_app_b.get("name","â€”")} Â· Phone: {_app_b.get("phone","â€”")}<br>'
-                    f'Employer: {_app_emp.get("employer","â€”")}'
+                    f'Borrower: {_app_b.get("name","")} Â· Phone: {_app_b.get("phone","")}<br>'
+                    f'Employer: {_app_emp.get("employer","")}'
                     '</div>',
                     unsafe_allow_html=True,
                 )
@@ -9602,7 +9602,7 @@ def show_loan_detail():
                         if any(str(v).strip() for v in _pv.values()):
                             _new_contacts[_pk] = _pv
                     update_loan(lid, contacts=_new_contacts)
-                    log_activity(lid, "upload", f"1003 Application scanned â€” contacts merged", user=my_name)
+                    log_activity(lid, "upload", f"1003 Application scanned contacts merged", user=my_name)
                     st.session_state.pop(_scan_key, None)
                     st.toast("Contacts merged into loan")
                     st.rerun()
@@ -9632,9 +9632,9 @@ def show_loan_detail():
                     # Preview the conditions
                     for _nc in _new_conds:
                         st.markdown(
-                            f'<span style="color:#fbbf24;font-size:12px;">â—</span> '
+                            f'<span style="color:#fbbf24;font-size:12px;"></span> '
                             f'<span style="color:#ffffff;font-size:12px;">{_nc["desc"]}</span> '
-                            f'<span style="color:#9ca3af;font-size:11px;">â€” {_nc["party"]}</span>',
+                            f'<span style="color:#9ca3af;font-size:11px;">{_nc["party"]}</span>',
                             unsafe_allow_html=True,
                         )
 
@@ -9649,7 +9649,7 @@ def show_loan_detail():
                                 _existing.append(_nc)
                                 _added += 1
                         update_loan(lid, conditions=_existing)
-                        log_activity(lid, "upload", f"{_sr_dtype} scanned â€” {_added} condition(s) added", user=my_name)
+                        log_activity(lid, "upload", f"{_sr_dtype} scanned {_added} condition(s) added", user=my_name)
                         st.session_state.pop(_scan_key, None)
                         st.toast(f"{_added} condition(s) merged")
                         st.rerun()
@@ -9908,14 +9908,14 @@ def show_loan_detail():
                         st.markdown(
                             f'<div class="stat-card"><div class="stat-num" style="color:#3b82f6;">'
                             f'{len(_af_found)}</div>'
-                            f'<div class="stat-label">âœ“ Documents Found</div></div>',
+                            f'<div class="stat-label">Documents Found</div></div>',
                             unsafe_allow_html=True,
                         )
                     with _s3:
                         st.markdown(
                             f'<div class="stat-card"><div class="stat-num" style="color:#ef4444;">'
                             f'{len(_af_missing)}</div>'
-                            f'<div class="stat-label">âœ— Still Missing</div></div>',
+                            f'<div class="stat-label">Still Missing</div></div>',
                             unsafe_allow_html=True,
                         )
 
@@ -9923,7 +9923,7 @@ def show_loan_detail():
                     if _af_found:
                         st.markdown(
                             '<div style="font-size:13px;font-weight:700;color:#3b82f6;'
-                            'margin:12px 0 6px 0;">FOUND â€” Documents located in folder</div>',
+                            'margin:12px 0 6px 0;">FOUND Documents located in folder</div>',
                             unsafe_allow_html=True,
                         )
                         for _c, _matches in _af_found:
@@ -9935,7 +9935,7 @@ def show_loan_detail():
                                 f'<div style="display:flex;gap:10px;align-items:flex-start;'
                                 f'background:rgba(59,130,246,0.05);border-left:3px solid #3b82f6;'
                                 f'border-radius:6px;padding:8px 12px;margin-bottom:4px;">'
-                                f'<span style="color:#3b82f6;font-weight:700;font-size:12px;min-width:20px;">âœ“</span>'
+                                f'<span style="color:#3b82f6;font-weight:700;font-size:12px;min-width:20px;"></span>'
                                 f'<div style="flex:1;">'
                                 f'<span style="color:#ffffff;font-size:13px;font-weight:600;">'
                                 f'#{_c["num"]} {_c["desc"][:80]}</span><br>'
@@ -9958,7 +9958,7 @@ def show_loan_detail():
                     if _af_missing:
                         st.markdown(
                             '<div style="font-size:13px;font-weight:700;color:#ef4444;'
-                            'margin:12px 0 6px 0;">MISSING â€” No matching documents found</div>',
+                            'margin:12px 0 6px 0;">MISSING No matching documents found</div>',
                             unsafe_allow_html=True,
                         )
                         for _c in _af_missing:
@@ -9966,7 +9966,7 @@ def show_loan_detail():
                                 f'<div style="display:flex;gap:10px;align-items:flex-start;'
                                 f'background:rgba(239,68,68,0.05);border-left:3px solid #ef4444;'
                                 f'border-radius:6px;padding:8px 12px;margin-bottom:4px;">'
-                                f'<span style="color:#ef4444;font-weight:700;font-size:12px;min-width:20px;">âœ—</span>'
+                                f'<span style="color:#ef4444;font-weight:700;font-size:12px;min-width:20px;"></span>'
                                 f'<div style="flex:1;">'
                                 f'<span style="color:#ffffff;font-size:13px;font-weight:600;">'
                                 f'#{_c["num"]} {_c["desc"][:80]}</span>'
@@ -9978,7 +9978,7 @@ def show_loan_detail():
                                 unsafe_allow_html=True,
                             )
 
-                    # Merge button â€” push conditions + found/missing status into the loan
+                    # Merge button push conditions + found/missing status into the loan
                     st.markdown("---")
                     _mc1, _mc2 = st.columns([1, 1])
                     with _mc1:
@@ -10004,7 +10004,7 @@ def show_loan_detail():
                             _miss_str = ", ".join(_miss_list) if _miss_list else ""
                             update_loan(lid, conditions=_existing, missing_docs=_miss_str)
                             log_activity(lid, "upload",
-                                f"Approval letter scanned â€” {_added} condition(s) merged, "
+                                f"Approval letter scanned {_added} condition(s) merged, "
                                 f"{len(_af_found)} found, {len(_af_missing)} missing",
                                 user=my_name)
                             st.session_state.pop(_af_key, None)
@@ -10025,7 +10025,7 @@ def show_loan_detail():
                                     _added += 1
                             update_loan(lid, conditions=_existing)
                             log_activity(lid, "upload",
-                                f"Approval letter scanned â€” {_added} condition(s) merged",
+                                f"Approval letter scanned {_added} condition(s) merged",
                                 user=my_name)
                             st.session_state.pop(_af_key, None)
                             st.toast(f"{_added} conditions merged")
@@ -10140,10 +10140,10 @@ def show_loan_detail():
     with _td2:
         _loan_num_str = loan.get("loan_num", str(lid))
         _borrower_str = loan.get("borrower", "")
-        _mailto_subject = f"Loan {_loan_num_str} â€” {_borrower_str} â€” Document Request"
+        _mailto_subject = f"Loan {_loan_num_str} {_borrower_str} Document Request"
         _mailto_body = (
             f"Hello,%0A%0A"
-            f"Please find below the document checklist for Loan #{_loan_num_str} â€” {_borrower_str}.%0A%0A"
+            f"Please find below the document checklist for Loan #{_loan_num_str} {_borrower_str}.%0A%0A"
             f"Documents received: {_ld_doc_count}%0A%0A"
             f"Please upload or email any outstanding documents at your earliest convenience.%0A%0A"
             f"Thank you"
@@ -10188,13 +10188,13 @@ def show_loan_detail():
 
             # Build loan context summary
             _lc_parts = [
-                f"Loan #{loan.get('loan_num','â€”')} â€” {loan.get('borrower','â€”')}",
-                f"Status: {loan.get('status','â€”')}",
-                f"Property: {loan.get('property_address', 'â€”')}",
-                f"Purchase Price: {loan.get('purchase_price','â€”')}",
-                f"Loan Amount: {loan.get('loan_amount','â€”')}",
-                f"Closing Date: {loan.get('closing_date','â€”')}",
-                f"Lock Expiry: {loan.get('lock_expiry','â€”')}",
+                f"Loan #{loan.get('loan_num','')} {loan.get('borrower','')}",
+                f"Status: {loan.get('status','')}",
+                f"Property: {loan.get('property_address', '')}",
+                f"Purchase Price: {loan.get('purchase_price','')}",
+                f"Loan Amount: {loan.get('loan_amount','')}",
+                f"Closing Date: {loan.get('closing_date','')}",
+                f"Lock Expiry: {loan.get('lock_expiry','')}",
             ]
             _conds = loan.get("conditions", [])
             if _conds:
@@ -10247,7 +10247,7 @@ def show_loan_detail():
             "note": "Â·",
             "dates": "Â·",
             "removed": "Remove",
-            "docs": "â€”",
+            "docs": "",
             "upload": "Attach",
             "email": "Email",
             "share": "â†—",
@@ -10257,7 +10257,7 @@ def show_loan_detail():
             _action = entry.get("action", "")
             _detail = entry.get("detail", "")
             _user = entry.get("user", "")
-            _icon = _act_icons.get(_action, "â—")
+            _icon = _act_icons.get(_action, "")
             _user_tag = f'<span style="color:#3b82f6;font-weight:600;">{_user}</span> Â· ' if _user else ""
             st.markdown(
                 f'<div style="display:flex;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
