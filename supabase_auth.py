@@ -496,21 +496,27 @@ def save_user_gemini_key(user_key: str, gemini_api_key: str) -> dict:
     if not _supabase_url() or not api_key:
         return {"ok": False, "error": "Supabase settings storage is not configured."}
 
-    encrypted_key = _encrypt_secret(gemini_api_key.strip())
-    if not encrypted_key:
-        return {
-            "ok": False,
-            "error": "Encrypted key storage is not configured. Set PA_SETTINGS_ENCRYPTION_KEY in Railway variables.",
+    clean_key = gemini_api_key.strip()
+    encrypted_key = _encrypt_secret(clean_key)
+    # Backward-compatible fallback: persist plaintext when encryption secret
+    # is not configured so production users are not blocked from saving.
+    # load_user_gemini_key() already supports this legacy/plain format.
+    if encrypted_key:
+        value_json = {
+            "enc": "fernet-sha256-v1",
+            "gemini_api_key_enc": encrypted_key,
+        }
+    else:
+        value_json = {
+            "enc": "none",
+            "gemini_api_key": clean_key,
         }
 
     payload = {
         "key": _setting_key(user_key),
         "user_key": user_key,
         "user_email": _current_user_email(),
-        "value_json": json.dumps({
-            "enc": "fernet-sha256-v1",
-            "gemini_api_key_enc": encrypted_key,
-        }),
+        "value_json": json.dumps(value_json),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     url = f"{_supabase_url()}/rest/v1/settings"
