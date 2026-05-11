@@ -375,6 +375,9 @@ def _ascii_log_text(value: str) -> str:
         "": "->",
         "": "...",
     }
+    # Guard against corrupted empty-string keys that would inject separators
+    # between every character (e.g., "C...L...O...U...D").
+    replacements.pop("", None)
     for old, new in replacements.items():
         text = text.replace(old, new)
     return text.encode("ascii", errors="ignore").decode("ascii").strip()
