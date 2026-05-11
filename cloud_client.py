@@ -947,24 +947,50 @@ def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes, api_key_override: 
             return "", _log("SCRIPT", "approval_pdf_extract", "No Gemini key available"), ""
         provider = cfg.get("provider", DEFAULT_PROVIDER)
     system = (
-        "You read mortgage approval letters and extract only real prior-to-doc, "
-        "prior-to-funding, prior-to-closing, underwriting, credit, income, asset, "
-        "appraisal, title, insurance, and property conditions. Output only rows in "
-        "the requested pipe-delimited format. No markdown and no commentary."
+        "You are a precise mortgage processor reading underwriting approval letters. "
+        "You extract every single numbered condition exactly as written in the PDF — "
+        "no paraphrasing, no merging, no inventing. You preserve the original numbering "
+        "within each section and tag every condition with its section code. You output "
+        "only pipe-delimited rows. No markdown headers, no commentary, no preamble."
     )
-    prompt = """Read this approval letter PDF, including scanned/image pages.
+    prompt = """Read this approval letter PDF carefully, including scanned/image pages.
 
-Extract every numbered approval condition. Keep each original numbered condition as ONE row,
-including wrapped continuation text. Ignore headers, borrower summaries, dates, addresses,
-loan terms, signatures, and general boilerplate.
+Approval letters are typically organized into sections. Look for these section headers:
+  - "Prior to Approval" or PTA
+  - "Prior to Docs" or PTD
+  - "Internal and At Closing" or AC
+  - "Prior to Funding" or PTF
+  - "Prior to Purchase" or PTP
+  - "Loan Approval Conditions" or generic numbered lists
 
-Use this exact format, one condition per line:
-| 1 | Full description of the condition | Borrower | Needed | High Confidence |
-| 2 | Full description of the condition | Title | Needed | High Confidence |
+Extract EVERY numbered condition from EVERY section. Do not skip any condition, even
+if a section header is on a separate page. Do not merge separate numbered items into
+one row. Do not summarize — copy the wording as written, including any "Updated" notes,
+asterisks, and stamped comments.
 
-Responsible party options: Borrower, Title, Underwriter, Insurance, Closer, Appraiser, Employer, Realtor, Seller
-Status must always be Needed.
-Confidence options: High Confidence, Best Guess
+OUTPUT FORMAT — one condition per line, exactly five pipe-delimited fields:
+| GLOBAL# | [SECTION-LOCAL#] Full condition text as written | Responsible | Needed | Confidence |
+
+Where:
+  GLOBAL# = sequential number across the whole letter (1, 2, 3, ...)
+  SECTION-LOCAL# = bracketed prefix on the description: section tag + the number in the
+                   PDF for that section. e.g. [PTD-1], [PTD-2], [AC-1], [PTF-1]
+  Responsible = which party gets the request: Borrower, Title, Underwriter, Insurance,
+                Closer, Appraiser, Employer, Realtor, Seller
+  Status = always "Needed"
+  Confidence = "High Confidence" if you copied wording verbatim, "Best Guess" if OCR was unclear
+
+Example output (study this carefully — the prefix in brackets is part of the description):
+| 1 | [PTD-1] Appraisal - 1004D with final photos - 1004-D TO SUPPORT ALL REPAIRS LISTED ON PAGE 1 OF 6 | Appraiser | Needed | High Confidence |
+| 2 | [PTD-2] Document Expirations - Credit expiration 4/1; Income expiration 3/25; Asset expiration 3/9 | Borrower | Needed | High Confidence |
+| 9 | [AC-1] Internal - Lock Desk to confirm pricing prior to CTC | Underwriter | Needed | High Confidence |
+| 11 | [PTF-1] Funding - LQI Report - If loan has not funded by ____ date, loan file to be returned to Underwriting for an updated LQI Report | Underwriter | Needed | High Confidence |
+
+Skip these (do NOT output rows for them):
+  - Borrower summary, loan terms, rates, property info on page 1
+  - Underwriter name/signature blocks
+  - Empty section headers (e.g. an empty PTA section)
+  - Date stamps, page numbers, footers
 """
     try:
         # Gemini is the only inline PDF understanding path this client supports.

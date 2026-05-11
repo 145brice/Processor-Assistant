@@ -488,6 +488,29 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     border-color: rgba(59,130,246,0.4) !important;
     background: rgba(59,130,246,0.05) !important;
 }
+/* Scanner detect rows: align label heights and prevent dropdown overlap when stacked */
+.pa-scan-detect-rows + div [data-testid="stHorizontalBlock"] {
+    margin-bottom: 10px !important;
+    align-items: center !important;
+}
+.pa-scan-fname, .pa-scan-conf {
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    line-height: 1.3;
+    word-break: break-word;
+}
+@media (max-width: 768px) {
+    .pa-scan-detect-rows + div [data-testid="stHorizontalBlock"] {
+        margin-bottom: 18px !important;
+        row-gap: 6px !important;
+    }
+    .pa-scan-detect-rows + div [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        margin-bottom: 4px !important;
+    }
+    .pa-scan-fname { min-height: 0; padding: 0 0 2px 0; font-weight: 600 !important; }
+    .pa-scan-conf  { min-height: 0; padding: 2px 0 0 0; }
+}
 .pa-myloans-toggle + div [data-testid="stCheckbox"] label {
     font-size: 12px !important;
     color: #d1d5db !important;
@@ -3214,6 +3237,7 @@ def show_dashboard():
                 st.rerun()
 
         _overrides = {}
+        st.markdown('<div class="pa-scan-detect-rows">', unsafe_allow_html=True)
         for _di, _det in enumerate(_detections):
             if _di in _dupes:
                 continue  # skip dupes in the list
@@ -3226,12 +3250,13 @@ def show_dashboard():
                 )
             with _c1:
                 _color = "var(--slate-900)" if _is_checked else "var(--slate-500)"
-                st.markdown(f'<div style="font-size:12px;color:{_color};padding-top:8px;">{_det["name"]}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="pa-scan-fname" style="font-size:12px;color:{_color};">{_det["name"]}</div>', unsafe_allow_html=True)
             with _c2:
                 _ov = st.selectbox("Type", _BULK_DOC_TYPES, index=_didx, key=f"dash_type_{_di}", label_visibility="collapsed")
                 _overrides[_di] = _ov
             with _c3:
-                st.markdown(f'<div style="font-size:11px;color:var(--slate-500);padding-top:8px;">{_det["confidence"]}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="pa-scan-conf" style="font-size:11px;color:var(--slate-500);">{_det["confidence"]}</div>', unsafe_allow_html=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
         # â”€â”€ Scan button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _try_cloud = False
@@ -3824,12 +3849,43 @@ def show_dashboard():
                             _cond_view["_primary_section"] = _primary_section
                             _conds_by_section.setdefault(_section, []).append(_cond_view)
 
+                    # Sort mode: "PDF order" (default) keeps conditions in scan order;
+                    # "By party" groups them under section headers.
+                    _scan_sort_key = f"{_scan_fkey}_cond_sort"
+                    _sort_mode = st.session_state.get(_scan_sort_key, "PDF order")
+
                     _norm_conds_grouped = []
-                    for _party in _SECTION_ORDER_SCAN:
-                        _section_conds = _conds_by_section.get(_party, [])
-                        if _section_conds:
-                            _norm_conds_grouped.append({"_section": _party, "_count": len(_section_conds)})
-                            _norm_conds_grouped.extend(_section_conds)
+                    if _sort_mode == "By party":
+                        for _party in _SECTION_ORDER_SCAN:
+                            _section_conds = _conds_by_section.get(_party, [])
+                            if _section_conds:
+                                _norm_conds_grouped.append({"_section": _party, "_count": len(_section_conds)})
+                                _norm_conds_grouped.extend(_section_conds)
+                    else:
+                        # PDF order: emit each condition once, in its original scan position,
+                        # using its primary (first) section for the per-row party tag.
+                        for _cond_idx, _cond in enumerate(_norm_conds):
+                            _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
+                            _sections = _scan_sections_for_condition(_cond)
+                            _primary_section = _sections[0]
+                            _cond_view = dict(_cond)
+                            _cond_view["_scan_uid"] = _cond_uid
+                            _cond_view["_section_party"] = _primary_section
+                            _cond_view["_primary_section"] = _primary_section
+                            _norm_conds_grouped.append(_cond_view)
+
+                    # Sort toggle (small, top of conditions list)
+                    _sort_c1, _sort_c2 = st.columns([3, 1])
+                    with _sort_c2:
+                        _new_sort = st.selectbox(
+                            "Sort", ["PDF order", "By party"],
+                            index=0 if _sort_mode == "PDF order" else 1,
+                            key=f"{_scan_sort_key}_select",
+                            label_visibility="collapsed",
+                        )
+                        if _new_sort != _sort_mode:
+                            st.session_state[_scan_sort_key] = _new_sort
+                            st.rerun()
 
                     for _c in _norm_conds_grouped:
                         if _c.get("_section"):
