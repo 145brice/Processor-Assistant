@@ -4112,9 +4112,9 @@ def show_dashboard():
                             st.caption("Gmail opens ready to review. It will not send automatically.")
                         st.markdown('</div>', unsafe_allow_html=True)
 
-                    # Single dropdown lists only the parties that have at least one
-                    # checked condition. Resolves the To-email from the loan contacts
-                    # for the selected party.
+                    # Auto-group checked conditions by their per-condition party assignment.
+                    # If 5 conditions are checked and span 3 parties, we generate 3 separate
+                    # email drafts — one per party — with the right To address each.
                     _parties_with_checked = []
                     for _section_party in _SECTION_ORDER_SCAN:
                         _section_conds = _conds_by_section.get(_section_party, [])
@@ -4128,33 +4128,40 @@ def show_dashboard():
                             _parties_with_checked.append(_section_party)
 
                     if _parties_with_checked:
-                        def _party_option_label(p):
-                            _email = _scan_contact_email_for_section(p) or ""
-                            _label = _SECTION_LABEL_SCAN.get(p, f"{p} Conditions")
-                            return f"{_label} → {_email}" if _email else f"{_label} → (no contact email)"
-
                         _send_cols = st.columns([3, 1.1, 1.4])
                         with _send_cols[0]:
-                            _picked_party = st.selectbox(
-                                "Send to",
-                                _parties_with_checked,
-                                format_func=_party_option_label,
-                                key=f"{_scan_fkey}_email_party_pick",
-                                label_visibility="collapsed",
+                            _summary = ", ".join(
+                                _SECTION_LABEL_SCAN.get(p, p).replace(" Conditions", "")
+                                for p in _parties_with_checked
+                            )
+                            st.markdown(
+                                f'<div style="font-size:12px;color:#94a3b8;padding:8px 0;">'
+                                f'Will draft {len(_parties_with_checked)} email'
+                                f'{"s" if len(_parties_with_checked) != 1 else ""}: '
+                                f'<span style="color:#e2e8f0;">{_summary}</span></div>',
+                                unsafe_allow_html=True,
                             )
                         with _send_cols[1]:
                             st.selectbox(
                                 "Language", ["English", "Spanish"],
-                                key=f"{_scan_fkey}_{_picked_party}_email_group_lang",
+                                key=f"{_scan_fkey}_email_group_lang_global",
                                 label_visibility="collapsed",
                             )
                         with _send_cols[2]:
-                            if st.button("Draft email", type="primary",
-                                         key=f"{_scan_fkey}_email_draft_btn",
+                            if st.button("Draft emails", type="primary",
+                                         key=f"{_scan_fkey}_email_draft_all_btn",
                                          use_container_width=True):
-                                st.session_state[f"{_scan_fkey}_email_group_open"] = _picked_party
-                        if st.session_state.get(f"{_scan_fkey}_email_group_open"):
-                            _render_scan_email_draft(st.session_state[f"{_scan_fkey}_email_group_open"])
+                                # Open every party that has a checked condition; renderer
+                                # below will draw one draft block per opened party.
+                                st.session_state[f"{_scan_fkey}_email_groups_open"] = list(_parties_with_checked)
+                        _open_groups = st.session_state.get(f"{_scan_fkey}_email_groups_open", [])
+                        for _open_party in _open_groups:
+                            if _open_party in _parties_with_checked:
+                                # Mirror the global language pick into the per-party state key
+                                # the existing _render_scan_email_draft reads from
+                                st.session_state[f"{_scan_fkey}_{_open_party}_email_group_lang"] = \
+                                    st.session_state.get(f"{_scan_fkey}_email_group_lang_global", "English")
+                                _render_scan_email_draft(_open_party)
                     st.markdown('</div>', unsafe_allow_html=True)
                 elif _cond_count and "No specific conditions found in this document" not in str(_raw_c):
                     st.markdown(
