@@ -173,11 +173,14 @@ def get_config() -> dict:
 
 
 def save_config(enabled: bool, provider: str, api_key: str, model: str) -> dict:
+    # Backfill blanks so saved file always has the canonical Gemini defaults
+    provider = (provider or "").strip().lower() or "gemini"
+    model = (model or "").strip() or DEFAULT_MODELS.get(provider, DEFAULT_MODELS["gemini"])
     cfg = {
         "enabled":  enabled,
         "provider": provider,
         "api_key":  api_key.strip(),
-        "model":    model.strip(),
+        "model":    model,
     }
     with open(_CFG_FILE, "w", encoding="utf-8") as f:
         json.dump(cfg, f, indent=2)
