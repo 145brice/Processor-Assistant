@@ -4709,10 +4709,23 @@ def _has_sensitive_content(text: str) -> bool:
     return bool(_SENSITIVE_RE.search(text))
 
 
+def _user_gemini_key() -> str:
+    """Read the signed-in user's Gemini API key from Streamlit session, or env."""
+    try:
+        import streamlit as st
+        k = (st.session_state.get("user_gemini_api_key") or "").strip()
+        if k:
+            return k
+    except Exception:
+        pass
+    return (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
+
+
 def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_approved_cloud: bool = False) -> dict:
     """
     Main processing function. Takes PDF bytes, returns structured results.
-    Local fallback path. PDF is only held in memory for processing.
+    For Approval Letters: ALWAYS uses Gemini (no local regex fallback).
+    PDF is only held in memory for processing.
 
     Args:
         pdf_bytes: PDF content as bytes
@@ -4720,6 +4733,50 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         user_history: Optional user history for context
         user_approved_cloud: If True, allows cloud AI augmentation for cloud-enabled doc types
     """
+    # Approval Letters: always route through Gemini (handles both text + scanned PDFs)
+    if doc_type == "Approval Letter":
+        _gem_key = _user_gemini_key()
+        if not _gem_key:
+            return {
+                "success": False,
+                "error": "Approval Letter scanning needs a Gemini API key. Add one in onboarding or settings.",
+                "conditions": "",
+                "risks": "",
+                "text_length": 0,
+            }
+        try:
+            import cloud_client as _cc
+            _pdf_conditions, _pdf_ai_log, _pdf_text = _cc.extract_approval_conditions_ai_from_pdf(pdf_bytes, api_key_override=_gem_key)
+            if _pdf_conditions:
+                return {
+                    "success": True,
+                    "text_length": len(_pdf_text or ""),
+                    "doc_type": doc_type,
+                    "bank_rules": "",
+                    "conditions": _pdf_conditions,
+                    "extracted_data": {},
+                    "raw_text": (_pdf_text or "")[:12000],
+                    "ai_log": _pdf_ai_log,
+                    "image_only": False,
+                    "ocr_via_cloud": True,
+                }
+            return {
+                "success": False,
+                "error": f"Gemini did not return any conditions. {_pdf_ai_log}",
+                "conditions": "",
+                "risks": "",
+                "text_length": 0,
+                "ai_log": _pdf_ai_log,
+            }
+        except Exception as e:
+            return {
+                "success": False,
+                "error": f"Gemini extraction failed: {e}",
+                "conditions": "",
+                "risks": "",
+                "text_length": 0,
+            }
+
     text = extract_text_from_pdf(pdf_bytes)
 
     # Image-based (scanned) PDFs — for certain doc types we can still succeed

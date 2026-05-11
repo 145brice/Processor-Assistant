@@ -928,17 +928,21 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
         return {}, _log("SCRIPT", "pc_pdf_extract", f"Cloud error: {str(e)[:120]}"), ""
 
 
-def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes) -> tuple[str, str, str]:
+def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes, api_key_override: str = "") -> tuple[str, str, str]:
     """
-    OCR + extraction path for scanned/image-only Approval Letters.
-    Uses Gemini inline PDF understanding to return condition rows directly.
+    OCR + extraction path for Approval Letters via Gemini inline PDF understanding.
     Returns: (pipe_delimited_conditions, log_line, text_hint)
-    """
-    cfg = get_config()
-    if not cfg.get("enabled") or not cfg.get("api_key"):
-        return "", _log("SCRIPT", "approval_pdf_extract", "Cloud disabled"), ""
 
-    provider = cfg.get("provider", DEFAULT_PROVIDER)
+    api_key_override: if provided, uses this key directly (bypasses cloud_config).
+    Caller passes the user's onboarding Gemini API key.
+    """
+    if api_key_override:
+        provider = "gemini"
+    else:
+        cfg = get_config()
+        if not cfg.get("enabled") or not cfg.get("api_key"):
+            return "", _log("SCRIPT", "approval_pdf_extract", "No Gemini key available"), ""
+        provider = cfg.get("provider", DEFAULT_PROVIDER)
     system = (
         "You read mortgage approval letters and extract only real prior-to-doc, "
         "prior-to-funding, prior-to-closing, underwriting, credit, income, asset, "
@@ -961,7 +965,10 @@ Confidence options: High Confidence, Best Guess
 """
     try:
         # Gemini is the only inline PDF understanding path this client supports.
-        if provider == "gemini":
+        if api_key_override:
+            api_key = api_key_override
+            model = DEFAULT_MODELS["gemini"]
+        elif provider == "gemini":
             api_key = cfg.get("api_key", "")
             model = cfg.get("model") or DEFAULT_MODELS["gemini"]
         else:
