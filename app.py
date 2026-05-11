@@ -488,9 +488,9 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     border-color: rgba(59,130,246,0.4) !important;
     background: rgba(59,130,246,0.05) !important;
 }
-/* Scanner detect rows: align label heights and prevent dropdown overlap when stacked */
-.pa-scan-detect-rows + div [data-testid="stHorizontalBlock"] {
-    margin-bottom: 10px !important;
+/* Scanner detect rows: keep filename + dropdown from visually colliding */
+[data-testid="stElementContainer"]:has(.pa-scan-detect-rows) ~ [data-testid="stElementContainer"] [data-testid="stHorizontalBlock"] {
+    margin-bottom: 14px !important;
     align-items: center !important;
 }
 .pa-scan-fname, .pa-scan-conf {
@@ -500,16 +500,25 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     line-height: 1.3;
     word-break: break-word;
 }
-@media (max-width: 768px) {
-    .pa-scan-detect-rows + div [data-testid="stHorizontalBlock"] {
-        margin-bottom: 18px !important;
-        row-gap: 6px !important;
+.pa-scan-fname { font-weight: 600; color: #e2e8f0; }
+@media (max-width: 900px) {
+    [data-testid="stElementContainer"]:has(.pa-scan-detect-rows) ~ [data-testid="stElementContainer"] [data-testid="stHorizontalBlock"] {
+        margin-bottom: 26px !important;
+        row-gap: 10px !important;
+        padding-bottom: 10px !important;
+        border-bottom: 1px dashed rgba(255,255,255,0.08);
     }
-    .pa-scan-detect-rows + div [data-testid="stHorizontalBlock"] > [data-testid="column"] {
-        margin-bottom: 4px !important;
+    [data-testid="stElementContainer"]:has(.pa-scan-detect-rows) ~ [data-testid="stElementContainer"] [data-testid="stHorizontalBlock"] > [data-testid="column"] {
+        margin-bottom: 8px !important;
     }
-    .pa-scan-fname { min-height: 0; padding: 0 0 2px 0; font-weight: 600 !important; }
-    .pa-scan-conf  { min-height: 0; padding: 2px 0 0 0; }
+    .pa-scan-fname {
+        min-height: 0;
+        font-size: 14px !important;
+        font-weight: 700 !important;
+        color: #ffffff !important;
+        padding: 6px 0 4px 0;
+    }
+    .pa-scan-conf  { min-height: 0; padding: 2px 0 6px 0; font-style: italic; }
 }
 .pa-myloans-toggle + div [data-testid="stCheckbox"] label {
     font-size: 12px !important;
@@ -4103,31 +4112,49 @@ def show_dashboard():
                             st.caption("Gmail opens ready to review. It will not send automatically.")
                         st.markdown('</div>', unsafe_allow_html=True)
 
+                    # Single dropdown lists only the parties that have at least one
+                    # checked condition. Resolves the To-email from the loan contacts
+                    # for the selected party.
+                    _parties_with_checked = []
                     for _section_party in _SECTION_ORDER_SCAN:
                         _section_conds = _conds_by_section.get(_section_party, [])
                         if not _section_conds:
                             continue
-                        _send_cols = st.columns([1.6, 1.1, 4])
+                        _checked_for_email = [
+                            c for c in _section_conds
+                            if _scan_condition_checked_for_section(c, _section_party)
+                        ]
+                        if _checked_for_email:
+                            _parties_with_checked.append(_section_party)
+
+                    if _parties_with_checked:
+                        def _party_option_label(p):
+                            _email = _scan_contact_email_for_section(p) or ""
+                            _label = _SECTION_LABEL_SCAN.get(p, f"{p} Conditions")
+                            return f"{_label} → {_email}" if _email else f"{_label} → (no contact email)"
+
+                        _send_cols = st.columns([3, 1.1, 1.4])
                         with _send_cols[0]:
-                            if st.button(_SEND_LABEL_SCAN.get(_section_party, f"Send to {_section_party}"),
-                                         key=f"{_scan_fkey}_{_section_party}_email_checked",
-                                         use_container_width=True):
-                                _checked_for_email = [
-                                    c for c in _section_conds
-                                    if _scan_condition_checked_for_section(c, _section_party)
-                                ]
-                                if _checked_for_email:
-                                    st.session_state[f"{_scan_fkey}_email_group_open"] = _section_party
-                                else:
-                                    st.toast(f"Check one or more {_SECTION_LABEL_SCAN.get(_section_party, _section_party).lower()} first.")
-                        with _send_cols[1]:
-                            st.selectbox(
-                                "Draft language", ["English", "Spanish"],
-                                key=f"{_scan_fkey}_{_section_party}_email_group_lang",
+                            _picked_party = st.selectbox(
+                                "Send to",
+                                _parties_with_checked,
+                                format_func=_party_option_label,
+                                key=f"{_scan_fkey}_email_party_pick",
                                 label_visibility="collapsed",
                             )
-                        if st.session_state.get(f"{_scan_fkey}_email_group_open") == _section_party:
-                            _render_scan_email_draft(_section_party)
+                        with _send_cols[1]:
+                            st.selectbox(
+                                "Language", ["English", "Spanish"],
+                                key=f"{_scan_fkey}_{_picked_party}_email_group_lang",
+                                label_visibility="collapsed",
+                            )
+                        with _send_cols[2]:
+                            if st.button("Draft email", type="primary",
+                                         key=f"{_scan_fkey}_email_draft_btn",
+                                         use_container_width=True):
+                                st.session_state[f"{_scan_fkey}_email_group_open"] = _picked_party
+                        if st.session_state.get(f"{_scan_fkey}_email_group_open"):
+                            _render_scan_email_draft(st.session_state[f"{_scan_fkey}_email_group_open"])
                     st.markdown('</div>', unsafe_allow_html=True)
                 elif _cond_count and "No specific conditions found in this document" not in str(_raw_c):
                     st.markdown(
