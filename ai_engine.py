@@ -311,10 +311,12 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
             _flush_condition(current_cond)
             rest = line[loan_m.end():].strip()
             # Capture the Prior To column (Docs / Closing / Funding) before stripping.
-            # Format: "{description} {Category} {Prior To} {Date} {Age} {Borrower} {Status} {Date}"
+            # Format: "{description}{Category}{Prior To} {Date} {Age}{Borrower}{Status}{Date}"
+            # PDF text extraction often glues columns together (e.g., "PropertyDocs",
+            # "1194PropertyDocs"), so allow optional whitespace before and between.
             prior_to = ""
             pt_match = re.search(
-                r'(?i)\s+(Legal|Property|Credit|Income|Asset|Compliance|Misc|Closing|Title|Insurance|Appraisal)\s+(Docs?|Closing|Funding)\s+\d{1,2}/\d{1,2}/\d{2,4}',
+                r'(?i)(Legal|Property|Credit|Income|Asset|Compliance|Misc|Closing|Title|Insurance|Appraisal)\s*(Docs?|Closing|Funding)\s*\d{1,2}/\d{1,2}/\d{2,4}',
                 rest,
             )
             if pt_match:
