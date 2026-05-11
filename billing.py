@@ -87,7 +87,7 @@ def get_usage(user_id: str, year_month: str | None = None) -> dict:
         included        — how many are covered by base
         overage         — scans above threshold
         base_cost       — $49.00
-        overage_cost    — overage × $10.00
+        overage_cost    — overage  $10.00
         total_cost      — base + overage
         pct_used        — % of included quota used (capped at 100 for display)
         by_doc_type     — {doc_type: count}

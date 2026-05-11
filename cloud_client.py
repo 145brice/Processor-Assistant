@@ -215,7 +215,7 @@ def ping(provider: str | None = None, api_key: str | None = None,
         response = _generate("Reply with: OK", "Reply with OK and nothing else.",
                              provider, api_key, model, timeout=15)
         if response:
-            return True, f"Connected · {provider} · {model}"
+            return True, f"Connected  {provider}  {model}"
         return False, "Empty response"
     except urllib.error.HTTPError as e:
         # Read Anthropic/OpenAI error body so the user sees the actual reason
@@ -366,14 +366,14 @@ def _generate_openai(prompt: str, system: str, model: str,
 def _ascii_log_text(value: str) -> str:
     text = str(value or "")
     replacements = {
-        "Â·": "-",
-        "·": "-",
+        "": "-",
+        "": "-",
         "—": "-",
         "–": "-",
-        "â€”": "-",
-        "â€“": "-",
-        "â†’": "->",
-        "â€¦": "...",
+        "": "-",
+        "": "-",
+        "": "->",
+        "": "...",
     }
     for old, new in replacements.items():
         text = text.replace(old, new)
@@ -481,7 +481,7 @@ Confidence options: High Confidence, Best Guess"""
                     renumbered.append(ln)
             result = "\n".join(renumbered)
             log = _log("CLOUD", "condition_extraction",
-                       f"{len(valid)} conditions · {provider} · {cfg.get('model')}")
+                       f"{len(valid)} conditions  {provider}  {cfg.get('model')}")
             return result, log
         else:
             existing = {ln.strip() for ln in script_conditions.split("\n") if "|" in ln}
@@ -506,7 +506,7 @@ def interpret_guidelines(condition_text: str, chunks: list[dict]) -> tuple[str, 
     chunk_text = ""
     for chunk in chunks[:6]:
         chunk_text += (
-            f"\n── {chunk.get('source','?')} · page {chunk.get('page','?')} ──\n"
+            f"\n── {chunk.get('source','?')}  page {chunk.get('page','?')} ──\n"
             f"{chunk.get('text','')[:600]}\n"
         )
 
@@ -527,7 +527,7 @@ Be specific and actionable. Write for a working mortgage processor, not a lawyer
     try:
         provider = cfg.get("provider", DEFAULT_PROVIDER)
         response = _generate(prompt, system, provider, cfg["api_key"], cfg["model"])
-        log = _log("CLOUD", "guideline_search", f"{provider} · {cfg.get('model')}")
+        log = _log("CLOUD", "guideline_search", f"{provider}  {cfg.get('model')}")
         return response, log
     except Exception as e:
         return "", _log("SCRIPT", "guideline_search", f"Cloud error: {str(e)[:60]}")
@@ -547,7 +547,7 @@ def draft_email_enhanced(conditions: list[dict], recipient_type: str,
         f"- {c.get('desc', c.get('num', 'Item'))}" for c in conditions
     )
     lang_instr = (
-        "Escribe el correo en español formal y profesional."
+        "Escribe el correo en espaol formal y profesional."
         if language == "Spanish"
         else "Write in professional American English."
     )
@@ -573,7 +573,7 @@ Keep it concise — under 300 words."""
         provider = cfg.get("provider", DEFAULT_PROVIDER)
         response = _generate(prompt, system, provider, cfg["api_key"], cfg["model"])
         log = _log("CLOUD", "email_draft",
-                   f"{recipient_type} · {language} · {provider} · {cfg.get('model')}")
+                   f"{recipient_type}  {language}  {provider}  {cfg.get('model')}")
         return response, log
     except Exception as e:
         return "", _log("SCRIPT", "email_draft", f"Cloud error: {str(e)[:60]}")
@@ -606,7 +606,7 @@ Be concise. Each bullet should be one sentence."""
     try:
         provider = cfg.get("provider", DEFAULT_PROVIDER)
         response = _generate(prompt, system, provider, cfg["api_key"], cfg["model"])
-        log = _log("CLOUD", "doc_summary", f"{provider} · {cfg.get('model')}")
+        log = _log("CLOUD", "doc_summary", f"{provider}  {cfg.get('model')}")
         return response, log
     except Exception as e:
         return "", _log("SCRIPT", "doc_summary", f"Cloud error: {str(e)[:60]}")
@@ -844,7 +844,7 @@ CONTRACT TEXT:
         # Post-process: filter out obvious boilerplate in extracted values
         data = _clean_extracted_contract_data(data)
 
-        log = _log("CLOUD", "pc_extract", f"{provider} · {cfg.get('model')}")
+        log = _log("CLOUD", "pc_extract", f"{provider}  {cfg.get('model')}")
         return data, log
     except Exception as e:
         return {}, _log("SCRIPT", "pc_extract", f"Cloud error: {str(e)[:80]}")
@@ -925,7 +925,7 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
             data = json.loads(resp.read().decode("utf-8"))
         txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
         parsed = _clean_extracted_contract_data(_parse_ai_json(txt))
-        _note = f"gemini · {model}" if provider == "gemini" else f"gemini_fallback · {model}"
+        _note = f"gemini  {model}" if provider == "gemini" else f"gemini_fallback  {model}"
         return parsed, _log("CLOUD", "pc_pdf_extract", _note), ""
     except Exception as e:
         return {}, _log("SCRIPT", "pc_pdf_extract", f"Cloud error: {str(e)[:120]}"), ""

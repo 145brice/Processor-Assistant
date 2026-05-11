@@ -2606,9 +2606,9 @@ def extract_purchase_contract(text: str) -> dict:
         return val
 
     def _truncate_at_separator(val: str) -> str:
-        """Truncate value at middle-dot (·) or pipe (|) separators used by some PDFs."""
+        """Truncate value at middle-dot () or pipe (|) separators used by some PDFs."""
         # Middle dot (U+00B7) and bullet (•) are used as field separators in some PDFs
-        val = re.split(r'\s*[·•|]\s*', val)[0].strip()
+        val = re.split(r'\s*[|]\s*', val)[0].strip()
         return val
 
     def _find(patterns, default=""):
@@ -2937,18 +2937,18 @@ def extract_purchase_contract(text: str) -> dict:
 
     # ── Hard-stop helpers (used by Title, Listing/Selling Agent, Brokerage) ───
     # Names are 2-5 capitalized words; companies are mixed-case with limited punctuation.
-    # Both stop at separators (·•|), next-field markers, phone, email, or end-of-line.
+    # Both stop at separators (|), next-field markers, phone, email, or end-of-line.
     _NAME_BODY = r"[A-Z][a-zA-Z'\-]+(?:\s+(?:and\s+)?[A-Z][a-zA-Z'\-\.]+){0,4}"
-    _NAME_STOP = r"(?=\s*(?:[·•|]|Tel|Phone|Email|Fax|Selling|Listing|Title|Brokerage|Broker|License|Agent|Office|Company|of\s|\d{3}[\-\.\s]\d{3}|[\w\.\+\-]+@|$|\n))"
+    _NAME_STOP = r"(?=\s*(?:[|]|Tel|Phone|Email|Fax|Selling|Listing|Title|Brokerage|Broker|License|Agent|Office|Company|of\s|\d{3}[\-\.\s]\d{3}|[\w\.\+\-]+@|$|\n))"
     _CO_BODY   = r"[A-Z][A-Za-z0-9'&,\-\. ]{3,58}?"
-    _CO_STOP   = r"(?=\s*(?:[·•|]|Tel|Phone|Email|Fax|Selling|Listing|Title|License|Agent|of\s|\d{3}[\-\.\s]\d{3}|[\w\.\+\-]+@|$|\n))"
+    _CO_STOP   = r"(?=\s*(?:[|]|Tel|Phone|Email|Fax|Selling|Listing|Title|License|Agent|of\s|\d{3}[\-\.\s]\d{3}|[\w\.\+\-]+@|$|\n))"
 
     # ── Title company ─────────────────────────────────────────────────────────
     title_company = _find_company([
         r"(?:Title\s*Company|Title\s*Co\.?|Escrow\s*Company|Settlement\s*Agent|Title\s*Insurance\s*(?:Company|Co))[:\s]+(" + _CO_BODY + r")" + _CO_STOP,
         r"(?:closing\s+(?:at|with|through)|escrow\s+(?:at|with|through))\s+(" + _CO_BODY + r")" + _CO_STOP,
         r"([A-Z][a-zA-Z\s]{1,40}(?:Title|Escrow|Settlement)\s+(?:Company|Co\.?|Corp\.?|Inc\.?|LLC|Services?|Group))",
-        r"(?m)^([A-Z][^\n\d·•|]{2,60}(?:Title|Escrow|Settlement)[^\n·•|]{0,30})\s*$",
+        r"(?m)^([A-Z][^\n\d|]{2,60}(?:Title|Escrow|Settlement)[^\n|]{0,30})\s*$",
         r"(?i)Title\s+&\s+Escrow[:\s]+(" + _CO_BODY + r")" + _CO_STOP,
         r"(?i)Settlement\s+Company[:\s]+(" + _CO_BODY + r")" + _CO_STOP,
     ])
@@ -3098,7 +3098,7 @@ def extract_purchase_contract(text: str) -> dict:
             return ""
         rest = text[m.end():]
         same_line = rest.split('\n')[0].strip()
-        same_line = re.sub(r'^[\s:·\-]+', '', same_line).strip()
+        same_line = re.sub(r'^[\s:\-]+', '', same_line).strip()
 
         if same_line and not _is_template_line(same_line) and len(same_line) >= 2:
             val = same_line

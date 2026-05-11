@@ -1783,7 +1783,7 @@ def _normalize_contact_value(value) -> dict:
 def _clean_display_text(value) -> str:
     text = str(value or "")
     replacements = {
-        "Â·": "·",
+        "": "·",
         "Â—": "-",
         "": "-",
         "": "-",
@@ -1794,9 +1794,9 @@ def _clean_display_text(value) -> str:
         "": "",
         "": "",
         "": "Warning",
-        "â¸": "Paused",
+        "": "Paused",
         "Â": "",
-        "ï¸": "",
+        "": "",
     }
     for bad, good in replacements.items():
         text = text.replace(bad, good)
@@ -3186,7 +3186,7 @@ def show_dashboard():
                     _match_reasons.append(f"{_rep_fp['period'][0]}{_rep_fp['period'][1]}")
                 elif _rep_fp["names"]:
                     _match_reasons.append(_rep_fp["names"][0])
-                _reason_str = " Â· ".join(_match_reasons) if _match_reasons else _grp_type
+                _reason_str = "  ".join(_match_reasons) if _match_reasons else _grp_type
 
                 st.markdown(
                     f'<div style="font-size:12px;font-weight:700;color:#3b82f6;margin-bottom:4px;">'
@@ -3202,7 +3202,7 @@ def show_dashboard():
                     _label_parts = [new_files[_idx].name]
                     if _pg_label: _label_parts.append(_pg_label)
                     if _period_label: _label_parts.append(_period_label)
-                    _cb_label = "  Â·  ".join(_label_parts)
+                    _cb_label = "    ".join(_label_parts)
                     _checked = st.checkbox(_cb_label, value=True, key=f"dash_merge_{_gi}_{_idx}")
                     if _checked:
                         _selected.add(_idx)
@@ -4007,14 +4007,14 @@ def show_dashboard():
                                     _pg  = _gm.get("page", "")
                                     _sc  = _gm.get("score", 0)
                                     _ex  = (_gm.get("excerpt", "") or "").replace("\n", " ")[:360]
-                                    _sec_part = f" Â· <b>{_sec}</b>" if _sec else ""
+                                    _sec_part = f"  <b>{_sec}</b>" if _sec else ""
                                     st.markdown(
                                         f'<div style="font-size:11px;color:#e5e7eb;padding:6px 10px;margin:3px 0 3px 32px;'
                                         f'background:rgba(59,130,246,0.05);border-left:2px solid rgba(59,130,246,0.45);'
                                         f'border-radius:4px;">'
                                         f'<span style="color:#3b82f6;font-weight:700;">{_src}</span>'
                                         f'{_sec_part}'
-                                        f' <span style="color:#9ca3af;">p.{_pg} Â· {_sc}% match</span><br/>'
+                                        f' <span style="color:#9ca3af;">p.{_pg}  {_sc}% match</span><br/>'
                                         f'<span style="color:#cbd5e1;font-size:10.5px;">{_ex}</span>'
                                         f'</div>',
                                         unsafe_allow_html=True,
@@ -4459,7 +4459,7 @@ def show_dashboard():
                     if _cr_inq:   _sum_parts.append(f"{_cr_inq} inquir{'y' if _cr_inq==1 else 'ies'}")
                     if _cr_past_due > 0: _sum_parts.append(f"Past due: ${_cr_past_due:,.2f}")
                     if _sum_parts:
-                        st.caption(" Â· ".join(_sum_parts))
+                        st.caption("  ".join(_sum_parts))
 
                 # â”€â”€ 1099 display â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if _batch.get("type") == "1099":
@@ -5153,7 +5153,7 @@ def show_pipeline():
                         st.markdown(
                             f'<div style="background:#0a1a0a;border:1px solid rgba(59,130,246,0.2);border-radius:8px;'
                             f'padding:10px;margin:4px 0;font-size:12px;color:#3b82f6;">'
-                            f'Auto-filled: {" &nbsp;Â·&nbsp; ".join(_parts)}'
+                            f'Auto-filled: {" &nbsp;&nbsp; ".join(_parts)}'
                             f'</div>',
                             unsafe_allow_html=True,
                         )
@@ -5175,7 +5175,7 @@ def show_pipeline():
                             f'fill these in manually below.</div>',
                             unsafe_allow_html=True,
                         )
-                    if st.button("Removeï¸ Clear scan results", key="add_loan_bulk_clear"):
+                    if st.button("Remove Clear scan results", key="add_loan_bulk_clear"):
                         st.session_state.pop(_add_bulk_key, None)
                         for _k in ["pl_new_num", "pl_new_borrower", "pl_new_closing",
                                     "pl_new_lock"]:
@@ -5335,7 +5335,7 @@ def show_pipeline():
                         f"<div style='font-weight:700;color:#ffffff;'>"
                         f"#{item.get('loan_num','')} &nbsp; {item.get('borrower','')}</div>"
                         f"<div style='font-size:12px;color:#9ca3af;'>"
-                        f"From: {item.get('last_updated_by','?')} &nbsp;Â·&nbsp; "
+                        f"From: {item.get('last_updated_by','?')} &nbsp;&nbsp; "
                         f"Updated: {item.get('last_updated','')[:10]}</div>",
                         unsafe_allow_html=True,
                     )
@@ -5571,7 +5571,7 @@ def show_pipeline():
                     _inline_badges += (
                         f'&nbsp;<span style="background:rgba(245,158,11,0.1);color:#f59e0b;padding:1px 6px;'
                         f'border-radius:3px;font-size:9px;font-weight:600;border:1px solid rgba(245,158,11,0.3);">'
-                        f'â± {_hrs_left:.1f}h to respond</span>'
+                        f' {_hrs_left:.1f}h to respond</span>'
                     )
             except Exception:
                 pass
@@ -6153,7 +6153,7 @@ def show_reader():
         if _hits:
             st.caption(f"{len(_hits)} result(s)")
             for _h in _hits:
-                _label = " Â· ".join(filter(None, [
+                _label = "  ".join(filter(None, [
                     _h.get("borrower"), _h.get("doc_type"),
                     _h.get("month"), _h.get("year"),
                 ]))
@@ -6313,7 +6313,7 @@ def show_reader():
                 st.error(f"Could not display image: {_e}")
             with open(open_file["path"], "rb") as _ifh:
                 st.download_button(
-                    f"â¬‡ Download {open_file['name']}",
+                    f" Download {open_file['name']}",
                     _ifh.read(),
                     file_name=open_file["name"],
                     mime=f"image/{open_file['ext'].lstrip('.')}",
@@ -6325,7 +6325,7 @@ def show_reader():
                 with open(open_file["path"], "rb") as _ofh:
                     st.info("This file type can't be rendered inline download it below.")
                     st.download_button(
-                        f"â¬‡ Download {open_file['name']}",
+                        f" Download {open_file['name']}",
                         _ofh.read(),
                         file_name=open_file["name"],
                         key=f"other_dl_{open_file['name']}",
@@ -6806,7 +6806,7 @@ def show_spanish_reply_page():
                 st.markdown("**English Translation:**")
                 st.text_area("Translated text", value=english_translation, height=110, key="spanish_translated")
             else:
-                st.error("âŒ Translation failed. Please check your internet connection.")
+                st.error(" Translation failed. Please check your internet connection.")
                 st.markdown("**Original Spanish Text:**")
                 st.text_area("Original text", value=original_text, height=110, key="spanish_original")
 
@@ -6825,7 +6825,7 @@ def show_spanish_reply_page():
                         st.text_area("Copy this Spanish text to Gmail", value=spanish_draft, height=150, key="spanish_final_draft")
                         st.info("Copy the text above and paste it into Gmail to send to your Spanish-speaking borrower!")
                     else:
-                        st.error("âŒ Translation failed. Please try again.")
+                        st.error(" Translation failed. Please try again.")
                 else:
                     st.warning("Please enter a reply first.")
     else:
@@ -6965,7 +6965,7 @@ def show_auto_data_entry_page():
             if value:
                 st.success(f"{field.replace('_', ' ').title()}: {value}")
             else:
-                st.warning(f"âŒ {field.replace('_', ' ').title()}: Not filled")
+                st.warning(f" {field.replace('_', ' ').title()}: Not filled")
 
         # Show statistics
         stats = data_entry.get_fill_statistics(form_template, filled_form)
@@ -7114,7 +7114,7 @@ def show_dti_calculator_page():
         confidence = st.session_state.get("dti_confidence", "low")
 
         if data_source == "scanned_documents":
-            confidence_icon = {"high": "", "medium": "", "low": ""}.get(confidence, "â“")
+            confidence_icon = {"high": "", "medium": "", "low": ""}.get(confidence, "")
             st.info(f"Auto-filled from scanned documents ({confidence_icon} {confidence} confidence)")
         elif st.session_state.get("dti_income", 0) > 0:
             st.info("Manually entered data")
@@ -7124,7 +7124,7 @@ def show_dti_calculator_page():
 
             # Check for errors
             if "error" in result:
-                st.error(f"âŒ Calculation Error: {result['error']}")
+                st.error(f" Calculation Error: {result['error']}")
                 st.info("Please ensure Monthly Gross Income is greater than $0")
                 return
 
@@ -7177,7 +7177,7 @@ def show_dti_calculator_page():
         confidence = st.session_state.get("cc_confidence", "low")
 
         if data_source == "scanned_documents":
-            confidence_icon = {"high": "", "medium": "", "low": ""}.get(confidence, "â“")
+            confidence_icon = {"high": "", "medium": "", "low": ""}.get(confidence, "")
             st.info(f"Auto-filled from scanned documents ({confidence_icon} {confidence} confidence)")
         elif st.session_state.get("cc_loan_amt", 0) > 0 or st.session_state.get("cc_property_val", 0) > 0:
             st.info("Manually entered data")
@@ -7267,7 +7267,7 @@ def show_compliance_checker_page():
                 st.markdown(f"**Score:** {category_results['score']}%")
                 if category_results.get("flags"):
                     for flag in category_results["flags"]:
-                        if "âŒ" in flag:
+                        if "" in flag:
                             st.error(flag)
                         elif "" in flag:
                             st.warning(flag)
@@ -7313,7 +7313,7 @@ def show_closing_package_page():
                 for doc in result["missing_documents"]:
                     st.write(f"{doc}")
         else:
-            st.error(f"âŒ Failed to generate package: {result.get('error', 'Unknown error')}")
+            st.error(f" Failed to generate package: {result.get('error', 'Unknown error')}")
 
 
 def show_pipeline_dashboard_page():
@@ -7410,7 +7410,7 @@ def show_guideline_checker_page():
         if result["passed"]:
             st.success("Loan meets all guidelines!")
         else:
-            st.error("âŒ Loan does not meet guidelines - review required")
+            st.error(" Loan does not meet guidelines - review required")
 
 
 def show_fraud_detector_page():
@@ -7534,7 +7534,7 @@ def show_los_export_page():
             for file_path in result["files_created"]:
                 st.code(file_path)
         else:
-            st.error(f"âŒ Export failed: {', '.join(result['errors'])}")
+            st.error(f" Export failed: {', '.join(result['errors'])}")
 
 
 # --- New Advanced Automation Pages ---
@@ -7637,7 +7637,7 @@ def show_underwriting_tracker_page():
         if results["condition_status"]:
             st.markdown("### Condition Status")
             for condition in results["condition_status"]:
-                status_icon = {"cleared": "", "pending": "â³", "overdue": ""}.get(condition["status"], "â“")
+                status_icon = {"cleared": "", "pending": "", "overdue": ""}.get(condition["status"], "")
                 st.markdown(f"{status_icon} **{condition['description']}** - {condition['status'].title()}")
 
                 if condition.get("recommendations"):
@@ -7676,7 +7676,7 @@ def show_document_classifier_page():
                 for rec in result["recommendations"]:
                     st.info(rec)
         else:
-            st.error("âŒ Document type not recognized")
+            st.error(" Document type not recognized")
 
         if result.get("secondary_classifications"):
             st.markdown("### Could Also Be")
@@ -7779,7 +7779,7 @@ def show_email_watch_controls_page():
     """Email Watch Controls: status, start/stop, credentials, settings."""
     import email_watch as ew
 
-    st.markdown("## Email Watch Â· Controls")
+    st.markdown("## Email Watch  Controls")
     st.caption(
         "Watch your inbox for new attachments. Runs in the background "
         "you can use Scanner or Pipeline normally while it checks."
@@ -7795,7 +7795,7 @@ def show_email_watch_controls_page():
             f'padding:10px 16px;margin-bottom:16px;">'
             f'<span style="font-size:14px;font-weight:700;color:#a9dfbf;">Watching inbox</span>'
             f'<span style="font-size:12px;color:#7dcea0;margin-left:12px;">'
-            f'Last check: {status["last_time"] or ""} Â· {status["last_status"]}</span></div>',
+            f'Last check: {status["last_time"] or ""}  {status["last_status"]}</span></div>',
             unsafe_allow_html=True,
         )
     else:
@@ -7804,7 +7804,7 @@ def show_email_watch_controls_page():
             f'padding:10px 16px;margin-bottom:16px;">'
             f'<span style="font-size:14px;font-weight:700;color:#9ca3af;">Inbox watch is off</span>'
             + (f'<span style="font-size:12px;color:#d1d5db;margin-left:12px;">'
-               f'Last check: {status["last_time"]} Â· {status["last_status"]}</span>'
+               f'Last check: {status["last_time"]}  {status["last_status"]}</span>'
                if status["last_time"] else "")
             + '</div>',
             unsafe_allow_html=True,
@@ -7908,7 +7908,7 @@ def show_email_watch_controls_page():
                 st.error("Enter both email address and app password.")
 
     # â”€â”€ How it works â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    with st.expander("â„¹ï¸ How Email Watch works"):
+    with st.expander("¸ How Email Watch works"):
         st.markdown("""
 **What it does:**
 - Checks your inbox every N minutes (runs in the background you can use the rest of the app normally)
@@ -7944,14 +7944,14 @@ def show_email_watch_page():
 
     # compact status strip + Controls shortcut
     _dot   = "" if _ew_running else ""
-    _state = f"Watching Â· last check {_ew_status['last_time'] or ''}" if _ew_running else "Watch is off"
+    _state = f"Watching  last check {_ew_status['last_time'] or ''}" if _ew_running else "Watch is off"
     _rs1, _rs2 = st.columns([5, 1])
     with _rs1:
         st.markdown(
             f'<div style="background:#1e1e1e;border-left:3px solid '
             f'{"#3b82f6" if _ew_running else "rgba(255,255,255,0.15)"};border-radius:6px;'
             f'padding:6px 14px;font-size:12px;color:#9ca3af;">'
-            f'{_dot} {_state} Â· <b style="color:#fff">{_ew_pending} attachment(s) waiting</b></div>',
+            f'{_dot} {_state}  <b style="color:#fff">{_ew_pending} attachment(s) waiting</b></div>',
             unsafe_allow_html=True,
         )
     with _rs2:
@@ -7960,7 +7960,7 @@ def show_email_watch_page():
             st.session_state["ew_nav_open"] = True
             st.rerun()
 
-    st.markdown("## Email Watch Â· Results")
+    st.markdown("## Email Watch  Results")
 
     # â”€â”€ Pending matches â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     matches = ew.get_matches()
@@ -7974,15 +7974,15 @@ def show_email_watch_page():
 
             if sugg == "match":
                 conf_color = "#3b82f6"
-                conf_label = f"Matched {bname} Â· Loan {lnum} ({conf}% confidence)"
+                conf_label = f"Matched {bname}  Loan {lnum} ({conf}% confidence)"
             elif sugg == "possible":
                 conf_color = "#fbbf24"
-                conf_label = f"Possible match {bname} Â· Loan {lnum} ({conf}%)"
+                conf_label = f"Possible match {bname}  Loan {lnum} ({conf}%)"
             else:
                 conf_color = "#ef4444"
                 conf_label = "? No pipeline match found"
 
-            with st.expander(f"{m['filename']}  Â·  {m.get('received', '')}  Â·  {conf_label}", expanded=True):
+            with st.expander(f"{m['filename']}    {m.get('received', '')}    {conf_label}", expanded=True):
                 mc1, mc2 = st.columns([3, 1])
                 with mc1:
                     st.markdown(
@@ -8036,7 +8036,7 @@ def show_email_watch_page():
                     try:
                         with open(m["file_path"], "rb") as _dfh:
                             st.download_button(
-                                "â¬‡ Download", _dfh.read(),
+                                " Download", _dfh.read(),
                                 file_name=m["filename"],
                                 key=f"ew_dl_{i}", use_container_width=True,
                             )
@@ -8139,7 +8139,7 @@ def show_email_watch_page():
                 )
                 _bname = _qv.get("borrower") or "Unknown borrower"
                 _lnum  = _qv.get("loan_num", "")
-                _match_label = f" Â· {_bname} Â· Loan {_lnum}" if _qv.get("borrower") else " Â· No pipeline match"
+                _match_label = f"  {_bname}  Loan {_lnum}" if _qv.get("borrower") else "  No pipeline match"
 
                 with st.container():
                     st.markdown(
@@ -8148,8 +8148,8 @@ def show_email_watch_page():
                         f'<span style="font-weight:700;color:#ffffff;font-size:13px;">'
                         f'{_v_icon} {_qfname}</span>'
                         f'<span style="font-size:12px;color:#9ca3af;">{_match_label}</span><br>'
-                        f'<span style="font-size:11px;color:#3b82f6;">{_qv.get("doc_type","Document")} Â· '
-                        f'{_qv.get("page_count",0)} pages Â· '
+                        f'<span style="font-size:11px;color:#3b82f6;">{_qv.get("doc_type","Document")}  '
+                        f'{_qv.get("page_count",0)} pages  '
                         f'{_qv.get("days_old","?")}d old</span></div>',
                         unsafe_allow_html=True,
                     )
@@ -8602,7 +8602,7 @@ def show_billing_page():
     notes = _bl.get_notes(uid)
     if notes:
         for n in notes:
-            st.markdown(f'<div style="font-size:13px;color:#9ca3af;">Â· {n}</div>',
+            st.markdown(f'<div style="font-size:13px;color:#9ca3af;"> {n}</div>',
                         unsafe_allow_html=True)
 
     # â”€â”€ Monthly history â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -8614,7 +8614,7 @@ def show_billing_page():
             c1, c2, c3 = st.columns([3, 2, 2])
             c1.markdown(f"**{_bl.format_month(h['year_month'])}**")
             c2.markdown(f"{h['scans']} scans"
-                        + (f" Â· {h['overage']} overage" if h["overage"] else ""))
+                        + (f"  {h['overage']} overage" if h["overage"] else ""))
             c3.markdown(f"**${h['total_cost']:.2f}**")
     else:
         st.info("No billing history yet scan a document to start tracking.")
@@ -8641,7 +8641,7 @@ Scans include all document uploads processed through the Scanner.
         if all_usage:
             for u in all_usage:
                 ua1, ua2, ua3, ua4 = st.columns([3, 2, 2, 2])
-                ua1.markdown(f"**{u['display_name'] or u['email']}** Â· {u['role']}")
+                ua1.markdown(f"**{u['display_name'] or u['email']}**  {u['role']}")
                 ua2.markdown(f"{u['scans']} scans")
                 ua3.markdown(f"{u['overage']} overage" if u["overage"] else "")
                 ua4.markdown(f"**${u['total_cost']:.2f}**")
@@ -9079,7 +9079,7 @@ def show_loan_detail():
             try:
                 with open(_p, "rb") as _fh:
                     st.download_button(
-                        f"â¬‡ Download {_lbl} ({_p.split(chr(92))[-1] if chr(92) in _p else _p.split('/')[-1]})",
+                        f" Download {_lbl} ({_p.split(chr(92))[-1] if chr(92) in _p else _p.split('/')[-1]})",
                         _fh.read(),
                         file_name=_p.split(chr(92))[-1] if chr(92) in _p else _p.split("/")[-1],
                         mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -9206,14 +9206,14 @@ def show_loan_detail():
                         _pg  = _gm.get("page", "")
                         _sc  = _gm.get("score", 0)
                         _ex  = (_gm.get("excerpt", "") or "").replace("\n", " ")[:360]
-                        _sec_part = f" Â· <b>{_sec}</b>" if _sec else ""
+                        _sec_part = f"  <b>{_sec}</b>" if _sec else ""
                         st.markdown(
                             f'<div style="font-size:11px;color:#e5e7eb;padding:6px 10px;margin:3px 0 3px 32px;'
                             f'background:rgba(59,130,246,0.05);border-left:2px solid rgba(59,130,246,0.45);'
                             f'border-radius:4px;">'
                             f'<span style="color:#3b82f6;font-weight:700;">{_src}</span>'
                             f'{_sec_part}'
-                            f' <span style="color:#9ca3af;">p.{_pg} Â· {_sc}% match</span><br/>'
+                            f' <span style="color:#9ca3af;">p.{_pg}  {_sc}% match</span><br/>'
                             f'<span style="color:#cbd5e1;font-size:10.5px;">{_ex}</span>'
                             f'</div>',
                             unsafe_allow_html=True,
@@ -9525,20 +9525,20 @@ def show_loan_detail():
                     _pc_rows.append(f'Seller Concessions: {_pc_txn["seller_concessions"]}')
                 if _pc_la.get("name"):
                     _la_str = f'Listing Agent: {_pc_la["name"]}'
-                    if _pc_la.get("brokerage"): _la_str += f' Â· {_pc_la["brokerage"]}'
-                    if _pc_la.get("phone"):     _la_str += f' Â· {_pc_la["phone"]}'
-                    if _pc_la.get("email"):     _la_str += f' Â· {_pc_la["email"]}'
+                    if _pc_la.get("brokerage"): _la_str += f'  {_pc_la["brokerage"]}'
+                    if _pc_la.get("phone"):     _la_str += f'  {_pc_la["phone"]}'
+                    if _pc_la.get("email"):     _la_str += f'  {_pc_la["email"]}'
                     _pc_rows.append(_la_str)
                 if _pc_sa.get("name"):
                     _sa_str = f'Selling Agent: {_pc_sa["name"]}'
-                    if _pc_sa.get("brokerage"): _sa_str += f' Â· {_pc_sa["brokerage"]}'
-                    if _pc_sa.get("phone"):     _sa_str += f' Â· {_pc_sa["phone"]}'
-                    if _pc_sa.get("email"):     _sa_str += f' Â· {_pc_sa["email"]}'
+                    if _pc_sa.get("brokerage"): _sa_str += f'  {_pc_sa["brokerage"]}'
+                    if _pc_sa.get("phone"):     _sa_str += f'  {_pc_sa["phone"]}'
+                    if _pc_sa.get("email"):     _sa_str += f'  {_pc_sa["email"]}'
                     _pc_rows.append(_sa_str)
                 if _pc_title.get("company"):
                     _tc_str = f'Title: {_pc_title["company"]}'
-                    if _pc_title.get("contact"): _tc_str += f' Â· {_pc_title["contact"]}'
-                    if _pc_title.get("phone"):   _tc_str += f' Â· {_pc_title["phone"]}'
+                    if _pc_title.get("contact"): _tc_str += f'  {_pc_title["contact"]}'
+                    if _pc_title.get("phone"):   _tc_str += f'  {_pc_title["phone"]}'
                     _pc_rows.append(_tc_str)
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
@@ -9584,7 +9584,7 @@ def show_loan_detail():
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
                     'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
                     '<b style="color:#3b82f6;">1003 Application found:</b><br>'
-                    f'Borrower: {_app_b.get("name","")} Â· Phone: {_app_b.get("phone","")}<br>'
+                    f'Borrower: {_app_b.get("name","")}  Phone: {_app_b.get("phone","")}<br>'
                     f'Employer: {_app_emp.get("employer","")}'
                     '</div>',
                     unsafe_allow_html=True,
@@ -9832,10 +9832,10 @@ def show_loan_detail():
                 f'<div>'
                 f'<span style="color:#3b82f6;font-weight:700;font-size:13px;">Approval Letter Scanned</span><br>'
                 f'<span style="color:#9ca3af;font-size:12px;">Borrower: <b style="color:#ffffff;">'
-                f'{_af_borrower or "Unknown"}</b> Â· '
-                f'{_af_data["cond_count"]} condition(s) extracted Â· '
+                f'{_af_borrower or "Unknown"}</b>  '
+                f'{_af_data["cond_count"]} condition(s) extracted  '
                 f'{_af_data["text_length"]:,} chars'
-                f'{" Â· Commitment: <b style=color:#9ca3af;>" + _af_data.get("commitment_date","") + "</b>" if _af_data.get("commitment_date") else ""}'
+                f'{"  Commitment: <b style=color:#9ca3af;>" + _af_data.get("commitment_date","") + "</b>" if _af_data.get("commitment_date") else ""}'
                 f'</span>'
                 f'</div>'
                 f'</div></div>',
@@ -9861,7 +9861,7 @@ def show_loan_detail():
                                            key=f"af_search_btn_{lid}",
                                            use_container_width=True, type="primary")
                 with _af_c2:
-                    if st.button("Removeï¸ Clear Approval", key=f"af_clear_{lid}",
+                    if st.button("Remove Clear Approval", key=f"af_clear_{lid}",
                                  use_container_width=True):
                         st.session_state.pop(_af_key, None)
                         st.rerun()
@@ -9940,8 +9940,8 @@ def show_loan_detail():
                                 f'<span style="color:#ffffff;font-size:13px;font-weight:600;">'
                                 f'#{_c["num"]} {_c["desc"][:80]}</span><br>'
                                 f'<span style="color:#9ca3af;font-size:11px;">{_best["file_name"]}'
-                                f' &nbsp;Â·&nbsp; <span style="color:{_conf_color};">{_best["score"]}% match</span>'
-                                f' &nbsp;Â·&nbsp; {_best["match_type"]}</span>'
+                                f' &nbsp;&nbsp; <span style="color:{_conf_color};">{_best["score"]}% match</span>'
+                                f' &nbsp;&nbsp; {_best["match_type"]}</span>'
                                 + (f'<br><span style="color:#9ca3af;font-size:11px;font-style:italic;">'
                                    f'{_best["snippet"][:120]}</span>' if _best.get("snippet") else "")
                                 + (f'<br><span style="color:#9ca3af;font-size:10px;">'
@@ -10244,8 +10244,8 @@ def show_loan_detail():
             "created": "+",
             "status": "â†’",
             "reassign": "User",
-            "note": "Â·",
-            "dates": "Â·",
+            "note": "",
+            "dates": "",
             "removed": "Remove",
             "docs": "",
             "upload": "Attach",
@@ -10258,7 +10258,7 @@ def show_loan_detail():
             _detail = entry.get("detail", "")
             _user = entry.get("user", "")
             _icon = _act_icons.get(_action, "")
-            _user_tag = f'<span style="color:#3b82f6;font-weight:600;">{_user}</span> Â· ' if _user else ""
+            _user_tag = f'<span style="color:#3b82f6;font-weight:600;">{_user}</span>  ' if _user else ""
             st.markdown(
                 f'<div style="display:flex;gap:10px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
                 f'<span style="font-size:14px;min-width:20px;">{_icon}</span>'
