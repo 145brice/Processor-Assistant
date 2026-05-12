@@ -2018,22 +2018,101 @@ def _render_trial_gate(profile: dict) -> None:
                     st.error(f"Error: {e}")
 
 
+# Keyword routing for condition responsibility.
+# Third-party / non-borrower keywords win first — they identify documents or
+# actions that a specific party owns (Title, Appraiser, Insurance, etc.).
+# Borrower-action keywords are checked second for items the borrower must
+# personally sign/provide/explain. Anything unmatched defaults to Borrower.
+_PARTY_KEYWORDS_THIRD_PARTY = [
+    # (party, [keywords - must appear in lowercased condition text])
+    ("Appraiser", [
+        "appraisal", "appraiser", "1004d", "1004 ", "1004-d",
+        "property inspection", "property valuation", "final inspection",
+        "ead portal", "appraisal logging", "appraisal condition",
+        "successful submission report", "ssr",
+    ]),
+    ("Title", [
+        "title commitment", "title search", "title review", "title insurance",
+        "clear title", "title company", "settlement agent", "wiring instructions",
+        "lien", "payoff statement", "payoff account", "estoppel", "survey",
+        "alta", "cpl", "preliminary cd", "warranty deed", "deed of trust",
+        "vesting", "security instrument",
+    ]),
+    ("Insurance", [
+        "hazard insurance", "homeowner insurance", "homeowner's insurance",
+        "homeowners insurance", "hoi policy", "hoi binder", "insurance binder",
+        "hazard dec page", "declarations page", "flood certification",
+        "flood determination", "wind coverage", "mortgagee clause",
+        "dwelling coverage", "replacement cost",
+    ]),
+    ("Closer", [
+        "closing disclosure", "final closing disclosure", "initial closing disclosure",
+        "cd ", "closer ", "closing package", "lock desk", "ctc", "clear to close",
+        "fund release", "wire authorization", "closing agent", "closer to confirm",
+        "closer to provide",
+    ]),
+    ("Underwriter", [
+        "underwriting review", "underwriter approval", "underwriter review",
+        "compliance review", "lender requirements", "investor guidelines",
+        "lqi report", "loan quality initiative", "second-level review",
+        "slr ", "qc review", "quality control",
+        "pmi approval", "pmi coverage", " pmi ", "mi approval", "mi coverage",
+        "max interest rate", "interest rate not to exceed", "rate lock",
+        "max piti", "max ltv", "max dti", "max cltv",
+    ]),
+    ("Employer", [
+        "verbal verification of employment", "written verification of employment",
+        "voe ", "wvoe", "verbal voe", "written voe", "employer verification",
+        "employment confirmation", "current voe", "employer to confirm",
+    ]),
+    ("Realtor", [
+        "purchase contract", "purchase agreement", "sales agreement",
+        "realtor", "listing agent", "selling agent", "buyer's agent",
+        "seller's agent", "real estate agent",
+    ]),
+    ("Seller", [
+        "seller to provide", "seller's closing", "seller credit",
+        "seller concession", "seller contribution", "seller signature",
+    ]),
+]
+
+_PARTY_KEYWORDS_BORROWER_ACTION = [
+    # Pure borrower-only actions: sign, provide income/asset proof, explain.
+    "missing signature", "sign document", "sign disclosure",
+    "provide paystub", "provide pay stub", "provide bank statement",
+    "provide tax return", "provide w-2", "provide w2", "missing w-2",
+    "missing 1040", "provide 1040", "provide 1099", "provide ssa",
+    "provide social security", "verify employment",
+    "provide income verification", "provide asset", "provide gift letter",
+    "borrower consent", "borrower authorization", "borrower acknowledgment",
+    "provide id", "provide identification", "provide driver's license",
+    "missing disclosure", "provide explanation letter", "letter of explanation",
+    "debt verification needed", "income verification needed",
+    "asset documentation needed", "motivation letter", "gift funds",
+    "earnest money", "name affidavit", "aka",
+]
+
+
 def _infer_condition_party(desc: str) -> str:
+    """Infer responsible party from condition text using layered keyword lists.
+
+    Order:
+      1. Third-party document/action keywords win first (Title, Appraiser, etc.)
+      2. Borrower-action keywords → Borrower
+      3. Fall through to Borrower as default
+    """
     text = str(desc or "").lower()
-    if any(k in text for k in ["insurance", "hoi", "hazard", "flood"]):
-        return "Insurance"
-    if any(k in text for k in ["title", "lien", "payoff", "survey"]):
-        return "Title"
-    if any(k in text for k in ["appraisal", "appraiser", "value"]):
-        return "Appraiser"
-    if any(k in text for k in ["voe", "employer", "employment"]):
-        return "Employer"
-    if any(k in text for k in ["purchase contract", "realtor", "agent"]):
-        return "Realtor"
-    if "seller" in text:
-        return "Seller"
-    if any(k in text for k in ["closer", "cd ", "closing disclosure"]):
-        return "Closer"
+
+    # Step 1: third-party / non-borrower routing
+    for party, keywords in _PARTY_KEYWORDS_THIRD_PARTY:
+        if any(k in text for k in keywords):
+            return party
+
+    # Step 2: explicit borrower-action signals
+    if any(k in text for k in _PARTY_KEYWORDS_BORROWER_ACTION):
+        return "Borrower"
+
+    # Step 3: default
     return "Borrower"
 
 

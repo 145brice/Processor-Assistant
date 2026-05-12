@@ -526,17 +526,85 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
     return "\n".join(table_lines) + notes
 
 
+_GUESS_PARTY_THIRD = [
+    ("Appraiser", [
+        "apprais", "1004d", "1004 ", "1004-d", "property inspection",
+        "property valuation", "final inspection", "ead portal",
+        "appraisal logging", "appraisal condition",
+        "successful submission report", "ssr",
+    ]),
+    ("Title", [
+        "title commitment", "title search", "title review", "clear title",
+        "title company", "settlement agent", "wiring instructions",
+        "lien", "payoff statement", "payoff account", "estoppel", "survey",
+        "alta", "cpl", "preliminary cd", "warranty deed", "deed of trust",
+        "vesting", "security instrument", "hoa",
+    ]),
+    ("Insurance", [
+        "hazard insurance", "homeowner insurance", "homeowner's insurance",
+        "homeowners insurance", "hoi policy", "hoi binder", "insurance binder",
+        "hazard dec page", "declarations page", "flood certification",
+        "flood determination", "wind coverage", "mortgagee clause",
+        "dwelling coverage", "replacement cost", "hazard", "flood", "insurance",
+    ]),
+    ("Closer", [
+        "closing disclosure", "final closing disclosure", "initial closing disclosure",
+        "closing package", "lock desk", "ctc", "clear to close",
+        "fund release", "wire authorization", "closing agent",
+        "closer to confirm", "closer to provide",
+    ]),
+    ("Underwriter", [
+        "underwriting review", "underwriter approval", "underwriter review",
+        "compliance review", "lender requirements", "investor guidelines",
+        "lqi report", "loan quality initiative", "second-level review",
+        "slr ", "qc review", "quality control", "underwrit",
+        "pmi approval", "pmi coverage", " pmi ", "mi approval", "mi coverage",
+        "max interest rate", "interest rate not to exceed", "rate lock",
+        "max piti", "max ltv", "max dti", "max cltv",
+    ]),
+    ("Employer", [
+        "verbal verification of employment", "written verification of employment",
+        "voe ", "wvoe", "verbal voe", "written voe", "employer verification",
+        "employment confirmation", "current voe", "employer to confirm",
+    ]),
+    ("Realtor", [
+        "purchase contract", "purchase agreement", "sales agreement",
+        "realtor", "listing agent", "selling agent",
+    ]),
+    ("Seller", [
+        "seller to provide", "seller's closing", "seller credit",
+        "seller concession", "seller contribution", "seller signature",
+    ]),
+]
+
+_GUESS_PARTY_BORROWER = [
+    "missing signature", "sign document", "sign disclosure",
+    "provide paystub", "provide pay stub", "provide bank statement",
+    "provide tax return", "provide w-2", "provide w2", "missing w-2",
+    "missing 1040", "provide 1040", "provide 1099", "provide ssa",
+    "provide social security", "verify employment",
+    "provide income verification", "provide asset", "provide gift letter",
+    "borrower consent", "borrower authorization", "borrower acknowledgment",
+    "provide id", "provide identification", "provide driver's license",
+    "missing disclosure", "provide explanation letter", "letter of explanation",
+    "debt verification needed", "income verification needed",
+    "asset documentation needed", "motivation letter", "gift funds",
+    "earnest money", "name affidavit", "aka",
+]
+
+
 def _guess_party(text: str) -> str:
-    """Guess responsible party from condition description."""
-    t = text.lower()
-    if any(w in t for w in ["title", "lien", "survey", "estoppel", "hoa"]):
-        return "Title"
-    if any(w in t for w in ["apprais", "inspection"]):
-        return "Appraiser"
-    if any(w in t for w in ["underwrit", "approve", "clear to close"]):
-        return "Underwriter"
-    if any(w in t for w in ["insurance", "hazard", "flood"]):
-        return "Insurance"
+    """Guess responsible party from condition description.
+
+    Third-party document/action keywords take priority over borrower defaults,
+    so e.g. 'Provide title commitment' goes to Title rather than Borrower.
+    """
+    t = (text or "").lower()
+    for party, keywords in _GUESS_PARTY_THIRD:
+        if any(k in t for k in keywords):
+            return party
+    if any(k in t for k in _GUESS_PARTY_BORROWER):
+        return "Borrower"
     return "Borrower"
 
 
