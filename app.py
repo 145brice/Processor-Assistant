@@ -4034,16 +4034,25 @@ def show_dashboard():
                                     f' <span style="color:#93c5fd;font-size:10px;opacity:0.8;">{_conf}</span>'
                                     if _conf else ""
                                 )
-                                _display_desc = _c["desc"]
-                                if _plain_on:
-                                    _pmap = st.session_state.get(_plain_map_key, {})
-                                    _display_desc = _pmap.get(_c["desc"], _c["desc"])
-                                st.markdown(
+                                _orig_desc = str(_c.get("desc", ""))
+                                _pmap = st.session_state.get(_plain_map_key, {})
+                                _client_desc = str(_pmap.get(_orig_desc, _orig_desc))
+                                _has_alt = bool(_client_desc and _client_desc != _orig_desc)
+                                _primary_desc = _client_desc if _plain_on else _orig_desc
+                                _secondary_desc = _orig_desc if _plain_on else _client_desc
+                                _secondary_label = "Original" if _plain_on else "Client language"
+
+                                _desc_html = (
                                     f'<div style="font-size:13px;line-height:1.38;padding:1px 0 4px;">'
                                     f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
-                                    f'<span style="color:#e5e7eb;">{_display_desc}</span>{_conf_badge}</div>',
-                                    unsafe_allow_html=True,
+                                    f'<span style="color:#e5e7eb;">{_primary_desc}</span>{_conf_badge}</div>'
                                 )
+                                if _has_alt:
+                                    _desc_html += (
+                                        f'<div style="font-size:11px;line-height:1.35;padding:0 0 5px 22px;'
+                                        f'color:#94a3b8;"><b>{_secondary_label}:</b> {_secondary_desc}</div>'
+                                    )
+                                st.markdown(_desc_html, unsafe_allow_html=True)
 
                             _ctrl1, _ctrl2, _ctrl3 = st.columns([1.5, 3.4, 1.15])
                             with _ctrl1:
