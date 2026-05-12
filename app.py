@@ -2020,14 +2020,6 @@ def _render_trial_gate(profile: dict) -> None:
 
 def _infer_condition_party(desc: str) -> str:
     text = str(desc or "").lower()
-    if "invoice" in text:
-        if any(k in text for k in ["insurance", "hoi", "hazard", "homeowner"]):
-            return ["Insurance", "Processor"]
-        if any(k in text for k in ["appraisal", "appraiser", "amc"]):
-            return ["Appraiser", "Processor"]
-        return "Processor"
-    if any(k in text for k in ["fha connection", "case query", "case number", "case #", "sponsor id", "business tax id"]):
-        return "Processor"
     if any(k in text for k in ["insurance", "hoi", "hazard", "flood"]):
         return "Insurance"
     if any(k in text for k in ["title", "lien", "payoff", "survey"]):
@@ -4278,17 +4270,12 @@ def show_dashboard():
                     _PARTY_OPTS_SCAN = [
                         "Borrower", "Co-Borrower", "Title", "Realtor", "Seller",
                         "Underwriter", "Jr Underwriter", "Loan Officer", "Closer",
-                        "Insurance", "Appraiser", "Employer", "Manager", "Processor",
+                        "Insurance", "Appraiser", "Employer", "Manager",
                     ]
                     _COND_STATS_SCAN = ["Needed", "Requested", "Important", "Ready to Clear", "Cleared"]
 
                     def _infer_party(_desc: str) -> str:
                         _d = (_desc or "").lower()
-                        if "invoice" in _d:
-                            if any(k in _d for k in ["insurance", "hoi", "hazard", "homeowner"]): return ["Insurance", "Processor"]
-                            if any(k in _d for k in ["appraisal", "appraiser", "amc"]): return ["Appraiser", "Processor"]
-                            return "Processor"
-                        if any(k in _d for k in ["fha connection", "case query", "case number", "case #", "sponsor id", "business tax id"]): return "Processor"
                         if any(k in _d for k in ["insurance", "hoi", "hazard", "flood"]): return "Insurance"
                         if any(k in _d for k in ["title", "lien", "payoff", "survey"]):  return "Title"
                         if any(k in _d for k in ["appraisal", "appraiser", "value"]):    return "Appraiser"
@@ -4303,7 +4290,7 @@ def show_dashboard():
                     _SECTION_ORDER_SCAN = [
                         "Borrower", "Title", "Insurance", "Appraiser",
                         "Employer", "Realtor", "Seller", "Closer",
-                        "Underwriter", "Processor",
+                        "Underwriter",
                     ]
                     _SECTION_LABEL_SCAN = {
                         "Borrower": "Client Conditions",
@@ -4315,7 +4302,6 @@ def show_dashboard():
                         "Seller": "Seller Conditions",
                         "Closer": "Closer Conditions",
                         "Underwriter": "Underwriting Conditions",
-                        "Processor": "Processor Conditions",
                     }
                     _SEND_LABEL_SCAN = {
                         "Borrower": "Send to Borrower",
@@ -4327,7 +4313,6 @@ def show_dashboard():
                         "Seller": "Send to Seller",
                         "Closer": "Send to Closer",
                         "Underwriter": "Send to Underwriter",
-                        "Processor": "Processor Follow-Up",
                     }
                     _SECTION_CONTACT_KEYS_SCAN = {
                         "Borrower": ["borrower", "buyer", "co_borrower", "client"],
@@ -4339,7 +4324,6 @@ def show_dashboard():
                         "Seller": ["seller"],
                         "Closer": ["closer", "title", "settlement_agent"],
                         "Underwriter": ["underwriter", "loan_officer", "processor"],
-                        "Processor": ["processor", "loan_officer", "underwriter"],
                     }
 
                     def _scan_contact_email_for_section(_section_party):
@@ -4374,7 +4358,6 @@ def show_dashboard():
                             "Jr Underwriter": "Underwriter",
                             "Loan Officer": "Underwriter",
                             "Manager": "Underwriter",
-                            "Processor": "Processor",
                         }
                         _sections = []
                         for _party in _raw_parties:
@@ -4484,7 +4467,7 @@ def show_dashboard():
 
                     def _is_client_need_condition(_cond) -> bool:
                         _sections = _scan_sections_for_condition(_cond)
-                        return "Borrower" in _sections
+                        return "Borrower" in _sections and _condition_is_client_actionable(str(_cond.get("desc", "")))
 
                     import html as _html
                     _needs_rows = []
