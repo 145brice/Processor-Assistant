@@ -2232,205 +2232,6 @@ def _client_need_item(desc: str, party: str = "Borrower") -> tuple[str, str]:
     return subject, body
 
 
-def _condition_learning_key() -> str:
-    user_key = st.session_state.get("user_key") or st.session_state.get("supabase_user_id") or st.session_state.get("user_id")
-    if not user_key:
-        keys = _auth_user_key_candidates()
-        user_key = keys[0] if keys else st.session_state.get("user_email", "anonymous")
-    return f"condition_learning::{user_key}"
-
-
-def _condition_learning_default() -> dict:
-    return {
-        "version": 1,
-        "daily": {},
-        "scores": {},
-        "ignored": {},
-        "allowed": {},
-        "ignored_keywords": {},
-        "keyword_scores": {},
-    }
-
-
-def _condition_learning_load() -> dict:
-    if st.session_state.get("sandbox_mode", False):
-        return st.session_state.setdefault("condition_learning_local", _condition_learning_default())
-    cache_key = "_condition_learning_cache"
-    loaded_key = "_condition_learning_loaded_for"
-    setting_key = _condition_learning_key()
-    if st.session_state.get(loaded_key) == setting_key and isinstance(st.session_state.get(cache_key), dict):
-        return st.session_state[cache_key]
-    data = {}
-    try:
-        import supabase_auth as _sa
-        data = _sa._load_setting_json(setting_key)
-    except Exception:
-        data = {}
-    if not isinstance(data, dict) or not data:
-        data = _condition_learning_default()
-    for key, value in _condition_learning_default().items():
-        data.setdefault(key, value)
-    st.session_state[cache_key] = data
-    st.session_state[loaded_key] = setting_key
-    return data
-
-
-def _condition_learning_save(data: dict) -> None:
-    st.session_state["_condition_learning_cache"] = data
-    if st.session_state.get("sandbox_mode", False):
-        st.session_state["condition_learning_local"] = data
-        return
-    try:
-        import supabase_auth as _sa
-        _sa._save_setting_json(
-            _condition_learning_key(),
-            data,
-            user_key=str(st.session_state.get("user_key") or st.session_state.get("user_id") or ""),
-            user_email=str(st.session_state.get("user_email") or ""),
-        )
-    except Exception:
-        pass
-
-
-def _condition_fingerprint(desc: str) -> str:
-    text = _clean_condition_for_client(desc).lower()
-    text = re.sub(r"[^a-z0-9 ]+", " ", text)
-    return re.sub(r"\s+", " ", text).strip()[:180]
-
-
-def _condition_keywords(desc: str) -> list[str]:
-    text = _condition_fingerprint(desc)
-    stop = {
-        "the", "and", "for", "with", "from", "this", "that", "will", "need", "needs",
-        "provide", "copy", "condition", "borrower", "please", "must", "have", "been",
-        "upon", "upload", "following", "document", "documents", "review",
-    }
-    words = [w for w in text.split() if len(w) >= 4 and w not in stop]
-    phrases = []
-    for size in (3, 2):
-        for idx in range(max(0, len(words) - size + 1)):
-            phrase = " ".join(words[idx:idx + size])
-            if phrase not in phrases:
-                phrases.append(phrase)
-    for word in words:
-        if word not in phrases:
-            phrases.append(word)
-    return phrases[:14]
-
-
-def _condition_learning_track(action: str, desc: str = "", points: int = 0, *, score_condition: bool = True) -> None:
-    data = _condition_learning_load()
-    from datetime import date as _date
-    day = _date.today().isoformat()
-    daily = data.setdefault("daily", {}).setdefault(day, {
-        "logins": 0,
-        "features": {},
-        "actions": {},
-        "points": 0,
-    })
-    daily.setdefault("actions", {})[action] = int(daily.setdefault("actions", {}).get(action, 0)) + 1
-    daily["points"] = int(daily.get("points", 0)) + int(points or 0)
-    if desc and score_condition:
-        fp = _condition_fingerprint(desc)
-        if fp:
-            data.setdefault("scores", {})[fp] = int(data.setdefault("scores", {}).get(fp, 0)) + int(points or 0)
-            for kw in _condition_keywords(desc)[:8]:
-                data.setdefault("keyword_scores", {})[kw] = int(data.setdefault("keyword_scores", {}).get(kw, 0)) + int(points or 0)
-    _condition_learning_save(data)
-
-
-def _condition_learning_touch_feature(feature: str) -> None:
-    from datetime import date as _date
-    now = int(time.time())
-    last_key = f"_condition_learning_last_{feature}"
-    prior_seen = st.session_state.get(last_key)
-    if prior_seen is not None and now - int(prior_seen) < 5:
-        return
-    data = _condition_learning_load()
-    day = _date.today().isoformat()
-    daily = data.setdefault("daily", {}).setdefault(day, {"logins": 0, "features": {}, "actions": {}, "points": 0})
-    feature_row = daily.setdefault("features", {}).setdefault(feature, {"views": 0, "seconds": 0})
-    feature_row["views"] = int(feature_row.get("views", 0)) + 1
-    last_seen = int(prior_seen or now)
-    if last_seen and now > last_seen:
-        feature_row["seconds"] = int(feature_row.get("seconds", 0)) + min(now - last_seen, 1800)
-    st.session_state[last_key] = now
-    _condition_learning_save(data)
-
-
-def _condition_learning_login_once() -> None:
-    from datetime import date as _date
-    day = _date.today().isoformat()
-    marker = f"_condition_learning_login_{day}"
-    if st.session_state.get(marker):
-        return
-    data = _condition_learning_load()
-    daily = data.setdefault("daily", {}).setdefault(day, {"logins": 0, "features": {}, "actions": {}, "points": 0})
-    daily["logins"] = int(daily.get("logins", 0)) + 1
-    _condition_learning_save(data)
-    _condition_learning_touch_feature("login")
-    st.session_state[marker] = True
-
-
-def _condition_mark_ignored(desc: str, source: str = "manual") -> None:
-    data = _condition_learning_load()
-    fp = _condition_fingerprint(desc)
-    if not fp:
-        return
-    data.setdefault("ignored", {})[fp] = {
-        "desc": _clean_condition_for_client(desc),
-        "source": source,
-        "ignored_at": int(time.time()),
-    }
-    data.setdefault("allowed", {}).pop(fp, None)
-    for kw in _condition_keywords(desc):
-        data.setdefault("ignored_keywords", {})[kw] = int(data.setdefault("ignored_keywords", {}).get(kw, 0)) + 1
-    _condition_learning_track("ignore_condition", desc, -1, score_condition=False)
-    _condition_learning_save(data)
-
-
-def _condition_unignore(desc: str) -> None:
-    data = _condition_learning_load()
-    fp = _condition_fingerprint(desc)
-    if fp:
-        data.setdefault("ignored", {}).pop(fp, None)
-        data.setdefault("allowed", {})[fp] = {"desc": _clean_condition_for_client(desc), "restored_at": int(time.time())}
-    _condition_learning_track("restore_condition", desc, 0, score_condition=False)
-    _condition_learning_save(data)
-
-
-def _condition_ignore_reason(desc: str) -> str:
-    data = _condition_learning_load()
-    fp = _condition_fingerprint(desc)
-    if fp and fp in data.setdefault("allowed", {}):
-        return ""
-    if fp and fp in data.setdefault("ignored", {}):
-        return "manually ignored"
-    matches = [kw for kw in _condition_keywords(desc) if int(data.setdefault("ignored_keywords", {}).get(kw, 0)) >= 2]
-    if matches:
-        return f"similar to ignored keyword: {matches[0]}"
-    return ""
-
-
-def _condition_adaptive_score(desc: str) -> int:
-    data = _condition_learning_load()
-    fp = _condition_fingerprint(desc)
-    score = int(data.setdefault("scores", {}).get(fp, 0)) if fp else 0
-    for kw in _condition_keywords(desc):
-        score += int(data.setdefault("keyword_scores", {}).get(kw, 0))
-    return score
-
-
-def _condition_is_funding(desc: str) -> bool:
-    text = _clean_condition_for_client(desc).lower()
-    funding_terms = [
-        "funds to close", "cash to close", "reserves", "sufficient funds",
-        "assets to close", "source of funds", "verified funds", "poc item",
-        "closing funds", "funding condition", "total funds required",
-    ]
-    return any(term in text for term in funding_terms)
-
-
 def _load_user_gemini_key_into_session(force: bool = False) -> str:
     """Load the signed-in user's Gemini key from Supabase into session state."""
     if st.session_state.get("sandbox_mode", False):
@@ -2475,7 +2276,6 @@ def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: s
     st.session_state.force_login = False
     st.session_state.user_gemini_api_key = ""
     _load_user_gemini_key_into_session(force=True)
-    _condition_learning_login_once()
     # Returning users with a saved Gemini key land on pipeline; new users go
     # to dashboard so they hit the onboarding wizard banner.
     if not sandbox_mode and st.session_state.get("user_gemini_api_key"):
@@ -4328,37 +4128,9 @@ def show_dashboard():
                                 _sections.append(_party)
                         return _sections or ["Borrower"]
 
-                    _view_marker = f"{_scan_fkey}_learning_view_logged"
-                    if not st.session_state.get(_view_marker):
-                        _condition_learning_track("view_scanner_conditions", points=0, score_condition=False)
-                        st.session_state[_view_marker] = True
-                    _condition_learning_touch_feature("scanner_conditions")
-
-                    _ignored_scan_conds = []
-                    _funding_scan_conds = []
-                    _active_scan_conds = []
+                    _conds_by_section = {p: [] for p in _SECTION_ORDER_SCAN}
                     for _cond_idx, _cond in enumerate(_norm_conds):
                         _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
-                        _cond_view = dict(_cond)
-                        _cond_view["_scan_uid"] = _cond_uid
-                        _ignore_reason = _condition_ignore_reason(str(_cond.get("desc", "")))
-                        if _ignore_reason:
-                            _cond_view["_ignore_reason"] = _ignore_reason
-                            _ignored_scan_conds.append(_cond_view)
-                        elif _condition_is_funding(str(_cond.get("desc", ""))):
-                            _funding_scan_conds.append(_cond_view)
-                        else:
-                            _active_scan_conds.append(_cond_view)
-
-                    _hide_funding_key = f"{_scan_fkey}_hide_funding"
-                    _hide_funding = bool(st.session_state.get(_hide_funding_key, False))
-                    _main_scan_conds = list(_active_scan_conds)
-                    if not _hide_funding:
-                        _main_scan_conds.extend(_funding_scan_conds)
-
-                    _conds_by_section = {p: [] for p in _SECTION_ORDER_SCAN}
-                    for _cond in _main_scan_conds:
-                        _cond_uid = _cond.get("_scan_uid", _cond.get("num", "0"))
                         _sections = _scan_sections_for_condition(_cond)
                         _primary_section = _sections[0]
                         for _section in _sections:
@@ -4371,7 +4143,7 @@ def show_dashboard():
                     # Sort mode: "PDF order" (default) keeps conditions in scan order;
                     # "By party" groups them under section headers.
                     _scan_sort_key = f"{_scan_fkey}_cond_sort"
-                    _sort_mode = st.session_state.get(_scan_sort_key, "Adaptive")
+                    _sort_mode = st.session_state.get(_scan_sort_key, "PDF order")
 
                     _norm_conds_grouped = []
                     if _sort_mode == "By party":
@@ -4383,14 +4155,8 @@ def show_dashboard():
                     else:
                         # PDF order: emit each condition once, in its original scan position,
                         # using its primary (first) section for the per-row party tag.
-                        _ordered_scan_conds = list(_main_scan_conds)
-                        if _sort_mode == "Adaptive":
-                            _ordered_scan_conds.sort(
-                                key=lambda _c: _condition_adaptive_score(str(_c.get("desc", ""))),
-                                reverse=True,
-                            )
-                        for _cond in _ordered_scan_conds:
-                            _cond_uid = _cond.get("_scan_uid", _cond.get("num", "0"))
+                        for _cond_idx, _cond in enumerate(_norm_conds):
+                            _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
                             _sections = _scan_sections_for_condition(_cond)
                             _primary_section = _sections[0]
                             _cond_view = dict(_cond)
@@ -4405,8 +4171,8 @@ def show_dashboard():
                     _sort_c1, _sort_c2, _sort_c3 = st.columns([3.2, 0.2, 1.4])
                     with _sort_c3:
                         _new_sort = st.selectbox(
-                            "Sort", ["Adaptive", "PDF order", "By party"],
-                            index=["Adaptive", "PDF order", "By party"].index(_sort_mode) if _sort_mode in ["Adaptive", "PDF order", "By party"] else 0,
+                            "Sort", ["PDF order", "By party"],
+                            index=0 if _sort_mode == "PDF order" else 1,
                             key=f"{_scan_sort_key}_select",
                             label_visibility="collapsed",
                         )
@@ -4414,22 +4180,7 @@ def show_dashboard():
                             st.session_state[_scan_sort_key] = _new_sort
                             st.rerun()
 
-                    _fund_cols = st.columns([1.4, 5])
-                    with _fund_cols[0]:
-                        _hide_funding_new = st.toggle(
-                            "Hide funding",
-                            value=_hide_funding,
-                            key=f"{_hide_funding_key}_toggle",
-                            help="Funding/funds-to-close conditions stay out of the client needs list. This only hides them from the main parsed table.",
-                        )
-                        if _hide_funding_new != _hide_funding:
-                            st.session_state[_hide_funding_key] = _hide_funding_new
-                            st.rerun()
-                    with _fund_cols[1]:
-                        if _funding_scan_conds:
-                            st.caption(f"{len(_funding_scan_conds)} funding condition(s) kept out of Client Needs List.")
-
-                    _originals = [str(c.get("desc", "")) for c in _main_scan_conds]
+                    _originals = [str(c.get("desc", "")) for c in _norm_conds]
                     _plain_sig = "\n".join(_originals)
                     if (
                         not st.session_state.get(_plain_map_key)
@@ -4453,8 +4204,8 @@ def show_dashboard():
                     st.markdown('<div class="pa-section" style="margin-top:8px;">Client Needs List</div>', unsafe_allow_html=True)
                     import html as _html
                     _needs_rows = []
-                    for _cond in _active_scan_conds:
-                        _cond_uid = _cond.get("_scan_uid", _cond.get("num", "0"))
+                    for _cond_idx, _cond in enumerate(_norm_conds):
+                        _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
                         _cond_for_needs = dict(_cond)
                         _cond_for_needs["_scan_uid"] = _cond_uid
                         if not _is_client_need_condition(_cond_for_needs):
@@ -4526,18 +4277,12 @@ def show_dashboard():
                                     )
                                 st.markdown(_desc_html, unsafe_allow_html=True)
 
-                            _ctrl1, _ctrl2, _ctrl3, _ctrl4 = st.columns([1.5, 2.7, 1.15, 1.55])
+                            _ctrl1, _ctrl2, _ctrl3 = st.columns([1.5, 3.4, 1.15])
                             with _ctrl1:
                                 if _is_primary_row:
                                     _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c["status"] in _COND_STATS_SCAN else 0
-                                    _old_stat_key = f"{_base_uid}_stat_last"
-                                    _old_stat = st.session_state.get(_old_stat_key, _c["status"])
                                     _cstat = st.selectbox("Status", _COND_STATS_SCAN, index=_sidx,
                                                           key=f"{_base_uid}_stat", label_visibility="collapsed")
-                                    if _cstat != _old_stat:
-                                        if _cstat == "Important":
-                                            _condition_learning_track("priority_mark", str(_c.get("desc", "")), 3)
-                                        st.session_state[_old_stat_key] = _cstat
                                 else:
                                     st.caption("Shared")
                             with _ctrl2:
@@ -4573,19 +4318,6 @@ def show_dashboard():
                                              help="Check vs. Fannie/Freddie guidelines"):
                                     st.session_state[f"{_uid}_guide_open"] = True
                                     st.session_state.pop(f"{_uid}_guide_results", None)
-                            with _ctrl4:
-                                if _is_primary_row:
-                                    _ignore_now = st.checkbox(
-                                        "Never email/process",
-                                        value=False,
-                                        key=f"{_base_uid}_ignore_chk",
-                                        help="Moves this condition to Ignored Conditions and teaches your account to filter similar items.",
-                                    )
-                                    if _ignore_now:
-                                        _condition_mark_ignored(str(_c.get("desc", "")))
-                                        st.rerun()
-                                else:
-                                    st.caption("")
 
                         # â”€â”€ Guidelines panel (toggled by ) â”€â”€
                         if st.session_state.get(f"{_uid}_guide_open"):
@@ -4642,8 +4374,6 @@ def show_dashboard():
                                 )
 
                     def _scan_condition_checked_for_section(_cond, _section_party):
-                        if _condition_ignore_reason(str(_cond.get("desc", ""))):
-                            return False
                         _cond_key = _cond.get("_scan_uid", _cond["num"])
                         if st.session_state.get(f"{_scan_fkey}_{_cond_key}_{_section_party}_chk", False):
                             return True
@@ -4770,10 +4500,6 @@ def show_dashboard():
                             if st.button("Draft emails", type="primary",
                                          key=f"{_scan_fkey}_email_draft_all_btn",
                                          use_container_width=True):
-                                for _party in _parties_with_checked:
-                                    for _cond in _conds_by_section.get(_party, []):
-                                        if _scan_condition_checked_for_section(_cond, _party):
-                                            _condition_learning_track("email_action", str(_cond.get("desc", "")), 5)
                                 # Open every party that has a checked condition; renderer
                                 # below will draw one draft block per opened party.
                                 st.session_state[f"{_scan_fkey}_email_groups_open"] = list(_parties_with_checked)
@@ -4785,39 +4511,6 @@ def show_dashboard():
                                 st.session_state[f"{_scan_fkey}_{_open_party}_email_group_lang"] = \
                                     st.session_state.get(f"{_scan_fkey}_email_group_lang_global", "English")
                                 _render_scan_email_draft(_open_party)
-
-                    if _hide_funding and _funding_scan_conds:
-                        with st.expander(f"Funding Conditions ({len(_funding_scan_conds)})", expanded=False):
-                            st.caption("Funding/funds-to-close items are kept out of the client needs list.")
-                            for _fc in _funding_scan_conds:
-                                st.markdown(
-                                    f'<div style="font-size:12px;line-height:1.35;color:#cbd5e1;'
-                                    f'padding:5px 0;border-bottom:1px dashed rgba(148,163,184,0.12);">'
-                                    f'<b style="color:#60a5fa;">#{_html.escape(str(_fc.get("num", "")))}</b> '
-                                    f'{_html.escape(str(_fc.get("desc", "")))}</div>',
-                                    unsafe_allow_html=True,
-                                )
-
-                    if _ignored_scan_conds:
-                        with st.expander(f"Ignored Conditions ({len(_ignored_scan_conds)})", expanded=False):
-                            st.caption("Ignored conditions stay out of needs lists, emails, and scoring. Restore one if the auto-filter guessed wrong.")
-                            for _ic in _ignored_scan_conds:
-                                _ic_uid = _ic.get("_scan_uid", _ic.get("num", "0"))
-                                _ic_cols = st.columns([6, 1.1])
-                                with _ic_cols[0]:
-                                    st.markdown(
-                                        f'<div style="font-size:12px;line-height:1.35;color:#94a3b8;'
-                                        f'padding:5px 0;border-bottom:1px dashed rgba(148,163,184,0.12);">'
-                                        f'<b style="color:#64748b;">#{_html.escape(str(_ic.get("num", "")))}</b> '
-                                        f'{_html.escape(str(_ic.get("desc", "")))}'
-                                        f'<br><span style="font-size:10px;color:#64748b;">Filtered: '
-                                        f'{_html.escape(str(_ic.get("_ignore_reason", "ignored")))}</span></div>',
-                                        unsafe_allow_html=True,
-                                    )
-                                with _ic_cols[1]:
-                                    if st.button("Restore", key=f"{_scan_fkey}_{_ic_uid}_restore_ignored", use_container_width=True):
-                                        _condition_unignore(str(_ic.get("desc", "")))
-                                        st.rerun()
                     st.markdown('</div>', unsafe_allow_html=True)
                 elif _cond_count and "No specific conditions found in this document" not in str(_raw_c):
                     st.markdown(
