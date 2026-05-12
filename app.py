@@ -601,6 +601,15 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .scan-scroll .cond-num { color:#3b82f6; font-weight:800; font-size:11px; min-width:22px; }
 .scan-scroll .cond-desc { color:#e5e7eb; font-size:12px; line-height:1.35; flex:1; }
 .scan-scroll .pa-section { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.6px; margin:6px 0 2px 0; }
+@media (max-width: 768px) {
+    /* Prevent condition text clipping on mobile when client-language lines are longer */
+    .scan-scroll [style*="line-height:1.38"] span,
+    .scan-scroll [style*="line-height:1.35"] {
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+    }
+}
 /* Sidebar section collapse toggle buttons green label style */
 [data-testid="stSidebar"] [data-testid="stElementContainer"]:has(hr) + [data-testid="stElementContainer"] button,
 [data-testid="stSidebar"] hr + * button,
@@ -4090,7 +4099,7 @@ def show_dashboard():
                                 import html as _html
                                 _orig_desc = str(_c.get("desc", ""))
                                 _pmap = st.session_state.get(_plain_map_key, {})
-                                _client_desc = str(_pmap.get(_orig_desc, _orig_desc))
+                                _client_desc = str(_pmap.get(_orig_desc) or _orig_desc)
                                 _has_alt = bool(_client_desc and _client_desc != _orig_desc)
                                 _primary_desc = _client_desc if _plain_on else _orig_desc
                                 _secondary_desc = _orig_desc if _plain_on else _client_desc
