@@ -3966,13 +3966,13 @@ def show_dashboard():
                             _cond_view["_primary_section"] = _primary_section
                             _norm_conds_grouped.append(_cond_view)
 
-                    # Sort + Plain English toggle row
+                    # Sort + Client Language toggle row
                     _plain_key = f"{_scan_fkey}_plain_english"
                     _plain_map_key = f"{_scan_fkey}_plain_map"
                     _sort_c1, _sort_c2, _sort_c3 = st.columns([2.2, 1.4, 1.4])
                     with _sort_c2:
                         _plain_on = st.toggle(
-                            "Plain English",
+                            "Client Language",
                             value=bool(st.session_state.get(_plain_key, False)),
                             key=f"{_plain_key}_toggle",
                             help="Translate underwriter jargon into everyday language using Gemini",
@@ -3995,7 +3995,7 @@ def show_dashboard():
                     if _plain_on and not st.session_state.get(_plain_map_key):
                         _gem_key = st.session_state.get("user_gemini_api_key", "")
                         _originals = [str(c.get("desc", "")) for c in _norm_conds]
-                        with st.spinner("Translating conditions to plain English..."):
+                        with st.spinner("Translating conditions to client language..."):
                             try:
                                 import cloud_client as _cc_tr
                                 _translated, _tr_log = _cc_tr.translate_conditions_to_plain(_originals, api_key_override=_gem_key)
