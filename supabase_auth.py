@@ -225,24 +225,7 @@ def _settings_table_error(data: dict | str) -> str:
     return text
 
 
-def load_user_gemini_key(user_key: str) -> str:
-    if not user_key:
-        return ""
-    api_key = _service_key() or _public_key()
-    if not _supabase_url() or not api_key:
-        return ""
-
-    params = urllib.parse.urlencode({"key": f"eq.{_setting_key(user_key)}", "select": "value_json"})
-    url = f"{_supabase_url()}/rest/v1/settings?{params}"
-    result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
-    if not result.get("ok"):
-        return ""
-
-    rows = result.get("data") or []
-    if not rows:
-        return ""
-
-    raw = rows[0].get("value_json")
+def _extract_gemini_key_from_value_json(raw) -> str:
     if isinstance(raw, str):
         try:
             raw = json.loads(raw)
@@ -253,6 +236,46 @@ def load_user_gemini_key(user_key: str) -> str:
             return _decrypt_secret(str(raw.get("gemini_api_key_enc") or ""))
         # Backward compatibility for keys saved before app-side encryption.
         return str(raw.get("gemini_api_key", "")).strip()
+    return ""
+
+
+def load_user_gemini_key(user_key: str, user_email: str = "") -> str:
+    if not user_key and not user_email:
+        return ""
+    api_key = _service_key() or _public_key()
+    if not _supabase_url() or not api_key:
+        return ""
+
+    # Primary lookup by stable key.
+    if user_key:
+        params = urllib.parse.urlencode({"key": f"eq.{_setting_key(user_key)}", "select": "value_json"})
+        url = f"{_supabase_url()}/rest/v1/settings?{params}"
+        result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
+        if result.get("ok"):
+            rows = result.get("data") or []
+            if rows:
+                key = _extract_gemini_key_from_value_json(rows[0].get("value_json"))
+                if key:
+                    return key
+
+    # Fallback lookup by user email in case the stored user_key differs across auth paths.
+    email = str(user_email or "").strip().lower()
+    if email:
+        params = urllib.parse.urlencode({
+            "user_email": f"eq.{email}",
+            "key": "like.user_ai:%",
+            "select": "value_json,updated_at",
+            "order": "updated_at.desc",
+            "limit": "5",
+        })
+        url = f"{_supabase_url()}/rest/v1/settings?{params}"
+        result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
+        if result.get("ok"):
+            rows = result.get("data") or []
+            for row in rows:
+                key = _extract_gemini_key_from_value_json(row.get("value_json"))
+                if key:
+                    return key
     return ""
 
 

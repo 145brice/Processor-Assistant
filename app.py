@@ -2046,7 +2046,10 @@ def _load_user_gemini_key_into_session(force: bool = False) -> str:
         import supabase_auth as _sa
         loaded = ""
         for user_key in user_keys:
-            loaded = _sa.load_user_gemini_key(user_key)
+            loaded = _sa.load_user_gemini_key(
+                user_key,
+                user_email=str(st.session_state.get("user_email") or ""),
+            )
             if loaded:
                 break
         st.session_state.user_gemini_api_key = loaded
