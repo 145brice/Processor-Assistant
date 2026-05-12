@@ -4388,11 +4388,7 @@ def show_dashboard():
                         else:
                             _active_scan_conds.append(_cond_view)
 
-                    _hide_funding_key = f"{_scan_fkey}_hide_funding"
-                    _hide_funding = bool(st.session_state.get(_hide_funding_key, False))
                     _main_scan_conds = list(_active_scan_conds)
-                    if not _hide_funding:
-                        _main_scan_conds.extend(_funding_scan_conds)
 
                     _conds_by_section = {p: [] for p in _SECTION_ORDER_SCAN}
                     for _cond in _main_scan_conds:
@@ -4452,21 +4448,6 @@ def show_dashboard():
                             st.session_state[_scan_sort_key] = _new_sort
                             st.rerun()
 
-                    _fund_cols = st.columns([1.4, 5])
-                    with _fund_cols[0]:
-                        _hide_funding_new = st.toggle(
-                            "Hide funding",
-                            value=_hide_funding,
-                            key=f"{_hide_funding_key}_toggle",
-                            help="Funding/funds-to-close conditions stay out of the client needs list. This only hides them from the main parsed table.",
-                        )
-                        if _hide_funding_new != _hide_funding:
-                            st.session_state[_hide_funding_key] = _hide_funding_new
-                            st.rerun()
-                    with _fund_cols[1]:
-                        if _funding_scan_conds:
-                            st.caption(f"{len(_funding_scan_conds)} funding condition(s) kept out of Client Needs List.")
-
                     _originals = [str(c.get("desc", "")) for c in _main_scan_conds]
                     _plain_sig = "\n".join(_originals)
                     if (
@@ -4488,7 +4469,6 @@ def show_dashboard():
                         _sections = _scan_sections_for_condition(_cond)
                         return "Borrower" in _sections and _condition_is_client_actionable(str(_cond.get("desc", "")))
 
-                    st.markdown('<div class="pa-section" style="margin-top:8px;">Client Needs List</div>', unsafe_allow_html=True)
                     import html as _html
                     _needs_rows = []
                     for _cond in _active_scan_conds:
@@ -4512,6 +4492,7 @@ def show_dashboard():
                             '</div>'
                         )
                     if _needs_rows:
+                        st.markdown('<div class="pa-section" style="margin-top:8px;">Client Needs List</div>', unsafe_allow_html=True)
                         st.markdown('<div class="pa-needs-list">' + "".join(_needs_rows) + '</div>', unsafe_allow_html=True)
 
                     for _c in _norm_conds_grouped:
@@ -4545,7 +4526,11 @@ def show_dashboard():
                                 _orig_desc = str(_c.get("desc", ""))
                                 _pmap = st.session_state.get(_plain_map_key, {})
                                 _client_desc = str(_pmap.get(_orig_desc) or _orig_desc)
-                                _has_alt = bool(_client_desc and _client_desc != _orig_desc)
+                                _show_client_alt = (
+                                    _section_party_for_row == "Borrower"
+                                    and _condition_is_client_actionable(_orig_desc)
+                                )
+                                _has_alt = bool(_show_client_alt and _client_desc and _client_desc != _orig_desc)
                                 _primary_desc = _orig_desc
                                 _secondary_desc = _client_desc
                                 _primary_desc_html = _html.escape(_primary_desc)
@@ -4824,9 +4809,9 @@ def show_dashboard():
                                     st.session_state.get(f"{_scan_fkey}_email_group_lang_global", "English")
                                 _render_scan_email_draft(_open_party)
 
-                    if _hide_funding and _funding_scan_conds:
+                    if _funding_scan_conds:
                         with st.expander(f"Funding Conditions ({len(_funding_scan_conds)})", expanded=False):
-                            st.caption("Funding/funds-to-close items are kept out of the client needs list.")
+                            st.caption("Funding/funds-to-close items are separate from the client needs list and collapsed by default.")
                             for _fc in _funding_scan_conds:
                                 st.markdown(
                                     f'<div style="font-size:12px;line-height:1.35;color:#cbd5e1;'
