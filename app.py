@@ -2115,7 +2115,7 @@ def _to_client_language(desc: str, party: str = "Borrower") -> str:
         return "Please send proof the listed debt has been paid in full, plus the account or bank statement showing where the payment came from."
 
     if "real estate certification" in low:
-        return "Please sign the Real Estate Certification or addendum if your signature is needed."
+        return "Please have the required parties sign the Real Estate Certification or addendum so we can add it to the file."
 
     if "closing disclosure" in low:
         return "Please send the final seller Closing Disclosure once it is available."
@@ -2429,44 +2429,6 @@ def _condition_is_funding(desc: str) -> bool:
         "closing funds", "funding condition", "total funds required",
     ]
     return any(term in text for term in funding_terms)
-
-
-def _condition_is_client_actionable(desc: str) -> bool:
-    """True only for items a borrower/client would reasonably act on."""
-    text = _clean_condition_for_client(desc).lower()
-    if not text:
-        return False
-
-    internal_terms = [
-        "fha connection", "case query", "case number assignment", "case #",
-        "underwriter to", "underwriter approval", "uwm", "newrez", "sponsor id",
-        "business tax id", "amc", "appraisal ordered", "will upload upon completion",
-        "invoice", "closing disclosure", "seller cd", "final seller", "title company",
-        "payoff", "lien", "broker to have", "assigned amc", "processor invoice",
-    ]
-    if any(term in text for term in internal_terms):
-        return False
-    if _condition_is_funding(text):
-        return False
-
-    client_terms = [
-        # Income
-        "pay stub", "paystub", "w2", "w-2", "income", "employment", "employer",
-        "verification of employment", "voe", "year end",
-        # Assets
-        "bank statement", "asset", "earnest money", "emd", "deposit", "gift letter",
-        "proof of funds", "source of deposit",
-        # ID / borrower identity
-        "driver", "license", "government id", "identification", "social security", "ssn",
-        # Contract / disclosure / signature packages
-        "purchase contract", "contract", "addendum", "disclosure", "anti steering",
-        "anti-steering", "lead based paint", "real estate certification", "sign",
-        "signature", "esign", "e-sign",
-        # Borrower explanations and borrower-chosen vendors
-        "letter of explanation", "loe", "motivation letter", "homeowner", "insurance",
-        "hoi", "hazard insurance", "tax bill",
-    ]
-    return any(term in text for term in client_terms)
 
 
 def _load_user_gemini_key_into_session(force: bool = False) -> str:
@@ -4486,7 +4448,7 @@ def show_dashboard():
 
                     def _is_client_need_condition(_cond) -> bool:
                         _sections = _scan_sections_for_condition(_cond)
-                        return "Borrower" in _sections and _condition_is_client_actionable(str(_cond.get("desc", "")))
+                        return "Borrower" in _sections
 
                     st.markdown('<div class="pa-section" style="margin-top:8px;">Client Needs List</div>', unsafe_allow_html=True)
                     import html as _html
