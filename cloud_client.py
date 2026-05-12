@@ -549,6 +549,31 @@ def draft_email_enhanced(conditions: list[dict], recipient_type: str,
     cond_list = "\n".join(
         f"- {c.get('desc', c.get('num', 'Item'))}" for c in conditions
     )
+    rewrite_templates = {
+        "borrower": (
+            "Rewrite each mortgage condition in simple, friendly language a homebuyer "
+            "without financial background would understand. Focus on what they need to do and why. "
+            "Use conversational tone."
+        ),
+        "appraiser": (
+            "Rewrite each condition clearly for a professional appraiser. Include the technical "
+            "requirement but keep it concise and action-oriented."
+        ),
+        "realtor": (
+            "Rewrite each condition briefly for a real estate agent. Make it clear and actionable "
+            "in one or two sentences."
+        ),
+    }
+    _rtype = str(recipient_type or "").strip().lower()
+    if "borrower" in _rtype or "buyer" in _rtype:
+        _prompt_role = "borrower"
+    elif "appraiser" in _rtype:
+        _prompt_role = "appraiser"
+    elif "realtor" in _rtype or "agent" in _rtype:
+        _prompt_role = "realtor"
+    else:
+        _prompt_role = "realtor"
+    rewrite_instruction = rewrite_templates[_prompt_role]
     lang_instr = (
         "Escribe el correo en espaol formal y profesional."
         if language == "Spanish"
@@ -562,6 +587,9 @@ def draft_email_enhanced(conditions: list[dict], recipient_type: str,
 
 Documents / items needed:
 {cond_list}
+
+Condition rewrite instruction:
+{rewrite_instruction}
 
 Write a complete, professional email body (no subject line needed). Include:
 - A brief, warm opening explaining these items are needed to move the loan forward

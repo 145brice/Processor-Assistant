@@ -9450,9 +9450,10 @@ def show_loan_detail():
 
         _em_c1, _em_c2, _em_c3 = st.columns([2, 2, 1])
         with _em_c1:
-            _ld_recipient = st.selectbox(
+            _ld_recipients = st.multiselect(
                 "Send to", _party_choices,
-                key=f"ld_recip_{lid}", label_visibility="visible"
+                default=[_party_choices[0]] if _party_choices else [],
+                key=f"ld_recip_multi_{lid}", label_visibility="visible"
             )
         with _em_c2:
             _ld_lang = st.selectbox(
@@ -9472,6 +9473,16 @@ def show_loan_detail():
                     unsafe_allow_html=True,
                 )
 
+        def _recipient_type_from_label(label: str) -> str:
+            s = str(label or "").lower()
+            if "appraiser" in s:
+                return "Appraiser"
+            if "realtor" in s or "listing agent" in s or "selling agent" in s:
+                return "Realtor"
+            if "borrower" in s or "buyer" in s or "co-borrower" in s:
+                return "Borrower"
+            return str(label or "Borrower").split("(")[0].strip()
+
         _ld_d1, _ld_d2 = st.columns([1, 1])
         with _ld_d1:
             _ld_draft_btn = st.button("Draft Email", key=f"ld_draft_{lid}",
@@ -9483,39 +9494,42 @@ def show_loan_detail():
         if _ld_draft_btn:
             from ai_engine import draft_email as _de
             import urllib.parse
-            _recip_contact = _normalize_contact_value(_contact_party_map.get(_ld_recipient, {}))
-            _recip_label = _recip_contact.get("name") or _ld_recipient.split("")[0].strip()
-            _is_client_party = ("borrower" in (_ld_recipient or "").lower())
-            if _ld_checked:
-                _cond_lines = [
-                    f"- Condition #{c['num']}: {(_to_client_language(c['desc'], 'Borrower') if _is_client_party else c['desc'])}"
-                    for c in _ld_checked
-                ]
-            else:
-                _cond_lines = [
-                    f"- Condition #{c['num']}: {(_to_client_language(c['desc'], 'Borrower') if _is_client_party else c['desc'])}"
-                    for c in _conditions[:10]
-                ]
-            _email_out = _de("\n".join(_cond_lines), _recip_label, _ld_lang)
-            _recip_email = _recip_contact.get("email", "")
-            if _recip_email:
+            _targets = _ld_recipients or (_party_choices[:1] if _party_choices else [])
+            for _ld_recipient in _targets:
+                _recip_contact = _normalize_contact_value(_contact_party_map.get(_ld_recipient, {}))
+                _recip_type = _recipient_type_from_label(_ld_recipient)
+                _is_client_party = _recip_type == "Borrower"
+                if _ld_checked:
+                    _cond_lines = [
+                        f"- Condition #{c['num']}: {(_to_client_language(c['desc'], 'Borrower') if _is_client_party else c['desc'])}"
+                        for c in _ld_checked
+                    ]
+                else:
+                    _cond_lines = [
+                        f"- Condition #{c['num']}: {(_to_client_language(c['desc'], 'Borrower') if _is_client_party else c['desc'])}"
+                        for c in _conditions[:10]
+                    ]
+                _email_out = _de("\n".join(_cond_lines), _recip_type, _ld_lang)
+                _recip_email = _recip_contact.get("email", "")
+                st.markdown(f"**Draft: {_ld_recipient}**")
+                if _recip_email:
+                    st.markdown(
+                        f'<div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">To: <b>{_recip_email}</b></div>',
+                        unsafe_allow_html=True,
+                    )
+                st.container(border=True).markdown(_email_out)
+                _gmail_url = "https://mail.google.com/mail/?view=cm&fs=1&" + urllib.parse.urlencode({
+                    "to": _recip_email,
+                    "su": f"Re: {loan.get('loan_num','')} {loan.get('borrower','')}",
+                    "body": _email_out,
+                })
                 st.markdown(
-                    f'<div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">To: <b>{_recip_email}</b></div>',
+                    f'<a href="{_gmail_url}" target="_blank" style="display:inline-block;margin-top:8px;'
+                    f'padding:6px 16px;background:rgba(66,133,244,0.12);border:1px solid rgba(66,133,244,0.4);'
+                    f'border-radius:6px;color:#4285f4;font-size:12px;font-weight:700;text-decoration:none;">'
+                    f'Compose in Gmail</a>',
                     unsafe_allow_html=True,
                 )
-            st.container(border=True).markdown(_email_out)
-            _gmail_url = "https://mail.google.com/mail/?view=cm&fs=1&" + urllib.parse.urlencode({
-                "to": _recip_email,
-                "su": f"Re: {loan.get('loan_num','')} {loan.get('borrower','')}",
-                "body": _email_out,
-            })
-            st.markdown(
-                f'<a href="{_gmail_url}" target="_blank" style="display:inline-block;margin-top:8px;'
-                f'padding:6px 16px;background:rgba(66,133,244,0.12);border:1px solid rgba(66,133,244,0.4);'
-                f'border-radius:6px;color:#4285f4;font-size:12px;font-weight:700;text-decoration:none;">'
-                f'Compose in Gmail</a>',
-                unsafe_allow_html=True,
-            )
 
         if _ld_ai_btn:
             import ai_router as _ld_ar
@@ -9524,27 +9538,31 @@ def show_loan_detail():
             if _ld_backend == "script":
                 st.warning("AI backend not configured. Go to AI Settings.")
             else:
+                _targets = _ld_recipients or (_party_choices[:1] if _party_choices else [])
                 _conds_for_ai = _ld_checked if _ld_checked else _conditions[:10]
-                with st.spinner("Drafting with AI"):
-                    _ld_ai_text, _ld_ai_log = _ld_ar.draft_email_enhanced(
-                        _conds_for_ai, _ld_recipient.split("")[0].strip(), _ld_lang
-                    )
-                if _ld_ai_text:
-                    _recip_contact2 = _normalize_contact_value(_contact_party_map.get(_ld_recipient, {}))
-                    _recip_email2 = _recip_contact2.get("email", "")
-                    st.container(border=True).markdown(_ld_ai_text)
-                    _gmail_url2 = "https://mail.google.com/mail/?view=cm&fs=1&" + urllib.parse.urlencode({
-                        "to": _recip_email2,
-                        "su": f"Re: {loan.get('loan_num','')} {loan.get('borrower','')}",
-                        "body": _ld_ai_text,
-                    })
-                    st.markdown(
-                        f'<a href="{_gmail_url2}" target="_blank" style="display:inline-block;margin-top:8px;'
-                        f'padding:6px 16px;background:rgba(66,133,244,0.12);border:1px solid rgba(66,133,244,0.4);'
-                        f'border-radius:6px;color:#4285f4;font-size:12px;font-weight:700;text-decoration:none;">'
-                        f'Compose in Gmail</a>',
-                        unsafe_allow_html=True,
-                    )
+                for _ld_recipient in _targets:
+                    _recip_type = _recipient_type_from_label(_ld_recipient)
+                    with st.spinner(f"Drafting with AI for {_ld_recipient}"):
+                        _ld_ai_text, _ld_ai_log = _ld_ar.draft_email_enhanced(
+                            _conds_for_ai, _recip_type, _ld_lang
+                        )
+                    if _ld_ai_text:
+                        _recip_contact2 = _normalize_contact_value(_contact_party_map.get(_ld_recipient, {}))
+                        _recip_email2 = _recip_contact2.get("email", "")
+                        st.markdown(f"**AI Draft: {_ld_recipient}**")
+                        st.container(border=True).markdown(_ld_ai_text)
+                        _gmail_url2 = "https://mail.google.com/mail/?view=cm&fs=1&" + urllib.parse.urlencode({
+                            "to": _recip_email2,
+                            "su": f"Re: {loan.get('loan_num','')} {loan.get('borrower','')}",
+                            "body": _ld_ai_text,
+                        })
+                        st.markdown(
+                            f'<a href="{_gmail_url2}" target="_blank" style="display:inline-block;margin-top:8px;'
+                            f'padding:6px 16px;background:rgba(66,133,244,0.12);border:1px solid rgba(66,133,244,0.4);'
+                            f'border-radius:6px;color:#4285f4;font-size:12px;font-weight:700;text-decoration:none;">'
+                            f'Compose in Gmail</a>',
+                            unsafe_allow_html=True,
+                        )
     else:
         st.markdown(
             '<span style="color:#9ca3af;font-size:12px;">No conditions attached to this loan yet. '
