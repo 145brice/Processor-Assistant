@@ -706,6 +706,22 @@ div[data-testid="stExpander"]:hover {
     box-shadow: none !important;
     transform: none !important;
 }
+/* Keep expanded details/summary surfaces dark (avoid bright white flash) */
+div[data-testid="stExpander"] details,
+div[data-testid="stExpander"] details[open],
+div[data-testid="stExpander"] summary,
+div[data-testid="stExpander"] summary[aria-expanded="true"],
+div[data-testid="stExpander"] > div {
+    background: #1a1f2e !important;
+    color: #e5e7eb !important;
+}
+
+/* Ensure app pages use full working width (login page has its own wrapper) */
+[data-testid="stMainBlockContainer"],
+[data-testid="stAppViewContainer"] .main .block-container {
+    width: 100% !important;
+    max-width: none !important;
+}
 
 /* Sidebar internals stay flat */
 [data-testid="stSidebar"] [data-testid="stVerticalBlockBorderWrapper"] {
@@ -2451,20 +2467,13 @@ def show_login_page():
     st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
     st.markdown("""
     <style>
-    [data-testid="stMainBlockContainer"],
-    [data-testid="stAppViewContainer"] .main .block-container {
+    .login-page-wrap {
         width: min(720px, calc(100vw - 32px)) !important;
-        max-width: min(720px, calc(100vw - 32px)) !important;
+        max-width: 720px !important;
         margin-left: auto !important;
         margin-right: auto !important;
         padding-left: 16px !important;
         padding-right: 16px !important;
-    }
-    .login-page-wrap {
-        width: 100% !important;
-        max-width: 720px !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
     }
     button[kind="primary"],
     div[data-testid="stButton"] > button,
