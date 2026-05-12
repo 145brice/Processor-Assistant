@@ -561,6 +561,14 @@ _GUESS_PARTY_THIRD = [
         "pmi approval", "pmi coverage", " pmi ", "mi approval", "mi coverage",
         "max interest rate", "interest rate not to exceed", "rate lock",
         "max piti", "max ltv", "max dti", "max cltv",
+        # Broker / lender internal tasks — not borrower's job
+        "broker to ", "broker has ", "fha case", "case number assignment",
+        "case # transferred", "case transferred", "case query",
+        "transferred to uwm", "sponsor id", "business tax id",
+        "corp to obtain", "internal lock", "fha connection",
+        "copy of the appraisal invoice", "copy of the credit report invoice",
+        "copy of the verification of employment invoice",
+        "copy of the voe invoice", "copy of the invoice", "fee sheet",
     ]),
     ("Employer", [
         "verbal verification of employment", "written verification of employment",
@@ -570,6 +578,8 @@ _GUESS_PARTY_THIRD = [
     ("Realtor", [
         "purchase contract", "purchase agreement", "sales agreement",
         "realtor", "listing agent", "selling agent",
+        "real estate certification", "arm's length affidavit",
+        "required parties sign",
     ]),
     ("Seller", [
         "seller to provide", "seller's closing", "seller credit",

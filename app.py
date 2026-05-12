@@ -2059,6 +2059,14 @@ _PARTY_KEYWORDS_THIRD_PARTY = [
         "pmi approval", "pmi coverage", " pmi ", "mi approval", "mi coverage",
         "max interest rate", "interest rate not to exceed", "rate lock",
         "max piti", "max ltv", "max dti", "max cltv",
+        # Broker / lender internal tasks — not borrower's job
+        "broker to ", "broker has ", "fha case", "case number assignment",
+        "case # transferred", "case transferred", "case query",
+        "transferred to uwm", "sponsor id", "business tax id",
+        "corp to obtain", "internal lock", "fha connection",
+        "copy of the appraisal invoice", "copy of the credit report invoice",
+        "copy of the verification of employment invoice",
+        "copy of the voe invoice", "copy of the invoice", "fee sheet",
     ]),
     ("Employer", [
         "verbal verification of employment", "written verification of employment",
@@ -2068,7 +2076,8 @@ _PARTY_KEYWORDS_THIRD_PARTY = [
     ("Realtor", [
         "purchase contract", "purchase agreement", "sales agreement",
         "realtor", "listing agent", "selling agent", "buyer's agent",
-        "seller's agent", "real estate agent",
+        "seller's agent", "real estate agent", "real estate certification",
+        "arm's length affidavit", "required parties sign",
     ]),
     ("Seller", [
         "seller to provide", "seller's closing", "seller credit",
@@ -2162,7 +2171,17 @@ def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
             continue
         cond["num"] = str(cond.get("num") or idx + 1)
         cond["desc"] = desc
-        cond["party"] = cond.get("party") or _infer_condition_party(desc)
+        # Always run keyword routing — the user's third-party / borrower-action
+        # keyword lists are authoritative. Geminis party tag is too coarse
+        # (it labels broker / lender internal items as Borrower).
+        _routed = _infer_condition_party(desc)
+        _gem_party = (cond.get("party") or "").strip()
+        if _routed != "Borrower":
+            cond["party"] = _routed  # keyword router found a strong third-party signal
+        elif _gem_party and _gem_party != "Borrower":
+            cond["party"] = _gem_party  # Gemini gave a non-Borrower hint, trust it
+        else:
+            cond["party"] = "Borrower"
         cond["status"] = cond.get("status") or "Needed"
         rows.append(cond)
     return rows
