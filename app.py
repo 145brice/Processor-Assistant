@@ -4025,20 +4025,9 @@ def show_dashboard():
                             _cond_view["_primary_section"] = _primary_section
                             _norm_conds_grouped.append(_cond_view)
 
-                    # Sort + Client Language toggle row
-                    _plain_key = f"{_scan_fkey}_plain_english"
+                    # Sort row + always-on Client Needs List
                     _plain_map_key = f"{_scan_fkey}_plain_map"
-                    _sort_c1, _sort_c2, _sort_c3 = st.columns([2.2, 1.4, 1.4])
-                    with _sort_c2:
-                        _plain_on = st.toggle(
-                            "Client Language",
-                            value=bool(st.session_state.get(_plain_key, False)),
-                            key=f"{_plain_key}_toggle",
-                            help="Translate underwriter jargon into everyday language using Gemini",
-                        )
-                        if _plain_on != bool(st.session_state.get(_plain_key, False)):
-                            st.session_state[_plain_key] = _plain_on
-                            st.rerun()
+                    _sort_c1, _sort_c2, _sort_c3 = st.columns([3.2, 0.2, 1.4])
                     with _sort_c3:
                         _new_sort = st.selectbox(
                             "Sort", ["PDF order", "By party"],
@@ -4050,24 +4039,29 @@ def show_dashboard():
                             st.session_state[_scan_sort_key] = _new_sort
                             st.rerun()
 
-                    # If toggle is ON and we don't have a cached translation map yet, build it
-                    if _plain_on and not st.session_state.get(_plain_map_key):
-                        _gem_key = st.session_state.get("user_gemini_api_key", "")
+                    if not st.session_state.get(_plain_map_key):
                         _originals = [str(c.get("desc", "")) for c in _norm_conds]
-                        _rule_map = {o: _to_client_language(o, "Borrower") for o in _originals}
-                        _needs_ai = [o for o in _originals if _rule_map.get(o, o) == o]
-                        _final_map = dict(_rule_map)
-                        if _needs_ai and _gem_key:
-                            with st.spinner("Translating conditions to client language..."):
-                                try:
-                                    import cloud_client as _cc_tr
-                                    _translated, _tr_log = _cc_tr.translate_conditions_to_plain(_needs_ai, api_key_override=_gem_key)
-                                    for _src, _dst in zip(_needs_ai, _translated):
-                                        if _dst and _dst.strip():
-                                            _final_map[_src] = _dst
-                                except Exception as _tr_e:
-                                    st.warning(f"Could not translate: {_tr_e}")
-                        st.session_state[_plain_map_key] = _final_map
+                        st.session_state[_plain_map_key] = {o: _to_client_language(o, "Borrower") for o in _originals}
+
+                    def _needs_status_label(_raw_status: str) -> str:
+                        s = str(_raw_status or "").strip().lower()
+                        if s == "cleared":
+                            return "Received"
+                        if s in {"ready to clear", "requested"}:
+                            return "Submitted"
+                        return "Needed"
+
+                    st.markdown('<div class="pa-section" style="margin-top:8px;">Client Needs List</div>', unsafe_allow_html=True)
+                    _needs_lines = []
+                    for _cond_idx, _cond in enumerate(_norm_conds):
+                        _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
+                        _base_uid = f"{_scan_fkey}_{_cond_uid}"
+                        _row_status = st.session_state.get(f"{_base_uid}_stat", _cond.get("status", "Needed"))
+                        _status_label = _needs_status_label(_row_status)
+                        _client_text = st.session_state.get(_plain_map_key, {}).get(str(_cond.get("desc", "")), str(_cond.get("desc", "")))
+                        _needs_lines.append(f"- **{_status_label}** - {_client_text}")
+                    if _needs_lines:
+                        st.markdown("\n".join(_needs_lines))
 
                     for _c in _norm_conds_grouped:
                         if _c.get("_section"):
@@ -4101,11 +4095,11 @@ def show_dashboard():
                                 _pmap = st.session_state.get(_plain_map_key, {})
                                 _client_desc = str(_pmap.get(_orig_desc) or _orig_desc)
                                 _has_alt = bool(_client_desc and _client_desc != _orig_desc)
-                                _primary_desc = _client_desc if _plain_on else _orig_desc
-                                _secondary_desc = _orig_desc if _plain_on else _client_desc
+                                _primary_desc = _orig_desc
+                                _secondary_desc = _client_desc
                                 _primary_desc_html = _html.escape(_primary_desc)
                                 _secondary_desc_html = _html.escape(_secondary_desc)
-                                _secondary_label = "Original" if _plain_on else "Client language"
+                                _secondary_label = "Client language"
 
                                 _desc_html = (
                                     f'<div style="font-size:13px;line-height:1.38;padding:1px 0 4px;">'
