@@ -1169,14 +1169,16 @@ def flag_risks(pdf_text: str, user_history=None) -> str:
 _EMAIL_TEMPLATES = {
     "Borrower": {
         "English": (
-            "Subject: Action Required - Outstanding Loan Conditions\n\n"
-            "Dear Borrower,\n\n"
-            "We are working to move your loan toward closing as quickly as possible. "
-            "To keep things on track, we need the following item(s) from you:\n\n"
+            "Subject: Loan Needs List - Next Steps\n\n"
+            "Good evening,\n\n"
+            "I wanted to take a moment to introduce myself as your mortgage loan processor. "
+            "I will be working with your loan officer to help get your loan cleared of the "
+            "conditions below so we can close on time, or possibly even early.\n\n"
+            "Please take a look at the needs list below, as this is where we need your assistance:\n\n"
             "{conditions}\n\n"
-            "Please provide these at your earliest convenience. If you have any questions "
-            "about any of these items, don't hesitate to reach out.\n\n"
-            "Thank you for your prompt attention to this matter.\n\n"
+            "If you have any questions at all, please feel free to reach out any time using "
+            "the contact information in my signature. I look forward to working with you.\n\n"
+            "Again, if anything is unclear, please contact me and I will gladly help.\n\n"
             "Best regards,\n[Your Name]\nLoan Processor"
         ),
         "Spanish": (
@@ -1265,11 +1267,12 @@ _EMAIL_TEMPLATES = {
     },
     "Co-Borrower": {
         "English": (
-            "Subject: Action Required - Outstanding Loan Conditions\n\n"
+            "Subject: Loan Needs List - Next Steps\n\n"
             "Dear Co-Borrower,\n\n"
-            "To keep your loan moving toward closing, we need the following item(s) from you:\n\n"
+            "I will be helping process your loan along with your loan officer. "
+            "To keep things moving toward closing on time, please review the needs list below:\n\n"
             "{conditions}\n\n"
-            "Please provide at your earliest convenience.\n\n"
+            "If you have any questions, please reach out any time and I will be happy to help.\n\n"
             "Thank you,\n[Your Name]\nLoan Processor"
         ),
         "Spanish": (
