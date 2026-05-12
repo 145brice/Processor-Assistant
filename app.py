@@ -4,6 +4,7 @@ Main Streamlit application.
 """
 
 import os
+import re
 import time
 import streamlit as st
 from dotenv import load_dotenv
@@ -601,6 +602,40 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .scan-scroll .cond-num { color:#3b82f6; font-weight:800; font-size:11px; min-width:22px; }
 .scan-scroll .cond-desc { color:#e5e7eb; font-size:12px; line-height:1.35; flex:1; }
 .scan-scroll .pa-section { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.6px; margin:6px 0 2px 0; }
+.scan-scroll .pa-needs-list {
+    margin: 4px 0 12px 0;
+    padding: 8px 10px;
+    border: 1px solid rgba(59,130,246,0.16);
+    border-left: 3px solid rgba(59,130,246,0.75);
+    border-radius: 8px;
+    background: rgba(15,23,42,0.34);
+}
+.scan-scroll .pa-need-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 5px 0;
+    color: #e5e7eb;
+    font-size: 12.5px;
+    line-height: 1.42;
+}
+.scan-scroll .pa-need-bullet { color: #94a3b8; font-weight: 800; line-height: 1.45; }
+.scan-scroll .pa-need-subject { color: #f8fafc; font-weight: 850; }
+.scan-scroll .pa-need-body { color: #dbeafe; font-weight: 500; }
+.scan-scroll .pa-need-status {
+    display: inline-block;
+    margin-left: 7px;
+    padding: 1px 5px;
+    border: 1px solid rgba(148,163,184,0.24);
+    border-radius: 999px;
+    color: #93c5fd;
+    background: rgba(59,130,246,0.08);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.55px;
+    text-transform: uppercase;
+    vertical-align: middle;
+}
 @media (max-width: 768px) {
     /* Prevent condition text clipping on mobile when client-language lines are longer */
     .scan-scroll [style*="line-height:1.38"] span,
@@ -2056,7 +2091,7 @@ def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
 
 def _to_client_language(desc: str, party: str = "Borrower") -> str:
     """Rewrite underwriting condition text into borrower-friendly language."""
-    text = " ".join(str(desc or "").split())
+    text = _clean_condition_for_client(desc)
     if not text:
         return ""
     low = text.lower()
@@ -2064,8 +2099,44 @@ def _to_client_language(desc: str, party: str = "Borrower") -> str:
     if any(k in low for k in ["anti steering", "anti-steering"]):
         return "Please sign the attached anti-steering disclosure form."
 
+    if ("fha connection" in low) or ("case query" in low) or ("case number assignment" in low):
+        return "We are working on the FHA case assignment items needed for underwriting."
+
+    if ("appraisal" in low) and ("ordered" in low or "amc" in low):
+        return "The appraisal has been ordered. Watch for a link from a third party if payment is needed."
+
     if ("1004d" in low) or ("final inspection" in low) or ("upon completion of repairs" in low):
         return "We will need a final inspection (1004D) once the listed repairs are completed."
+
+    if ("funds to close" in low) or ("reserves" in low) or ("sufficient funds" in low):
+        return "Please send the most recent full bank statement showing the funds needed for closing and reserves. Include all pages, even blank pages."
+
+    if ("paid in full" in low) and ("debt" in low or "credit" in low):
+        return "Please send proof the listed debt has been paid in full, plus the account or bank statement showing where the payment came from."
+
+    if "real estate certification" in low:
+        return "Please have the required parties sign the Real Estate Certification or addendum so we can add it to the file."
+
+    if "closing disclosure" in low:
+        return "Please send the final seller Closing Disclosure once it is available."
+
+    if "invoice" in low:
+        if "appraisal" in low:
+            return "Please send a copy of the appraisal invoice."
+        if "credit report" in low:
+            return "Please send a copy of the credit report invoice."
+        if "voe" in low or "verification of employment" in low:
+            return "Please send a copy of the verification of employment invoice."
+        return "Please send a copy of the invoice."
+
+    if ("earnest money" in low) or ("emd" in low):
+        return "Please send a copy of the earnest money check and the full bank statement showing it cleared. Include all pages, even blank pages."
+
+    if "bank statement" in low:
+        return "Please send the full bank statement requested. Include all pages, even blank pages."
+
+    if ("social security" in low) or (" ssn" in low) or ("w2" in low) or ("w-2" in low):
+        return "Please send a copy of your Social Security card or your most recent W-2."
 
     if ("motivation letter" in low) or ("letter of motivation" in low):
         return "Please write a short letter explaining the reason for the change in housing/credit profile."
@@ -2088,8 +2159,77 @@ def _to_client_language(desc: str, party: str = "Borrower") -> str:
         return "Please sign the attached form(s) and return them."
 
     if party in {"Borrower", "Co-Borrower"}:
-        return f"Please provide: {text}"
+        cleaned = text
+        cleaned = re.sub(r"^(provide|borrower to provide|copy of)\s+", "", cleaned, flags=re.I).strip()
+        if cleaned:
+            cleaned = cleaned[0].lower() + cleaned[1:] if len(cleaned) > 1 else cleaned.lower()
+            return f"Please send {cleaned}"
+        return text
     return text
+
+
+def _clean_condition_for_client(desc: str) -> str:
+    """Remove condition IDs and lender notes before showing borrower-facing text."""
+    text = " ".join(str(desc or "").split())
+    if not text:
+        return ""
+    text = re.sub(r"\[[A-Z]{2,}-?\d+\]\s*", "", text)
+    text = re.sub(r"\*\*?", " ", text)
+    text = re.sub(r"\bHigh Confidence\b", "", text, flags=re.I)
+    text = re.sub(r"\b\d{1,2}/\d{1,2}\s*-\s*not in upload\b.*", "", text, flags=re.I)
+    text = re.sub(r"\b\d{1,2}/\d{1,2}\s*-\s*need\b", "Need", text, flags=re.I)
+    text = re.sub(r"\s+\*", " ", text)
+    text = re.sub(r"\s+", " ", text).strip(" -.;")
+    return text
+
+
+def _client_need_subject(desc: str) -> str:
+    """Pick the bold topic for the client needs list."""
+    text = _clean_condition_for_client(desc)
+    low = text.lower()
+    topic_rules = [
+        ("Anti Steering", ["anti steering", "anti-steering"]),
+        ("Lead Based Paint", ["lead based paint"]),
+        ("FHA Connection", ["fha connection", "case query", "case number assignment"]),
+        ("Appraisal", ["appraisal", "1004d", "final inspection", "amc"]),
+        ("Earnest Money", ["earnest money"]),
+        ("Funds to Close", ["funds to close", "reserves", "sufficient funds", "cash to close"]),
+        ("Bank Statement", ["bank statement"]),
+        ("SSN/W2", ["social security", " ssn", "w2", "w-2"]),
+        ("Employment", ["employment", "pay stub", "paystub", "voe", "verification of employment"]),
+        ("Homeowners Insurance", ["homeowner", "hazard insurance", "hoi", "insurance declaration"]),
+        ("Driver's License", ["driver", "government id", "license"]),
+        ("Letter of Explanation", ["letter of explanation", " loe", "signed letter"]),
+        ("Motivation Letter", ["motivation letter", "letter of motivation"]),
+        ("Real Estate Certification", ["real estate certification", "seller's real estate agent", "sellers agent"]),
+        ("Closing Disclosure", ["closing disclosure", "seller cd", "final seller"]),
+        ("Invoice", ["invoice"]),
+        ("Tax Bill", ["tax bill"]),
+        ("Payoff", ["payoff"]),
+        ("Verification of Mortgage", ["verification of mortgage", " vom"]),
+    ]
+    for subject, needles in topic_rules:
+        if any(n in low for n in needles):
+            return subject
+
+    candidate = re.split(r"\s+-\s+|:\s+", text, maxsplit=1)[0]
+    candidate = re.sub(r"^(provide|copy of|borrower to provide)\s+", "", candidate, flags=re.I).strip()
+    words = candidate.split()
+    if len(words) > 6:
+        candidate = " ".join(words[:6])
+    return candidate or "Condition"
+
+
+def _client_need_item(desc: str, party: str = "Borrower") -> tuple[str, str]:
+    """Return subject-first borrower wording for the Client Needs List."""
+    subject = _client_need_subject(desc)
+    body = _to_client_language(desc, party)
+    if not body:
+        body = _clean_condition_for_client(desc)
+    body = re.sub(r"^(please send|please provide)\s+", "", body, flags=re.I).strip()
+    if body:
+        body = body[0].upper() + body[1:]
+    return subject, body
 
 
 def _load_user_gemini_key_into_session(force: bool = False) -> str:
@@ -4027,6 +4167,7 @@ def show_dashboard():
 
                     # Sort row + always-on Client Needs List
                     _plain_map_key = f"{_scan_fkey}_plain_map"
+                    _plain_sig_key = f"{_scan_fkey}_plain_sig"
                     _sort_c1, _sort_c2, _sort_c3 = st.columns([3.2, 0.2, 1.4])
                     with _sort_c3:
                         _new_sort = st.selectbox(
@@ -4039,9 +4180,14 @@ def show_dashboard():
                             st.session_state[_scan_sort_key] = _new_sort
                             st.rerun()
 
-                    if not st.session_state.get(_plain_map_key):
-                        _originals = [str(c.get("desc", "")) for c in _norm_conds]
+                    _originals = [str(c.get("desc", "")) for c in _norm_conds]
+                    _plain_sig = "\n".join(_originals)
+                    if (
+                        not st.session_state.get(_plain_map_key)
+                        or st.session_state.get(_plain_sig_key) != _plain_sig
+                    ):
                         st.session_state[_plain_map_key] = {o: _to_client_language(o, "Borrower") for o in _originals}
+                        st.session_state[_plain_sig_key] = _plain_sig
 
                     def _needs_status_label(_raw_status: str) -> str:
                         s = str(_raw_status or "").strip().lower()
@@ -4052,16 +4198,26 @@ def show_dashboard():
                         return "Needed"
 
                     st.markdown('<div class="pa-section" style="margin-top:8px;">Client Needs List</div>', unsafe_allow_html=True)
-                    _needs_lines = []
+                    import html as _html
+                    _needs_rows = []
                     for _cond_idx, _cond in enumerate(_norm_conds):
                         _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
                         _base_uid = f"{_scan_fkey}_{_cond_uid}"
                         _row_status = st.session_state.get(f"{_base_uid}_stat", _cond.get("status", "Needed"))
                         _status_label = _needs_status_label(_row_status)
-                        _client_text = st.session_state.get(_plain_map_key, {}).get(str(_cond.get("desc", "")), str(_cond.get("desc", "")))
-                        _needs_lines.append(f"- **{_status_label}** - {_client_text}")
-                    if _needs_lines:
-                        st.markdown("\n".join(_needs_lines))
+                        _subject, _body = _client_need_item(str(_cond.get("desc", "")), "Borrower")
+                        _needs_rows.append(
+                            '<div class="pa-need-row">'
+                            '<span class="pa-need-bullet">-</span>'
+                            '<div>'
+                            f'<span class="pa-need-subject">{_html.escape(_subject)}</span>'
+                            f'<span class="pa-need-body"> - {_html.escape(_body)}</span>'
+                            f'<span class="pa-need-status">{_html.escape(_status_label)}</span>'
+                            '</div>'
+                            '</div>'
+                        )
+                    if _needs_rows:
+                        st.markdown('<div class="pa-needs-list">' + "".join(_needs_rows) + '</div>', unsafe_allow_html=True)
 
                     for _c in _norm_conds_grouped:
                         if _c.get("_section"):
