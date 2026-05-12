@@ -2029,6 +2029,44 @@ def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
     return rows
 
 
+def _to_client_language(desc: str, party: str = "Borrower") -> str:
+    """Rewrite underwriting condition text into borrower-friendly language."""
+    text = " ".join(str(desc or "").split())
+    if not text:
+        return ""
+    low = text.lower()
+
+    if any(k in low for k in ["anti steering", "anti-steering"]):
+        return "Please sign the attached anti-steering disclosure form."
+
+    if ("1004d" in low) or ("final inspection" in low) or ("upon completion of repairs" in low):
+        return "We will need a final inspection (1004D) once the listed repairs are completed."
+
+    if ("motivation letter" in low) or ("letter of motivation" in low):
+        return "Please write a short letter explaining the reason for the change in housing/credit profile."
+
+    if ("letter of explanation" in low) or ("loe" in low):
+        if "signed" in low or "attach" in low:
+            return "Please fill in and sign the attached letter of explanation."
+        return "Please provide a short signed letter of explanation."
+
+    if ("driver" in low and "license" in low) or ("government id" in low):
+        return "Please provide a clear, unexpired copy of your driver's license."
+
+    if ("homeowner" in low and "insurance" in low) or ("hazard insurance" in low) or ("hoi" in low):
+        return "Please send your homeowner's insurance choice and your agent's contact info, and we will take it from there."
+
+    if ("vom" in low) or ("verification of mortgage" in low):
+        return "Please share contact information for your current or previous mortgage company so we can send the required form."
+
+    if ("please sign" in low) and ("attached" in low):
+        return "Please sign the attached form(s) and return them."
+
+    if party in {"Borrower", "Co-Borrower"}:
+        return f"Please provide: {text}"
+    return text
+
+
 def _load_user_gemini_key_into_session(force: bool = False) -> str:
     """Load the signed-in user's Gemini key from Supabase into session state."""
     if st.session_state.get("sandbox_mode", False):
@@ -3994,18 +4032,24 @@ def show_dashboard():
                             st.session_state[_scan_sort_key] = _new_sort
                             st.rerun()
 
-                    # If toggle is ON and we don't have a cached translation map yet, fetch it
+                    # If toggle is ON and we don't have a cached translation map yet, build it
                     if _plain_on and not st.session_state.get(_plain_map_key):
                         _gem_key = st.session_state.get("user_gemini_api_key", "")
                         _originals = [str(c.get("desc", "")) for c in _norm_conds]
-                        with st.spinner("Translating conditions to client language..."):
-                            try:
-                                import cloud_client as _cc_tr
-                                _translated, _tr_log = _cc_tr.translate_conditions_to_plain(_originals, api_key_override=_gem_key)
-                                st.session_state[_plain_map_key] = dict(zip(_originals, _translated))
-                            except Exception as _tr_e:
-                                st.warning(f"Could not translate: {_tr_e}")
-                                st.session_state[_plain_map_key] = {}
+                        _rule_map = {o: _to_client_language(o, "Borrower") for o in _originals}
+                        _needs_ai = [o for o in _originals if _rule_map.get(o, o) == o]
+                        _final_map = dict(_rule_map)
+                        if _needs_ai and _gem_key:
+                            with st.spinner("Translating conditions to client language..."):
+                                try:
+                                    import cloud_client as _cc_tr
+                                    _translated, _tr_log = _cc_tr.translate_conditions_to_plain(_needs_ai, api_key_override=_gem_key)
+                                    for _src, _dst in zip(_needs_ai, _translated):
+                                        if _dst and _dst.strip():
+                                            _final_map[_src] = _dst
+                                except Exception as _tr_e:
+                                    st.warning(f"Could not translate: {_tr_e}")
+                        st.session_state[_plain_map_key] = _final_map
 
                     for _c in _norm_conds_grouped:
                         if _c.get("_section"):
@@ -4173,8 +4217,10 @@ def show_dashboard():
                         try:
                             from ai_engine import draft_email as _draft
                             import urllib.parse as _uparse
+                            _is_client_party = _group_to in {"Borrower", "Co-Borrower"}
                             _cond_text = "\n".join(
-                                f"- #{c['num']}: {c['desc']}" for c in _checked_for_email
+                                f"- #{c['num']}: {(_to_client_language(c['desc'], _group_to) if _is_client_party else c['desc'])}"
+                                for c in _checked_for_email
                             )
                             _ebody = _draft(_cond_text, _group_to, _group_lang)
                         except Exception as _e:
@@ -9418,10 +9464,17 @@ def show_loan_detail():
             import urllib.parse
             _recip_contact = _normalize_contact_value(_contact_party_map.get(_ld_recipient, {}))
             _recip_label = _recip_contact.get("name") or _ld_recipient.split("")[0].strip()
+            _is_client_party = ("borrower" in (_ld_recipient or "").lower())
             if _ld_checked:
-                _cond_lines = [f"- Condition #{c['num']}: {c['desc']}" for c in _ld_checked]
+                _cond_lines = [
+                    f"- Condition #{c['num']}: {(_to_client_language(c['desc'], 'Borrower') if _is_client_party else c['desc'])}"
+                    for c in _ld_checked
+                ]
             else:
-                _cond_lines = [f"- Condition #{c['num']}: {c['desc']}" for c in _conditions[:10]]
+                _cond_lines = [
+                    f"- Condition #{c['num']}: {(_to_client_language(c['desc'], 'Borrower') if _is_client_party else c['desc'])}"
+                    for c in _conditions[:10]
+                ]
             _email_out = _de("\n".join(_cond_lines), _recip_label, _ld_lang)
             _recip_email = _recip_contact.get("email", "")
             if _recip_email:
