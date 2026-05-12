@@ -2018,8 +2018,50 @@ def _render_trial_gate(profile: dict) -> None:
                     st.error(f"Error: {e}")
 
 
-def _infer_condition_party(desc: str) -> str:
+_BORROWER_ACTION_KEYWORDS = [
+    "missing signature", "sign document", "provide paystubs", "provide pay stubs",
+    "provide bank statements", "provide tax returns", "verify employment",
+    "provide income verification", "missing w-2", "missing w2", "missing 1040",
+    "provide asset proof", "provide income documentation", "provide employment letter",
+    "borrower consent", "borrower authorization", "borrower acknowledgment",
+    "provide id", "provide driver's license", "provide drivers license",
+    "missing disclosure", "provide explanation letter", "debt verification needed",
+    "income verification needed", "asset documentation needed",
+]
+
+_NON_BORROWER_KEYWORDS = [
+    "appraisal", "title search", "title review", "title insurance",
+    "underwriting review", "compliance review", "final inspection",
+    "property inspection", "survey", "flood certification", "hoa documentation",
+    "property valuation", "lender requirements", "investor guidelines",
+    "clear conditions", "appraisal condition", "title commitment", "clear title",
+    "lender approval", "underwriter approval",
+]
+
+
+def _condition_has_any(text: str, keywords: list[str]) -> bool:
+    return any(k in text for k in keywords)
+
+
+def _route_non_borrower_condition(text: str):
+    """Route third-party/lender conditions to the most likely owner."""
+    if any(k in text for k in ["appraisal", "appraiser", "final inspection", "property inspection", "property valuation", "appraisal condition"]):
+        return "Appraiser"
+    if any(k in text for k in ["title search", "title review", "title insurance", "title commitment", "clear title", "survey"]):
+        return "Title"
+    if any(k in text for k in ["flood certification", "hoa documentation"]):
+        return "Insurance"
+    if any(k in text for k in ["underwriting review", "underwriter approval", "lender approval", "lender requirements", "investor guidelines", "clear conditions"]):
+        return "Underwriter"
+    if "compliance review" in text:
+        return "Processor"
+    return ""
+
+
+def _infer_condition_party(desc: str):
     text = str(desc or "").lower()
+    if _condition_has_any(text, _BORROWER_ACTION_KEYWORDS):
+        return "Borrower"
     if "invoice" in text:
         if any(k in text for k in ["insurance", "hoi", "hazard", "homeowner"]):
             return ["Insurance", "Processor"]
@@ -2028,6 +2070,9 @@ def _infer_condition_party(desc: str) -> str:
         return "Processor"
     if any(k in text for k in ["fha connection", "case query", "case number", "case #", "sponsor id", "business tax id"]):
         return "Processor"
+    _non_borrower_route = _route_non_borrower_condition(text)
+    if _non_borrower_route:
+        return _non_borrower_route
     if any(k in text for k in ["insurance", "hoi", "hazard", "flood"]):
         return "Insurance"
     if any(k in text for k in ["title", "lien", "payoff", "survey"]):
@@ -4283,20 +4328,7 @@ def show_dashboard():
                     _COND_STATS_SCAN = ["Needed", "Requested", "Important", "Ready to Clear", "Cleared"]
 
                     def _infer_party(_desc: str) -> str:
-                        _d = (_desc or "").lower()
-                        if "invoice" in _d:
-                            if any(k in _d for k in ["insurance", "hoi", "hazard", "homeowner"]): return ["Insurance", "Processor"]
-                            if any(k in _d for k in ["appraisal", "appraiser", "amc"]): return ["Appraiser", "Processor"]
-                            return "Processor"
-                        if any(k in _d for k in ["fha connection", "case query", "case number", "case #", "sponsor id", "business tax id"]): return "Processor"
-                        if any(k in _d for k in ["insurance", "hoi", "hazard", "flood"]): return "Insurance"
-                        if any(k in _d for k in ["title", "lien", "payoff", "survey"]):  return "Title"
-                        if any(k in _d for k in ["appraisal", "appraiser", "value"]):    return "Appraiser"
-                        if any(k in _d for k in ["voe", "employer", "employment"]):      return "Employer"
-                        if any(k in _d for k in ["purchase contract", "realtor", "agent"]): return "Realtor"
-                        if "seller" in _d:                                               return "Seller"
-                        if any(k in _d for k in ["closer", "cd ", "closing disclosure"]):return "Closer"
-                        return "Borrower"
+                        return _infer_condition_party(_desc)
 
                     _scan_fkey = f"scan_{_bidx}"
 
