@@ -248,13 +248,18 @@ def load_user_gemini_key(user_key: str, user_email: str = "") -> str:
 
     # Primary lookup by stable key.
     if user_key:
-        params = urllib.parse.urlencode({"key": f"eq.{_setting_key(user_key)}", "select": "value_json"})
+        params = urllib.parse.urlencode({
+            "key": f"eq.{_setting_key(user_key)}",
+            "select": "value_json,updated_at",
+            "order": "updated_at.desc",
+            "limit": "5",
+        })
         url = f"{_supabase_url()}/rest/v1/settings?{params}"
         result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
         if result.get("ok"):
             rows = result.get("data") or []
-            if rows:
-                key = _extract_gemini_key_from_value_json(rows[0].get("value_json"))
+            for row in rows:
+                key = _extract_gemini_key_from_value_json(row.get("value_json"))
                 if key:
                     return key
 
@@ -535,17 +540,29 @@ def save_user_gemini_key(user_key: str, gemini_api_key: str) -> dict:
             "gemini_api_key": clean_key,
         }
 
+    email_for_row = str(_current_user_email() or "").strip().lower()
     payload = {
         "key": _setting_key(user_key),
         "user_key": user_key,
-        "user_email": _current_user_email(),
+        "user_email": email_for_row,
         "value_json": json.dumps(value_json),
         "updated_at": datetime.now(timezone.utc).isoformat(),
     }
     url = f"{_supabase_url()}/rest/v1/settings"
     try:
         if _upsert_setting(url, api_key, payload):
-            return {"ok": True}
+            # Read-after-write verification: if we cannot load what we just saved,
+            # report it now so UI does not falsely imply durable save.
+            read_back = load_user_gemini_key(user_key, user_email=email_for_row)
+            if read_back:
+                return {"ok": True}
+            return {
+                "ok": False,
+                "error": (
+                    "Saved request sent, but key could not be read back from Supabase. "
+                    "Check settings table constraints/RLS and schema cache."
+                ),
+            }
     except urllib.error.HTTPError as e:
         raw = e.read().decode("utf-8", errors="ignore")
         try:
