@@ -4197,11 +4197,19 @@ def show_dashboard():
                             return "Submitted"
                         return "Needed"
 
+                    def _is_client_need_condition(_cond) -> bool:
+                        _sections = _scan_sections_for_condition(_cond)
+                        return "Borrower" in _sections
+
                     st.markdown('<div class="pa-section" style="margin-top:8px;">Client Needs List</div>', unsafe_allow_html=True)
                     import html as _html
                     _needs_rows = []
                     for _cond_idx, _cond in enumerate(_norm_conds):
                         _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
+                        _cond_for_needs = dict(_cond)
+                        _cond_for_needs["_scan_uid"] = _cond_uid
+                        if not _is_client_need_condition(_cond_for_needs):
+                            continue
                         _base_uid = f"{_scan_fkey}_{_cond_uid}"
                         _row_status = st.session_state.get(f"{_base_uid}_stat", _cond.get("status", "Needed"))
                         _status_label = _needs_status_label(_row_status)
