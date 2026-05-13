@@ -622,6 +622,32 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .scan-scroll .pa-need-bullet { color: #94a3b8; font-weight: 800; line-height: 1.45; }
 .scan-scroll .pa-need-subject { color: #ffffff; font-weight: 900; }
 .scan-scroll .pa-need-body { color: #dbeafe; font-weight: 500; }
+/* Guide-button panel: dark theme override so the publisher buttons aren't
+   blinding white. */
+.pa-guide-btns + div a[data-testid="stBaseLinkButton-secondary"],
+.pa-guide-btns + div [data-testid="stLinkButton"] a {
+    background: rgba(59,130,246,0.12) !important;
+    border: 1px solid rgba(59,130,246,0.45) !important;
+    color: #dbeafe !important;
+    font-weight: 700 !important;
+    font-size: 12px !important;
+    height: 30px !important;
+    line-height: 28px !important;
+    border-radius: 6px !important;
+    text-decoration: none !important;
+    transition: background 0.15s ease, border-color 0.15s ease !important;
+}
+.pa-guide-btns + div a[data-testid="stBaseLinkButton-secondary"]:hover,
+.pa-guide-btns + div [data-testid="stLinkButton"] a:hover {
+    background: rgba(59,130,246,0.22) !important;
+    border-color: rgba(59,130,246,0.75) !important;
+    color: #ffffff !important;
+}
+.pa-guide-btns + div a[data-testid="stBaseLinkButton-secondary"] *,
+.pa-guide-btns + div [data-testid="stLinkButton"] a * {
+    color: inherit !important;
+    background: transparent !important;
+}
 /* Aggressively compress condition rows — target ~65-75% of default height. */
 .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] {
     padding: 3px 8px !important;
@@ -4606,29 +4632,32 @@ def show_dashboard():
                             import html as _html
                             _guide_subject = _client_need_subject(str(_c.get("desc", "")))
                             _gq = _ulp.quote(_guide_subject or "loan condition")
-                            # Use Google site-search — the publishers' own search URLs
-                            # are unstable; this reliably lands on the right section.
-                            _gm_url = f"https://www.google.com/search?q=site:selling-guide.fanniemae.com+{_gq}"
-                            _fm_url = f"https://www.google.com/search?q=site:guide.freddiemac.com+{_gq}"
-                            _usda_url = f"https://www.google.com/search?q=site:rd.usda.gov+%22{_gq}%22+%223555%22"
+                            # Direct PDF links to each publisher's current guide.
+                            # The #search=... fragment opens the PDF in Chrome/Edge
+                            # with that term highlighted (built-in PDF viewer).
+                            _gm_url = f"https://singlefamily.fanniemae.com/media/document/pdf/selling-guide-current#search={_gq}"
+                            _fm_url = f"https://guide.freddiemac.com/ci/okcsFattach/get/1004283_2#search={_gq}"
+                            _usda_url = f"https://www.rd.usda.gov/sites/default/files/hb-1-3555.pdf#search={_gq}"
 
-                            _g1, _g2, _g3, _g4 = st.columns([1, 1, 1, 0.4])
+                            st.markdown('<div class="pa-guide-btns">', unsafe_allow_html=True)
+                            _g1, _g2, _g3, _g4 = st.columns([1, 1, 1, 0.5])
                             with _g1:
-                                st.link_button(f"Fannie Mae", _gm_url, use_container_width=True,
-                                               help=f"Selling Guide search for '{_guide_subject}'")
+                                st.link_button("Fannie Mae", _gm_url, use_container_width=True,
+                                               help=f"Selling Guide PDF - search for '{_guide_subject}'")
                             with _g2:
-                                st.link_button(f"Freddie Mac", _fm_url, use_container_width=True,
-                                               help=f"Seller/Servicer Guide search for '{_guide_subject}'")
+                                st.link_button("Freddie Mac", _fm_url, use_container_width=True,
+                                               help=f"Seller/Servicer Guide PDF - search for '{_guide_subject}'")
                             with _g3:
-                                st.link_button(f"USDA", _usda_url, use_container_width=True,
-                                               help=f"USDA Handbook 3555 search for '{_guide_subject}'")
+                                st.link_button("USDA", _usda_url, use_container_width=True,
+                                               help=f"USDA Handbook 3555 PDF - search for '{_guide_subject}'")
                             with _g4:
                                 if st.button("Close", key=f"{_uid}_guide_close", help="Close"):
                                     st.session_state.pop(f"{_uid}_guide_open", None)
                                     st.rerun()
+                            st.markdown('</div>', unsafe_allow_html=True)
                             st.markdown(
                                 f'<div style="font-size:10.5px;color:#94a3b8;padding:2px 0 4px 0;">'
-                                f'Searching for: <b style="color:#cbd5e1;">{_html.escape(_guide_subject)}</b></div>',
+                                f'PDF will open and highlight: <b style="color:#cbd5e1;">{_html.escape(_guide_subject)}</b></div>',
                                 unsafe_allow_html=True,
                             )
 
