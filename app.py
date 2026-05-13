@@ -4135,15 +4135,9 @@ def show_dashboard():
                     _COND_STATS_SCAN = ["Needed", "Requested", "Important", "Ready to Clear", "Cleared"]
 
                     def _infer_party(_desc: str) -> str:
-                        _d = (_desc or "").lower()
-                        if any(k in _d for k in ["insurance", "hoi", "hazard", "flood"]): return "Insurance"
-                        if any(k in _d for k in ["title", "lien", "payoff", "survey"]):  return "Title"
-                        if any(k in _d for k in ["appraisal", "appraiser", "value"]):    return "Appraiser"
-                        if any(k in _d for k in ["voe", "employer", "employment"]):      return "Employer"
-                        if any(k in _d for k in ["purchase contract", "realtor", "agent"]): return "Realtor"
-                        if "seller" in _d:                                               return "Seller"
-                        if any(k in _d for k in ["closer", "cd ", "closing disclosure"]):return "Closer"
-                        return "Borrower"
+                        # Use the global keyword router so Client Needs List filtering
+                        # stays in lockstep with the per-condition party tags.
+                        return _infer_condition_party(_desc or "")
 
                     _scan_fkey = f"scan_{_bidx}"
 
