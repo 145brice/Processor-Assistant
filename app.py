@@ -4289,7 +4289,28 @@ def show_dashboard():
                             return "Submitted"
                         return "Needed"
 
+                    # Hard skip list: anything containing these phrases in the
+                    # description is internal/third-party work, never a borrower task,
+                    # regardless of how Gemini or any cache tagged the party.
+                    _CLIENT_NEEDS_SKIP = (
+                        "invoice", "fee sheet", "broker to ", "broker has ",
+                        "fha case", "case query", "case number assignment",
+                        "case # transferred", "case transferred",
+                        "transferred to uwm", "sponsor id", "business tax id",
+                        "corp to obtain", "internal lock", "fha connection",
+                        "underwriter to obtain", "underwriter to review",
+                        "lqi report", "loan quality initiative",
+                        "mcr,", "pmi approval", "pmi coverage",
+                        "max interest rate", "interest rate not to exceed",
+                        "warranty deed", "security instrument", "title commitment",
+                        "alta", "cpl,", "preliminary cd", "mortgagee clause",
+                        "ssr ", "ead portal", "appraisal logging",
+                    )
+
                     def _is_client_need_condition(_cond) -> bool:
+                        _desc_l = str(_cond.get("desc", "")).lower()
+                        if any(skip in _desc_l for skip in _CLIENT_NEEDS_SKIP):
+                            return False
                         _sections = _scan_sections_for_condition(_cond)
                         return "Borrower" in _sections
 
