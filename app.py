@@ -4289,11 +4289,13 @@ def show_dashboard():
                             return "Submitted"
                         return "Needed"
 
-                    # Hard skip list: anything containing these phrases in the
-                    # description is internal/third-party work, never a borrower task,
-                    # regardless of how Gemini or any cache tagged the party.
+                    # Internal/third-party signals that should usually skip the
+                    # Client Needs List. EXCEPT when the condition is asking the
+                    # borrower to prove payment / show receipt (those are real
+                    # borrower tasks, e.g. proof of paid appraisal, paid homebuyer
+                    # education class invoice, etc.).
                     _CLIENT_NEEDS_SKIP = (
-                        "invoice", "fee sheet", "broker to ", "broker has ",
+                        "fee sheet", "broker to ", "broker has ",
                         "fha case", "case query", "case number assignment",
                         "case # transferred", "case transferred",
                         "transferred to uwm", "sponsor id", "business tax id",
@@ -4306,10 +4308,25 @@ def show_dashboard():
                         "alta", "cpl,", "preliminary cd", "mortgagee clause",
                         "ssr ", "ead portal", "appraisal logging",
                     )
+                    # If an "invoice" condition has any of these, it IS a borrower
+                    # task — they need to provide proof of payment / participation.
+                    _CLIENT_NEEDS_INVOICE_KEEP = (
+                        "proof of pay", "proof of paid", "paid by borrower",
+                        "borrower paid", "paid outside", "poc ", " poc.",
+                        "receipt", "homebuyer education", "homebuyer class",
+                        "homebuyer course", "fannie mae class", "freddie mac class",
+                        "fnma class", "fhlmc class", "framework class",
+                        "counseling certificate", "education certificate",
+                        "course completion",
+                    )
 
                     def _is_client_need_condition(_cond) -> bool:
                         _desc_l = str(_cond.get("desc", "")).lower()
-                        if any(skip in _desc_l for skip in _CLIENT_NEEDS_SKIP):
+                        # Invoice items: skip unless this is proof-of-payment / class receipt
+                        if "invoice" in _desc_l:
+                            if not any(k in _desc_l for k in _CLIENT_NEEDS_INVOICE_KEEP):
+                                return False
+                        elif any(skip in _desc_l for skip in _CLIENT_NEEDS_SKIP):
                             return False
                         _sections = _scan_sections_for_condition(_cond)
                         return "Borrower" in _sections
