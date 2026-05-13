@@ -620,7 +620,7 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     line-height: 1.42;
 }
 .scan-scroll .pa-need-bullet { color: #94a3b8; font-weight: 800; line-height: 1.45; }
-.scan-scroll .pa-need-subject { color: #f8fafc; font-weight: 850; }
+.scan-scroll .pa-need-subject { color: #ffffff; font-weight: 900; }
 .scan-scroll .pa-need-body { color: #dbeafe; font-weight: 500; }
 /* Aggressively compress condition rows — target ~65-75% of default height. */
 .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] {
@@ -4429,6 +4429,16 @@ def show_dashboard():
 
                     def _is_client_need_condition(_cond) -> bool:
                         _desc_l = str(_cond.get("desc", "")).lower()
+                        # Funding-stage conditions never belong on the client list —
+                        # they're processed at funding by the processor / closer.
+                        if (
+                            _desc_l.startswith("funding -")
+                            or _desc_l.startswith("funding:")
+                            or "[ptf-" in _desc_l
+                            or _desc_l.startswith("[ptf]")
+                            or " funding -" in _desc_l[:40]
+                        ):
+                            return False
                         # Invoice items: skip unless this is proof-of-payment / class receipt
                         if "invoice" in _desc_l:
                             if not any(k in _desc_l for k in _CLIENT_NEEDS_INVOICE_KEEP):
@@ -4440,7 +4450,9 @@ def show_dashboard():
 
                     st.markdown('<div class="pa-section" style="margin-top:8px;">Client Needs List</div>', unsafe_allow_html=True)
                     import html as _html
+                    import re as _re_needs
                     _needs_rows = []
+                    _summary_map_for_needs = st.session_state.get(_summary_map_key, {}) if _summary_on else {}
                     for _cond_idx, _cond in enumerate(_norm_conds):
                         _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
                         _cond_for_needs = dict(_cond)
@@ -4450,7 +4462,17 @@ def show_dashboard():
                         _base_uid = f"{_scan_fkey}_{_cond_uid}"
                         _row_status = st.session_state.get(f"{_base_uid}_stat", _cond.get("status", "Needed"))
                         _status_label = _needs_status_label(_row_status)
-                        _subject, _body = _client_need_item(str(_cond.get("desc", "")), "Borrower")
+                        _orig_text = str(_cond.get("desc", ""))
+                        # If Summarized is on AND Gemini gave us "**Subject** - body",
+                        # parse it out and use it as the Needs List entry so the list
+                        # matches the processor email format.
+                        _sum_text = str(_summary_map_for_needs.get(_orig_text, "")).strip()
+                        _sum_match = _re_needs.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_text) if _sum_text else None
+                        if _sum_match:
+                            _subject = _sum_match.group(1).strip()
+                            _body = _sum_match.group(2).strip()
+                        else:
+                            _subject, _body = _client_need_item(_orig_text, "Borrower")
                         _needs_rows.append(
                             '<div class="pa-need-row">'
                             '<span class="pa-need-bullet">-</span>'
