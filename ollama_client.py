@@ -28,6 +28,15 @@ DEFAULT_ENDPOINT = "http://localhost:11434"
 DEFAULT_MODEL    = "llama3.2"
 
 
+def _filter_invoice_conditions(conditions: list[dict]) -> list[dict]:
+    """Remove invoice items from client-facing condition lists."""
+    filtered = [
+        cond for cond in conditions
+        if not re.search(r"\binvoice\b", str(cond.get("desc", "")).lower())
+    ]
+    return filtered
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Config
 # ─────────────────────────────────────────────────────────────────────────────
@@ -299,8 +308,9 @@ def draft_email_enhanced(conditions: list[dict], recipient_type: str,
     if not ok:
         return "", _log("SCRIPT", "email_draft", f"local fallback — {msg}")
 
+    filtered_conditions = _filter_invoice_conditions(conditions)
     cond_list = "\n".join(
-        f"- {c.get('desc', c.get('num', 'Item'))}" for c in conditions
+        f"- {c.get('desc', c.get('num', 'Item'))}" for c in filtered_conditions
     )
     lang_instr = (
         "Escribe el correo en español formal y profesional."

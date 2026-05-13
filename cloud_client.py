@@ -119,6 +119,15 @@ def _parse_ai_json(text: str) -> dict:
         raise ValueError(f"Unbalanced JSON in AI response: {str(e)[:80]}")
 
 
+def _filter_invoice_conditions(conditions: list[dict]) -> list[dict]:
+    """Remove invoice items from client-facing condition lists."""
+    filtered = [
+        cond for cond in conditions
+        if not re.search(r"\binvoice\b", str(cond.get("desc", "")).lower())
+    ]
+    return filtered
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Config
 # ─────────────────────────────────────────────────────────────────────────────
@@ -546,8 +555,9 @@ def draft_email_enhanced(conditions: list[dict], recipient_type: str,
     if not cfg.get("enabled") or not cfg.get("api_key"):
         return "", _log("SCRIPT", "email_draft", "Cloud disabled")
 
+    filtered_conditions = _filter_invoice_conditions(conditions)
     cond_list = "\n".join(
-        f"- {c.get('desc', c.get('num', 'Item'))}" for c in conditions
+        f"- {c.get('desc', c.get('num', 'Item'))}" for c in filtered_conditions
     )
     rewrite_templates = {
         "borrower": (
