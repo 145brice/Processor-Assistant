@@ -9824,12 +9824,20 @@ def show_loan_detail():
         unsafe_allow_html=True,
     )
     _qc_c1, _qc_c2 = st.columns(2)
+    import html as _html_qc
     for _col, _role_key, _role_label in [
         (_qc_c1, "title", "Title"),
         (_qc_c2, "insurance", "HOI / Insurance"),
     ]:
         with _col:
-            _rc = _normalize_contact_value(_qc_contacts.get(_role_key))
+            if _role_key == "title":
+                _rc = _normalize_title_contact(
+                    _qc_contacts.get("title"),
+                    _qc_contacts.get("title_company"),
+                    _qc_contacts.get("settlement_agent"),
+                )
+            else:
+                _rc = _normalize_contact_value(_qc_contacts.get(_role_key))
             _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
             _phone = _rc.get("phone", "")
             _email = _rc.get("email", "")
@@ -9846,13 +9854,19 @@ def show_loan_detail():
                 continue
             if _name:
                 st.markdown(
-                    f'<div style="color:#d1d5db;font-size:13px;font-weight:600;margin-bottom:2px;">{_name}</div>',
+                    f'<div style="color:#d1d5db;font-size:13px;font-weight:600;margin-bottom:2px;">{_html_qc.escape(str(_name))}</div>',
                     unsafe_allow_html=True,
                 )
             if _phone:
-                st.code(_phone, language=None)
+                st.markdown(
+                    f'<div style="color:#cbd5e1;font-size:12px;margin-bottom:2px;">{_html_qc.escape(str(_phone))}</div>',
+                    unsafe_allow_html=True,
+                )
             if _email:
-                st.code(_email, language=None)
+                st.markdown(
+                    f'<div style="color:#cbd5e1;font-size:12px;margin-bottom:2px;">{_html_qc.escape(str(_email))}</div>',
+                    unsafe_allow_html=True,
+                )
 
     # â”€â”€ Open Conditions (interactive checkbox, status, parties, email) â”€â”€â”€â”€
     _conditions = loan.get("conditions", [])
