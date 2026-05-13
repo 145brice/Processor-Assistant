@@ -622,24 +622,35 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .scan-scroll .pa-need-bullet { color: #94a3b8; font-weight: 800; line-height: 1.45; }
 .scan-scroll .pa-need-subject { color: #f8fafc; font-weight: 850; }
 .scan-scroll .pa-need-body { color: #dbeafe; font-weight: 500; }
-/* Compress condition rows to ~75% of default height */
+/* Aggressively compress condition rows — target ~65-75% of default height. */
 .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] {
-    padding: 4px 8px !important;
-    margin-bottom: 4px !important;
+    padding: 3px 8px !important;
+    margin-bottom: 3px !important;
+    border-radius: 4px !important;
 }
 .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
-    gap: 1px !important;
+    gap: 0 !important;
 }
 .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stHorizontalBlock"] {
     gap: 4px !important;
     margin: 0 !important;
+    padding: 0 !important;
 }
 .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stElementContainer"] {
     margin: 0 !important;
+    padding: 0 !important;
+}
+.scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stMarkdownContainer"] {
+    margin: 0 !important;
+    padding: 0 !important;
 }
 .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stMarkdownContainer"] p {
     margin: 0 !important;
-    line-height: 1.25 !important;
+    padding: 0 !important;
+    line-height: 1.22 !important;
+}
+.scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stMarkdownContainer"] div {
+    line-height: 1.22 !important;
 }
 .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] > div {
     min-height: 22px !important;
@@ -648,14 +659,33 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-baseweb="select"] {
     margin: 0 !important;
 }
+.scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stSelectbox"] {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stMultiSelect"] {
+    margin: 0 !important;
+    padding: 0 !important;
+}
+.scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stMultiSelect"] > div {
+    min-height: 22px !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+}
 .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] button {
     height: 22px !important;
     min-height: 22px !important;
     padding: 0 6px !important;
+    margin: 0 !important;
 }
 .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stCheckbox"] {
     padding: 0 !important;
     margin: 0 !important;
+}
+/* Higher-specificity override against the global stVerticalBlockBorderWrapper rule */
+[data-testid="stMainBlockContainer"] .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] {
+    padding: 3px 8px !important;
+    margin-bottom: 3px !important;
 }
 .scan-scroll .pa-need-status {
     display: inline-block;
