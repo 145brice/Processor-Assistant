@@ -4574,63 +4574,41 @@ def show_dashboard():
                                     st.caption(f"Also included in {_SECTION_LABEL_SCAN.get(_section_party_for_row, _section_party_for_row)}")
                             with _ctrl3:
                                 if st.button("Guide", key=f"{_uid}_guide", use_container_width=True,
-                                             help="Check vs. Fannie/Freddie guidelines"):
-                                    st.session_state[f"{_uid}_guide_open"] = True
-                                    st.session_state.pop(f"{_uid}_guide_results", None)
+                                             help="Open Fannie Mae / Freddie Mac / USDA guidelines for this condition"):
+                                    st.session_state[f"{_uid}_guide_open"] = not st.session_state.get(f"{_uid}_guide_open", False)
 
-                        # â”€â”€ Guidelines panel (toggled by ) â”€â”€
+                        # â”€â”€ Guide panel: 3 link buttons that jump to the right publisher
+                        # â”€â”€ guideline page, pre-filtered by the condition subject.
                         if st.session_state.get(f"{_uid}_guide_open"):
-                            _gc1, _gc2 = st.columns([9, 0.5])
-                            with _gc2:
+                            import urllib.parse as _ulp
+                            import html as _html
+                            _guide_subject = _client_need_subject(str(_c.get("desc", "")))
+                            _gq = _ulp.quote(_guide_subject or "loan condition")
+                            # Use Google site-search — the publishers' own search URLs
+                            # are unstable; this reliably lands on the right section.
+                            _gm_url = f"https://www.google.com/search?q=site:selling-guide.fanniemae.com+{_gq}"
+                            _fm_url = f"https://www.google.com/search?q=site:guide.freddiemac.com+{_gq}"
+                            _usda_url = f"https://www.google.com/search?q=site:rd.usda.gov+%22{_gq}%22+%223555%22"
+
+                            _g1, _g2, _g3, _g4 = st.columns([1, 1, 1, 0.4])
+                            with _g1:
+                                st.link_button(f"Fannie Mae", _gm_url, use_container_width=True,
+                                               help=f"Selling Guide search for '{_guide_subject}'")
+                            with _g2:
+                                st.link_button(f"Freddie Mac", _fm_url, use_container_width=True,
+                                               help=f"Seller/Servicer Guide search for '{_guide_subject}'")
+                            with _g3:
+                                st.link_button(f"USDA", _usda_url, use_container_width=True,
+                                               help=f"USDA Handbook 3555 search for '{_guide_subject}'")
+                            with _g4:
                                 if st.button("Close", key=f"{_uid}_guide_close", help="Close"):
-                                    for _k in (f"{_uid}_guide_open", f"{_uid}_guide_results"):
-                                        st.session_state.pop(_k, None)
+                                    st.session_state.pop(f"{_uid}_guide_open", None)
                                     st.rerun()
-                            _gres = st.session_state.get(f"{_uid}_guide_results")
-                            if _gres is None:
-                                with st.spinner("Searching Fannie Mae & Freddie Mac"):
-                                    try:
-                                        from guidelines import check_conditions_against_guidelines as _cag
-                                        _out = _cag([{"num": _c["num"], "desc": _c["desc"]}])
-                                        if isinstance(_out, dict) and _out.get("error"):
-                                            _gres = {"error": _out["error"]}
-                                        else:
-                                            _gres = _out.get(_c["num"], {}).get("guidelines", [])
-                                    except Exception as _e:
-                                        _gres = {"error": f"{_e}"}
-                                    st.session_state[f"{_uid}_guide_results"] = _gres
-                            if isinstance(_gres, dict) and _gres.get("error"):
-                                st.markdown(
-                                    f'<div style="font-size:11px;color:#fbbf24;padding:4px 8px;'
-                                    f'background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);'
-                                    f'border-radius:6px;margin:4px 0 4px 32px;">{_gres["error"]}</div>',
-                                    unsafe_allow_html=True,
-                                )
-                            elif isinstance(_gres, list) and _gres:
-                                for _gm in _gres[:4]:
-                                    _src = _gm.get("source", "")
-                                    _sec = _gm.get("section", "")
-                                    _pg  = _gm.get("page", "")
-                                    _sc  = _gm.get("score", 0)
-                                    _ex  = (_gm.get("excerpt", "") or "").replace("\n", " ")[:360]
-                                    _sec_part = f"  <b>{_sec}</b>" if _sec else ""
-                                    st.markdown(
-                                        f'<div style="font-size:11px;color:#e5e7eb;padding:6px 10px;margin:3px 0 3px 32px;'
-                                        f'background:rgba(59,130,246,0.05);border-left:2px solid rgba(59,130,246,0.45);'
-                                        f'border-radius:4px;">'
-                                        f'<span style="color:#3b82f6;font-weight:700;">{_src}</span>'
-                                        f'{_sec_part}'
-                                        f' <span style="color:#9ca3af;">p.{_pg}  {_sc}% match</span><br/>'
-                                        f'<span style="color:#cbd5e1;font-size:10.5px;">{_ex}</span>'
-                                        f'</div>',
-                                        unsafe_allow_html=True,
-                                    )
-                            elif isinstance(_gres, list):
-                                st.markdown(
-                                    '<div style="font-size:11px;color:#6b7280;padding:4px 0 4px 32px;">'
-                                    'No relevant guideline sections found.</div>',
-                                    unsafe_allow_html=True,
-                                )
+                            st.markdown(
+                                f'<div style="font-size:10.5px;color:#94a3b8;padding:2px 0 4px 0;">'
+                                f'Searching for: <b style="color:#cbd5e1;">{_html.escape(_guide_subject)}</b></div>',
+                                unsafe_allow_html=True,
+                            )
 
                     def _scan_condition_checked_for_section(_cond, _section_party):
                         _cond_key = _cond.get("_scan_uid", _cond["num"])
