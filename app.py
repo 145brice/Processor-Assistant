@@ -4503,8 +4503,8 @@ def show_dashboard():
                             '<div class="pa-need-row">'
                             '<span class="pa-need-bullet">-</span>'
                             '<div>'
-                            f'<span class="pa-need-subject">{_html.escape(_subject)}</span>'
-                            f'<span class="pa-need-body"> - {_html.escape(_body)}</span>'
+                            f'<b class="pa-need-subject" style="color:#ffffff;font-weight:900;">{_html.escape(_subject)}</b>'
+                            f'<span class="pa-need-body" style="color:#dbeafe;"> - {_html.escape(_body)}</span>'
                             f'<span class="pa-need-status">{_html.escape(_status_label)}</span>'
                             '</div>'
                             '</div>'
@@ -4632,32 +4632,49 @@ def show_dashboard():
                             import html as _html
                             _guide_subject = _client_need_subject(str(_c.get("desc", "")))
                             _gq = _ulp.quote(_guide_subject or "loan condition")
-                            # Direct PDF links to each publisher's current guide.
-                            # The #search=... fragment opens the PDF in Chrome/Edge
-                            # with that term highlighted (built-in PDF viewer).
-                            _gm_url = f"https://singlefamily.fanniemae.com/media/document/pdf/selling-guide-current#search={_gq}"
-                            _fm_url = f"https://guide.freddiemac.com/ci/okcsFattach/get/1004283_2#search={_gq}"
+                            # Direct PDF links to each publisher's current handbook.
+                            # USDA's PDF is hosted at a stable URL. Fannie Mae and
+                            # Freddie Mac rotate PDF URLs frequently, so we use the
+                            # canonical HTML guide entry pages with #search= which
+                            # both their viewers accept.
+                            _gm_url = f"https://selling-guide.fanniemae.com/#q={_gq}"
+                            _fm_url = f"https://guide.freddiemac.com/app/guide/search?q={_gq}"
                             _usda_url = f"https://www.rd.usda.gov/sites/default/files/hb-1-3555.pdf#search={_gq}"
 
-                            st.markdown('<div class="pa-guide-btns">', unsafe_allow_html=True)
-                            _g1, _g2, _g3, _g4 = st.columns([1, 1, 1, 0.5])
-                            with _g1:
-                                st.link_button("Fannie Mae", _gm_url, use_container_width=True,
-                                               help=f"Selling Guide PDF - search for '{_guide_subject}'")
-                            with _g2:
-                                st.link_button("Freddie Mac", _fm_url, use_container_width=True,
-                                               help=f"Seller/Servicer Guide PDF - search for '{_guide_subject}'")
-                            with _g3:
-                                st.link_button("USDA", _usda_url, use_container_width=True,
-                                               help=f"USDA Handbook 3555 PDF - search for '{_guide_subject}'")
-                            with _g4:
+                            # Render the three publisher buttons as raw HTML so styling
+                            # isn't subject to Streamlit's link_button defaults.
+                            _btn_css = (
+                                "display:flex;align-items:center;justify-content:center;"
+                                "height:32px;padding:0 12px;border-radius:6px;"
+                                "background:rgba(59,130,246,0.14);"
+                                "border:1px solid rgba(59,130,246,0.5);"
+                                "color:#dbeafe;font-weight:700;font-size:12px;"
+                                "text-decoration:none;letter-spacing:0.3px;"
+                                "transition:background 0.15s,border-color 0.15s,color 0.15s;"
+                            )
+                            _btn_grid = (
+                                f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:4px 0 6px 0;">'
+                                f'  <a href="{_gm_url}" target="_blank" rel="noopener noreferrer" '
+                                f'     title="Fannie Mae Selling Guide - search for {_html.escape(_guide_subject)}" '
+                                f'     style="{_btn_css}">Fannie Mae</a>'
+                                f'  <a href="{_fm_url}" target="_blank" rel="noopener noreferrer" '
+                                f'     title="Freddie Mac Seller/Servicer Guide - search for {_html.escape(_guide_subject)}" '
+                                f'     style="{_btn_css}">Freddie Mac</a>'
+                                f'  <a href="{_usda_url}" target="_blank" rel="noopener noreferrer" '
+                                f'     title="USDA Handbook 3555 - search for {_html.escape(_guide_subject)}" '
+                                f'     style="{_btn_css}">USDA</a>'
+                                f'</div>'
+                            )
+                            _gc1, _gc2 = st.columns([5, 0.6])
+                            with _gc1:
+                                st.markdown(_btn_grid, unsafe_allow_html=True)
+                            with _gc2:
                                 if st.button("Close", key=f"{_uid}_guide_close", help="Close"):
                                     st.session_state.pop(f"{_uid}_guide_open", None)
                                     st.rerun()
-                            st.markdown('</div>', unsafe_allow_html=True)
                             st.markdown(
                                 f'<div style="font-size:10.5px;color:#94a3b8;padding:2px 0 4px 0;">'
-                                f'PDF will open and highlight: <b style="color:#cbd5e1;">{_html.escape(_guide_subject)}</b></div>',
+                                f'Will open and highlight: <b style="color:#cbd5e1;">{_html.escape(_guide_subject)}</b></div>',
                                 unsafe_allow_html=True,
                             )
 
