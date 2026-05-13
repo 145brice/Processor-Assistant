@@ -4272,10 +4272,23 @@ def show_dashboard():
                             _cond_view["_primary_section"] = _primary_section
                             _norm_conds_grouped.append(_cond_view)
 
-                    # Sort row + always-on Client Needs List
+                    # Sort row + Summarized toggle + always-on Client Needs List
                     _plain_map_key = f"{_scan_fkey}_plain_map"
                     _plain_sig_key = f"{_scan_fkey}_plain_sig"
-                    _sort_c1, _sort_c2, _sort_c3 = st.columns([3.2, 0.2, 1.4])
+                    _summary_key = f"{_scan_fkey}_summary_on"
+                    _summary_map_key = f"{_scan_fkey}_summary_map"
+                    _summary_sig_key = f"{_scan_fkey}_summary_sig"
+                    _sort_c1, _sort_c2, _sort_c3 = st.columns([2.0, 1.4, 1.4])
+                    with _sort_c2:
+                        _summary_on = st.toggle(
+                            "Summarized",
+                            value=bool(st.session_state.get(_summary_key, False)),
+                            key=f"{_summary_key}_toggle",
+                            help="Bold subject + one short instruction per condition (Gemini)",
+                        )
+                        if _summary_on != bool(st.session_state.get(_summary_key, False)):
+                            st.session_state[_summary_key] = _summary_on
+                            st.rerun()
                     with _sort_c3:
                         _new_sort = st.selectbox(
                             "Sort", ["PDF order", "By party"],
@@ -4295,6 +4308,20 @@ def show_dashboard():
                     ):
                         st.session_state[_plain_map_key] = {o: _to_client_language(o, "Borrower") for o in _originals}
                         st.session_state[_plain_sig_key] = _plain_sig
+
+                    # When Summarized toggle is on and we don't have a cached map (or
+                    # the underlying conditions changed), fetch summarized text from Gemini.
+                    if _summary_on and st.session_state.get(_summary_sig_key) != _plain_sig:
+                        _gem_key = st.session_state.get("user_gemini_api_key", "")
+                        with st.spinner("Summarizing conditions..."):
+                            try:
+                                import cloud_client as _cc_sum
+                                _summarized, _sum_log = _cc_sum.translate_conditions_to_summarized(_originals, api_key_override=_gem_key)
+                                st.session_state[_summary_map_key] = dict(zip(_originals, _summarized))
+                                st.session_state[_summary_sig_key] = _plain_sig
+                            except Exception as _se:
+                                st.warning(f"Could not summarize: {_se}")
+                                st.session_state[_summary_map_key] = {}
 
                     def _needs_status_label(_raw_status: str) -> str:
                         s = str(_raw_status or "").strip().lower()
@@ -4371,6 +4398,12 @@ def show_dashboard():
                         )
                     if _needs_rows:
                         st.markdown('<div class="pa-needs-list">' + "".join(_needs_rows) + '</div>', unsafe_allow_html=True)
+                        # Visual breathing room between the Client Needs List and
+                        # the parsed conditions list below it.
+                        st.markdown(
+                            '<div style="height:28px;border-top:1px dashed rgba(255,255,255,0.08);margin:28px 0 12px 0;"></div>',
+                            unsafe_allow_html=True,
+                        )
 
                     for _c in _norm_conds_grouped:
                         if _c.get("_section"):
@@ -4400,6 +4433,7 @@ def show_dashboard():
                                     if _conf else ""
                                 )
                                 import html as _html
+                                import re as _re_desc
                                 _orig_desc = str(_c.get("desc", ""))
                                 _pmap = st.session_state.get(_plain_map_key, {})
                                 _client_desc = str(_pmap.get(_orig_desc) or _orig_desc)
@@ -4409,6 +4443,21 @@ def show_dashboard():
                                 _primary_desc_html = _html.escape(_primary_desc)
                                 _secondary_desc_html = _html.escape(_secondary_desc)
                                 _secondary_label = "Client language"
+
+                                # If Summarized toggle is on and we have a Gemini summary
+                                # for this condition, render it INSTEAD of the original
+                                # desc, with **bold** converted to HTML <b>.
+                                if _summary_on:
+                                    _smap = st.session_state.get(_summary_map_key, {})
+                                    _sum_desc = str(_smap.get(_orig_desc) or "").strip()
+                                    if _sum_desc:
+                                        _esc = _html.escape(_sum_desc)
+                                        # Convert **bold** to <b>bold</b>
+                                        _primary_desc_html = _re_desc.sub(
+                                            r"\*\*(.+?)\*\*",
+                                            r"<b style='color:#ffffff;'>\1</b>",
+                                            _esc,
+                                        )
 
                                 _desc_html = (
                                     f'<div style="font-size:13px;line-height:1.38;padding:1px 0 4px;">'

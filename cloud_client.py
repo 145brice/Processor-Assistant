@@ -1159,3 +1159,98 @@ def translate_conditions_to_plain(descriptions: list[str], api_key_override: str
         return cleaned, _log("CLOUD", "translate_plain", f"{len(cleaned)} translated - gemini - {model}")
     except Exception as e:
         return list(descriptions), _log("SCRIPT", "translate_plain", _friendly_cloud_error(e))
+
+
+def translate_conditions_to_summarized(descriptions: list[str], api_key_override: str = "") -> tuple[list[str], str]:
+    """Summarize each condition into '**Short Subject** - one short instruction'.
+    Returns (summarized_list_same_length, log_line). Falls back to originals on error."""
+    if not descriptions:
+        return [], _log("SCRIPT", "translate_summary", "Empty input")
+
+    if api_key_override:
+        api_key = api_key_override
+        model = DEFAULT_MODELS["gemini"]
+    else:
+        cfg = get_config()
+        if cfg.get("provider") == "gemini" and cfg.get("api_key"):
+            api_key = cfg["api_key"]
+            model = cfg.get("model") or DEFAULT_MODELS["gemini"]
+        else:
+            api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
+            model = DEFAULT_MODELS["gemini"]
+    if not api_key:
+        return list(descriptions), _log("SCRIPT", "translate_summary", "No Gemini key")
+
+    system = (
+        "You compress mortgage underwriting conditions into the exact bullet "
+        "format a senior loan processor uses when emailing clients. Each item "
+        "is one line: a bold short subject (1-3 words), then ' - ', then ONE "
+        "short specific instruction. Preserve every fact, dollar amount, date, "
+        "address, and document name. Drop industry jargon and acronyms."
+    )
+    numbered_input = "\n".join(f"{i+1}. {d}" for i, d in enumerate(descriptions))
+    prompt = (
+        "Compress each condition into the EXACT format below. This is how a "
+        "senior loan processor writes to clients.\n\n"
+        "OUTPUT FORMAT (one line per item):\n"
+        "  **Short Subject** - one short specific instruction\n\n"
+        "Subject rules:\n"
+        "  * 1-3 words, Title Case, surrounded by ** ** for bold.\n"
+        "  * Use the actual topic, not the acronym. Examples:\n"
+        "      Appraisal, Earnest Money, Bank Statement, SSN/W2, Employment,\n"
+        "      Homeowners Insurance, Lead Based Paint, Anti Steering, Title,\n"
+        "      Payoff, Tax Bill, Statement, Invoice, Funds to Close,\n"
+        "      Letter of Explanation, Motivation Letter, Closing Disclosure,\n"
+        "      Verification of Mortgage, Gift Funds, ID, Driver's License.\n"
+        "  * For property-specific items use the street part of the address as\n"
+        "    the subject, e.g. '18111 Wildemere'.\n\n"
+        "Body rules:\n"
+        "  * ONE short sentence. No fluff. No 'In order to' / 'Please be advised'.\n"
+        "  * Keep every fact: amounts, dates, addresses, document names.\n"
+        "  * Drop section tags like [PTD-1], [PTF-1], [AC-1].\n"
+        "  * Replace acronyms: VOM = mortgage payment history, LQI = loan\n"
+        "    quality re-check, LOE = letter of explanation, SLR = second-level\n"
+        "    review, VOE/WVOE = employer verification, 4506C = IRS income\n"
+        "    verification form, HOI = homeowner's insurance, CTC = clear-to-close,\n"
+        "    CD = closing disclosure, AKA = former / also-known-as name.\n"
+        "  * Use ALL CAPS sparingly for emphasis: 'ALL PAGES EVEN BLANK'.\n\n"
+        "Real examples to model on:\n"
+        "  **Appraisal** - Watch for a link from a third party asking for credit "
+        "card payment for the appraisal.\n"
+        "  **Earnest Money** - Copy of the earnest money check plus full month "
+        "bank statement (ALL PAGES EVEN BLANK) showing the clearance.\n"
+        "  **Bank Statement** - Re-send the Westex statement - page 2 was cut off.\n"
+        "  **SSN/W2** - Copy of your Social Security Card OR most recent W2.\n"
+        "  **Employment** - 2021 & 2022 year-end pay stubs plus an HR or "
+        "direct-manager contact for the employment verification.\n"
+        "  **Lead Based Paint** - eSign the updated disclosure - box D needs "
+        "to be checked.\n\n"
+        "Output ONLY a JSON array of strings, same order, same length as input.\n\n"
+        f"Input:\n{numbered_input}\n\n"
+        'Format: ["**Subject** - body", "**Subject** - body", ...]'
+    )
+
+    try:
+        payload = json.dumps({
+            "system_instruction": {"parts": [{"text": system}]},
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": 0.2, "maxOutputTokens": 8192},
+        }).encode("utf-8")
+        url = GEMINI_ENDPOINT.format(model=model, key=api_key)
+        req = urllib.request.Request(url, data=payload,
+                                     headers={"Content-Type": "application/json"},
+                                     method="POST")
+        with urllib.request.urlopen(req, timeout=60) as resp:
+            data = json.loads(resp.read().decode("utf-8"))
+        txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        if txt.startswith("```"):
+            txt = re.sub(r"^```(?:json)?\s*", "", txt)
+            txt = re.sub(r"\s*```$", "", txt).strip()
+        out = json.loads(txt)
+        if not isinstance(out, list) or len(out) != len(descriptions):
+            return list(descriptions), _log("CLOUD", "translate_summary",
+                                            f"Length mismatch: got {len(out) if isinstance(out, list) else '?'} expected {len(descriptions)}")
+        cleaned = [str(s).strip() or descriptions[i] for i, s in enumerate(out)]
+        return cleaned, _log("CLOUD", "translate_summary", f"{len(cleaned)} summarized - gemini - {model}")
+    except Exception as e:
+        return list(descriptions), _log("SCRIPT", "translate_summary", _friendly_cloud_error(e))
