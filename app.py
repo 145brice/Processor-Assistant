@@ -2000,6 +2000,72 @@ def _normalize_contact_value(value) -> dict:
     return {}
 
 
+def _normalize_title_contact(*sources) -> dict:
+    """Return a title contact from any scan/contact shape we recognize."""
+    out = {}
+    for source in sources:
+        if not source:
+            continue
+        if isinstance(source, str):
+            source = {"company": source}
+        if not isinstance(source, dict):
+            continue
+        company = (
+            source.get("company")
+            or source.get("title_company")
+            or source.get("name")
+            or source.get("settlement_agent")
+            or source.get("escrow_company")
+            or ""
+        )
+        contact = source.get("contact") or source.get("contact_name") or source.get("agent") or ""
+        phone = source.get("phone") or source.get("contact_phone") or ""
+        email = source.get("email") or source.get("contact_email") or ""
+        if company and not out.get("company"):
+            out["company"] = company
+        if contact and not out.get("contact"):
+            out["contact"] = contact
+        if phone and not out.get("phone"):
+            out["phone"] = phone
+        if email and not out.get("email"):
+            out["email"] = email
+    return {k: v for k, v in out.items() if str(v).strip()}
+
+
+def _title_contact_from_scan_result(scan_result: dict) -> dict:
+    if not isinstance(scan_result, dict):
+        return {}
+    extracted = scan_result.get("extracted_data") or {}
+    contacts = scan_result.get("contacts") or {}
+    return _normalize_title_contact(
+        extracted.get("title"),
+        extracted.get("title_company"),
+        extracted.get("settlement_agent"),
+        contacts.get("title"),
+        contacts.get("title_company"),
+        contacts.get("settlement_agent"),
+    )
+
+
+def _merge_title_contact_into_contacts(contacts: dict, title_contact: dict) -> dict:
+    contacts = dict(contacts or {})
+    title_contact = _normalize_title_contact(title_contact)
+    if not title_contact:
+        return contacts
+    existing = _normalize_title_contact(
+        contacts.get("title"),
+        contacts.get("title_company"),
+        contacts.get("settlement_agent"),
+    )
+    merged = dict(existing)
+    for key, value in title_contact.items():
+        if value and not merged.get(key):
+            merged[key] = value
+    contacts["title"] = merged
+    contacts["title_company"] = merged
+    return contacts
+
+
 def _clean_display_text(value) -> str:
     text = str(value or "")
     replacements = {
@@ -4105,6 +4171,7 @@ def show_dashboard():
                                 _existing_contacts = _existing_loan.get("contacts", {})
                                 _new_conds = _normalize_scanned_conditions(_r.get("conditions", []))
                                 _new_contacts = _r.get("contacts", {}) or {}
+                                _pc_title_contact = _title_contact_from_scan_result(_r)
                                 _upd = {}
                                 _added = 0
                                 # Merge conditions (approval letters, checklists, etc.)
@@ -4114,6 +4181,7 @@ def show_dashboard():
                                 _upd["conditions"] = _existing_conds
                                 # Merge contacts
                                 _existing_contacts.update({k: v for k, v in _new_contacts.items() if v})
+                                _existing_contacts = _merge_title_contact_into_contacts(_existing_contacts, _pc_title_contact)
                                 _upd["contacts"] = _existing_contacts
                                 # Purchase contract extras closing date, transaction data
                                 if _batch["type"] == "Purchase Contract":
@@ -4124,10 +4192,10 @@ def show_dashboard():
                                         _upd["due_date"] = _txn["closing_date"]
                                     # Also merge listing/selling agents into contacts
                                     for _ak, _av in [("listing_agent", _pcd.get("listing_agent", {})),
-                                                     ("selling_agent", _pcd.get("selling_agent", {})),
-                                                     ("title", _pcd.get("title", {}))]:
+                                                     ("selling_agent", _pcd.get("selling_agent", {}))]:
                                         if _av and any(v for v in _av.values()):
                                             _existing_contacts[_ak] = _av
+                                    _existing_contacts = _merge_title_contact_into_contacts(_existing_contacts, _pc_title_contact)
                                     _upd["contacts"] = _existing_contacts
                                     _msg = f"Purchase Contract merged contacts & dates updated"
                                 else:
@@ -4848,7 +4916,7 @@ def show_dashboard():
                     _txn = (_r.get("extracted_data") or {}).get("transaction", {})
                     _la_info = (_r.get("extracted_data") or {}).get("listing_agent", {})
                     _sa_info = (_r.get("extracted_data") or {}).get("selling_agent", {})
-                    _title_info = (_r.get("extracted_data") or {}).get("title", {})
+                    _title_info = _title_contact_from_scan_result(_r)
                     _rows = []
                     if _txn.get("date_signed"):        _rows.append(("Date Signed", _txn["date_signed"]))
                     if _txn.get("obligation_date"):    _rows.append(("Obligation/Approval Date", _txn["obligation_date"]))
@@ -6544,7 +6612,11 @@ def show_pipeline():
                             )
                     except FileNotFoundError:
                         pass
-                _rc = _pl_contacts.get("title") or {}
+                _rc = _normalize_title_contact(
+                    _pl_contacts.get("title"),
+                    _pl_contacts.get("title_company"),
+                    _pl_contacts.get("settlement_agent"),
+                )
                 if isinstance(_rc, str): _rc = {"name": _rc}
                 _name = _rc.get("contact") or _rc.get("name") or _rc.get("company") or ""
                 _phone, _email = _rc.get("phone", ""), _rc.get("email", "")
@@ -10041,15 +10113,22 @@ def show_loan_detail():
         unsafe_allow_html=True,
     )
     if _contacts:
+        _contacts = _merge_title_contact_into_contacts(_contacts, _normalize_title_contact(
+            _contacts.get("title"),
+            _contacts.get("title_company"),
+            _contacts.get("settlement_agent"),
+        ))
         from crm import PARTY_COLORS as _PC2
         _party_labels = {
             "buyer": "Buyer / Borrower", "borrower": "Borrower", "co_borrower": "Co-Borrower",
             "seller": "Seller", "listing_agent": "Listing Agent", "selling_agent": "Selling Agent",
-            "title": "Title Company", "employer": "Employer",
+            "title": "Title Company", "title_company": "Title Company", "employer": "Employer",
         }
         import urllib.parse as _uparse2
         _contact_html = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
         for _ck, _cv in _contacts.items():
+            if _ck == "title_company" and _contacts.get("title"):
+                continue
             _cv = _normalize_contact_value(_cv)
             if not _cv:
                 continue
@@ -10185,7 +10264,11 @@ def show_loan_detail():
                 _pc_seller = _pcd.get("seller", {})
                 _pc_la = _pcd.get("listing_agent", {})
                 _pc_sa = _pcd.get("selling_agent", {})
-                _pc_title = _pcd.get("title", {})
+                _pc_title = _normalize_title_contact(
+                    _pcd.get("title"),
+                    _pcd.get("title_company"),
+                    _pcd.get("settlement_agent"),
+                )
                 _pc_txn = _pcd.get("transaction", {})
 
                 _pc_rows = [
@@ -10229,16 +10312,21 @@ def show_loan_detail():
                 if st.button("Merge contacts into this loan", key=f"detail_merge_pc_{lid}",
                              use_container_width=True):
                     _new_contacts = dict(_contacts)  # existing contacts
+                    _pc_title_contact = _normalize_title_contact(
+                        _pc_title,
+                        _pcd.get("title_company"),
+                        _pcd.get("settlement_agent"),
+                    )
                     _pc_map = {
                         "buyer": {"name": _pc_buyer.get("name",""), "phone": _pc_buyer.get("phone",""), "email": _pc_buyer.get("email","")},
                         "seller": {"name": _pc_seller.get("name",""), "phone": _pc_seller.get("phone","")},
                         "listing_agent": {"name": _pc_la.get("name",""), "brokerage": _pc_la.get("brokerage",""), "phone": _pc_la.get("phone",""), "email": _pc_la.get("email","")},
                         "selling_agent": {"name": _pc_sa.get("name",""), "brokerage": _pc_sa.get("brokerage",""), "phone": _pc_sa.get("phone",""), "email": _pc_sa.get("email","")},
-                        "title": {"company": _pc_title.get("company",""), "contact": _pc_title.get("contact",""), "phone": _pc_title.get("phone","")},
                     }
                     for _pk, _pv in _pc_map.items():
                         if any(str(v).strip() for v in _pv.values()):
                             _new_contacts[_pk] = _pv
+                    _new_contacts = _merge_title_contact_into_contacts(_new_contacts, _pc_title_contact)
                     # Also update closing date if found and not already set
                     _upd = {"contacts": _new_contacts}
                     if _pc_txn.get("closing_date") and not _closing:
