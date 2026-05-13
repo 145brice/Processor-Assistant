@@ -2019,12 +2019,32 @@ def _render_trial_gate(profile: dict) -> None:
 
 
 # Keyword routing for condition responsibility.
-# Third-party / non-borrower keywords win first — they identify documents or
-# actions that a specific party owns (Title, Appraiser, Insurance, etc.).
-# Borrower-action keywords are checked second for items the borrower must
-# personally sign/provide/explain. Anything unmatched defaults to Borrower.
+# Checked top to bottom. Earlier entries win, so put narrow/specific keywords
+# (like "copy of the appraisal invoice" → Processor) BEFORE broader ones
+# (like "appraisal" → Appraiser). Same applies to borrower-action overrides:
+# "proof of paid appraisal" lands in Borrower's list, not Appraiser.
 _PARTY_KEYWORDS_THIRD_PARTY = [
-    # (party, [keywords - must appear in lowercased condition text])
+    # Highest precedence: explicit borrower-paid receipts (must come first so
+    # "appraisal" doesn't shunt them to Appraiser).
+    ("Borrower", [
+        "proof of paid", "proof of pay", "paid by borrower",
+        "borrower paid", "paid outside closing", " poc ", " poc.",
+        "homebuyer education", "homebuyer class", "homebuyer course",
+        "fannie mae class", "freddie mac class", "fnma class", "fhlmc class",
+        "framework class", "counseling certificate", "education certificate",
+        "course completion",
+    ]),
+    # Loan-processor internal tasks (must come before Appraiser/Underwriter
+    # so "copy of the appraisal invoice" routes here, not to Appraiser).
+    ("Processor", [
+        "copy of the appraisal invoice", "copy of the credit report invoice",
+        "copy of the verification of employment invoice",
+        "copy of the voe invoice", "copy of the invoice", "fee sheet",
+        "broker to ", "broker has ", "fha case", "case number assignment",
+        "case # transferred", "case transferred", "case query",
+        "transferred to uwm", "sponsor id", "business tax id",
+        "corp to obtain", "internal lock", "fha connection",
+    ]),
     ("Appraiser", [
         "appraisal", "appraiser", "1004d", "1004 ", "1004-d",
         "property inspection", "property valuation", "final inspection",
@@ -2059,14 +2079,6 @@ _PARTY_KEYWORDS_THIRD_PARTY = [
         "pmi approval", "pmi coverage", " pmi ", "mi approval", "mi coverage",
         "max interest rate", "interest rate not to exceed", "rate lock",
         "max piti", "max ltv", "max dti", "max cltv",
-        # Broker / lender internal tasks — not borrower's job
-        "broker to ", "broker has ", "fha case", "case number assignment",
-        "case # transferred", "case transferred", "case query",
-        "transferred to uwm", "sponsor id", "business tax id",
-        "corp to obtain", "internal lock", "fha connection",
-        "copy of the appraisal invoice", "copy of the credit report invoice",
-        "copy of the verification of employment invoice",
-        "copy of the voe invoice", "copy of the invoice", "fee sheet",
     ]),
     ("Employer", [
         "verbal verification of employment", "written verification of employment",
@@ -4129,8 +4141,8 @@ def show_dashboard():
                     st.markdown('<div class="pa-section">Conditions</div>', unsafe_allow_html=True)
                     _PARTY_OPTS_SCAN = [
                         "Borrower", "Co-Borrower", "Title", "Realtor", "Seller",
-                        "Underwriter", "Jr Underwriter", "Loan Officer", "Closer",
-                        "Insurance", "Appraiser", "Employer", "Manager",
+                        "Processor", "Underwriter", "Jr Underwriter", "Loan Officer",
+                        "Closer", "Insurance", "Appraiser", "Employer", "Manager",
                     ]
                     _COND_STATS_SCAN = ["Needed", "Requested", "Important", "Ready to Clear", "Cleared"]
 
@@ -4144,7 +4156,7 @@ def show_dashboard():
                     _SECTION_ORDER_SCAN = [
                         "Borrower", "Title", "Insurance", "Appraiser",
                         "Employer", "Realtor", "Seller", "Closer",
-                        "Underwriter",
+                        "Processor", "Underwriter",
                     ]
                     _SECTION_LABEL_SCAN = {
                         "Borrower": "Client Conditions",
@@ -4155,6 +4167,7 @@ def show_dashboard():
                         "Realtor": "Realtor Conditions",
                         "Seller": "Seller Conditions",
                         "Closer": "Closer Conditions",
+                        "Processor": "Processor Conditions",
                         "Underwriter": "Underwriting Conditions",
                     }
                     _SEND_LABEL_SCAN = {
@@ -4166,6 +4179,7 @@ def show_dashboard():
                         "Realtor": "Send to Realtor",
                         "Seller": "Send to Seller",
                         "Closer": "Send to Closer",
+                        "Processor": "Send to Processor",
                         "Underwriter": "Send to Underwriter",
                     }
                     _SECTION_CONTACT_KEYS_SCAN = {
@@ -4177,7 +4191,8 @@ def show_dashboard():
                         "Realtor": ["selling_agent", "listing_agent", "realtor", "agent"],
                         "Seller": ["seller"],
                         "Closer": ["closer", "title", "settlement_agent"],
-                        "Underwriter": ["underwriter", "loan_officer", "processor"],
+                        "Processor": ["processor", "loan_processor"],
+                        "Underwriter": ["underwriter", "loan_officer"],
                     }
 
                     def _scan_contact_email_for_section(_section_party):

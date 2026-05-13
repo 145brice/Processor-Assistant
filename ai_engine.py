@@ -553,6 +553,15 @@ _GUESS_PARTY_THIRD = [
         "fund release", "wire authorization", "closing agent",
         "closer to confirm", "closer to provide",
     ]),
+    ("Processor", [
+        "copy of the appraisal invoice", "copy of the credit report invoice",
+        "copy of the verification of employment invoice",
+        "copy of the voe invoice", "copy of the invoice", "fee sheet",
+        "broker to ", "broker has ", "fha case", "case number assignment",
+        "case # transferred", "case transferred", "case query",
+        "transferred to uwm", "sponsor id", "business tax id",
+        "corp to obtain", "internal lock", "fha connection",
+    ]),
     ("Underwriter", [
         "underwriting review", "underwriter approval", "underwriter review",
         "compliance review", "lender requirements", "investor guidelines",
@@ -561,14 +570,6 @@ _GUESS_PARTY_THIRD = [
         "pmi approval", "pmi coverage", " pmi ", "mi approval", "mi coverage",
         "max interest rate", "interest rate not to exceed", "rate lock",
         "max piti", "max ltv", "max dti", "max cltv",
-        # Broker / lender internal tasks — not borrower's job
-        "broker to ", "broker has ", "fha case", "case number assignment",
-        "case # transferred", "case transferred", "case query",
-        "transferred to uwm", "sponsor id", "business tax id",
-        "corp to obtain", "internal lock", "fha connection",
-        "copy of the appraisal invoice", "copy of the credit report invoice",
-        "copy of the verification of employment invoice",
-        "copy of the voe invoice", "copy of the invoice", "fee sheet",
     ]),
     ("Employer", [
         "verbal verification of employment", "written verification of employment",
