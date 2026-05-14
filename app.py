@@ -6,6 +6,7 @@ Main Streamlit application.
 import os
 import re
 import time
+import html as _html
 import streamlit as st
 from dotenv import load_dotenv
 
@@ -2354,6 +2355,165 @@ def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
         cond["status"] = cond.get("status") or "Needed"
         rows.append(cond)
     return rows
+
+
+def _condition_keywords(desc: str) -> set[str]:
+    text = re.sub(r"[^a-z0-9\s]", " ", str(desc or "").lower())
+    stop = {
+        "the", "and", "for", "with", "that", "this", "from", "into", "your", "have", "has",
+        "will", "must", "need", "needed", "provide", "please", "prior", "before", "after",
+        "loan", "borrower", "co", "copy", "signed", "updated", "form", "letter", "submit",
+    }
+    out = set()
+    for tok in text.split():
+        if len(tok) >= 4 and tok not in stop:
+            out.add(tok)
+    return out
+
+
+def _collect_condition_notes(cond: dict) -> list[str]:
+    notes = []
+    if not isinstance(cond, dict):
+        return notes
+    for key in ("note", "notes", "comment", "comments", "uw_notes", "processor_notes"):
+        val = cond.get(key)
+        if isinstance(val, str) and val.strip():
+            notes.append(val.strip())
+        elif isinstance(val, list):
+            for item in val:
+                s = str(item or "").strip()
+                if s:
+                    notes.append(s)
+    # keep order while removing duplicates
+    return list(dict.fromkeys(notes))
+
+
+def _condition_match_score(old_cond: dict, new_cond: dict) -> tuple[float, str]:
+    old_desc = str((old_cond or {}).get("desc") or "")
+    new_desc = str((new_cond or {}).get("desc") or "")
+    old_type = _client_need_subject(old_desc)
+    new_type = _client_need_subject(new_desc)
+    type_match = old_type == new_type
+
+    old_kw = _condition_keywords(old_desc)
+    new_kw = _condition_keywords(new_desc)
+    overlap = len(old_kw & new_kw)
+    union = len(old_kw | new_kw)
+    jaccard = (overlap / union) if union else 0.0
+
+    # Blend coarse type match + keyword overlap to handle reworded conditions.
+    score = (0.55 if type_match else 0.0) + (0.45 * jaccard)
+    return score, new_type
+
+
+def _build_condition_merge_plan(existing_conditions: list[dict], incoming_conditions: list[dict]) -> dict:
+    from datetime import datetime
+    old_items = [dict(c) for c in (existing_conditions or []) if isinstance(c, dict)]
+    new_items = [dict(c) for c in (incoming_conditions or []) if isinstance(c, dict)]
+    matched = []
+    fresh = []
+    used_old = set()
+
+    for new_cond in new_items:
+        best_idx = None
+        best_score = 0.0
+        best_type = ""
+        for idx, old_cond in enumerate(old_items):
+            if idx in used_old:
+                continue
+            score, ctype = _condition_match_score(old_cond, new_cond)
+            if score > best_score:
+                best_score = score
+                best_idx = idx
+                best_type = ctype
+        if best_idx is not None and best_score >= 0.62:
+            old_cond = old_items[best_idx]
+            used_old.add(best_idx)
+            carried_notes = _collect_condition_notes(old_cond)
+            merged_cond = dict(new_cond)
+            if carried_notes:
+                existing_notes = _collect_condition_notes(merged_cond)
+                merged_cond["notes"] = list(dict.fromkeys(existing_notes + carried_notes))
+            # Carry operational state forward unless new parse explicitly set it.
+            if not merged_cond.get("status") and old_cond.get("status"):
+                merged_cond["status"] = old_cond.get("status")
+            if not merged_cond.get("party") and old_cond.get("party"):
+                merged_cond["party"] = old_cond.get("party")
+            matched.append({
+                "old": old_cond,
+                "new": new_cond,
+                "merged": merged_cond,
+                "condition_type": best_type,
+                "score": best_score,
+                "carried_notes": carried_notes,
+            })
+        else:
+            fresh.append(dict(new_cond))
+
+    final_conditions = []
+    for i, item in enumerate([m["merged"] for m in matched] + fresh, start=1):
+        c = dict(item)
+        c["num"] = str(i)
+        final_conditions.append(c)
+
+    history_entries = []
+    for m in matched:
+        history_entries.append({
+            "archived_at": datetime.now().isoformat(),
+            "reason": "Replaced by newer approval condition",
+            "condition_type": m["condition_type"],
+            "old_condition": m["old"],
+            "replaced_by": m["merged"].get("desc", ""),
+        })
+    for idx, old_cond in enumerate(old_items):
+        if idx in used_old:
+            continue
+        history_entries.append({
+            "archived_at": datetime.now().isoformat(),
+            "reason": "Not present in latest approval scan",
+            "condition_type": _client_need_subject(str(old_cond.get("desc", ""))),
+            "old_condition": old_cond,
+            "replaced_by": "",
+        })
+
+    return {
+        "final_conditions": final_conditions,
+        "matched": matched,
+        "new_only": fresh,
+        "history_entries": history_entries,
+    }
+
+
+def _render_condition_merge_preview(plan: dict, section_key: str) -> None:
+    matched = plan.get("matched", [])
+    new_only = plan.get("new_only", [])
+    archived_only = max(0, len(plan.get("history_entries", [])) - len(matched))
+    st.markdown(
+        f'<div style="background:rgba(59,130,246,0.07);border:1px solid rgba(59,130,246,0.28);border-radius:8px;'
+        f'padding:10px;margin:8px 0;font-size:12px;color:#cbd5e1;">'
+        f'<b style="color:#3b82f6;">Merge Preview:</b> {len(matched)} matched/replaced, '
+        f'{len(new_only)} new, {archived_only} archived-only condition(s)</div>',
+        unsafe_allow_html=True,
+    )
+    if matched:
+        with st.expander("Matched Conditions (new text kept + old notes carried)", expanded=True):
+            for i, m in enumerate(matched, start=1):
+                old_desc = _html.escape(str(m["old"].get("desc", "")))
+                new_desc = _html.escape(str(m["merged"].get("desc", "")))
+                ctype = _html.escape(str(m.get("condition_type", "Condition")))
+                notes = m.get("carried_notes", [])
+                st.markdown(
+                    f'<div style="font-size:12px;color:#d1d5db;margin:6px 0;">'
+                    f'<b style="color:#3b82f6;">#{i} {ctype}</b><br>'
+                    f'<span style="color:#9ca3af;">Old:</span> {old_desc}<br>'
+                    f'<span style="color:#ffffff;">New:</span> {new_desc}<br>'
+                    f'<span style="color:#9ca3af;">Notes carried:</span> {len(notes)}</div>',
+                    unsafe_allow_html=True,
+                )
+    if new_only:
+        with st.expander("Completely New Conditions", expanded=False):
+            for c in new_only:
+                st.markdown(f'- {c.get("desc", "")}')
 
 
 def _to_client_language(desc: str, party: str = "Borrower") -> str:
@@ -10120,6 +10280,32 @@ def show_loan_detail():
         )
 
     # â”€â”€ Parties & Contacts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    _cond_history = loan.get("condition_history", []) or []
+    st.markdown(
+        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+        'letter-spacing:0.5px;margin-top:10px;display:inline-block;">Condition History</span>',
+        unsafe_allow_html=True,
+    )
+    if _cond_history:
+        with st.expander(f"View archived conditions ({len(_cond_history)})", expanded=False):
+            for _h in reversed(_cond_history[-50:]):
+                _h_type = _html.escape(str(_h.get("condition_type", "Condition")))
+                _h_old = _html.escape(str((_h.get("old_condition") or {}).get("desc", "")))
+                _h_new = _html.escape(str(_h.get("replaced_by", "")))
+                _h_when = _html.escape(str(_h.get("archived_at", "")))
+                st.markdown(
+                    f'<div style="font-size:12px;color:#cbd5e1;margin:6px 0;">'
+                    f'<b style="color:#3b82f6;">{_h_type}</b> '
+                    f'<span style="color:#9ca3af;">({_h_when})</span><br>'
+                    f'<span style="color:#9ca3af;">Old:</span> {_h_old}<br>'
+                    f'<span style="color:#ffffff;">Replaced by:</span> {_h_new}</div>',
+                    unsafe_allow_html=True,
+                )
+    else:
+        st.markdown(
+            '<span style="color:#9ca3af;font-size:12px;">No archived conditions yet.</span>',
+            unsafe_allow_html=True,
+        )
     _contacts = loan.get("contacts", {})
     st.markdown(
         '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
@@ -10389,18 +10575,10 @@ def show_loan_detail():
             # â”€â”€ All other doc types â†’ merge conditions â”€â”€
             elif _sr.get("conditions"):
                 _cond_text = _sr["conditions"]
-                _new_conds = []
-                for _cl in _cond_text.split("\n"):
-                    _cl = _cl.strip()
-                    if _cl.startswith("|") and not _cl.startswith("| #") and not _cl.startswith("|--") and not _cl.startswith("|-"):
-                        _cells = [c.strip() for c in _cl.split("|") if c.strip()]
-                        if len(_cells) >= 4:
-                            _new_conds.append({
-                                "num": _cells[0], "desc": _cells[1],
-                                "party": _cells[2], "status": _cells[3],
-                            })
+                _new_conds = _normalize_scanned_conditions(_cond_text)
 
                 if _new_conds:
+                    _merge_plan = _build_condition_merge_plan(_conditions, _new_conds)
                     st.markdown(
                         f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);border-radius:8px;'
                         f'padding:10px;margin:8px 0;font-size:12px;color:#9ca3af;">'
@@ -10417,20 +10595,29 @@ def show_loan_detail():
                             unsafe_allow_html=True,
                         )
 
-                    if st.button("Merge conditions into this loan", key=f"detail_merge_conds_{lid}",
+                    _render_condition_merge_preview(_merge_plan, f"detail_{lid}")
+
+                    if st.button("Approve & apply condition merge", key=f"detail_merge_conds_{lid}",
                                  use_container_width=True):
-                        _existing = list(_conditions)
-                        _existing_descs = {c.get("desc", "").lower().strip() for c in _existing}
-                        _added = 0
-                        for _nc in _new_conds:
-                            if _nc["desc"].lower().strip() not in _existing_descs:
-                                _nc["num"] = str(len(_existing) + 1)
-                                _existing.append(_nc)
-                                _added += 1
-                        update_loan(lid, conditions=_existing)
-                        log_activity(lid, "upload", f"{_sr_dtype} scanned {_added} condition(s) added", user=my_name)
+                        _hist = list(loan.get("condition_history", []) or [])
+                        _hist.extend(_merge_plan.get("history_entries", []))
+                        update_loan(
+                            lid,
+                            conditions=_merge_plan.get("final_conditions", []),
+                            condition_history=_hist,
+                        )
+                        log_activity(
+                            lid,
+                            "upload",
+                            (
+                                f"{_sr_dtype} scanned: {len(_merge_plan.get('matched', []))} replaced, "
+                                f"{len(_merge_plan.get('new_only', []))} new, "
+                                f"{len(_merge_plan.get('history_entries', []))} archived"
+                            ),
+                            user=my_name,
+                        )
                         st.session_state.pop(_scan_key, None)
-                        st.toast(f"{_added} condition(s) merged")
+                        st.toast("Condition merge approved and applied")
                         st.rerun()
                 else:
                     st.info("No conditions extracted from this document.")
@@ -10542,18 +10729,8 @@ def show_loan_detail():
                 st.error(_af_result.get("error", "Could not extract text from this PDF."))
             else:
                 # Parse conditions from the result
-                _af_conds = []
                 _af_cond_text = _af_result.get("conditions", "")
-                for _cl in _af_cond_text.split("\n"):
-                    _cl = _cl.strip()
-                    if _cl.startswith("|") and not _cl.startswith("| #") and not _cl.startswith("|--") and not _cl.startswith("|-"):
-                        _cells = [c.strip() for c in _cl.split("|") if c.strip()]
-                        if len(_cells) >= 4:
-                            _af_conds.append({
-                                "num": _cells[0], "desc": _cells[1],
-                                "party": _cells[2], "status": _cells[3],
-                                "confidence": _cells[4] if len(_cells) >= 5 else "",
-                            })
+                _af_conds = _normalize_scanned_conditions(_af_cond_text)
 
                 # Extract commitment/approval expiration date
                 _af_commit_date = ""
@@ -10759,55 +10936,58 @@ def show_loan_detail():
 
                     # Merge button push conditions + found/missing status into the loan
                     st.markdown("---")
+                    _af_merge_plan = _build_condition_merge_plan(_conditions, _af_conds)
+                    _render_condition_merge_preview(_af_merge_plan, f"af_{lid}")
                     _mc1, _mc2 = st.columns([1, 1])
                     with _mc1:
-                        if st.button("Merge conditions into this loan", key=f"af_merge_{lid}",
+                        if st.button("Approve & apply merge (+folder status)", key=f"af_merge_{lid}",
                                      use_container_width=True, type="primary"):
-                            _existing = list(_conditions)
-                            _existing_descs = {c.get("desc", "").lower().strip() for c in _existing}
-                            _added = 0
-                            for _c in _af_conds:
-                                if _c["desc"].lower().strip() not in _existing_descs:
-                                    _c_copy = dict(_c)
-                                    _c_copy["num"] = str(len(_existing) + 1)
-                                    # Mark found ones as "Ready to Clear"
-                                    _found_nums = {c["num"] for c, _ in _af_found}
-                                    if _c["num"] in _found_nums:
-                                        _c_copy["status"] = "Ready to Clear"
-                                    else:
-                                        _c_copy["status"] = "Needed"
-                                    _existing.append(_c_copy)
-                                    _added += 1
+                            _found_descs = {
+                                str(c.get("desc", "")).strip().lower()
+                                for c, _matches in _af_found
+                            }
+                            _final = []
+                            for _c in _af_merge_plan.get("final_conditions", []):
+                                _copy = dict(_c)
+                                _d = str(_copy.get("desc", "")).strip().lower()
+                                _copy["status"] = "Ready to Clear" if _d in _found_descs else "Needed"
+                                _final.append(_copy)
                             # Update missing docs list from missing conditions
                             _miss_list = [c["desc"][:60] for c in _af_missing]
                             _miss_str = ", ".join(_miss_list) if _miss_list else ""
-                            update_loan(lid, conditions=_existing, missing_docs=_miss_str)
+                            _hist = list(loan.get("condition_history", []) or [])
+                            _hist.extend(_af_merge_plan.get("history_entries", []))
+                            update_loan(
+                                lid,
+                                conditions=_final,
+                                missing_docs=_miss_str,
+                                condition_history=_hist,
+                            )
                             log_activity(lid, "upload",
-                                f"Approval letter scanned {_added} condition(s) merged, "
+                                f"Approval letter merge approved: {len(_af_merge_plan.get('matched', []))} replaced, "
+                                f"{len(_af_merge_plan.get('new_only', []))} new, "
                                 f"{len(_af_found)} found, {len(_af_missing)} missing",
                                 user=my_name)
                             st.session_state.pop(_af_key, None)
-                            st.toast(f"{_added} conditions merged into loan")
+                            st.toast("Approval merge applied")
                             st.rerun()
                     with _mc2:
-                        if st.button("Merge conditions only (skip folder results)",
+                        if st.button("Approve & apply merge only",
                                      key=f"af_merge_conds_only_{lid}",
                                      use_container_width=True):
-                            _existing = list(_conditions)
-                            _existing_descs = {c.get("desc", "").lower().strip() for c in _existing}
-                            _added = 0
-                            for _c in _af_conds:
-                                if _c["desc"].lower().strip() not in _existing_descs:
-                                    _c_copy = dict(_c)
-                                    _c_copy["num"] = str(len(_existing) + 1)
-                                    _existing.append(_c_copy)
-                                    _added += 1
-                            update_loan(lid, conditions=_existing)
+                            _hist = list(loan.get("condition_history", []) or [])
+                            _hist.extend(_af_merge_plan.get("history_entries", []))
+                            update_loan(
+                                lid,
+                                conditions=_af_merge_plan.get("final_conditions", []),
+                                condition_history=_hist,
+                            )
                             log_activity(lid, "upload",
-                                f"Approval letter scanned {_added} condition(s) merged",
+                                f"Approval letter merge approved: {len(_af_merge_plan.get('matched', []))} replaced, "
+                                f"{len(_af_merge_plan.get('new_only', []))} new",
                                 user=my_name)
                             st.session_state.pop(_af_key, None)
-                            st.toast(f"{_added} conditions merged")
+                            st.toast("Approval merge applied")
                             st.rerun()
 
                 elif _af_scan_res and _af_scan_res.get("error"):
