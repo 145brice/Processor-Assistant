@@ -11270,18 +11270,112 @@ def show_persistent_header():
     )
 
 
+def render_site_footer() -> None:
+    st.markdown("---")
+    st.markdown(
+        """
+        <div style="text-align:center;font-size:12px;color:#9ca3af;padding:6px 0 16px 0;">
+          <a href="?page=privacy" style="color:#93c5fd;text-decoration:none;">Privacy Policy</a>
+          &nbsp;|&nbsp;
+          <a href="?page=terms" style="color:#93c5fd;text-decoration:none;">Terms of Service</a>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def show_privacy_policy_page() -> None:
+    st.title("Privacy Policy")
+    st.caption("Last updated: May 16, 2026")
+    st.markdown(
+        """
+### What we collect
+- Your account email.
+- Loan files you upload to process.
+- Borrower information inside those loan files.
+
+### Where data is stored
+- We use Supabase for cloud data storage and authentication.
+- Some temporary/local processing data may also exist on the app host for app operation and troubleshooting.
+
+### How long we keep data
+- We keep account and operational data while your account is active.
+- We keep loan-processing data only as long as needed to provide the service, support your workflow, and meet legal or compliance needs.
+- You can request deletion of your data, subject to legal retention requirements.
+
+### We do not sell your data
+- We do not sell personal data to third parties.
+
+### GDPR and CCPA basics
+- You can request access to your personal data.
+- You can request correction or deletion where legally allowed.
+- You can request information about how your data is used.
+- CCPA users can request disclosure and deletion rights where applicable.
+
+### Privacy questions
+- Email us at: privacy@processorassistant.com
+
+This policy is written in plain language to help you understand how your information is handled.
+        """
+    )
+
+
+def show_terms_page() -> None:
+    st.title("Terms of Service")
+    st.caption("Last updated: May 16, 2026")
+    st.markdown(
+        """
+### Your responsibilities
+- Use Processor Assistant only for files and data you are authorized to handle.
+- Keep your account credentials secure.
+- Provide accurate information when using the service.
+
+### Data usage limits
+- Use the app for legitimate mortgage-processing and related business workflows.
+- Do not upload unlawful content or content that violates privacy, copyright, or confidentiality rules.
+
+### Acceptable use policy
+- Do not attempt to break, probe, or reverse engineer the service.
+- Do not abuse APIs, bypass limits, or interfere with service availability.
+- Do not use the service to send spam, malware, or fraudulent content.
+
+### Liability disclaimers
+- The service is provided "as is" without guarantees of uninterrupted operation.
+- You remain responsible for final review and compliance decisions on loan files and borrower communications.
+- To the fullest extent allowed by law, Processor Assistant is not liable for indirect or consequential damages.
+
+By using Processor Assistant, you agree to these terms.
+        """
+    )
+
+
 def main():
     _handle_google_oauth_callback()
+    _qp_page = st.query_params.get("page", "")
+    if isinstance(_qp_page, list):
+        _qp_page = _qp_page[0] if _qp_page else ""
+    _qp_page = str(_qp_page or "").strip().lower()
+    if _qp_page == "privacy":
+        show_privacy_policy_page()
+        render_site_footer()
+        return
+    if _qp_page == "terms":
+        show_terms_page()
+        render_site_footer()
+        return
+
     if not st.session_state.authenticated:
         # If user explicitly logged out, show login once, then stop forcing it.
         if st.session_state.get("force_login", False):
             st.session_state.force_login = False
             show_login_page()
+            render_site_footer()
             return
         if _AUTO_ENTER_SANDBOX:
             _enter_sandbox(page="dashboard")
             st.rerun()
         show_login_page()
+        render_site_footer()
     else:
         _load_user_gemini_key_into_session()
         _profile = _user_trial_profile()
@@ -11289,10 +11383,8 @@ def main():
             show_sidebar()
             show_persistent_header()
             _render_trial_gate(_profile)
+            render_site_footer()
             return
-        _qp_page = st.query_params.get("page", "")
-        if isinstance(_qp_page, list):
-            _qp_page = _qp_page[0] if _qp_page else ""
         if _qp_page:
             st.session_state.page = str(_qp_page)
         show_sidebar()
@@ -11367,6 +11459,7 @@ def main():
             show_escrow_calculator_page()
         else:
             show_dashboard()
+        render_site_footer()
 
 
 if __name__ == "__main__":
