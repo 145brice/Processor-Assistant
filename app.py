@@ -3427,6 +3427,35 @@ def show_sidebar():
                 _save_session()
                 st.rerun()
 
+            # Private owner-only user counter (hidden from all other users).
+            _admin_emails = {
+                e.strip().lower()
+                for e in str(os.getenv("PA_PRIVATE_ADMIN_EMAILS", "")).split(",")
+                if e.strip()
+            }
+            _current_email = str(st.session_state.get("user_email") or "").strip().lower()
+            if _admin_emails and _current_email in _admin_emails:
+                st.markdown("---")
+                st.markdown("**Private Usage Counter**")
+                _presence_window = int(os.getenv("PA_ACTIVE_WINDOW_MINUTES", "15") or "15")
+                _active_now = 0
+                _total_users = 0
+                try:
+                    import supabase_auth as _sa
+                    _counts = _sa.get_user_presence_counts(active_window_minutes=_presence_window)
+                    _active_now = int(_counts.get("active_now") or 0)
+                    _total_users = int(_counts.get("total_users") or 0)
+                except Exception:
+                    _counts = {"ok": False}
+                if _total_users <= 0:
+                    try:
+                        from db import get_all_users as _gau
+                        _total_users = len(_gau() or [])
+                    except Exception:
+                        _total_users = 0
+                st.caption(f"Active now ({_presence_window}m): {_active_now}")
+                st.caption(f"Total users: {_total_users}")
+
         # Logout always visible
         st.markdown("---")
         if st.button("Logout", use_container_width=True):

@@ -591,3 +591,60 @@ def _upsert_setting(url: str, api_key: str, payload: dict) -> bool:
     req.add_header("Prefer", "resolution=merge-duplicates")
     with urllib.request.urlopen(req, timeout=20):
         return True
+
+
+def get_user_presence_counts(active_window_minutes: int = 15) -> dict:
+    """Return total profiles and 'active now' users based on last_seen_at."""
+    try:
+        api_key = _service_key() or _public_key()
+        if not _supabase_url() or not api_key:
+            return {"ok": False, "error": "Supabase not configured.", "total_users": 0, "active_now": 0}
+
+        params = urllib.parse.urlencode({
+            "key": "like.user_profile:%",
+            "select": "key,value_json",
+        })
+        url = f"{_supabase_url()}/rest/v1/settings?{params}"
+        result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
+        if not result.get("ok"):
+            return {"ok": False, "error": _settings_table_error(result.get("data") or {}), "total_users": 0, "active_now": 0}
+
+        rows = result.get("data") or []
+        now = datetime.now(timezone.utc)
+        cutoff_seconds = max(1, int(active_window_minutes)) * 60
+        total_users = 0
+        active_now = 0
+
+        for row in rows:
+            key = str(row.get("key", ""))
+            if not key.startswith("user_profile:"):
+                continue
+            total_users += 1
+            raw = row.get("value_json") or {}
+            if isinstance(raw, str):
+                try:
+                    raw = json.loads(raw)
+                except Exception:
+                    raw = {}
+            if not isinstance(raw, dict):
+                continue
+            last_seen = str(raw.get("last_seen_at") or "").strip()
+            if not last_seen:
+                continue
+            try:
+                seen_at = datetime.fromisoformat(last_seen.replace("Z", "+00:00"))
+                if seen_at.tzinfo is None:
+                    seen_at = seen_at.replace(tzinfo=timezone.utc)
+                if (now - seen_at).total_seconds() <= cutoff_seconds:
+                    active_now += 1
+            except Exception:
+                continue
+
+        return {
+            "ok": True,
+            "total_users": total_users,
+            "active_now": active_now,
+            "window_minutes": int(active_window_minutes),
+        }
+    except Exception as e:
+        return {"ok": False, "error": str(e), "total_users": 0, "active_now": 0}
