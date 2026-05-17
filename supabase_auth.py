@@ -175,6 +175,10 @@ def _profile_key(user_key: str) -> str:
     return f"user_profile:{user_key}"
 
 
+def _browser_session_key(session_id: str) -> str:
+    return f"browser_session:{session_id}"
+
+
 def _current_user_email() -> str:
     try:
         import streamlit as st
@@ -593,8 +597,58 @@ def _upsert_setting(url: str, api_key: str, payload: dict) -> bool:
         return True
 
 
+def save_browser_session(session_id: str, auth_data: dict, *, user_email: str = "") -> dict:
+    """Persist a browser session auth snapshot for deploy-safe restores."""
+    session_id = str(session_id or "").strip()
+    if not session_id:
+        return {"ok": False, "error": "Missing session id."}
+    payload = dict(auth_data or {})
+    payload["saved_at"] = datetime.now(timezone.utc).isoformat()
+    return _save_setting_json(
+        _browser_session_key(session_id),
+        payload,
+        user_key=session_id,
+        user_email=(user_email or payload.get("user_email") or "").strip().lower(),
+    )
+
+
+def load_browser_session(session_id: str, *, max_age_days: int = 30) -> dict:
+    """Load browser session auth snapshot if not expired."""
+    session_id = str(session_id or "").strip()
+    if not session_id:
+        return {}
+    data = _load_setting_json(_browser_session_key(session_id))
+    if not data:
+        return {}
+    saved_at = str(data.get("saved_at") or "").strip()
+    if saved_at:
+        try:
+            saved_dt = datetime.fromisoformat(saved_at.replace("Z", "+00:00"))
+            if saved_dt.tzinfo is None:
+                saved_dt = saved_dt.replace(tzinfo=timezone.utc)
+            age_days = (datetime.now(timezone.utc) - saved_dt).total_seconds() / 86400.0
+            if age_days > max(1, int(max_age_days)):
+                return {}
+        except Exception:
+            return {}
+    return data if isinstance(data, dict) else {}
+
+
+def clear_browser_session(session_id: str) -> dict:
+    """Invalidate browser session snapshot."""
+    session_id = str(session_id or "").strip()
+    if not session_id:
+        return {"ok": False, "error": "Missing session id."}
+    return _save_setting_json(
+        _browser_session_key(session_id),
+        {},
+        user_key=session_id,
+        user_email="",
+    )
+
+
 def get_user_presence_counts(active_window_minutes: int = 15) -> dict:
-    """Return total profiles and 'active now' users based on last_seen_at."""
+    """Return all-time unique users plus 'active now' based on last_seen_at."""
     try:
         api_key = _service_key() or _public_key()
         if not _supabase_url() or not api_key:
@@ -614,12 +668,15 @@ def get_user_presence_counts(active_window_minutes: int = 15) -> dict:
         cutoff_seconds = max(1, int(active_window_minutes)) * 60
         total_users = 0
         active_now = 0
+        unique_keys = set()
+        unique_emails = set()
 
         for row in rows:
             key = str(row.get("key", ""))
             if not key.startswith("user_profile:"):
                 continue
             total_users += 1
+            unique_keys.add(key.removeprefix("user_profile:"))
             raw = row.get("value_json") or {}
             if isinstance(raw, str):
                 try:
@@ -628,6 +685,9 @@ def get_user_presence_counts(active_window_minutes: int = 15) -> dict:
                     raw = {}
             if not isinstance(raw, dict):
                 continue
+            _email = str(raw.get("email") or raw.get("google_email") or "").strip().lower()
+            if _email:
+                unique_emails.add(_email)
             last_seen = str(raw.get("last_seen_at") or "").strip()
             if not last_seen:
                 continue
@@ -643,8 +703,9 @@ def get_user_presence_counts(active_window_minutes: int = 15) -> dict:
         return {
             "ok": True,
             "total_users": total_users,
+            "all_time_unique_users": len(unique_keys) or len(unique_emails) or total_users,
             "active_now": active_now,
             "window_minutes": int(active_window_minutes),
         }
     except Exception as e:
-        return {"ok": False, "error": str(e), "total_users": 0, "active_now": 0}
+        return {"ok": False, "error": str(e), "total_users": 0, "all_time_unique_users": 0, "active_now": 0}

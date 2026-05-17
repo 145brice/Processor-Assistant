@@ -6,6 +6,7 @@ Main Streamlit application.
 import os
 import re
 import time
+import secrets
 import html as _html
 import streamlit as st
 from dotenv import load_dotenv
@@ -1770,6 +1771,23 @@ import json as _json_auth
 _SESSION_FILE = os.path.join(os.path.dirname(__file__), ".session_cache.json")
 _AUTH_KEYS = ["authenticated", "user_id", "supabase_user_id", "user_email", "user_name", "user_role", "sandbox_mode", "page"]
 
+
+def _browser_session_id() -> str:
+    """Stable browser id stored in URL query params for deploy-safe restores."""
+    sid = ""
+    try:
+        sid = str(st.query_params.get("pa_sid", "") or "").strip()
+    except Exception:
+        sid = ""
+    if sid:
+        return sid
+    sid = secrets.token_urlsafe(24)
+    try:
+        st.query_params["pa_sid"] = sid
+    except Exception:
+        pass
+    return sid
+
 def _save_session():
     try:
         _data = {k: st.session_state.get(k) for k in _AUTH_KEYS}
@@ -1777,11 +1795,26 @@ def _save_session():
             _json_auth.dump(_data, _f)
     except Exception:
         pass
+    try:
+        if _data.get("authenticated"):
+            import supabase_auth as _sa
+            _sa.save_browser_session(
+                _browser_session_id(),
+                _data,
+                user_email=str(_data.get("user_email") or "").strip().lower(),
+            )
+    except Exception:
+        pass
 
 def _clear_session():
     try:
         if os.path.exists(_SESSION_FILE):
             os.remove(_SESSION_FILE)
+    except Exception:
+        pass
+    try:
+        import supabase_auth as _sa
+        _sa.clear_browser_session(_browser_session_id())
     except Exception:
         pass
 
@@ -1792,6 +1825,17 @@ for key, val in DEFAULTS.items():
 
 # Restore from session file if not yet authenticated
 if not st.session_state.get("authenticated"):
+    try:
+        import supabase_auth as _sa
+        _max_days = int(os.getenv("PA_BROWSER_SESSION_MAX_DAYS", "30") or "30")
+        _cached_cloud = _sa.load_browser_session(_browser_session_id(), max_age_days=_max_days)
+        if _cached_cloud.get("authenticated") and _cached_cloud.get("user_id"):
+            for _k in _AUTH_KEYS:
+                if _k in _cached_cloud:
+                    st.session_state[_k] = _cached_cloud.get(_k)
+    except Exception:
+        pass
+
     try:
         if os.path.exists(_SESSION_FILE):
             with open(_SESSION_FILE) as _f:
@@ -3440,11 +3484,13 @@ def show_sidebar():
                 _presence_window = int(os.getenv("PA_ACTIVE_WINDOW_MINUTES", "15") or "15")
                 _active_now = 0
                 _total_users = 0
+                _all_time_unique = 0
                 try:
                     import supabase_auth as _sa
                     _counts = _sa.get_user_presence_counts(active_window_minutes=_presence_window)
                     _active_now = int(_counts.get("active_now") or 0)
                     _total_users = int(_counts.get("total_users") or 0)
+                    _all_time_unique = int(_counts.get("all_time_unique_users") or 0)
                 except Exception:
                     _counts = {"ok": False}
                 if _total_users <= 0:
@@ -3453,8 +3499,11 @@ def show_sidebar():
                         _total_users = len(_gau() or [])
                     except Exception:
                         _total_users = 0
+                if _all_time_unique <= 0:
+                    _all_time_unique = _total_users
                 st.caption(f"Active now ({_presence_window}m): {_active_now}")
                 st.caption(f"Total users: {_total_users}")
+                st.caption(f"All-time unique users: {_all_time_unique}")
 
         # Logout always visible
         st.markdown("---")
