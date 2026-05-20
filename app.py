@@ -4843,8 +4843,12 @@ def show_dashboard():
                         with st.container(border=True):
                             _top1, _top2 = st.columns([0.35, 8])
                             with _top1:
-                                _chk = st.checkbox("", value=False, key=f"{_uid}_chk",
-                                                   label_visibility="collapsed")
+                                _chk = st.checkbox(
+                                    "Select condition",
+                                    value=False,
+                                    key=f"{_uid}_chk",
+                                    label_visibility="collapsed",
+                                )
                             with _top2:
                                 _conf = (_c.get("confidence") or "").strip()
                                 _conf_badge = (
