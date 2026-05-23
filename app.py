@@ -1789,8 +1789,8 @@ def _browser_session_id() -> str:
     return sid
 
 def _save_session():
+    _data = {k: st.session_state.get(k) for k in _AUTH_KEYS}
     try:
-        _data = {k: st.session_state.get(k) for k in _AUTH_KEYS}
         with open(_SESSION_FILE, "w") as _f:
             _json_auth.dump(_data, _f)
     except Exception:
@@ -1798,13 +1798,17 @@ def _save_session():
     try:
         if _data.get("authenticated"):
             import supabase_auth as _sa
-            _sa.save_browser_session(
+            _save_result = _sa.save_browser_session(
                 _browser_session_id(),
                 _data,
                 user_email=str(_data.get("user_email") or "").strip().lower(),
             )
+            if _save_result.get("ok"):
+                st.session_state.pop("browser_session_save_error", None)
+            else:
+                st.session_state["browser_session_save_error"] = _save_result.get("error") or "Cloud session save failed."
     except Exception:
-        pass
+        st.session_state["browser_session_save_error"] = "Cloud session save failed."
 
 def _clear_session():
     try:
@@ -2143,13 +2147,19 @@ def _user_trial_profile() -> dict:
         return {}
     try:
         import supabase_auth as _sa
-        return _sa.ensure_user_profile(
+        profile = _sa.ensure_user_profile(
             user_key,
             email=st.session_state.get("user_email", ""),
             display_name=st.session_state.get("user_name", ""),
             role=st.session_state.get("user_role", ""),
         )
-    except Exception:
+        if profile.get("_save_error"):
+            st.session_state["profile_save_error"] = profile.get("_save_error")
+        else:
+            st.session_state.pop("profile_save_error", None)
+        return profile
+    except Exception as e:
+        st.session_state["profile_save_error"] = f"Cloud profile save failed: {e}"
         return {}
 
 
@@ -2840,14 +2850,18 @@ def _handle_google_oauth_callback() -> bool:
             page="dashboard",
         )
         try:
-            _sa.accept_terms(
+            _profile_save = _sa.accept_terms(
                 _current_auth_user_key(),
                 email=oauth_result.get("email", ""),
                 display_name=local_user.get("display_name") or oauth_result.get("display_name", ""),
                 role=local_user.get("role") or oauth_result.get("role", "Processor"),
             )
-        except Exception:
-            pass
+            if _profile_save.get("_save_error"):
+                st.session_state["profile_save_error"] = _profile_save.get("_save_error")
+            else:
+                st.session_state.pop("profile_save_error", None)
+        except Exception as e:
+            st.session_state["profile_save_error"] = f"Cloud profile save failed: {e}"
         st.session_state.pop("oauth_google_verifier", None)
         st.session_state.pop("oauth_google_flow_id", None)
         st.session_state.pop("oauth_error_message", None)
@@ -7108,8 +7122,42 @@ def show_reader():
     """Document Reader - browse any folder, open any file, read or search through it."""
     import os
 
+    ENABLE_DOC_SHARE_LINKS = False
+    if ENABLE_DOC_SHARE_LINKS:
+        from doc_links import create_or_get_link, get_recent_links, resolve_link
+
     st.markdown("## Document Reader")
     st.caption("Browse a local folder, open and read any document, or search inside it.")
+
+    # Link-open flow: any user with ?doc=<token> can open the shared document link.
+    _doc_token = ""
+    try:
+        _doc_token = str(st.query_params.get("doc") or "").strip()
+    except Exception:
+        _doc_token = ""
+    if ENABLE_DOC_SHARE_LINKS and _doc_token and st.session_state.get("reader_last_opened_token") != _doc_token:
+        _roots = []
+        if st.session_state.get("reader_folder"):
+            _roots.append(st.session_state.get("reader_folder"))
+        _resolved = resolve_link(_doc_token, search_roots=_roots)
+        if _resolved and _resolved.get("exists") and os.path.exists(_resolved.get("resolved_path", "")):
+            _p = _resolved["resolved_path"]
+            _ext = os.path.splitext(_p)[1].lower()
+            st.session_state["reader_open_file"] = {
+                "name": os.path.basename(_p),
+                "path": _p,
+                "rel": os.path.basename(_p),
+                "ext": _ext,
+                "size_kb": round((os.path.getsize(_p) / 1024), 1) if os.path.exists(_p) else 0,
+            }
+            st.session_state["reader_last_opened_token"] = _doc_token
+            st.success(f"Opened shared link: {_resolved.get('file_name', os.path.basename(_p))}")
+        elif _resolved:
+            st.warning("This shared link exists, but the file is currently unavailable on this machine.")
+            st.session_state["reader_last_opened_token"] = _doc_token
+        else:
+            st.error("Invalid document link token.")
+            st.session_state["reader_last_opened_token"] = _doc_token
 
     # â”€â”€ Smart Search (index-powered, instant) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     import document_index as _didx
@@ -7242,7 +7290,10 @@ def show_reader():
     )
     selected_file = files[selected_idx]
 
-    r1, r2, r3 = st.columns([1, 2, 1])
+    if ENABLE_DOC_SHARE_LINKS:
+        r1, r2, r3, r4 = st.columns([1, 2, 1, 1.4])
+    else:
+        r1, r2, r3 = st.columns([1, 2, 1])
     with r1:
         open_btn = st.button("Open & Read", use_container_width=True, key="reader_open_btn")
     with r2:
@@ -7256,6 +7307,43 @@ def show_reader():
             if st.button("Close File", use_container_width=True, key="reader_close_btn"):
                 st.session_state["reader_open_file"] = None
                 st.rerun()
+    if ENABLE_DOC_SHARE_LINKS:
+        with r4:
+            st.markdown("<br>", unsafe_allow_html=True)
+            if st.button("Create Share Link", use_container_width=True, key="reader_share_link_btn"):
+                try:
+                    _me = str(
+                        st.session_state.get("user_email")
+                        or st.session_state.get("user_id")
+                        or st.session_state.get("supabase_user_id")
+                        or "local-user"
+                    )
+                    _link = create_or_get_link(selected_file["path"], created_by=_me)
+                    _base = "?doc="
+                    _url = f"{_base}{_link['token']}"
+                    st.session_state["reader_generated_link"] = _url
+                    st.success("Share link created. Anyone with this link can open the document in the app.")
+                except Exception as _e:
+                    st.error(f"Couldn't create link: {_e}")
+
+        if st.session_state.get("reader_generated_link"):
+            st.text_input(
+                "Share this app link:",
+                value=st.session_state["reader_generated_link"],
+                key="reader_generated_link_value",
+                disabled=True,
+            )
+
+        with st.expander("Recent shared document links", expanded=False):
+            _recent = get_recent_links(limit=20)
+            if not _recent:
+                st.caption("No links created yet.")
+            for _r in _recent:
+                _tok = _r.get("token", "")
+                _name = _r.get("file_name", "(unknown)")
+                _count = int(_r.get("access_count") or 0)
+                _link = f"?doc={_tok}"
+                st.markdown(f"**{_name}**  |  opens: {_count}  |  `{_link}`")
 
     if open_btn:
         st.session_state["reader_open_file"] = selected_file
@@ -11461,6 +11549,16 @@ def main():
     else:
         _load_user_gemini_key_into_session()
         _profile = _user_trial_profile()
+        _cloud_save_errors = [
+            str(st.session_state.get("profile_save_error") or "").strip(),
+            str(st.session_state.get("browser_session_save_error") or "").strip(),
+        ]
+        _cloud_save_errors = [e for e in _cloud_save_errors if e]
+        if _cloud_save_errors:
+            st.warning(
+                "Your account is signed in, but Processor Assistant could not save all cloud profile/session data. "
+                "Refresh to retry. If it persists, contact support."
+            )
         if _profile and not _has_paid_access(_profile):
             show_sidebar()
             show_persistent_header()

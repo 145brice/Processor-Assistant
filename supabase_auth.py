@@ -372,14 +372,19 @@ def ensure_user_profile(user_key: str, *, email: str = "", display_name: str = "
         "role": role or profile.get("role", ""),
         "last_seen_at": now_iso,
     })
-    _save_setting_json(_profile_key(user_key), profile, user_key=user_key, user_email=google_email)
+    save_result = _save_setting_json(_profile_key(user_key), profile, user_key=user_key, user_email=google_email)
+    if not save_result.get("ok"):
+        profile["_save_error"] = save_result.get("error") or "Supabase profile save failed."
     return profile
 
 
 def accept_terms(user_key: str, *, email: str = "", display_name: str = "", role: str = "") -> dict:
     profile = ensure_user_profile(user_key, email=email, display_name=display_name, role=role)
+    profile.pop("_save_error", None)
     profile["terms_accepted_at"] = datetime.now(timezone.utc).isoformat()
-    _save_setting_json(_profile_key(user_key), profile, user_key=user_key, user_email=profile.get("email", email))
+    save_result = _save_setting_json(_profile_key(user_key), profile, user_key=user_key, user_email=profile.get("email", email))
+    if not save_result.get("ok"):
+        profile["_save_error"] = save_result.get("error") or "Supabase terms save failed."
     return profile
 
 

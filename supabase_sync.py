@@ -14,6 +14,9 @@ import json
 import time
 import threading
 import hashlib
+import urllib.error
+import urllib.parse
+import urllib.request
 from datetime import datetime, timezone
 from typing import Any
 from dotenv import load_dotenv
@@ -467,7 +470,7 @@ def restore_from_cloud() -> dict:
 
 # ─────────────────────────── Internals ───────────────────────────
 def _get_client():
-    """Lazy init Supabase client. Returns None if anything fails."""
+    """Lazy init the Supabase REST client. Returns None if anything fails."""
     global _client, _client_init_attempted
     if _client_init_attempted:
         return _client
@@ -475,8 +478,7 @@ def _get_client():
     if not SUPABASE_URL or not SUPABASE_KEY:
         return None
     try:
-        from supabase import create_client
-        _client = create_client(SUPABASE_URL, SUPABASE_KEY)
+        _client = _SupabaseRestClient(SUPABASE_URL, SUPABASE_KEY)
     except Exception as e:
         _log_error(f"Client init failed: {e}")
         _client = None
@@ -582,6 +584,94 @@ def _flush() -> dict:
 
 
 _TABLES_ENSURED = set()
+
+
+class _RestResult:
+    def __init__(self, data):
+        self.data = data
+
+
+class _SupabaseRestClient:
+    def __init__(self, url: str, key: str):
+        self.url = url.rstrip("/")
+        self.key = key
+
+    def table(self, table: str):
+        return _SupabaseRestTable(self, table)
+
+
+class _SupabaseRestTable:
+    def __init__(self, client: _SupabaseRestClient, table: str):
+        self.client = client
+        self.table = table
+        self._select = "*"
+        self._filters: list[tuple[str, str, str]] = []
+        self._limit = None
+
+    def select(self, columns: str):
+        self._select = columns or "*"
+        return self
+
+    def eq(self, column: str, value):
+        self._filters.append((column, "eq", str(value)))
+        return self
+
+    def limit(self, count: int):
+        self._limit = int(count)
+        return self
+
+    def upsert(self, payload):
+        return _SupabaseRestWrite(self.client, self.table, payload)
+
+    def execute(self):
+        params = [("select", self._select)]
+        for column, op, value in self._filters:
+            params.append((column, f"{op}.{value}"))
+        if self._limit is not None:
+            params.append(("limit", str(self._limit)))
+        url = f"{self.client.url}/rest/v1/{urllib.parse.quote(self.table)}?{urllib.parse.urlencode(params)}"
+        return _RestResult(_supabase_rest_request("GET", url, api_key=self.client.key))
+
+
+class _SupabaseRestWrite:
+    def __init__(self, client: _SupabaseRestClient, table: str, payload):
+        self.client = client
+        self.table = table
+        self.payload = payload
+
+    def execute(self):
+        url = f"{self.client.url}/rest/v1/{urllib.parse.quote(self.table)}"
+        headers = {
+            "Prefer": "resolution=merge-duplicates,return=minimal",
+        }
+        return _RestResult(
+            _supabase_rest_request(
+                "POST",
+                url,
+                self.payload,
+                api_key=self.client.key,
+                extra_headers=headers,
+            )
+        )
+
+
+def _supabase_rest_request(method: str, url: str, payload=None, *, api_key: str, extra_headers: dict | None = None):
+    data = json.dumps(payload).encode("utf-8") if payload is not None else None
+    req = urllib.request.Request(url, data=data, method=method.upper())
+    req.add_header("apikey", api_key)
+    req.add_header("Authorization", f"Bearer {api_key}")
+    if payload is not None:
+        req.add_header("Content-Type", "application/json")
+    for key, value in (extra_headers or {}).items():
+        req.add_header(key, value)
+
+    try:
+        with urllib.request.urlopen(req, timeout=20) as resp:
+            raw = resp.read().decode("utf-8")
+            return json.loads(raw) if raw else []
+    except urllib.error.HTTPError as e:
+        raw = e.read().decode("utf-8", errors="ignore")
+        raise RuntimeError(f"HTTP {e.code}: {raw or e.reason}") from e
 
 
 def _ensure_table(client, table: str):

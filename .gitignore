@@ -4,6 +4,7 @@ __pycache__/
 .streamlit/secrets.toml
 guidelines_index/
 processor.db
+document_links.db
 .session_cache.json
 
 # Runtime data — contains borrower PII, never commit

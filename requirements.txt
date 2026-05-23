@@ -2,10 +2,9 @@ streamlit
 pypdf
 python-dotenv
 thefuzz
-supabase==2.10.0
-httpx>=0.24.0
 python-docx
 cryptography
+# Supabase sync uses the REST API via stdlib urllib to avoid client/httpx drift.
 
 fastapi
 uvicorn[standard]
