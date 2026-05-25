@@ -624,11 +624,25 @@ def _guess_party(text: str) -> str:
         and any(k in t for k in ["hoi", "homeowner", "homeowners", "hazard insurance", "insurance"])
     ):
         return "Borrower"
+    if any(
+        k in t
+        for k in [
+            "hoi",
+            "homeowner insurance",
+            "homeowner's insurance",
+            "homeowners insurance",
+            "hazard insurance",
+        ]
+    ):
+        return "Borrower"
     if (
         "final selling disclosure" in t
         or "final seller disclosure" in t
         or "seller closing disclosure" in t
         or "seller's closing disclosure" in t
+        or "final sales disclosure" in t
+        or "seller cd" in t
+        or ("closing disclosure" in t and any(k in t for k in ["seller", "sale of current", "current home", "departing residence", "departing home"]))
     ):
         return "Borrower"
     for party, keywords in _GUESS_PARTY_THIRD:

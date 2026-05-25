@@ -2327,7 +2327,7 @@ _PARTY_KEYWORDS_BORROWER_ACTION = [
 ]
 
 
-_CONDITION_ROUTING_VERSION = "v20260525b"
+_CONDITION_ROUTING_VERSION = "v20260525c"
 
 
 def _condition_override_parties(desc: str):
@@ -2345,11 +2345,25 @@ def _condition_override_parties(desc: str):
         and any(k in text for k in ["hoi", "homeowner", "homeowners", "hazard insurance", "insurance"])
     ):
         return ["Borrower"]
+    if any(
+        k in text
+        for k in [
+            "hoi",
+            "homeowner insurance",
+            "homeowner's insurance",
+            "homeowners insurance",
+            "hazard insurance",
+        ]
+    ):
+        return ["Borrower"]
     if (
         "final selling disclosure" in text
         or "final seller disclosure" in text
         or "seller closing disclosure" in text
         or "seller's closing disclosure" in text
+        or "final sales disclosure" in text
+        or "seller cd" in text
+        or ("closing disclosure" in text and any(k in text for k in ["seller", "sale of current", "current home", "departing residence", "departing home"]))
     ):
         return ["Borrower"]
     return None
@@ -2648,6 +2662,12 @@ def _to_client_language(desc: str, party: str = "Borrower") -> str:
     ):
         return "Please send us your current homeowner's insurance agent's name, phone number, and email. We will contact them and handle the HOI invoice from there."
 
+    if any(
+        k in low
+        for k in ["hoi", "homeowner insurance", "homeowner's insurance", "homeowners insurance", "hazard insurance"]
+    ):
+        return "Please send us your current homeowner's insurance agent's name, phone number, and email. If you already have the policy or declaration page, send that too."
+
     if ("funds to close" in low) or ("reserves" in low) or ("sufficient funds" in low):
         return "Please send the most recent full bank statement showing the funds needed for closing and reserves. Include all pages, even blank pages."
 
@@ -2667,6 +2687,8 @@ def _to_client_language(desc: str, party: str = "Borrower") -> str:
         or "final seller disclosure" in low
         or "seller closing disclosure" in low
         or "seller's closing disclosure" in low
+        or "final sales disclosure" in low
+        or "seller cd" in low
         or ("closing disclosure" in low and any(k in low for k in ["seller", "sale of current", "current home", "departing residence", "departing home"]))
     ):
         return "Please send the final seller Closing Disclosure from the sale of your current home once it is available."
@@ -2756,7 +2778,7 @@ def _client_need_subject(desc: str) -> str:
         ("Letter of Explanation", ["letter of explanation", " loe", "signed letter"]),
         ("Motivation Letter", ["motivation letter", "letter of motivation"]),
         ("Real Estate Certification", ["real estate certification", "real estate cert", "fha amendatory clause", "amendatory clause", "seller's real estate agent", "sellers agent"]),
-        ("Final Selling Disclosure", ["final selling disclosure", "final seller disclosure", "seller closing disclosure", "seller's closing disclosure", "seller cd", "final seller", "sale of current home", "departing residence"]),
+        ("Final Selling Disclosure", ["final selling disclosure", "final seller disclosure", "final sales disclosure", "seller closing disclosure", "seller's closing disclosure", "seller cd", "final seller", "sale of current home", "departing residence"]),
         ("Closing Disclosure", ["closing disclosure"]),
         ("Invoice", ["invoice"]),
         ("Tax Bill", ["tax bill"]),
@@ -4954,6 +4976,14 @@ def show_dashboard():
                                 _pmap = st.session_state.get(_plain_map_key, {})
                                 _client_desc = str(_pmap.get(_orig_desc) or _orig_desc)
                                 _has_alt = bool(_client_desc and _client_desc != _orig_desc)
+                                _row_sections = _scan_sections_for_condition(_c)
+                                _route_chips = "".join(
+                                    f'<span style="display:inline-block;margin:0 4px 4px 0;padding:2px 7px;'
+                                    f'border-radius:999px;background:rgba(59,130,246,0.14);'
+                                    f'border:1px solid rgba(59,130,246,0.32);color:#bfdbfe;'
+                                    f'font-size:10px;font-weight:700;">{_html.escape(str(_party))}</span>'
+                                    for _party in _row_sections
+                                )
                                 _primary_desc = _orig_desc
                                 _secondary_desc = _client_desc
                                 _primary_desc_html = _html.escape(_primary_desc)
@@ -4980,6 +5010,13 @@ def show_dashboard():
                                     f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
                                     f'<span style="color:#e5e7eb;">{_primary_desc_html}</span>{_conf_badge}</div>'
                                 )
+                                if _route_chips:
+                                    _desc_html += (
+                                        f'<div style="padding:0 0 5px 22px;">'
+                                        f'<span style="color:#64748b;font-size:10px;font-weight:700;'
+                                        f'margin-right:6px;text-transform:uppercase;">Routes</span>'
+                                        f'{_route_chips}</div>'
+                                    )
                                 if _has_alt:
                                     _desc_html += (
                                         f'<div style="font-size:11px;line-height:1.35;padding:0 0 5px 22px;'
