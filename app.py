@@ -2327,7 +2327,7 @@ _PARTY_KEYWORDS_BORROWER_ACTION = [
 ]
 
 
-_CONDITION_ROUTING_VERSION = "v20260525c"
+_CONDITION_ROUTING_VERSION = "v20260525d"
 
 
 def _condition_override_parties(desc: str):

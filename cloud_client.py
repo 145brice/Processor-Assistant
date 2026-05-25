@@ -468,6 +468,8 @@ Your job:
 8. Treat HOI/homeowner/hazard insurance items as Borrower tasks; the borrower should provide their current insurance agent/contact, especially for HOI invoices.
 9. Treat Real Estate Certification/FHA Amendatory Clause items as Borrower-facing even though buyers, sellers, and agents all sign.
 10. Treat Final Seller/Selling Disclosure items as Borrower-facing because they come from the sale of the borrower's current home.
+11. Include every Borrower/Client condition section, even if the rows are not numbered.
+12. Do not drop borrower rows that begin with "Borrower to provide", "Borrower must", "Buyer to provide", or "All borrowers must".
 
 Return ONLY the conditions - no intro text, no headers, no explanations.
 Use this exact pipe-delimited format, one condition per line:
@@ -1010,11 +1012,24 @@ Approval letters are typically organized into sections. Look for these section h
   - "Prior to Funding" or PTF
   - "Prior to Purchase" or PTP
   - "Loan Approval Conditions" or generic numbered lists
+  - "Borrower Conditions", "Client Conditions", "Borrower Requirements",
+    "Borrower to Provide", or any table/list of borrower-facing requirements
 
-Extract EVERY numbered condition from EVERY section. Do not skip any condition, even
-if a section header is on a separate page. Do not merge separate numbered items into
-one row. Do not summarize — copy the wording as written, including any "Updated" notes,
-asterisks, and stamped comments.
+Extract EVERY condition from EVERY section. Do not skip any condition, even if:
+  - it is in a Borrower/Client section
+  - it is unnumbered but listed as a borrower requirement
+  - it begins with "Borrower to provide", "Borrower must", "Buyer to provide",
+    "All borrowers must", or similar borrower-facing wording
+  - the section header is on a separate page
+
+Do not merge separate numbered items into one row. Do not summarize - copy the wording
+as written, including any "Updated" notes, asterisks, and stamped comments.
+
+Borrower-facing conditions that must never be omitted:
+  - HOI, homeowner's insurance, homeowners insurance, hazard insurance, insurance agent/contact, or HOI invoice
+  - Real Estate Certification, Real Estate Cert, FHA Amendatory Clause, or Amendatory Clause
+  - Final Seller Disclosure, Final Selling Disclosure, Final Sales Disclosure, Seller CD, or seller Closing Disclosure from the sale of the borrower's current home
+  - Any other row under Borrower Conditions / Client Conditions / Borrower Requirements
 
 OUTPUT FORMAT — one condition per line, exactly five pipe-delimited fields:
 | GLOBAL# | [SECTION-LOCAL#] Full condition text as written | Responsible | Needed | Confidence |
@@ -1023,6 +1038,8 @@ Where:
   GLOBAL# = sequential number across the whole letter (1, 2, 3, ...)
   SECTION-LOCAL# = bracketed prefix on the description: section tag + the number in the
                    PDF for that section. e.g. [PTD-1], [PTD-2], [AC-1], [PTF-1]
+                   If the condition is unnumbered in a borrower/client section, use
+                   [BOR-1], [BOR-2], etc. in its original order.
   Responsible = which party gets the request: Borrower, Title, Underwriter, Insurance,
                 Closer, Appraiser, Employer, Realtor, Seller
   Status = always "Needed"
@@ -1033,6 +1050,9 @@ Example output (study this carefully — the prefix in brackets is part of the d
 | 2 | [PTD-2] Document Expirations - Credit expiration 4/1; Income expiration 3/25; Asset expiration 3/9 | Borrower | Needed | High Confidence |
 | 9 | [AC-1] Internal - Lock Desk to confirm pricing prior to CTC | Underwriter | Needed | High Confidence |
 | 11 | [PTF-1] Funding - LQI Report - If loan has not funded by ____ date, loan file to be returned to Underwriting for an updated LQI Report | Underwriter | Needed | High Confidence |
+| 12 | [BOR-1] HOI invoice / homeowner's insurance - borrower to provide current insurance agent name, phone, and email | Borrower | Needed | Best Guess |
+| 13 | [BOR-2] Real Estate Certification / FHA Amendatory Clause to be signed by buyers, sellers, and agents | Borrower | Needed | Best Guess |
+| 14 | [BOR-3] Final Seller Closing Disclosure from sale of current home | Borrower | Needed | Best Guess |
 
 Skip these (do NOT output rows for them):
   - Borrower summary, loan terms, rates, property info on page 1

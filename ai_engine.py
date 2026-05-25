@@ -52,7 +52,8 @@ _CONDITION_ACTION = re.compile(
     r'(?i)\b(?:provide|submit|obtain|furnish|verify|document|explain|clear|'
     r'resolve|update|upload|supply|confirm|complete|correct|evidence|copy of|'
     r'letter of|payoff|title|insurance|hoi|hazard|flood|appraisal|voe|bank statement|'
-    r'paystub|pay stub|w-?2|tax return|lease|gift letter)\b'
+    r'paystub|pay stub|w-?2|tax return|lease|gift letter|sign|signed|signature|'
+    r'agent contact|contact information)\b'
 )
 _CONDITION_OBJECT = re.compile(
     r'(?i)\b(?:paystubs?|pay\s*stubs?|bank statements?|asset statements?|'
@@ -60,7 +61,22 @@ _CONDITION_OBJECT = re.compile(
     r'gift letters?|title commitment|title policy|survey|payoff|subordination|'
     r'homeowners?|hazard|hoi|flood|insurance|appraisal|inspection|purchase contract|'
     r'closing disclosure|cd|driver.?s license|photo id|ssn|social security|'
-    r'mortgage statement|rent verification|lease agreement|earnest money|emd)\b'
+    r'mortgage statement|rent verification|lease agreement|earnest money|emd|'
+    r'real estate cert(?:ification)?|fha amendatory clause|amendatory clause|'
+    r'final (?:seller|selling|sales) disclosure|seller(?:\'s)? closing disclosure|seller cd|'
+    r'current insurance agent|insurance agent contact)\b'
+)
+_BORROWER_CONDITION_PREFIX = re.compile(
+    r'(?i)^(?:borrower|co-?borrower|buyer|buyers?|client|all borrowers?|all borrower\(s\)?)\s+'
+    r'(?:(?:is|are)\s+)?(?:to\s+)?'
+    r'(?:provide|submit|send|sign|signed|complete|obtain|furnish|verify|supply|document|'
+    r'explain|must|need(?:s|ed)?|required|responsible)\b'
+)
+_BORROWER_SPECIAL_CONDITION = re.compile(
+    r'(?i)\b(?:hoi|homeowner(?:\'s)? insurance|homeowners insurance|hazard insurance|'
+    r'current insurance agent|insurance agent contact|real estate cert(?:ification)?|'
+    r'fha amendatory clause|amendatory clause|final (?:seller|selling|sales) disclosure|'
+    r'seller(?:\'s)? closing disclosure|seller cd|sale of (?:the )?(?:current|departing|existing) home)\b'
 )
 _APPROVAL_NON_CONDITION = re.compile(
     r'(?i)^(?:borrower|co-?borrower|loan\s*(?:number|amount|purpose|type)|'
@@ -133,7 +149,9 @@ def _is_real_condition_text(text: str, *, approval_only: bool = False) -> bool:
     t = re.sub(r'\s+', ' ', str(text or '')).strip()
     if _is_junk_line(t):
         return False
-    if approval_only and _APPROVAL_NON_CONDITION.match(t):
+    if approval_only and _APPROVAL_NON_CONDITION.match(t) and not (
+        _BORROWER_CONDITION_PREFIX.search(t) or _BORROWER_SPECIAL_CONDITION.search(t)
+    ):
         return False
     if len(t.split()) < 3:
         return False
@@ -144,7 +162,9 @@ def _approval_condition_candidate(text: str) -> bool:
     t = re.sub(r'\s+', ' ', str(text or '')).strip()
     if not _is_real_condition_text(t, approval_only=True) and not _CONDITION_OBJECT.search(t):
         return False
-    if _APPROVAL_NON_CONDITION.match(t):
+    if _APPROVAL_NON_CONDITION.match(t) and not (
+        _BORROWER_CONDITION_PREFIX.search(t) or _BORROWER_SPECIAL_CONDITION.search(t)
+    ):
         return False
     if re.search(r'(?i)\b(?:prepared for|contact name|email:|phone:|date printed|senior uw|account manager)\b', t):
         return False
@@ -164,7 +184,7 @@ def _is_approval_metadata_line(text: str) -> bool:
         r'program|product|uwm|united wholesale|loan approval|approval|approved|'
         r'decision|broker|loan officer|date|expiration|expires|page\s+\d+)\b',
         t,
-    ):
+    ) and not (_BORROWER_CONDITION_PREFIX.search(t) or _BORROWER_SPECIAL_CONDITION.search(t)):
         return True
     return False
 
@@ -375,6 +395,9 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
         section_start = re.compile(
             r'(?i)(?:prior\s+to\s+(?:closing|funding|docs|CTC|clear)|'
             r'loan\s+approval\s+conditions?|approval\s+conditions?|'
+            r'borrower\s+(?:conditions?|requirements?|items?|needs?)|'
+            r'client\s+(?:conditions?|requirements?|items?|needs?)|'
+            r'all\s+borrower\s+conditions?|'
             r'conditions?\s*(?:of\s+approval|to\s+be\s+satisfied|list|:)|'
             r'outstanding\s+(?:conditions?|items?|requirements?)|'
             r'underwriting\s+conditions?|'
@@ -494,6 +517,49 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
                                 "party": _guess_party(desc),
                                 "status": "Needed",
                             })
+
+    if approval_mode:
+        # Final safety net: add obvious borrower-facing conditions the numbered
+        # parser/AI prompt may have missed, especially unnumbered borrower sections.
+        borrower_section = False
+        for raw_line in lines:
+            line = re.sub(r'\s+', ' ', raw_line.strip())
+            if not line:
+                continue
+            if re.search(r'(?i)\b(?:borrower|client|all borrower)\s+(?:conditions?|requirements?|items?|needs?)\b', line):
+                borrower_section = True
+                continue
+            if borrower_section and re.search(
+                r'(?i)^(?:title|closing|closer|underwriter|appraiser|appraisal|seller|realtor|agent|processor|lender|funding)\s+'
+                r'(?:conditions?|requirements?|items?|needs?)\b',
+                line,
+            ):
+                borrower_section = False
+                continue
+
+            cleaned = re.sub(r'^[\s]*(?:\d{1,3}[\.\)\:]|[a-zA-Z][\.\)]|[\-\*\u2022])\s*', '', line).strip(" -.;")
+            if len(cleaned) < 12:
+                continue
+            is_borrower_line = (
+                borrower_section
+                or _BORROWER_CONDITION_PREFIX.search(cleaned)
+                or _BORROWER_SPECIAL_CONDITION.search(cleaned)
+            )
+            if not is_borrower_line:
+                continue
+            if _is_approval_metadata_line(cleaned) and not _BORROWER_SPECIAL_CONDITION.search(cleaned):
+                continue
+            lower = cleaned.lower()
+            if lower in seen or any(lower in s or s in lower for s in seen):
+                continue
+            seen.add(lower)
+            cond_num += 1
+            conditions.append({
+                "num": str(cond_num),
+                "desc": cleaned,
+                "party": _guess_party(cleaned),
+                "status": "Needed",
+            })
 
     time.sleep(0.3)
 
