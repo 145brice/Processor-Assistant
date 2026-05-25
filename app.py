@@ -2327,6 +2327,46 @@ _PARTY_KEYWORDS_BORROWER_ACTION = [
 ]
 
 
+_CONDITION_ROUTING_VERSION = "v20260525b"
+
+
+def _condition_override_parties(desc: str):
+    """Return forced party defaults for borrower-facing special cases."""
+    text = str(desc or "").lower()
+    if (
+        "real estate certification" in text
+        or "real estate cert" in text
+        or "fha amendatory clause" in text
+        or "amendatory clause" in text
+    ):
+        return ["Borrower", "Realtor", "Seller"]
+    if (
+        "invoice" in text
+        and any(k in text for k in ["hoi", "homeowner", "homeowners", "hazard insurance", "insurance"])
+    ):
+        return ["Borrower"]
+    if (
+        "final selling disclosure" in text
+        or "final seller disclosure" in text
+        or "seller closing disclosure" in text
+        or "seller's closing disclosure" in text
+    ):
+        return ["Borrower"]
+    return None
+
+
+def _apply_condition_routing_defaults(cond: dict) -> dict:
+    """Apply current routing fixes to scanned or already-saved conditions."""
+    if not isinstance(cond, dict):
+        return cond
+    desc = cond.get("desc") or cond.get("description") or ""
+    parties = _condition_override_parties(desc)
+    if parties:
+        cond["party"] = parties[0]
+        cond["parties"] = parties
+    return cond
+
+
 def _infer_condition_party(desc: str) -> str:
     """Infer responsible party from condition text using layered keyword lists.
 
@@ -2338,25 +2378,9 @@ def _infer_condition_party(desc: str) -> str:
     """
     text = str(desc or "").lower()
 
-    if (
-        "real estate certification" in text
-        or "real estate cert" in text
-        or "fha amendatory clause" in text
-        or "amendatory clause" in text
-    ):
-        return "Borrower"
-    if (
-        "invoice" in text
-        and any(k in text for k in ["hoi", "homeowner", "homeowners", "hazard insurance", "insurance"])
-    ):
-        return "Borrower"
-    if (
-        "final selling disclosure" in text
-        or "final seller disclosure" in text
-        or "seller closing disclosure" in text
-        or "seller's closing disclosure" in text
-    ):
-        return "Borrower"
+    override_parties = _condition_override_parties(text)
+    if override_parties:
+        return override_parties[0]
 
     # Step 1: third-party / non-borrower routing
     for party, keywords in _PARTY_KEYWORDS_THIRD_PARTY:
@@ -2415,17 +2439,12 @@ def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
         desc = (cond.get("desc") or cond.get("description") or "").strip()
         if not desc or desc.lower() in {"condition", "-----------"}:
             continue
-        desc_l = desc.lower()
         cond["num"] = str(cond.get("num") or idx + 1)
         cond["desc"] = desc
-        if (
-            "real estate certification" in desc_l
-            or "real estate cert" in desc_l
-            or "fha amendatory clause" in desc_l
-            or "amendatory clause" in desc_l
-        ):
-            cond["party"] = "Borrower"
-            cond["parties"] = ["Borrower", "Realtor", "Seller"]
+        _override_parties = _condition_override_parties(desc)
+        if _override_parties:
+            cond["party"] = _override_parties[0]
+            cond["parties"] = _override_parties
             cond["status"] = cond.get("status") or "Needed"
             rows.append(cond)
             continue
@@ -4621,7 +4640,7 @@ def show_dashboard():
                         # stays in lockstep with the per-condition party tags.
                         return _infer_condition_party(_desc or "")
 
-                    _scan_fkey = f"scan_{_bidx}"
+                    _scan_fkey = f"scan_{_CONDITION_ROUTING_VERSION}_{_bidx}"
 
                     _SECTION_ORDER_SCAN = [
                         "Borrower", "Title", "Insurance", "Appraiser",
@@ -10260,7 +10279,10 @@ def show_loan_detail():
                 )
 
     # â”€â”€ Open Conditions (interactive checkbox, status, parties, email) â”€â”€â”€â”€
-    _conditions = loan.get("conditions", [])
+    _conditions = [
+        _apply_condition_routing_defaults(dict(c)) if isinstance(c, dict) else c
+        for c in (loan.get("conditions", []) or [])
+    ]
     st.markdown(
         '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:12px;display:inline-block;">Open Conditions</span>',

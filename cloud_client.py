@@ -465,13 +465,16 @@ Your job:
    Do not split wrapped details into extra conditions or extra checkboxes.
 6. Preserve the whole condition text. Do not shorten it.
 7. Mark confidence as High Confidence for clear lender condition rows, or Best Guess when the format is unclear.
+8. Treat HOI/homeowner/hazard insurance invoice items as Borrower tasks; the borrower should provide their current insurance agent/contact.
+9. Treat Real Estate Certification/FHA Amendatory Clause items as Borrower-facing even though buyers, sellers, and agents all sign.
+10. Treat Final Seller/Selling Disclosure items as Borrower-facing because they come from the sale of the borrower's current home.
 
 Return ONLY the conditions - no intro text, no headers, no explanations.
 Use this exact pipe-delimited format, one condition per line:
 | 1 | Full description of the condition | Borrower | Needed | High Confidence |
 | 2 | Full description of the condition | Title | Needed | Best Guess |
 
-Responsible party options: Borrower, Title, Underwriter, Insurance, Closer, Appraiser
+Responsible party options: Borrower, Title, Underwriter, Insurance, Closer, Appraiser, Employer, Realtor, Seller, Processor
 Status: always Needed
 Confidence options: High Confidence, Best Guess"""
 
