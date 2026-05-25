@@ -120,11 +120,15 @@ def _parse_ai_json(text: str) -> dict:
 
 
 def _filter_invoice_conditions(conditions: list[dict]) -> list[dict]:
-    """Remove invoice items from client-facing condition lists."""
-    filtered = [
-        cond for cond in conditions
-        if not re.search(r"\binvoice\b", str(cond.get("desc", "")).lower())
-    ]
+    """Remove internal invoice items, but keep HOI/current-agent requests."""
+    filtered = []
+    for cond in conditions:
+        desc = str(cond.get("desc", "")).lower()
+        if re.search(r"\binvoice\b", desc) and not any(
+            k in desc for k in ("hoi", "homeowner", "homeowners", "hazard insurance", "insurance agent", "current agent")
+        ):
+            continue
+        filtered.append(cond)
     return filtered
 
 

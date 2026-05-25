@@ -580,7 +580,8 @@ _GUESS_PARTY_THIRD = [
         "purchase contract", "purchase agreement", "sales agreement",
         "realtor", "listing agent", "selling agent",
         "real estate certification", "arm's length affidavit",
-        "required parties sign",
+        "required parties sign", "buyer seller agent sign",
+        "buyers sellers agents sign", "fha amendatory clause",
     ]),
     ("Seller", [
         "seller to provide", "seller's closing", "seller credit",
@@ -607,10 +608,29 @@ _GUESS_PARTY_BORROWER = [
 def _guess_party(text: str) -> str:
     """Guess responsible party from condition description.
 
-    Third-party document/action keywords take priority over borrower defaults,
-    so e.g. 'Provide title commitment' goes to Title rather than Borrower.
+    Borrower-facing exceptions win first, then third-party document/action
+    keywords take priority over borrower defaults.
     """
     t = (text or "").lower()
+    if (
+        "real estate certification" in t
+        or "real estate cert" in t
+        or "fha amendatory clause" in t
+        or "amendatory clause" in t
+    ):
+        return "Borrower"
+    if (
+        "invoice" in t
+        and any(k in t for k in ["hoi", "homeowner", "homeowners", "hazard insurance", "insurance"])
+    ):
+        return "Borrower"
+    if (
+        "final selling disclosure" in t
+        or "final seller disclosure" in t
+        or "seller closing disclosure" in t
+        or "seller's closing disclosure" in t
+    ):
+        return "Borrower"
     for party, keywords in _GUESS_PARTY_THIRD:
         if any(k in t for k in keywords):
             return party
@@ -3882,6 +3902,23 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
             (r'(?:title\s*company|escrow\s*company)', 35),
             (r'(?:listing\s*agent|selling\s*agent)', 40),
         ]),
+        # Real Estate Certification / FHA Amendatory companion docs
+        ("Real Estate Certification", [
+            (r'(?:real\s*estate\s*certification|real\s*estate\s*cert\b)', 75),
+            (r'(?:fha\s*amendatory\s*clause|amendatory\s*clause)', 55),
+            (r'(?:buyers?|purchasers?).{0,80}(?:sellers?|vendors?).{0,80}(?:agents?|brokers?)', 50),
+            (r'(?:buyer|seller|listing\s*agent|selling\s*agent).{0,120}(?:certif(?:y|ication)|signature)', 45),
+            (r'(?:borrower|buyer).{0,60}(?:seller).{0,60}(?:real\s*estate\s*agent)', 45),
+            (r'(?:all\s*parties|required\s*parties).{0,80}(?:sign|signature)', 35),
+        ]),
+        # Final selling disclosure from the sale of the borrower's current home
+        ("Final Selling Disclosure", [
+            (r'(?:final\s*selling\s*disclosure|final\s*seller\s*disclosure)', 75),
+            (r"(?:seller'?s?\s*closing\s*disclosure|seller\s*cd\b)", 65),
+            (r"(?:sale\s*of\s*(?:borrower'?s?\s*)?(?:current|departing|existing)\s*home)", 55),
+            (r'(?:proceeds\s*from\s*sale|seller\s*proceeds)', 45),
+            (r'(?:closing\s*disclosure).{0,120}(?:seller|sale\s*of)', 40),
+        ]),
         # Approval / Commitment Letter (merged — includes AUS findings)
         ("Approval Letter", [
             (r'(?:approv(?:al|ed)\s*(?:letter|notification|notice))', 50),
@@ -4147,6 +4184,18 @@ def detect_doc_type(pdf_bytes: bytes) -> dict:
             r'(?:seller|vendor)',
             r'real\s*estate',
             r'property\s*address',
+        ],
+        "Real Estate Certification": [
+            r'real\s*estate\s*certification',
+            r'fha\s*amendatory\s*clause',
+            r'(?:buyer|seller|listing\s*agent|selling\s*agent).{0,100}(?:signature|certif)',
+            r'(?:buyers?|purchasers?).{0,80}(?:sellers?|vendors?).{0,80}(?:agents?|brokers?)',
+        ],
+        "Final Selling Disclosure": [
+            r'final\s*(?:selling|seller)\s*disclosure',
+            r"seller'?s?\s*closing\s*disclosure",
+            r'(?:sale\s*of|proceeds\s*from\s*sale).{0,80}(?:current|departing|existing)?\s*home',
+            r'seller\s*proceeds',
         ],
         "Closing Disclosure (CD)": [
             r'closing\s*disclosure', r'projected\s*payments',

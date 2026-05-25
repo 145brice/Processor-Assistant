@@ -2301,6 +2301,7 @@ _PARTY_KEYWORDS_THIRD_PARTY = [
         "purchase contract", "purchase agreement", "sales agreement",
         "realtor", "listing agent", "selling agent", "buyer's agent",
         "seller's agent", "real estate agent", "real estate certification",
+        "real estate cert", "fha amendatory clause", "amendatory clause",
         "arm's length affidavit", "required parties sign",
     ]),
     ("Seller", [
@@ -2330,11 +2331,32 @@ def _infer_condition_party(desc: str) -> str:
     """Infer responsible party from condition text using layered keyword lists.
 
     Order:
-      1. Third-party document/action keywords win first (Title, Appraiser, etc.)
-      2. Borrower-action keywords → Borrower
-      3. Fall through to Borrower as default
+      1. Borrower-facing exceptions win first (HOI invoice, final seller CD, REC)
+      2. Third-party document/action keywords win next (Title, Appraiser, etc.)
+      3. Borrower-action keywords -> Borrower
+      4. Fall through to Borrower as default
     """
     text = str(desc or "").lower()
+
+    if (
+        "real estate certification" in text
+        or "real estate cert" in text
+        or "fha amendatory clause" in text
+        or "amendatory clause" in text
+    ):
+        return "Borrower"
+    if (
+        "invoice" in text
+        and any(k in text for k in ["hoi", "homeowner", "homeowners", "hazard insurance", "insurance"])
+    ):
+        return "Borrower"
+    if (
+        "final selling disclosure" in text
+        or "final seller disclosure" in text
+        or "seller closing disclosure" in text
+        or "seller's closing disclosure" in text
+    ):
+        return "Borrower"
 
     # Step 1: third-party / non-borrower routing
     for party, keywords in _PARTY_KEYWORDS_THIRD_PARTY:
@@ -2393,8 +2415,20 @@ def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
         desc = (cond.get("desc") or cond.get("description") or "").strip()
         if not desc or desc.lower() in {"condition", "-----------"}:
             continue
+        desc_l = desc.lower()
         cond["num"] = str(cond.get("num") or idx + 1)
         cond["desc"] = desc
+        if (
+            "real estate certification" in desc_l
+            or "real estate cert" in desc_l
+            or "fha amendatory clause" in desc_l
+            or "amendatory clause" in desc_l
+        ):
+            cond["party"] = "Borrower"
+            cond["parties"] = ["Borrower", "Realtor", "Seller"]
+            cond["status"] = cond.get("status") or "Needed"
+            rows.append(cond)
+            continue
         # Always run keyword routing — the user's third-party / borrower-action
         # keyword lists are authoritative. Geminis party tag is too coarse
         # (it labels broker / lender internal items as Borrower).
@@ -2589,17 +2623,37 @@ def _to_client_language(desc: str, party: str = "Borrower") -> str:
     if ("1004d" in low) or ("final inspection" in low) or ("upon completion of repairs" in low):
         return "We will need a final inspection (1004D) once the listed repairs are completed."
 
+    if (
+        ("invoice" in low)
+        and any(k in low for k in ["hoi", "homeowner", "homeowners", "hazard insurance", "insurance"])
+    ):
+        return "Please send us your current homeowner's insurance agent's name, phone number, and email. We will contact them and handle the HOI invoice from there."
+
     if ("funds to close" in low) or ("reserves" in low) or ("sufficient funds" in low):
         return "Please send the most recent full bank statement showing the funds needed for closing and reserves. Include all pages, even blank pages."
 
     if ("paid in full" in low) and ("debt" in low or "credit" in low):
         return "Please send proof the listed debt has been paid in full, plus the account or bank statement showing where the payment came from."
 
-    if "real estate certification" in low:
-        return "Please have the required parties sign the Real Estate Certification or addendum so we can add it to the file."
+    if (
+        "real estate certification" in low
+        or "real estate cert" in low
+        or "fha amendatory clause" in low
+        or "amendatory clause" in low
+    ):
+        return "Please have the buyers, sellers, and real estate agents sign the Real Estate Certification. It may be combined with the FHA amendatory clause/addendum."
+
+    if (
+        "final selling disclosure" in low
+        or "final seller disclosure" in low
+        or "seller closing disclosure" in low
+        or "seller's closing disclosure" in low
+        or ("closing disclosure" in low and any(k in low for k in ["seller", "sale of current", "current home", "departing residence", "departing home"]))
+    ):
+        return "Please send the final seller Closing Disclosure from the sale of your current home once it is available."
 
     if "closing disclosure" in low:
-        return "Please send the final seller Closing Disclosure once it is available."
+        return "Please send the requested Closing Disclosure once it is available."
 
     if "invoice" in low:
         if "appraisal" in low:
@@ -2682,8 +2736,9 @@ def _client_need_subject(desc: str) -> str:
         ("Driver's License", ["driver", "government id", "license"]),
         ("Letter of Explanation", ["letter of explanation", " loe", "signed letter"]),
         ("Motivation Letter", ["motivation letter", "letter of motivation"]),
-        ("Real Estate Certification", ["real estate certification", "seller's real estate agent", "sellers agent"]),
-        ("Closing Disclosure", ["closing disclosure", "seller cd", "final seller"]),
+        ("Real Estate Certification", ["real estate certification", "real estate cert", "fha amendatory clause", "amendatory clause", "seller's real estate agent", "sellers agent"]),
+        ("Final Selling Disclosure", ["final selling disclosure", "final seller disclosure", "seller closing disclosure", "seller's closing disclosure", "seller cd", "final seller", "sale of current home", "departing residence"]),
+        ("Closing Disclosure", ["closing disclosure"]),
         ("Invoice", ["invoice"]),
         ("Tax Bill", ["tax bill"]),
         ("Payoff", ["payoff"]),
@@ -3052,6 +3107,10 @@ def _render_condition(_c, _fkey, _party_options, _cond_statuses):
     _cnum = _c.get("num", "?")
     _cdesc = _c.get("desc", "")
     _cparty = _c.get("party", "Borrower")
+    _cparties_default = _c.get("all_parties") or _c.get("parties") or _cparty
+    if not isinstance(_cparties_default, list):
+        _cparties_default = [_cparties_default]
+    _cparties_default = [p for p in _cparties_default if p in _party_options]
     _cstatus = _c.get("status", "Needed")
 
     _uid = f"{_fkey}_{_cnum}"
@@ -3074,7 +3133,7 @@ def _render_condition(_c, _fkey, _party_options, _cond_statuses):
         _cparties = st.multiselect(
             "Parties",
             _party_options,
-            default=[_cparty] if _cparty in _party_options else [],
+            default=_cparties_default,
             key=f"{_uid}_party",
             label_visibility="collapsed",
         )
@@ -4770,7 +4829,8 @@ def show_dashboard():
                         "homebuyer course", "fannie mae class", "freddie mac class",
                         "fnma class", "fhlmc class", "framework class",
                         "counseling certificate", "education certificate",
-                        "course completion",
+                        "course completion", "hoi", "homeowner", "homeowners",
+                        "hazard insurance", "insurance agent", "current agent",
                     )
 
                     def _is_client_need_condition(_cond) -> bool:
@@ -5616,7 +5676,8 @@ def _pipeline_cond_row(c, contacts=None, loan_num="", borrower=""):
     _status = c.get("status", "")
     _bg = "rgba(59,130,246,0.15)" if _status in ("Cleared","Ready to Clear") else "rgba(245,158,11,0.12)" if _status == "Requested" else "rgba(239,68,68,0.12)"
     _clr = "#3b82f6" if _status in ("Cleared","Ready to Clear") else "#f59e0b" if _status == "Requested" else "#ef4444"
-    _parties = c.get("party", []) if isinstance(c.get("party"), list) else [c.get("party", "")]
+    _parties_raw = c.get("all_parties") or c.get("parties") or c.get("party", [])
+    _parties = _parties_raw if isinstance(_parties_raw, list) else [_parties_raw]
     _party_str = ", ".join(_parties)
 
     # Map party label â†’ contacts key
@@ -10386,7 +10447,7 @@ def show_loan_detail():
                 else:
                     _cond_lines = [
                         f"- Condition #{c['num']}: {(_to_client_language(c['desc'], 'Borrower') if _is_client_party else c['desc'])}"
-                        for c in _conditions[:10]
+                        for c in _conditions
                     ]
                 _email_out = _de("\n".join(_cond_lines), _recip_type, _ld_lang)
                 _recip_email = _recip_contact.get("email", "")
@@ -10418,7 +10479,7 @@ def show_loan_detail():
                 st.warning("AI backend not configured. Go to AI Settings.")
             else:
                 _targets = _ld_recipients or (_party_choices[:1] if _party_choices else [])
-                _conds_for_ai = _ld_checked if _ld_checked else _conditions[:10]
+                _conds_for_ai = _ld_checked if _ld_checked else _conditions
                 for _ld_recipient in _targets:
                     _recip_type = _recipient_type_from_label(_ld_recipient)
                     with st.spinner(f"Drafting with AI for {_ld_recipient}"):
