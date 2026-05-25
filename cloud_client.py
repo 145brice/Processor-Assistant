@@ -470,6 +470,7 @@ Your job:
 10. Treat Final Seller/Selling Disclosure items as Borrower-facing because they come from the sale of the borrower's current home.
 11. Include every Borrower/Client condition section, even if the rows are not numbered.
 12. Do not drop borrower rows that begin with "Borrower to provide", "Borrower must", "Buyer to provide", or "All borrowers must".
+13. Closing Disclosure routing: seller CD / sale-of-current-home CD goes to Borrower; subject-property CD, initial CD, final CD, preliminary CD, or full title package request goes to Title.
 
 Return ONLY the conditions - no intro text, no headers, no explanations.
 Use this exact pipe-delimited format, one condition per line:
@@ -1030,6 +1031,10 @@ Borrower-facing conditions that must never be omitted:
   - Real Estate Certification, Real Estate Cert, FHA Amendatory Clause, or Amendatory Clause
   - Final Seller Disclosure, Final Selling Disclosure, Final Sales Disclosure, Seller CD, or seller Closing Disclosure from the sale of the borrower's current home
   - Any other row under Borrower Conditions / Client Conditions / Borrower Requirements
+
+Closing Disclosure routing:
+  - Subject-property closing disclosure, initial CD, final CD, preliminary CD, or full title package request = Title
+  - Seller closing disclosure / seller CD / CD from sale of current or departing home = Borrower
 
 OUTPUT FORMAT — one condition per line, exactly five pipe-delimited fields:
 | GLOBAL# | [SECTION-LOCAL#] Full condition text as written | Responsible | Needed | Confidence |

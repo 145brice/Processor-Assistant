@@ -604,7 +604,9 @@ _GUESS_PARTY_THIRD = [
         "title company", "settlement agent", "wiring instructions",
         "lien", "payoff statement", "payoff account", "estoppel", "survey",
         "alta", "cpl", "preliminary cd", "warranty deed", "deed of trust",
-        "vesting", "security instrument", "hoa",
+        "vesting", "security instrument", "hoa", "title package",
+        "closing disclosure", "final cd", "final closing disclosure",
+        "initial closing disclosure", "initial cd", "cd delivery", "cd issued",
     ]),
     ("Insurance", [
         "hazard insurance", "homeowner insurance", "homeowner's insurance",
@@ -614,7 +616,6 @@ _GUESS_PARTY_THIRD = [
         "dwelling coverage", "replacement cost", "hazard", "flood", "insurance",
     ]),
     ("Closer", [
-        "closing disclosure", "final closing disclosure", "initial closing disclosure",
         "closing package", "lock desk", "ctc", "clear to close",
         "fund release", "wire authorization", "closing agent",
         "closer to confirm", "closer to provide",
@@ -711,6 +712,18 @@ def _guess_party(text: str) -> str:
         or ("closing disclosure" in t and any(k in t for k in ["seller", "sale of current", "current home", "departing residence", "departing home"]))
     ):
         return "Borrower"
+    if (
+        "closing disclosure" in t
+        or "final cd" in t
+        or "final closing disclosure" in t
+        or "initial closing disclosure" in t
+        or "initial cd" in t
+        or "cd delivery" in t
+        or "cd issued" in t
+        or "preliminary cd" in t
+        or "title package" in t
+    ):
+        return "Title"
     for party, keywords in _GUESS_PARTY_THIRD:
         if any(k in t for k in keywords):
             return party

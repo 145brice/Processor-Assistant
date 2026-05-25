@@ -2268,7 +2268,9 @@ _PARTY_KEYWORDS_THIRD_PARTY = [
         "clear title", "title company", "settlement agent", "wiring instructions",
         "lien", "payoff statement", "payoff account", "estoppel", "survey",
         "alta", "cpl", "preliminary cd", "warranty deed", "deed of trust",
-        "vesting", "security instrument",
+        "vesting", "security instrument", "title package", "closing disclosure",
+        "final cd", "final closing disclosure", "initial closing disclosure",
+        "initial cd", "cd delivery", "cd issued",
     ]),
     ("Insurance", [
         "hazard insurance", "homeowner insurance", "homeowner's insurance",
@@ -2278,8 +2280,7 @@ _PARTY_KEYWORDS_THIRD_PARTY = [
         "dwelling coverage", "replacement cost",
     ]),
     ("Closer", [
-        "closing disclosure", "final closing disclosure", "initial closing disclosure",
-        "cd ", "closer ", "closing package", "lock desk", "ctc", "clear to close",
+        "closer ", "closing package", "lock desk", "ctc", "clear to close",
         "fund release", "wire authorization", "closing agent", "closer to confirm",
         "closer to provide",
     ]),
@@ -2327,7 +2328,7 @@ _PARTY_KEYWORDS_BORROWER_ACTION = [
 ]
 
 
-_CONDITION_ROUTING_VERSION = "v20260525d"
+_CONDITION_ROUTING_VERSION = "v20260525e"
 
 
 def _condition_override_parties(desc: str):
@@ -2366,6 +2367,18 @@ def _condition_override_parties(desc: str):
         or ("closing disclosure" in text and any(k in text for k in ["seller", "sale of current", "current home", "departing residence", "departing home"]))
     ):
         return ["Borrower"]
+    if (
+        "closing disclosure" in text
+        or "final cd" in text
+        or "final closing disclosure" in text
+        or "initial closing disclosure" in text
+        or "initial cd" in text
+        or "cd delivery" in text
+        or "cd issued" in text
+        or "preliminary cd" in text
+        or "title package" in text
+    ):
+        return ["Title"]
     return None
 
 
