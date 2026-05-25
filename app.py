@@ -622,7 +622,7 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     line-height: 1.42;
 }
 .scan-scroll .pa-need-bullet { color: #94a3b8; font-weight: 800; line-height: 1.45; }
-.scan-scroll .pa-need-subject { color: #ffffff; font-weight: 900; }
+.scan-scroll .pa-need-subject { color: #ffffff; font-weight: 700; font-size: inherit; line-height: inherit; }
 .scan-scroll .pa-need-body { color: #dbeafe; font-weight: 500; }
 /* Guide-button panel: dark theme override so the publisher buttons aren't
    blinding white. */
@@ -4937,7 +4937,7 @@ def show_dashboard():
                             '<div class="pa-need-row">'
                             '<span class="pa-need-bullet">-</span>'
                             '<div>'
-                            f'<b class="pa-need-subject" style="color:#ffffff;font-weight:900;">{_html.escape(_subject)}</b>'
+                            f'<b class="pa-need-subject" style="color:#ffffff;font-weight:700;font-size:inherit;line-height:inherit;">{_html.escape(_subject)}</b>'
                             f'<span class="pa-need-body" style="color:#dbeafe;"> - {_html.escape(_body)}</span>'
                             f'<span class="pa-need-status">{_html.escape(_status_label)}</span>'
                             '</div>'
@@ -5014,7 +5014,7 @@ def show_dashboard():
                                         # Convert **bold** to <b>bold</b>
                                         _primary_desc_html = _re_desc.sub(
                                             r"\*\*(.+?)\*\*",
-                                            r"<b style='color:#ffffff;'>\1</b>",
+                                            r"<b style='color:#ffffff;font-size:inherit;line-height:inherit;font-weight:700;'>\1</b>",
                                             _esc,
                                         )
 
