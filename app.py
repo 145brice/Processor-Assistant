@@ -10734,6 +10734,57 @@ def show_loan_detail():
         import html as _html_ld
         import re as _re_ld
 
+        def _ld_detect_guideline_channel() -> str:
+            _bits = [str(loan.get("loan_type", "")), str(loan.get("notes", ""))]
+            for _d in (loan.get("documents", []) or []):
+                if isinstance(_d, dict):
+                    _bits.append(str(_d.get("name", "")))
+                    _bits.append(str(_d.get("type", "")))
+                else:
+                    _bits.append(str(_d))
+            _low = " ".join(_bits).lower()
+            if any(_k in _low for _k in ["desktop underwriter", "du findings", " du ", "fannie"]):
+                return "du"
+            if any(_k in _low for _k in ["loan product advisor", "lpa findings", " lp ", "freddie"]):
+                return "lp"
+            if any(_k in _low for _k in ["gus", "usda findings", "guaranteed underwriting"]):
+                return "gus"
+            if any(_k in _low for _k in ["fha findings", "fha case", "fha connection", "loan_type: fha", " fha "]):
+                return "fha"
+            return "du"
+
+        def _ld_guideline_url_for_condition(_desc: str) -> tuple[str, str]:
+            import urllib.parse as _ulp_ld
+            _q = _ulp_ld.quote(_client_need_subject(_desc) or "loan condition")
+            _aus = _ld_detect_guideline_channel()
+            if _aus == "lp":
+                return "LP/Freddie Mac", f"https://guide.freddiemac.com/app/guide/search?q={_q}"
+            if _aus == "gus":
+                return "GUS/USDA", f"https://www.rd.usda.gov/sites/default/files/hb-1-3555.pdf#search={_q}"
+            if _aus == "fha":
+                return "FHA", "https://www.hud.gov/hud-partners/single-family-handbook-4000-1"
+            return "DU/Fannie Mae", f"https://selling-guide.fanniemae.com/#q={_q}"
+
+        def _ld_flag_condition_question(_cnum: str, _desc: str):
+            _who = st.session_state.get("user_name", "") or "User"
+            _note_key = f"{_ld_fkey}_{_cnum}_note"
+            _typed_note = str(st.session_state.get(_note_key, "") or "").strip()
+            _question_txt = _typed_note if _typed_note else f"Question raised on condition #{_cnum}: {_desc[:140]}"
+            _stamp = f"[QUESTION] {_who}: {_question_txt}"
+            _updated = []
+            for _row in _conditions:
+                if str(_row.get("num")) != str(_cnum):
+                    _updated.append(dict(_row))
+                    continue
+                _new_row = dict(_row)
+                _existing_notes = str(_new_row.get("notes", "") or "").strip()
+                _new_row["notes"] = f"{_existing_notes}\n{_stamp}".strip() if _existing_notes else _stamp
+                _updated.append(_new_row)
+            update_loan(lid, conditions=_updated)
+            log_activity(lid, "condition_question", f"Condition #{_cnum} flagged as question", user=my_name)
+            st.success(f"Condition #{_cnum} flagged as a question for the team.")
+            st.rerun()
+
         def _render_ld_summary_card(_c):
             _orig_desc = str(_c.get("desc", ""))
             _smap = st.session_state.get(_ld_summary_map_key, {})
@@ -10788,6 +10839,13 @@ def show_loan_detail():
                     _desc_html += f'<div style="margin-top:2px;">{_chips}</div>'
                 st.markdown(_desc_html, unsafe_allow_html=True)
 
+                st.text_input(
+                    "Note",
+                    key=f"{_uid}_note",
+                    value=str(_c.get("notes", "") or ""),
+                    label_visibility="collapsed",
+                    placeholder="Notes on this condition",
+                )
                 _status_labels = list(COND_STATUSES_LD.keys())
                 _cstatus = _c.get("status", "Needed")
                 _sidx = _status_labels.index(_cstatus) if _cstatus in _status_labels else 0
@@ -10802,13 +10860,23 @@ def show_loan_detail():
                     key=f"{_uid}_party", label_visibility="collapsed",
                     placeholder="Parties",
                 )
-                if st.button(
-                    "Guide", key=f"{_uid}_guide",
-                    use_container_width=True,
-                    help="Check vs. Fannie/Freddie guidelines",
-                ):
-                    st.session_state[f"{_uid}_guide_open"] = True
-                    st.session_state.pop(f"{_uid}_guide_results", None)
+                _a1, _a2, _a3 = st.columns([1, 1, 1])
+                with _a1:
+                    if st.button("Email", key=f"{_uid}_email", use_container_width=True):
+                        st.session_state[f"{_uid}_chk"] = True
+                        st.session_state[f"ld_auto_draft_{lid}"] = True
+                        st.rerun()
+                with _a2:
+                    if st.button(
+                        "Guide", key=f"{_uid}_guide",
+                        use_container_width=True,
+                        help="Check guideline source based on findings (DU/LP/GUS/FHA)",
+                    ):
+                        st.session_state[f"{_uid}_guide_open"] = True
+                        st.session_state.pop(f"{_uid}_guide_results", None)
+                with _a3:
+                    if st.button("Flag ?", key=f"{_uid}_flag_q", use_container_width=True):
+                        _ld_flag_condition_question(_cnum, _orig_desc)
 
             if st.session_state.get(f"{_uid}_guide_open"):
                 if st.button("Close guide", key=f"{_uid}_guide_close",
@@ -10816,6 +10884,15 @@ def show_loan_detail():
                     for _k in (f"{_uid}_guide_open", f"{_uid}_guide_results"):
                         st.session_state.pop(_k, None)
                     st.rerun()
+                _guide_label, _guide_url = _ld_guideline_url_for_condition(_c.get("desc", ""))
+                st.markdown(
+                    f'<a href="{_guide_url}" target="_blank" rel="noopener noreferrer" '
+                    f'style="display:inline-block;margin:4px 0 8px 0;padding:4px 10px;'
+                    f'background:rgba(59,130,246,0.12);border:1px solid rgba(59,130,246,0.45);'
+                    f'border-radius:6px;color:#bfdbfe;font-size:11px;font-weight:700;'
+                    f'text-decoration:none;">Open {_guide_label} Guidelines</a>',
+                    unsafe_allow_html=True,
+                )
                 _gres = st.session_state.get(f"{_uid}_guide_results")
                 if _gres is None:
                     with st.spinner("Searching Fannie Mae & Freddie Mac"):
@@ -10921,7 +10998,7 @@ def show_loan_detail():
                 _subject, _body_short = _ld_compact_subject_body(
                     _orig_desc, _sum_desc, _primary_section,
                 )
-                _cb_col, _txt_col, _stat_col = st.columns([0.6, 6.4, 3.0])
+                _cb_col, _txt_col, _note_col, _stat_col, _act_col = st.columns([0.6, 5.0, 2.8, 2.2, 2.4])
                 with _cb_col:
                     st.checkbox(
                         f"#{_cnum}", value=False,
@@ -10956,6 +11033,14 @@ def show_loan_detail():
                         f'</div>',
                         unsafe_allow_html=True,
                     )
+                with _note_col:
+                    st.text_input(
+                        "Note",
+                        key=f"{_uid}_note",
+                        value=str(_c.get("notes", "") or ""),
+                        label_visibility="collapsed",
+                        placeholder="Notes",
+                    )
                 with _stat_col:
                     _sidx = _status_labels.index(_cur_status) if _cur_status in _status_labels else 0
                     st.selectbox(
@@ -10963,6 +11048,21 @@ def show_loan_detail():
                         key=f"{_uid}_stat",
                         label_visibility="collapsed",
                     )
+                with _act_col:
+                    _guide_label, _guide_url = _ld_guideline_url_for_condition(_orig_desc)
+                    st.markdown(
+                        f'<a href="{_guide_url}" target="_blank" rel="noopener noreferrer" '
+                        f'title="Open {_guide_label}" style="display:inline-block;padding:2px 8px;'
+                        f'border:1px solid rgba(59,130,246,0.45);border-radius:6px;'
+                        f'font-size:10px;color:#bfdbfe;text-decoration:none;margin-right:6px;">Guide</a>',
+                        unsafe_allow_html=True,
+                    )
+                    if st.button("Email", key=f"{_uid}_email_compact", use_container_width=True):
+                        st.session_state[f"{_uid}_chk"] = True
+                        st.session_state[f"ld_auto_draft_{lid}"] = True
+                        st.rerun()
+                    if st.button("Flag ?", key=f"{_uid}_flag_q_compact", use_container_width=True):
+                        _ld_flag_condition_question(_cnum, _orig_desc)
         else:
             for _c in _conditions:
                 _render_ld_original_card(_c)
@@ -11005,6 +11105,25 @@ def show_loan_detail():
                 "all_parties": _cparties,
             })
 
+        if st.button("Save Condition Updates", key=f"ld_save_condition_updates_{lid}", use_container_width=True):
+            _updated_conds = []
+            for _c in _conditions:
+                _cnum = _c["num"]
+                _uid = f"{_ld_fkey}_{_cnum}"
+                _row = dict(_c)
+                _row["status"] = st.session_state.get(f"{_uid}_stat", _row.get("status", "Needed"))
+                _row["parties"] = st.session_state.get(f"{_uid}_party") or _ld_parties_for_cond(_row)
+                _row["party"] = _row["parties"][0] if _row["parties"] else _row.get("party", "Borrower")
+                _note_txt = str(st.session_state.get(f"{_uid}_note", "") or "").strip()
+                if _note_txt:
+                    _row["notes"] = _note_txt
+                else:
+                    _row.pop("notes", None)
+                _updated_conds.append(_row)
+            update_loan(lid, conditions=_updated_conds)
+            log_activity(lid, "conditions", "Updated condition status/party/notes", user=my_name)
+            st.success("Condition updates saved.")
+            st.rerun()
         # â”€â”€ Email Draft below conditions, auto-populate from stored contacts â”€â”€
         st.markdown(
             '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
@@ -11081,6 +11200,8 @@ def show_loan_detail():
         with _ld_d2:
             _ld_ai_btn = st.button("Draft with AI", key=f"ld_ai_draft_{lid}",
                                    use_container_width=True)
+        if st.session_state.pop(f"ld_auto_draft_{lid}", False):
+            _ld_draft_btn = True
 
         if _ld_draft_btn:
             from ai_engine import draft_email as _de
@@ -12356,3 +12477,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
