@@ -873,6 +873,16 @@ p, li, label, [data-testid="stMarkdownContainer"] p,
 [data-testid="stMarkdownContainer"] strong { color: #ffffff !important; }
 
 /* Loan AI chat input: keep Streamlit's pinned chat bar in the dark app theme */
+[data-testid="stBottom"],
+[data-testid="stBottomBlockContainer"],
+[data-testid="stBottom"] > div,
+[data-testid="stBottomBlockContainer"] > div {
+    background: #0f1117 !important;
+}
+[data-testid="stBottomBlockContainer"] {
+    border-top: 1px solid #1f2937 !important;
+    box-shadow: 0 -10px 24px rgba(0,0,0,0.24) !important;
+}
 [data-testid="stChatInput"],
 [data-testid="stChatInput"] > div,
 [data-testid="stChatInput"] textarea,
