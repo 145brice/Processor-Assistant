@@ -338,6 +338,60 @@ button[kind="secondary"]:hover p { color: var(--accent) !important; }
 [data-testid="stForm"] [data-testid="stButton"] button p {
     color: inherit !important;
 }
+/* Streamlit's default st.link_button renders white-on-white in dark theme.
+   Force dark accent styling across every link_button variant the framework
+   emits. We target the wrapper, the anchor (both base testids and the
+   kind=primary/secondary attributes), and inner label nodes. body prefix
+   bumps specificity above Streamlit's built-in stylesheet. */
+body [data-testid="stLinkButton"],
+body [data-testid="stLinkButton"] > a,
+body [data-testid="stLinkButton"] a,
+body .stLinkButton,
+body .stLinkButton > a,
+body a[data-testid^="stBaseLinkButton"],
+body a[data-testid="stBaseLinkButton-secondary"],
+body a[data-testid="stBaseLinkButton-primary"],
+body a[data-testid="baseLinkButton-secondary"],
+body a[data-testid="baseLinkButton-primary"],
+body a[kind="secondary"][href],
+body a[kind="primary"][href] {
+    background: rgba(59,130,246,0.10) !important;
+    background-color: rgba(59,130,246,0.10) !important;
+    color: #3b82f6 !important;
+    border: 1px solid #3b82f6 !important;
+    border-radius: var(--radius-sm) !important;
+    font-weight: 700 !important;
+    font-size: 13px !important;
+    line-height: 1.2 !important;
+    box-shadow: 0 0 10px rgba(59,130,246,0.18) !important;
+    transition: all 0.25s ease !important;
+    text-decoration: none !important;
+}
+body [data-testid="stLinkButton"] a:hover,
+body .stLinkButton a:hover,
+body a[data-testid^="stBaseLinkButton"]:hover,
+body a[kind="secondary"][href]:hover,
+body a[kind="primary"][href]:hover {
+    background: rgba(59,130,246,0.20) !important;
+    background-color: rgba(59,130,246,0.20) !important;
+    color: #3b82f6 !important;
+    border-color: #3b82f6 !important;
+    box-shadow: 0 0 18px rgba(59,130,246,0.4) !important;
+    transform: translateY(-1px) !important;
+    text-decoration: none !important;
+}
+/* Inner label nodes (Streamlit wraps the label in a markdown container) */
+body [data-testid="stLinkButton"] a *,
+body [data-testid="stLinkButton"] *,
+body .stLinkButton a *,
+body a[data-testid^="stBaseLinkButton"] *,
+body a[kind="secondary"][href] *,
+body a[kind="primary"][href] * {
+    color: #3b82f6 !important;
+    background: transparent !important;
+    background-color: transparent !important;
+    font-weight: 700 !important;
+}
 [data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea, [data-testid="stSelectbox"] > div > div, [data-testid="stNumberInput"] input { background: var(--bg-subtle) !important; border: 1px solid var(--slate-300) !important; border-radius: var(--radius-sm) !important; color: var(--slate-900) !important; font-size: 13px !important; }
 [data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important; }
 [data-testid="stFileUploader"] { background: rgba(255,255,255,0.02) !important; border: 1.5px dashed rgba(59,130,246,0.3) !important; border-radius: 14px !important; padding: 8px !important; transition: all 0.18s ease-in-out !important; }
@@ -4798,58 +4852,54 @@ def show_dashboard():
                             _cond_view["_primary_section"] = _primary_section
                             _conds_by_section.setdefault(_section, []).append(_cond_view)
 
-                    # Sort mode: "PDF order" (default) keeps conditions in scan order;
-                    # "By party" groups them under section headers.
-                    _scan_sort_key = f"{_scan_fkey}_cond_sort"
-                    _sort_mode = st.session_state.get(_scan_sort_key, "PDF order")
+                    # 2x3 grid bucketing: Borrower / Third Party / Party Comms.
+                    # Top row of the grid renders the Gemini-summarized email version;
+                    # bottom row renders the originals with the full interactive
+                    # controls (status, parties, Guide). A condition that routes to
+                    # multiple parties appears in every bucket those parties span.
+                    _BUCKETS_SCAN = ["Borrower", "Third Party", "Party Comms"]
+                    _BUCKET_PARTIES_SCAN = {
+                        "Borrower": ["Borrower"],
+                        "Third Party": ["Title", "Insurance", "Appraiser", "Employer"],
+                        "Party Comms": ["Realtor", "Seller", "Closer", "Processor", "Underwriter"],
+                    }
+                    _BUCKET_LABEL_SCAN = {
+                        "Borrower": "Borrower",
+                        "Third Party": "Third Party",
+                        "Party Comms": "Party Comms",
+                    }
 
-                    _norm_conds_grouped = []
-                    if _sort_mode == "By party":
-                        for _party in _SECTION_ORDER_SCAN:
-                            _section_conds = _conds_by_section.get(_party, [])
-                            if _section_conds:
-                                _norm_conds_grouped.append({"_section": _party, "_count": len(_section_conds)})
-                                _norm_conds_grouped.extend(_section_conds)
-                    else:
-                        # PDF order: emit each condition once, in its original scan position,
-                        # using its primary (first) section for the per-row party tag.
-                        for _cond_idx, _cond in enumerate(_norm_conds):
-                            _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
-                            _sections = _scan_sections_for_condition(_cond)
-                            _primary_section = _sections[0]
+                    def _bucket_for_section(_section_party):
+                        for _b, _parties in _BUCKET_PARTIES_SCAN.items():
+                            if _section_party in _parties:
+                                return _b
+                        return "Party Comms"
+
+                    _conds_by_bucket = {b: [] for b in _BUCKETS_SCAN}
+                    for _cond_idx, _cond in enumerate(_norm_conds):
+                        _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
+                        _sections = _scan_sections_for_condition(_cond)
+                        _primary_section = _sections[0]
+                        _primary_bucket = _bucket_for_section(_primary_section)
+                        _seen_buckets = []
+                        for _section in _sections:
+                            _b = _bucket_for_section(_section)
+                            if _b in _seen_buckets:
+                                continue
+                            _seen_buckets.append(_b)
                             _cond_view = dict(_cond)
                             _cond_view["_scan_uid"] = _cond_uid
-                            _cond_view["_section_party"] = _primary_section
+                            _cond_view["_section_party"] = _section
                             _cond_view["_primary_section"] = _primary_section
-                            _norm_conds_grouped.append(_cond_view)
+                            _cond_view["_bucket"] = _b
+                            _cond_view["_primary_bucket"] = _primary_bucket
+                            _conds_by_bucket[_b].append(_cond_view)
 
-                    # Sort row + Summarized toggle + always-on Client Needs List
+                    # Pre-fetch summaries (always on; the top row is the summary).
                     _plain_map_key = f"{_scan_fkey}_plain_map"
                     _plain_sig_key = f"{_scan_fkey}_plain_sig"
-                    _summary_key = f"{_scan_fkey}_summary_on"
                     _summary_map_key = f"{_scan_fkey}_summary_map"
                     _summary_sig_key = f"{_scan_fkey}_summary_sig"
-                    _sort_c1, _sort_c2, _sort_c3 = st.columns([2.0, 1.4, 1.4])
-                    with _sort_c2:
-                        _summary_on = st.toggle(
-                            "Summarized",
-                            value=bool(st.session_state.get(_summary_key, False)),
-                            key=f"{_summary_key}_toggle",
-                            help="Bold subject + one short instruction per condition (Gemini)",
-                        )
-                        if _summary_on != bool(st.session_state.get(_summary_key, False)):
-                            st.session_state[_summary_key] = _summary_on
-                            st.rerun()
-                    with _sort_c3:
-                        _new_sort = st.selectbox(
-                            "Sort", ["PDF order", "By party"],
-                            index=0 if _sort_mode == "PDF order" else 1,
-                            key=f"{_scan_sort_key}_select",
-                            label_visibility="collapsed",
-                        )
-                        if _new_sort != _sort_mode:
-                            st.session_state[_scan_sort_key] = _new_sort
-                            st.rerun()
 
                     _originals = [str(c.get("desc", "")) for c in _norm_conds]
                     _plain_sig = "\n".join(_originals)
@@ -4860,9 +4910,7 @@ def show_dashboard():
                         st.session_state[_plain_map_key] = {o: _to_client_language(o, "Borrower") for o in _originals}
                         st.session_state[_plain_sig_key] = _plain_sig
 
-                    # When Summarized toggle is on and we don't have a cached map (or
-                    # the underlying conditions changed), fetch summarized text from Gemini.
-                    if _summary_on and st.session_state.get(_summary_sig_key) != _plain_sig:
+                    if st.session_state.get(_summary_sig_key) != _plain_sig:
                         _gem_key = st.session_state.get("user_gemini_api_key", "")
                         with st.spinner("Summarizing conditions..."):
                             try:
@@ -4873,6 +4921,7 @@ def show_dashboard():
                             except Exception as _se:
                                 st.warning(f"Could not summarize: {_se}")
                                 st.session_state[_summary_map_key] = {}
+                    _summary_on = True  # top row of the 2x3 grid always shows summaries
 
                     def _needs_status_label(_raw_status: str) -> str:
                         s = str(_raw_status or "").strip().lower()
@@ -4979,184 +5028,189 @@ def show_dashboard():
                             unsafe_allow_html=True,
                         )
 
-                    for _c in _norm_conds_grouped:
-                        if _c.get("_section"):
-                            _section_party = _c["_section"]
-                            _section_count = _c["_count"]
-                            st.markdown(
-                                f'<div class="pa-section" style="margin-top:12px;">'
-                                f'{_SECTION_LABEL_SCAN.get(_section_party, _section_party + " Conditions")} '
-                                f'<span style="color:#64748b;font-size:11px;font-weight:600;">'
-                                f'{_section_count} item{"s" if _section_count != 1 else ""}</span></div>',
-                                unsafe_allow_html=True,
+                    # â”€â”€ 2x3 grid: top row = Gemini summary (email-style, display-only),
+                    # bottom row = originals with full interactive controls (status,
+                    # parties, Guide). Both rows split into Borrower / Third Party /
+                    # Party Comms columns.
+                    import html as _html_grid
+                    import re as _re_grid
+
+                    def _render_summary_card(_c):
+                        _orig_desc = str(_c.get("desc", ""))
+                        _smap = st.session_state.get(_summary_map_key, {})
+                        _sum_desc = str(_smap.get(_orig_desc) or "").strip()
+                        _conf = (_c.get("confidence") or "").strip()
+                        _conf_badge = (
+                            f' <span style="color:#93c5fd;font-size:9px;opacity:0.8;">{_conf}</span>'
+                            if _conf else ""
+                        )
+                        if _sum_desc:
+                            _esc = _html_grid.escape(_sum_desc)
+                            _desc_html = _re_grid.sub(
+                                r"\*\*(.+?)\*\*",
+                                r"<b style='color:#ffffff;font-weight:700;'>\1</b>",
+                                _esc,
                             )
-                            continue
+                        else:
+                            _desc_html = _html_grid.escape(_orig_desc)
+                        _row_sections = _scan_sections_for_condition(_c)
+                        _route_chips = "".join(
+                            f'<span style="display:inline-block;margin:0 3px 3px 0;padding:1px 6px;'
+                            f'border-radius:999px;background:rgba(59,130,246,0.14);'
+                            f'border:1px solid rgba(59,130,246,0.32);color:#bfdbfe;'
+                            f'font-size:9px;font-weight:700;">{_html_grid.escape(str(_p))}</span>'
+                            for _p in _row_sections
+                        )
+                        st.markdown(
+                            f'<div style="border:1px solid rgba(255,255,255,0.10);border-radius:8px;'
+                            f'padding:8px 10px;margin-bottom:6px;background:rgba(255,255,255,0.02);">'
+                            f'<div style="font-size:12px;line-height:1.4;">'
+                            f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
+                            f'<span style="color:#e5e7eb;">{_desc_html}</span>{_conf_badge}</div>'
+                            + (f'<div style="margin-top:4px;">{_route_chips}</div>' if _route_chips else '')
+                            + '</div>',
+                            unsafe_allow_html=True,
+                        )
+
+                    def _render_original_card(_c):
                         _section_party_for_row = _c.get("_section_party") or "Borrower"
                         _is_primary_row = _section_party_for_row == (_c.get("_primary_section") or _section_party_for_row)
                         _base_uid = f"{_scan_fkey}_{_c.get('_scan_uid', _c['num'])}"
                         _uid = f"{_base_uid}_{_section_party_for_row}"
                         with st.container(border=True):
-                            _top1, _top2 = st.columns([0.35, 8])
-                            with _top1:
-                                _chk = st.checkbox(
-                                    "Select condition",
-                                    value=False,
-                                    key=f"{_uid}_chk",
-                                    label_visibility="collapsed",
+                            _orig_desc = str(_c.get("desc", ""))
+                            _pmap = st.session_state.get(_plain_map_key, {})
+                            _client_desc = str(_pmap.get(_orig_desc) or _orig_desc)
+                            _has_alt = bool(_client_desc and _client_desc != _orig_desc)
+                            _conf = (_c.get("confidence") or "").strip()
+                            _conf_badge = (
+                                f' <span style="color:#93c5fd;font-size:9px;opacity:0.8;">{_conf}</span>'
+                                if _conf else ""
+                            )
+                            _row_sections = _scan_sections_for_condition(_c)
+                            _route_chips = "".join(
+                                f'<span style="display:inline-block;margin:0 3px 3px 0;padding:1px 6px;'
+                                f'border-radius:999px;background:rgba(59,130,246,0.14);'
+                                f'border:1px solid rgba(59,130,246,0.32);color:#bfdbfe;'
+                                f'font-size:9px;font-weight:700;">{_html_grid.escape(str(_p))}</span>'
+                                for _p in _row_sections
+                            )
+                            st.checkbox(
+                                f'#{_c["num"]}',
+                                value=False,
+                                key=f"{_uid}_chk",
+                            )
+                            _desc_html = (
+                                f'<div style="font-size:12px;line-height:1.35;padding:2px 0;color:#e5e7eb;">'
+                                f'{_html_grid.escape(_orig_desc)}{_conf_badge}</div>'
+                            )
+                            if _route_chips:
+                                _desc_html += f'<div style="margin-top:2px;">{_route_chips}</div>'
+                            if _has_alt:
+                                _desc_html += (
+                                    f'<div style="font-size:10.5px;line-height:1.3;margin-top:3px;'
+                                    f'color:#94a3b8;"><b>Client language:</b> {_html_grid.escape(_client_desc)}</div>'
                                 )
-                            with _top2:
-                                _conf = (_c.get("confidence") or "").strip()
-                                _conf_badge = (
-                                    f' <span style="color:#93c5fd;font-size:10px;opacity:0.8;">{_conf}</span>'
-                                    if _conf else ""
+                            st.markdown(_desc_html, unsafe_allow_html=True)
+
+                            if _is_primary_row:
+                                _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c["status"] in _COND_STATS_SCAN else 0
+                                st.selectbox(
+                                    "Status", _COND_STATS_SCAN, index=_sidx,
+                                    key=f"{_base_uid}_stat", label_visibility="collapsed",
                                 )
-                                import html as _html
-                                import re as _re_desc
-                                _orig_desc = str(_c.get("desc", ""))
-                                _pmap = st.session_state.get(_plain_map_key, {})
-                                _client_desc = str(_pmap.get(_orig_desc) or _orig_desc)
-                                _has_alt = bool(_client_desc and _client_desc != _orig_desc)
-                                _row_sections = _scan_sections_for_condition(_c)
-                                _route_chips = "".join(
-                                    f'<span style="display:inline-block;margin:0 4px 4px 0;padding:2px 7px;'
-                                    f'border-radius:999px;background:rgba(59,130,246,0.14);'
-                                    f'border:1px solid rgba(59,130,246,0.32);color:#bfdbfe;'
-                                    f'font-size:10px;font-weight:700;">{_html.escape(str(_party))}</span>'
-                                    for _party in _row_sections
+                                _default_parties = _scan_sections_for_condition(_c)
+                                _party_key = f"{_base_uid}_party"
+                                _current_parties = st.session_state.get(_party_key)
+                                if not isinstance(_current_parties, list):
+                                    _current_parties = [p for p in _default_parties if p in _PARTY_OPTS_SCAN]
+                                st.multiselect(
+                                    "Responsible parties", _PARTY_OPTS_SCAN,
+                                    default=[p for p in _default_parties if p in _PARTY_OPTS_SCAN],
+                                    key=_party_key, label_visibility="collapsed",
+                                    placeholder="Parties",
                                 )
-                                _primary_desc = _orig_desc
-                                _secondary_desc = _client_desc
-                                _primary_desc_html = _html.escape(_primary_desc)
-                                _secondary_desc_html = _html.escape(_secondary_desc)
-                                _secondary_label = "Client language"
-
-                                # If Summarized toggle is on and we have a Gemini summary
-                                # for this condition, render it INSTEAD of the original
-                                # desc, with **bold** converted to HTML <b>.
-                                if _summary_on:
-                                    _smap = st.session_state.get(_summary_map_key, {})
-                                    _sum_desc = str(_smap.get(_orig_desc) or "").strip()
-                                    if _sum_desc:
-                                        _esc = _html.escape(_sum_desc)
-                                        # Convert **bold** to <b>bold</b>
-                                        _primary_desc_html = _re_desc.sub(
-                                            r"\*\*(.+?)\*\*",
-                                            r"<b style='color:#ffffff;font-size:inherit;line-height:inherit;font-weight:700;'>\1</b>",
-                                            _esc,
-                                        )
-
-                                _desc_html = (
-                                    f'<div style="font-size:13px;line-height:1.38;padding:1px 0 4px;">'
-                                    f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
-                                    f'<span style="color:#e5e7eb;">{_primary_desc_html}</span>{_conf_badge}</div>'
+                                if len(_current_parties) > 1:
+                                    if st.button("Clear parties", key=f"{_base_uid}_party_clear",
+                                                 use_container_width=True):
+                                        st.session_state[_party_key] = []
+                                        st.rerun()
+                            else:
+                                st.caption(
+                                    f"Shared - also in {_SECTION_LABEL_SCAN.get(_section_party_for_row, _section_party_for_row)}"
                                 )
-                                if _route_chips:
-                                    _desc_html += (
-                                        f'<div style="padding:0 0 5px 22px;">'
-                                        f'<span style="color:#64748b;font-size:10px;font-weight:700;'
-                                        f'margin-right:6px;text-transform:uppercase;">Routes</span>'
-                                        f'{_route_chips}</div>'
-                                    )
-                                if _has_alt:
-                                    _desc_html += (
-                                        f'<div style="font-size:11px;line-height:1.35;padding:0 0 5px 22px;'
-                                        f'color:#94a3b8;"><b>{_secondary_label}:</b> {_secondary_desc_html}</div>'
-                                    )
-                                st.markdown(_desc_html, unsafe_allow_html=True)
 
-                            _ctrl1, _ctrl2, _ctrl3 = st.columns([1.5, 3.4, 1.15])
-                            with _ctrl1:
-                                if _is_primary_row:
-                                    _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c["status"] in _COND_STATS_SCAN else 0
-                                    _cstat = st.selectbox("Status", _COND_STATS_SCAN, index=_sidx,
-                                                          key=f"{_base_uid}_stat", label_visibility="collapsed")
-                                else:
-                                    st.caption("Shared")
-                            with _ctrl2:
-                                if _is_primary_row:
-                                    _default_parties = _scan_sections_for_condition(_c)
-                                    _party_key = f"{_base_uid}_party"
-                                    _current_parties = st.session_state.get(_party_key)
-                                    if not isinstance(_current_parties, list):
-                                        _current_parties = [p for p in _default_parties if p in _PARTY_OPTS_SCAN]
-                                    if len(_current_parties) > 1:
-                                        _party_cols = st.columns([3.4, 1])
-                                        with _party_cols[1]:
-                                            if st.button("Unselect All", key=f"{_base_uid}_party_clear",
-                                                         use_container_width=True):
-                                                st.session_state[_party_key] = []
-                                                st.rerun()
-                                        with _party_cols[0]:
-                                            _cparties = st.multiselect(
-                                                "Responsible parties", _PARTY_OPTS_SCAN,
-                                                default=[p for p in _default_parties if p in _PARTY_OPTS_SCAN],
-                                                key=_party_key, label_visibility="collapsed",
-                                            )
-                                    else:
-                                        _cparties = st.multiselect(
-                                            "Responsible parties", _PARTY_OPTS_SCAN,
-                                            default=[p for p in _default_parties if p in _PARTY_OPTS_SCAN],
-                                            key=_party_key, label_visibility="collapsed",
-                                        )
-                                else:
-                                    st.caption(f"Also included in {_SECTION_LABEL_SCAN.get(_section_party_for_row, _section_party_for_row)}")
-                            with _ctrl3:
-                                if st.button("Guide", key=f"{_uid}_guide", use_container_width=True,
-                                             help="Open Fannie Mae / Freddie Mac / USDA guidelines for this condition"):
-                                    st.session_state[f"{_uid}_guide_open"] = not st.session_state.get(f"{_uid}_guide_open", False)
+                            if st.button(
+                                "Guide", key=f"{_uid}_guide", use_container_width=True,
+                                help="Open Fannie Mae / Freddie Mac / USDA guidelines for this condition",
+                            ):
+                                st.session_state[f"{_uid}_guide_open"] = not st.session_state.get(f"{_uid}_guide_open", False)
 
-                        # â”€â”€ Guide panel: 3 link buttons that jump to the right publisher
-                        # â”€â”€ guideline page, pre-filtered by the condition subject.
                         if st.session_state.get(f"{_uid}_guide_open"):
                             import urllib.parse as _ulp
-                            import html as _html
                             _guide_subject = _client_need_subject(str(_c.get("desc", "")))
                             _gq = _ulp.quote(_guide_subject or "loan condition")
-                            # Direct PDF links to each publisher's current handbook.
-                            # USDA's PDF is hosted at a stable URL. Fannie Mae and
-                            # Freddie Mac rotate PDF URLs frequently, so we use the
-                            # canonical HTML guide entry pages with #search= which
-                            # both their viewers accept.
                             _gm_url = f"https://selling-guide.fanniemae.com/#q={_gq}"
                             _fm_url = f"https://guide.freddiemac.com/app/guide/search?q={_gq}"
                             _usda_url = f"https://www.rd.usda.gov/sites/default/files/hb-1-3555.pdf#search={_gq}"
-
-                            # Render the three publisher buttons as raw HTML so styling
-                            # isn't subject to Streamlit's link_button defaults.
                             _btn_css = (
                                 "display:flex;align-items:center;justify-content:center;"
-                                "height:32px;padding:0 12px;border-radius:6px;"
+                                "height:28px;padding:0 8px;border-radius:6px;"
                                 "background:rgba(59,130,246,0.14);"
                                 "border:1px solid rgba(59,130,246,0.5);"
-                                "color:#dbeafe;font-weight:700;font-size:12px;"
-                                "text-decoration:none;letter-spacing:0.3px;"
-                                "transition:background 0.15s,border-color 0.15s,color 0.15s;"
+                                "color:#dbeafe;font-weight:700;font-size:11px;"
+                                "text-decoration:none;letter-spacing:0.2px;"
                             )
-                            _btn_grid = (
-                                f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin:4px 0 6px 0;">'
-                                f'  <a href="{_gm_url}" target="_blank" rel="noopener noreferrer" '
-                                f'     title="Fannie Mae Selling Guide - search for {_html.escape(_guide_subject)}" '
-                                f'     style="{_btn_css}">Fannie Mae</a>'
-                                f'  <a href="{_fm_url}" target="_blank" rel="noopener noreferrer" '
-                                f'     title="Freddie Mac Seller/Servicer Guide - search for {_html.escape(_guide_subject)}" '
-                                f'     style="{_btn_css}">Freddie Mac</a>'
-                                f'  <a href="{_usda_url}" target="_blank" rel="noopener noreferrer" '
-                                f'     title="USDA Handbook 3555 - search for {_html.escape(_guide_subject)}" '
-                                f'     style="{_btn_css}">USDA</a>'
-                                f'</div>'
-                            )
-                            _gc1, _gc2 = st.columns([5, 0.6])
-                            with _gc1:
-                                st.markdown(_btn_grid, unsafe_allow_html=True)
-                            with _gc2:
-                                if st.button("Close", key=f"{_uid}_guide_close", help="Close"):
-                                    st.session_state.pop(f"{_uid}_guide_open", None)
-                                    st.rerun()
                             st.markdown(
-                                f'<div style="font-size:10.5px;color:#94a3b8;padding:2px 0 4px 0;">'
-                                f'Will open and highlight: <b style="color:#cbd5e1;">{_html.escape(_guide_subject)}</b></div>',
+                                f'<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin:4px 0;">'
+                                f'<a href="{_gm_url}" target="_blank" rel="noopener noreferrer" style="{_btn_css}">Fannie</a>'
+                                f'<a href="{_fm_url}" target="_blank" rel="noopener noreferrer" style="{_btn_css}">Freddie</a>'
+                                f'<a href="{_usda_url}" target="_blank" rel="noopener noreferrer" style="{_btn_css}">USDA</a>'
+                                f'</div>',
                                 unsafe_allow_html=True,
                             )
+                            if st.button("Close guide", key=f"{_uid}_guide_close", use_container_width=True):
+                                st.session_state.pop(f"{_uid}_guide_open", None)
+                                st.rerun()
+
+                    def _render_bucket_column(_bucket, _renderer):
+                        _bucket_conds = _conds_by_bucket.get(_bucket, [])
+                        st.markdown(
+                            f'<div style="font-size:11px;font-weight:700;color:#93c5fd;text-transform:uppercase;'
+                            f'letter-spacing:0.4px;margin:2px 0 6px 0;">{_BUCKET_LABEL_SCAN[_bucket]} '
+                            f'<span style="color:#64748b;font-weight:600;text-transform:none;">'
+                            f'({len(_bucket_conds)})</span></div>',
+                            unsafe_allow_html=True,
+                        )
+                        if not _bucket_conds:
+                            st.markdown(
+                                '<div style="color:#64748b;font-size:11px;font-style:italic;'
+                                'padding:8px 0;">No conditions</div>',
+                                unsafe_allow_html=True,
+                            )
+                            return
+                        for _c in _bucket_conds:
+                            _renderer(_c)
+
+                    # Row 1: Summarized (email-style)
+                    st.markdown(
+                        '<div class="pa-section" style="margin-top:14px;">Summarized (email version)</div>',
+                        unsafe_allow_html=True,
+                    )
+                    _sum_cols = st.columns(3)
+                    for _i, _bucket in enumerate(_BUCKETS_SCAN):
+                        with _sum_cols[_i]:
+                            _render_bucket_column(_bucket, _render_summary_card)
+
+                    # Row 2: Originals (full interactive)
+                    st.markdown(
+                        '<div class="pa-section" style="margin-top:18px;">All Conditions (Original)</div>',
+                        unsafe_allow_html=True,
+                    )
+                    _orig_cols = st.columns(3)
+                    for _i, _bucket in enumerate(_BUCKETS_SCAN):
+                        with _orig_cols[_i]:
+                            _render_bucket_column(_bucket, _render_original_card)
 
                     def _scan_condition_checked_for_section(_cond, _section_party):
                         _cond_key = _cond.get("_scan_uid", _cond["num"])
@@ -5225,25 +5279,105 @@ def show_dashboard():
                         _edited_body = st.session_state.get(f"{_scan_fkey}_{_draft_party}_email_body_edit", _ebody)
                         _compose_params["body"] = _edited_body
                         _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode(_compose_params)
-                        _draft_cols = st.columns([1, 2, 3])
+
+                        # â”€â”€ Per-party communications log â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                        # Tracks each time the user clicks the per-draft log button.
+                        # We can't observe the Gmail tab (no API), so the user records
+                        # intent here. State machine: <no log> -> drafted -> sent.
+                        import datetime as _comms_dt
+                        _comms_log_key = f"{_scan_fkey}_{_draft_party}_comms_log"
+                        _comms_log = list(st.session_state.get(_comms_log_key, []))
+
+                        def _log_comms_event(_action):
+                            _entry = {
+                                "ts": _comms_dt.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                                "action": _action,
+                                "recipient": _recipient_email or "(no email)",
+                                "subject": _subject,
+                                "body": (_edited_body or "")[:240],
+                                "user": st.session_state.get("user_name", "") or "you",
+                                "party": _draft_party,
+                            }
+                            _existing = list(st.session_state.get(_comms_log_key, []))
+                            _existing.append(_entry)
+                            st.session_state[_comms_log_key] = _existing
+                            # Mirror into a batch-wide log so the central viewer can
+                            # show everything across parties in one place.
+                            _all_key = f"{_scan_fkey}_comms_log_all"
+                            _all_log = list(st.session_state.get(_all_key, []))
+                            _all_log.append(_entry)
+                            st.session_state[_all_key] = _all_log
+
+                        def _comms_tooltip_text():
+                            _log = st.session_state.get(_comms_log_key, [])
+                            if not _log:
+                                return "No drafts or sends logged for this party yet."
+                            _drafted = sum(1 for e in _log if e["action"] == "drafted")
+                            _sent = sum(1 for e in _log if e["action"] == "sent")
+                            _recent = "\n".join(
+                                f'{e["ts"]} - {e["action"].upper()} by {e.get("user","you")}'
+                                for e in list(reversed(_log))[:6]
+                            )
+                            return f"Sent: {_sent}    Drafted: {_drafted}\n\nRecent:\n{_recent}"
+
+                        _last_action = _comms_log[-1]["action"] if _comms_log else None
+                        if _last_action == "drafted":
+                            _log_btn_label = "Mark as sent"
+                            _next_action = "sent"
+                        elif _last_action == "sent":
+                            _log_btn_label = "Log new draft"
+                            _next_action = "drafted"
+                        else:
+                            _log_btn_label = "Log as drafted"
+                            _next_action = "drafted"
+
+                        _draft_cols = st.columns([1, 1.4, 1.4, 1.8])
                         with _draft_cols[0]:
                             if st.button("Close Draft", key=f"{_scan_fkey}_{_draft_party}_email_group_close"):
                                 st.session_state.pop(f"{_scan_fkey}_email_group_open", None)
                                 st.rerun()
                         with _draft_cols[1]:
                             st.markdown(
-                                f'<a href="{_gmail_compose}" target="_blank" style="display:inline-block;'
-                                f'margin-top:4px;padding:4px 12px;background:rgba(66,133,244,0.12);'
-                                f'border:1px solid rgba(66,133,244,0.4);border-radius:6px;color:#4285f4;'
-                                f'font-size:11px;font-weight:700;text-decoration:none;">Compose in Gmail</a>',
+                                f'<a href="{_gmail_compose}" target="_blank" '
+                                f'title="Opens Gmail in a new tab. Use the button to log when you draft or send." '
+                                f'style="display:inline-block;margin-top:4px;padding:4px 12px;'
+                                f'background:rgba(66,133,244,0.12);border:1px solid rgba(66,133,244,0.4);'
+                                f'border-radius:6px;color:#4285f4;font-size:11px;font-weight:700;'
+                                f'text-decoration:none;">Compose in Gmail</a>',
                                 unsafe_allow_html=True,
                             )
                         with _draft_cols[2]:
+                            if st.button(
+                                _log_btn_label,
+                                key=f"{_scan_fkey}_{_draft_party}_log_btn",
+                                help=_comms_tooltip_text(),
+                                use_container_width=True,
+                            ):
+                                _log_comms_event(_next_action)
+                                st.toast(
+                                    f"Logged: {_next_action} -> "
+                                    f"{_recipient_email or 'no email on file'}"
+                                )
+                                st.rerun()
+                        with _draft_cols[3]:
                             if st.button("Translate / Spanish Reply", key=f"{_scan_fkey}_{_draft_party}_translate"):
                                 st.session_state["spanish_reply_data"] = {"subject": _subject, "body": _edited_body}
                                 st.session_state.page = "spanish_reply"
                                 st.rerun()
+
+                        # Compact status caption right below the buttons.
+                        if _comms_log:
+                            _last = _comms_log[-1]
+                            _drafted_n = sum(1 for e in _comms_log if e["action"] == "drafted")
+                            _sent_n = sum(1 for e in _comms_log if e["action"] == "sent")
+                            st.caption(
+                                f'Last: {_last["action"].upper()} at {_last["ts"]} '
+                                f'by {_last.get("user","you")} '
+                                f'(sent {_sent_n}, drafted {_drafted_n})'
+                            )
+                        else:
                             st.caption("Gmail opens ready to review. It will not send automatically.")
+
                         st.markdown('</div>', unsafe_allow_html=True)
 
                     # Auto-group checked conditions by their per-condition party assignment.
@@ -5296,6 +5430,57 @@ def show_dashboard():
                                 st.session_state[f"{_scan_fkey}_{_open_party}_email_group_lang"] = \
                                     st.session_state.get(f"{_scan_fkey}_email_group_lang_global", "English")
                                 _render_scan_email_draft(_open_party)
+
+                    # â”€â”€ Central communications log for this scan batch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+                    # Aggregates every draft/sent event the user logged via the
+                    # per-party Compose buttons above. Lives in session_state for
+                    # the duration of the scan review.
+                    _comms_all_key = f"{_scan_fkey}_comms_log_all"
+                    _comms_all = st.session_state.get(_comms_all_key, [])
+                    if _comms_all:
+                        import html as _html_log
+                        _drafted_total = sum(1 for e in _comms_all if e["action"] == "drafted")
+                        _sent_total = sum(1 for e in _comms_all if e["action"] == "sent")
+                        with st.expander(
+                            f"Communications log - {_sent_total} sent, {_drafted_total} drafted",
+                            expanded=False,
+                        ):
+                            _log_rows = []
+                            for _e in reversed(_comms_all):
+                                _badge_color = "#22c55e" if _e["action"] == "sent" else "#f59e0b"
+                                _log_rows.append(
+                                    f'<div style="display:grid;grid-template-columns:140px 90px 140px 1fr;'
+                                    f'gap:8px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,0.06);'
+                                    f'font-size:11.5px;color:#cbd5e1;">'
+                                    f'<div style="color:#9ca3af;">{_html_log.escape(_e["ts"])}</div>'
+                                    f'<div><span style="display:inline-block;padding:1px 8px;border-radius:999px;'
+                                    f'background:rgba(255,255,255,0.04);border:1px solid {_badge_color};'
+                                    f'color:{_badge_color};font-weight:700;font-size:10px;letter-spacing:0.3px;">'
+                                    f'{_e["action"].upper()}</span></div>'
+                                    f'<div style="color:#e5e7eb;">{_html_log.escape(_e.get("party",""))}</div>'
+                                    f'<div><b style="color:#e5e7eb;">{_html_log.escape(_e.get("recipient",""))}</b> '
+                                    f'<span style="color:#94a3b8;">- {_html_log.escape(_e.get("subject",""))}</span></div>'
+                                    f'</div>'
+                                )
+                            st.markdown(
+                                '<div style="display:grid;grid-template-columns:140px 90px 140px 1fr;'
+                                'gap:8px;padding:4px 0;border-bottom:1px solid rgba(255,255,255,0.12);'
+                                'font-size:10px;color:#64748b;font-weight:700;text-transform:uppercase;'
+                                'letter-spacing:0.4px;">'
+                                '<div>When</div><div>Action</div><div>Party</div><div>To / Subject</div>'
+                                '</div>'
+                                + "".join(_log_rows),
+                                unsafe_allow_html=True,
+                            )
+                            _clear_c1, _clear_c2 = st.columns([4, 1])
+                            with _clear_c2:
+                                if st.button("Clear log", key=f"{_scan_fkey}_comms_clear",
+                                             use_container_width=True):
+                                    st.session_state.pop(_comms_all_key, None)
+                                    for _p in _SECTION_ORDER_SCAN:
+                                        st.session_state.pop(f"{_scan_fkey}_{_p}_comms_log", None)
+                                    st.rerun()
+
                     st.markdown('</div>', unsafe_allow_html=True)
                 elif _cond_count and "No specific conditions found in this document" not in str(_raw_c):
                     st.markdown(
@@ -10382,61 +10567,201 @@ def show_loan_detail():
     _ld_fkey = f"ld_{lid}"
 
     if _conditions:
-        _ld_checked = []
+        # Normalize each condition so desc/num/party are present.
         for _c in _conditions:
             _c["desc"] = _c.get("desc", _c.get("description", ""))
             if "num" not in _c:
                 _c["num"] = str(_conditions.index(_c) + 1)
             if "party" not in _c:
                 _c["party"] = "Borrower"
-            _chk, _cstat, _cparties = _render_condition(_c, _ld_fkey, PARTY_OPTIONS_LD, COND_STATUSES_LD)
-            if _chk:
-                _ld_checked.append({**_c, "party": _cparties[0] if _cparties else _c["party"], "all_parties": _cparties})
 
-            # â”€â”€ Per-condition Guidelines check â”€â”€
-            _ld_uid = f"{_ld_fkey}_{_c['num']}"
-            _gb1, _gb2 = st.columns([0.5, 9.5])
-            with _gb1:
-                if st.button("Guide", key=f"{_ld_uid}_guide", help="Check vs. Fannie/Freddie guidelines"):
-                    st.session_state[f"{_ld_uid}_guide_open"] = True
-                    st.session_state.pop(f"{_ld_uid}_guide_results", None)
-            if st.session_state.get(f"{_ld_uid}_guide_open"):
-                _gc1, _gc2 = st.columns([9, 0.5])
-                with _gc2:
-                    if st.button("Close", key=f"{_ld_uid}_guide_close"):
-                        for _k in (f"{_ld_uid}_guide_open", f"{_ld_uid}_guide_results"):
-                            st.session_state.pop(_k, None)
-                        st.rerun()
-                _gres = st.session_state.get(f"{_ld_uid}_guide_results")
+        # 2x3 grid: top row = Gemini summary (email-style, display-only),
+        # bottom row = originals with full interactive controls. Both rows
+        # split into Borrower / Third Party / Party Comms columns.
+        _LD_BUCKETS = ["Borrower", "Third Party", "Party Comms"]
+        _LD_BUCKET_PARTIES = {
+            "Borrower": ["Borrower", "Co-Borrower"],
+            "Third Party": ["Title", "Insurance", "Appraiser", "Employer"],
+            "Party Comms": ["Realtor", "Seller", "Closer", "Underwriter",
+                            "Jr Underwriter", "Loan Officer", "Manager"],
+        }
+        _LD_BUCKET_LABEL = {
+            "Borrower": "Borrower",
+            "Third Party": "Third Party",
+            "Party Comms": "Party Comms",
+        }
+
+        def _ld_bucket_for_party(_party):
+            for _b, _parties in _LD_BUCKET_PARTIES.items():
+                if _party in _parties:
+                    return _b
+            return "Party Comms"
+
+        def _ld_parties_for_cond(_c):
+            _raw = _c.get("parties") or _c.get("all_parties") or _c.get("party") or "Borrower"
+            if isinstance(_raw, list):
+                _list = [str(_p).strip() for _p in _raw if str(_p).strip()]
+            else:
+                _list = [str(_raw).strip()]
+            return _list or ["Borrower"]
+
+        _ld_conds_by_bucket = {b: [] for b in _LD_BUCKETS}
+        _ld_primary_bucket = {}  # cond num -> primary bucket
+        for _c in _conditions:
+            _parties = _ld_parties_for_cond(_c)
+            _primary_bkt = _ld_bucket_for_party(_parties[0])
+            _ld_primary_bucket[str(_c["num"])] = _primary_bkt
+            _seen = []
+            for _p in _parties:
+                _b = _ld_bucket_for_party(_p)
+                if _b in _seen:
+                    continue
+                _seen.append(_b)
+                _ld_conds_by_bucket[_b].append(_c)
+
+        # Pre-fetch summaries (top row of the grid is the email-style summary).
+        _ld_summary_map_key = f"{_ld_fkey}_summary_map"
+        _ld_summary_sig_key = f"{_ld_fkey}_summary_sig"
+        _ld_originals = [str(c.get("desc", "")) for c in _conditions]
+        _ld_plain_sig = "\n".join(_ld_originals)
+        if st.session_state.get(_ld_summary_sig_key) != _ld_plain_sig:
+            _gem_key = st.session_state.get("user_gemini_api_key", "")
+            with st.spinner("Summarizing conditions..."):
+                try:
+                    import cloud_client as _cc_sum_ld
+                    _summarized_ld, _sum_log_ld = _cc_sum_ld.translate_conditions_to_summarized(
+                        _ld_originals, api_key_override=_gem_key,
+                    )
+                    st.session_state[_ld_summary_map_key] = dict(zip(_ld_originals, _summarized_ld))
+                    st.session_state[_ld_summary_sig_key] = _ld_plain_sig
+                except Exception as _se_ld:
+                    st.warning(f"Could not summarize: {_se_ld}")
+                    st.session_state[_ld_summary_map_key] = {}
+
+        import html as _html_ld
+        import re as _re_ld
+
+        def _render_ld_summary_card(_c):
+            _orig_desc = str(_c.get("desc", ""))
+            _smap = st.session_state.get(_ld_summary_map_key, {})
+            _sum_desc = str(_smap.get(_orig_desc) or "").strip()
+            if _sum_desc:
+                _esc = _html_ld.escape(_sum_desc)
+                _desc_html = _re_ld.sub(
+                    r"\*\*(.+?)\*\*",
+                    r"<b style='color:#ffffff;font-weight:700;'>\1</b>",
+                    _esc,
+                )
+            else:
+                _desc_html = _html_ld.escape(_orig_desc)
+            _parties = _ld_parties_for_cond(_c)
+            _chips = "".join(
+                f'<span style="display:inline-block;margin:0 3px 3px 0;padding:1px 6px;'
+                f'border-radius:999px;background:rgba(59,130,246,0.14);'
+                f'border:1px solid rgba(59,130,246,0.32);color:#bfdbfe;'
+                f'font-size:9px;font-weight:700;">{_html_ld.escape(str(_p))}</span>'
+                for _p in _parties
+            )
+            st.markdown(
+                f'<div style="border:1px solid rgba(255,255,255,0.10);border-radius:8px;'
+                f'padding:8px 10px;margin-bottom:6px;background:rgba(255,255,255,0.02);">'
+                f'<div style="font-size:12px;line-height:1.4;">'
+                f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
+                f'<span style="color:#e5e7eb;">{_desc_html}</span></div>'
+                + (f'<div style="margin-top:4px;">{_chips}</div>' if _chips else '')
+                + '</div>',
+                unsafe_allow_html=True,
+            )
+
+        def _render_ld_original_card(_c, _bucket):
+            _cnum = _c["num"]
+            _uid = f"{_ld_fkey}_{_cnum}"
+            _is_primary = _ld_primary_bucket.get(str(_cnum)) == _bucket
+            with st.container(border=True):
+                _orig_desc = str(_c.get("desc", ""))
+                _parties = _ld_parties_for_cond(_c)
+                _chips = "".join(
+                    f'<span style="display:inline-block;margin:0 3px 3px 0;padding:1px 6px;'
+                    f'border-radius:999px;background:rgba(59,130,246,0.14);'
+                    f'border:1px solid rgba(59,130,246,0.32);color:#bfdbfe;'
+                    f'font-size:9px;font-weight:700;">{_html_ld.escape(str(_p))}</span>'
+                    for _p in _parties
+                )
+                if _is_primary:
+                    st.checkbox(f"#{_cnum}", value=False, key=f"{_uid}_chk")
+                else:
+                    st.markdown(
+                        f'<div style="font-size:11px;color:#64748b;padding:2px 0;">'
+                        f'#{_cnum} - shared (controls under primary bucket)</div>',
+                        unsafe_allow_html=True,
+                    )
+                _desc_html = (
+                    f'<div style="font-size:12px;line-height:1.35;padding:2px 0;color:#e5e7eb;">'
+                    f'{_html_ld.escape(_orig_desc)}</div>'
+                )
+                if _chips:
+                    _desc_html += f'<div style="margin-top:2px;">{_chips}</div>'
+                st.markdown(_desc_html, unsafe_allow_html=True)
+
+                if _is_primary:
+                    _status_labels = list(COND_STATUSES_LD.keys())
+                    _cstatus = _c.get("status", "Needed")
+                    _sidx = _status_labels.index(_cstatus) if _cstatus in _status_labels else 0
+                    st.selectbox(
+                        "Status", _status_labels, index=_sidx,
+                        key=f"{_uid}_stat", label_visibility="collapsed",
+                    )
+                    _default_parties = [p for p in _parties if p in PARTY_OPTIONS_LD]
+                    st.multiselect(
+                        "Parties", PARTY_OPTIONS_LD,
+                        default=_default_parties,
+                        key=f"{_uid}_party", label_visibility="collapsed",
+                        placeholder="Parties",
+                    )
+                    if st.button(
+                        "Guide", key=f"{_uid}_guide",
+                        use_container_width=True,
+                        help="Check vs. Fannie/Freddie guidelines",
+                    ):
+                        st.session_state[f"{_uid}_guide_open"] = True
+                        st.session_state.pop(f"{_uid}_guide_results", None)
+
+            if _is_primary and st.session_state.get(f"{_uid}_guide_open"):
+                if st.button("Close guide", key=f"{_uid}_guide_close",
+                             use_container_width=True):
+                    for _k in (f"{_uid}_guide_open", f"{_uid}_guide_results"):
+                        st.session_state.pop(_k, None)
+                    st.rerun()
+                _gres = st.session_state.get(f"{_uid}_guide_results")
                 if _gres is None:
                     with st.spinner("Searching Fannie Mae & Freddie Mac"):
                         try:
                             from guidelines import check_conditions_against_guidelines as _cag_ld
-                            _out = _cag_ld([{"num": _c["num"], "desc": _c["desc"]}])
+                            _out = _cag_ld([{"num": _cnum, "desc": _c["desc"]}])
                             if isinstance(_out, dict) and _out.get("error"):
                                 _gres = {"error": _out["error"]}
                             else:
-                                _gres = _out.get(_c["num"], {}).get("guidelines", [])
-                        except Exception as _e:
-                            _gres = {"error": f"{_e}"}
-                        st.session_state[f"{_ld_uid}_guide_results"] = _gres
+                                _gres = _out.get(_cnum, {}).get("guidelines", [])
+                        except Exception as _e_g:
+                            _gres = {"error": f"{_e_g}"}
+                        st.session_state[f"{_uid}_guide_results"] = _gres
                 if isinstance(_gres, dict) and _gres.get("error"):
                     st.markdown(
                         f'<div style="font-size:11px;color:#fbbf24;padding:4px 8px;'
                         f'background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.25);'
-                        f'border-radius:6px;margin:4px 0 4px 32px;">{_gres["error"]}</div>',
+                        f'border-radius:6px;margin:4px 0;">{_gres["error"]}</div>',
                         unsafe_allow_html=True,
                     )
                 elif isinstance(_gres, list) and _gres:
                     for _gm in _gres[:4]:
                         _src = _gm.get("source", "")
                         _sec = _gm.get("section", "")
-                        _pg  = _gm.get("page", "")
-                        _sc  = _gm.get("score", 0)
-                        _ex  = (_gm.get("excerpt", "") or "").replace("\n", " ")[:360]
+                        _pg = _gm.get("page", "")
+                        _sc = _gm.get("score", 0)
+                        _ex = (_gm.get("excerpt", "") or "").replace("\n", " ")[:280]
                         _sec_part = f"  <b>{_sec}</b>" if _sec else ""
                         st.markdown(
-                            f'<div style="font-size:11px;color:#e5e7eb;padding:6px 10px;margin:3px 0 3px 32px;'
+                            f'<div style="font-size:11px;color:#e5e7eb;padding:6px 10px;margin:3px 0;'
                             f'background:rgba(59,130,246,0.05);border-left:2px solid rgba(59,130,246,0.45);'
                             f'border-radius:4px;">'
                             f'<span style="color:#3b82f6;font-weight:700;">{_src}</span>'
@@ -10448,10 +10773,72 @@ def show_loan_detail():
                         )
                 elif isinstance(_gres, list):
                     st.markdown(
-                        '<div style="font-size:11px;color:#6b7280;padding:4px 0 4px 32px;">'
+                        '<div style="font-size:11px;color:#6b7280;padding:4px 0;">'
                         'No relevant guideline sections found.</div>',
                         unsafe_allow_html=True,
                     )
+
+        def _render_ld_bucket_column(_bucket, _renderer):
+            _bucket_conds = _ld_conds_by_bucket.get(_bucket, [])
+            st.markdown(
+                f'<div style="font-size:11px;font-weight:700;color:#93c5fd;text-transform:uppercase;'
+                f'letter-spacing:0.4px;margin:2px 0 6px 0;">{_LD_BUCKET_LABEL[_bucket]} '
+                f'<span style="color:#64748b;font-weight:600;text-transform:none;">'
+                f'({len(_bucket_conds)})</span></div>',
+                unsafe_allow_html=True,
+            )
+            if not _bucket_conds:
+                st.markdown(
+                    '<div style="color:#64748b;font-size:11px;font-style:italic;'
+                    'padding:8px 0;">No conditions</div>',
+                    unsafe_allow_html=True,
+                )
+                return
+            for _c in _bucket_conds:
+                if _renderer is _render_ld_original_card:
+                    _renderer(_c, _bucket)
+                else:
+                    _renderer(_c)
+
+        # Row 1: Summarized (email-style)
+        st.markdown(
+            '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+            'letter-spacing:0.5px;margin:8px 0 6px 0;">Summarized (email version)</div>',
+            unsafe_allow_html=True,
+        )
+        _ld_sum_cols = st.columns(3)
+        for _i, _bucket in enumerate(_LD_BUCKETS):
+            with _ld_sum_cols[_i]:
+                _render_ld_bucket_column(_bucket, _render_ld_summary_card)
+
+        # Row 2: Originals (full interactive)
+        st.markdown(
+            '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+            'letter-spacing:0.5px;margin:14px 0 6px 0;">All Conditions (Original)</div>',
+            unsafe_allow_html=True,
+        )
+        _ld_orig_cols = st.columns(3)
+        for _i, _bucket in enumerate(_LD_BUCKETS):
+            with _ld_orig_cols[_i]:
+                _render_ld_bucket_column(_bucket, _render_ld_original_card)
+
+        # Collect checked conditions for the email draft below. Each condition
+        # is counted once even if it appears in multiple buckets (the checkbox
+        # only renders in the primary bucket).
+        _ld_checked = []
+        for _c in _conditions:
+            _cnum = _c["num"]
+            _uid = f"{_ld_fkey}_{_cnum}"
+            if not st.session_state.get(f"{_uid}_chk", False):
+                continue
+            _cparties = st.session_state.get(f"{_uid}_party") or _ld_parties_for_cond(_c)
+            if not isinstance(_cparties, list):
+                _cparties = [_cparties]
+            _ld_checked.append({
+                **_c,
+                "party": _cparties[0] if _cparties else _c.get("party", "Borrower"),
+                "all_parties": _cparties,
+            })
 
         # â”€â”€ Email Draft below conditions, auto-populate from stored contacts â”€â”€
         st.markdown(

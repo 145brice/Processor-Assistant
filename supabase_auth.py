@@ -44,7 +44,17 @@ def _service_key() -> str:
 
 
 def is_configured() -> bool:
-    return bool(_supabase_url() and _public_key())
+    url = _supabase_url()
+    key = _public_key()
+    if not url or not key:
+        return False
+    # Detect placeholder / example values that ship with the repo
+    _placeholders = ("your-project.supabase.co", "your-anon-key", "your-project", "example.supabase.co")
+    if any(p in url for p in _placeholders):
+        return False
+    if any(p in key for p in ("your-anon-key", "your-key", "anon-key-here", "key-here")):
+        return False
+    return True
 
 
 def _app_base_url() -> str:
