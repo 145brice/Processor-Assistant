@@ -5149,8 +5149,23 @@ def show_dashboard():
                                 st.session_state.pop(f"{_uid}_guide_open", None)
                                 st.rerun()
 
+                    # Compact view toggle (defaults ON): left column becomes
+                    # one-liners "**Subject** - short note" with the full original
+                    # condition in a hover tooltip. Toggle OFF to expand to the
+                    # full cards (status, parties, Guide).
+                    _compact_view_key = f"{_scan_fkey}_compact_view"
+                    _compact_view = st.toggle(
+                        "Compact (hover for full text)",
+                        value=bool(st.session_state.get(_compact_view_key, True)),
+                        key=f"{_compact_view_key}_toggle",
+                        help="One-line `**Subject** - short note` per condition. Toggle off for full text plus status / parties / Guide controls.",
+                    )
+                    if _compact_view != bool(st.session_state.get(_compact_view_key, True)):
+                        st.session_state[_compact_view_key] = _compact_view
+                        st.rerun()
+
                     # 2-column layout:
-                    #   Left  = originals in PDF scan order (full interactive controls).
+                    #   Left  = originals in PDF scan order (compact or full).
                     #   Right = Gemini summaries grouped by party (display-only).
                     _left_col, _right_col = st.columns(2)
 
@@ -5163,15 +5178,81 @@ def show_dashboard():
                             '</div>',
                             unsafe_allow_html=True,
                         )
-                        for _cond_idx, _c in enumerate(_norm_conds):
-                            _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
-                            _sections = _scan_sections_for_condition(_c)
-                            _primary_section = _sections[0]
-                            _cond_view = dict(_c)
-                            _cond_view["_scan_uid"] = _cond_uid
-                            _cond_view["_section_party"] = _primary_section
-                            _cond_view["_primary_section"] = _primary_section
-                            _render_original_card(_cond_view)
+                        if _compact_view:
+                            import re as _re_compact
+                            import html as _html_compact
+                            _smap_compact = st.session_state.get(_summary_map_key, {})
+                            for _cond_idx, _c in enumerate(_norm_conds):
+                                _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
+                                _sections = _scan_sections_for_condition(_c)
+                                _primary_section = _sections[0]
+                                _base_uid = f"{_scan_fkey}_{_cond_uid}"
+                                _uid = f"{_base_uid}_{_primary_section}"
+                                _orig_desc = str(_c.get("desc", ""))
+                                _sum_desc = str(_smap_compact.get(_orig_desc) or "").strip()
+                                _match = _re_compact.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_desc) if _sum_desc else None
+                                if _match:
+                                    _subject = _match.group(1).strip()
+                                    _body = _match.group(2).strip()
+                                    _words = _body.split()
+                                    _body_short = " ".join(_words[:5]) + ("..." if len(_words) > 5 else "")
+                                elif _sum_desc:
+                                    _subject = _sum_desc.split("-")[0].strip().strip("*").strip() or _primary_section
+                                    _body_short = ""
+                                else:
+                                    _subject = _primary_section
+                                    _body_short = (_orig_desc[:48] + "...") if len(_orig_desc) > 48 else _orig_desc
+                                _cb_col, _txt_col, _stat_col = st.columns([0.6, 6.4, 3.0])
+                                with _cb_col:
+                                    st.checkbox(
+                                        f'#{_c["num"]}', value=False,
+                                        key=f"{_uid}_chk",
+                                        label_visibility="collapsed",
+                                    )
+                                with _txt_col:
+                                    _tail = f' <span style="color:#94a3b8;"> - {_html_compact.escape(_body_short)}</span>' if _body_short else ''
+                                    _cur_status = st.session_state.get(
+                                        f"{_base_uid}_stat", _c.get("status", "Needed")
+                                    )
+                                    _stat_dot_color = {
+                                        "Needed": "#f97316",
+                                        "Requested": "#eab308",
+                                        "Important": "#a855f7",
+                                        "Ready to Clear": "#22c55e",
+                                        "Cleared": "#3b82f6",
+                                    }.get(_cur_status, "#64748b")
+                                    st.markdown(
+                                        f'<div title="{_html_compact.escape(_orig_desc)}" '
+                                        f'style="font-size:12.5px;line-height:1.5;padding:5px 0 4px 0;'
+                                        f'border-bottom:1px solid rgba(255,255,255,0.05);'
+                                        f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+                                        f'cursor:help;">'
+                                        f'<span style="display:inline-block;width:7px;height:7px;'
+                                        f'border-radius:50%;background:{_stat_dot_color};'
+                                        f'margin-right:6px;vertical-align:middle;"></span>'
+                                        f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
+                                        f'<b style="color:#ffffff;">{_html_compact.escape(_subject)}</b>'
+                                        f'{_tail}'
+                                        f'</div>',
+                                        unsafe_allow_html=True,
+                                    )
+                                with _stat_col:
+                                    _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c.get("status") in _COND_STATS_SCAN else 0
+                                    st.selectbox(
+                                        "Status", _COND_STATS_SCAN, index=_sidx,
+                                        key=f"{_base_uid}_stat",
+                                        label_visibility="collapsed",
+                                    )
+                        else:
+                            for _cond_idx, _c in enumerate(_norm_conds):
+                                _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
+                                _sections = _scan_sections_for_condition(_c)
+                                _primary_section = _sections[0]
+                                _cond_view = dict(_c)
+                                _cond_view["_scan_uid"] = _cond_uid
+                                _cond_view["_section_party"] = _primary_section
+                                _cond_view["_primary_section"] = _primary_section
+                                _render_original_card(_cond_view)
 
                     with _right_col:
                         st.markdown(
@@ -10764,6 +10845,18 @@ def show_loan_detail():
                         unsafe_allow_html=True,
                     )
 
+        # Compact view toggle for loan detail: same behavior as scan flow.
+        _ld_compact_view_key = f"{_ld_fkey}_compact_view"
+        _ld_compact_view = st.toggle(
+            "Compact (hover for full text)",
+            value=bool(st.session_state.get(_ld_compact_view_key, True)),
+            key=f"{_ld_compact_view_key}_toggle",
+            help="One-line `**Subject** - short note` per condition. Toggle off for full text plus status / parties / Guide controls.",
+        )
+        if _ld_compact_view != bool(st.session_state.get(_ld_compact_view_key, True)):
+            st.session_state[_ld_compact_view_key] = _ld_compact_view
+            st.rerun()
+
         # Two-column layout
         _ld_left, _ld_right = st.columns(2)
 
@@ -10776,8 +10869,73 @@ def show_loan_detail():
                 f'{"s" if len(_conditions) != 1 else ""}</span></div>',
                 unsafe_allow_html=True,
             )
-            for _c in _conditions:
-                _render_ld_original_card(_c)
+            if _ld_compact_view:
+                import re as _re_ld_compact
+                _ld_smap = st.session_state.get(_ld_summary_map_key, {})
+                for _c in _conditions:
+                    _cnum = _c["num"]
+                    _uid = f"{_ld_fkey}_{_cnum}"
+                    _orig_desc = str(_c.get("desc", ""))
+                    _sections = _ld_sections_for_cond(_c)
+                    _primary_section = _sections[0]
+                    _sum_desc = str(_ld_smap.get(_orig_desc) or "").strip()
+                    _match = _re_ld_compact.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_desc) if _sum_desc else None
+                    if _match:
+                        _subject = _match.group(1).strip()
+                        _body = _match.group(2).strip()
+                        _words = _body.split()
+                        _body_short = " ".join(_words[:5]) + ("..." if len(_words) > 5 else "")
+                    elif _sum_desc:
+                        _subject = _sum_desc.split("-")[0].strip().strip("*").strip() or _primary_section
+                        _body_short = ""
+                    else:
+                        _subject = _primary_section
+                        _body_short = (_orig_desc[:48] + "...") if len(_orig_desc) > 48 else _orig_desc
+                    _cb_col, _txt_col, _stat_col = st.columns([0.6, 6.4, 3.0])
+                    with _cb_col:
+                        st.checkbox(
+                            f"#{_cnum}", value=False,
+                            key=f"{_uid}_chk",
+                            label_visibility="collapsed",
+                        )
+                    _status_labels = list(COND_STATUSES_LD.keys())
+                    _cur_status = st.session_state.get(
+                        f"{_uid}_stat", _c.get("status", "Needed")
+                    )
+                    with _txt_col:
+                        _tail = f' <span style="color:#94a3b8;"> - {_html_ld.escape(_body_short)}</span>' if _body_short else ''
+                        _stat_dot_color = {
+                            "Needed": "#f97316",
+                            "Requested": "#eab308",
+                            "Important": "#a855f7",
+                            "Ready to Clear": "#22c55e",
+                            "Cleared": "#3b82f6",
+                        }.get(_cur_status, "#64748b")
+                        st.markdown(
+                            f'<div title="{_html_ld.escape(_orig_desc)}" '
+                            f'style="font-size:12.5px;line-height:1.5;padding:5px 0 4px 0;'
+                            f'border-bottom:1px solid rgba(255,255,255,0.05);'
+                            f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+                            f'cursor:help;">'
+                            f'<span style="display:inline-block;width:7px;height:7px;'
+                            f'border-radius:50%;background:{_stat_dot_color};'
+                            f'margin-right:6px;vertical-align:middle;"></span>'
+                            f'<b style="color:#3b82f6;">#{_cnum}</b> '
+                            f'<b style="color:#ffffff;">{_html_ld.escape(_subject)}</b>'
+                            f'{_tail}'
+                            f'</div>',
+                            unsafe_allow_html=True,
+                        )
+                    with _stat_col:
+                        _sidx = _status_labels.index(_cur_status) if _cur_status in _status_labels else 0
+                        st.selectbox(
+                            "Status", _status_labels, index=_sidx,
+                            key=f"{_uid}_stat",
+                            label_visibility="collapsed",
+                        )
+            else:
+                for _c in _conditions:
+                    _render_ld_original_card(_c)
 
         with _ld_right:
             st.markdown(
