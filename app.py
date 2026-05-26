@@ -882,6 +882,19 @@ p, li, label, [data-testid="stMarkdownContainer"] p,
 [data-testid="stBottomBlockContainer"] {
     border-top: 1px solid #1f2937 !important;
     box-shadow: 0 -10px 24px rgba(0,0,0,0.24) !important;
+    padding-top: 18px !important;
+    position: relative !important;
+}
+[data-testid="stBottomBlockContainer"]::before {
+    content: "Ask AI";
+    position: absolute;
+    top: 5px;
+    left: 64px;
+    color: #93c5fd;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
 }
 [data-testid="stChatInput"],
 [data-testid="stChatInput"] > div,
@@ -12211,11 +12224,6 @@ def show_loan_detail():
     )
 
     # â”€â”€ Ask AI Assistant â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    st.markdown(
-        '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-        'letter-spacing:0.5px;margin-top:16px;display:inline-block;">Ask AI</span>',
-        unsafe_allow_html=True,
-    )
     _ai_chat_enabled = False
     try:
         import cloud_client as _ld_cc
