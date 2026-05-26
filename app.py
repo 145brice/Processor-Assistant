@@ -5182,6 +5182,39 @@ def show_dashboard():
                             import re as _re_compact
                             import html as _html_compact
                             _smap_compact = st.session_state.get(_summary_map_key, {})
+
+                            def _compact_subject_body(_desc, _sum_text, _fallback_party):
+                                """Return (subject, body_short) for the one-line view.
+                                Prefers a clean Gemini summary; falls back to parsing
+                                "[PTD-XXXX] CategoryName ..." out of the original."""
+                                # 1. Try Gemini summary "**Subject** - body"
+                                m = _re_compact.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_text) if _sum_text else None
+                                if m:
+                                    subj = m.group(1).strip()
+                                    # Strip any [PTD-XXXX] code Gemini accidentally bolded
+                                    subj = _re_compact.sub(r"^\s*\[[A-Z]+-\d+\]\s*", "", subj).strip()
+                                    body = m.group(2).strip()
+                                    words = body.split()
+                                    body_short = " ".join(words[:6]) + ("..." if len(words) > 6 else "")
+                                    if len(subj) >= 2:
+                                        return subj, body_short
+                                # 2. Parse "[PTD-XXXX] CategoryName description..." directly
+                                code_m = _re_compact.match(r"^\s*\[[A-Z]+-\d+\]\s*(.+)$", _desc)
+                                rest = code_m.group(1) if code_m else _desc
+                                cat_m = _re_compact.match(
+                                    r"^([A-Z][A-Za-z]+(?:\s+\([A-Za-z]+\))?)\s+(.+)$",
+                                    rest,
+                                )
+                                if cat_m:
+                                    subj = cat_m.group(1).strip()
+                                    body = cat_m.group(2).strip()
+                                    words = body.split()
+                                    body_short = " ".join(words[:7]) + ("..." if len(words) > 7 else "")
+                                    return subj, body_short
+                                # 3. Last resort: party + truncated desc
+                                short = (rest[:60] + "...") if len(rest) > 60 else rest
+                                return _fallback_party, short
+
                             for _cond_idx, _c in enumerate(_norm_conds):
                                 _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
                                 _sections = _scan_sections_for_condition(_c)
@@ -5190,18 +5223,9 @@ def show_dashboard():
                                 _uid = f"{_base_uid}_{_primary_section}"
                                 _orig_desc = str(_c.get("desc", ""))
                                 _sum_desc = str(_smap_compact.get(_orig_desc) or "").strip()
-                                _match = _re_compact.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_desc) if _sum_desc else None
-                                if _match:
-                                    _subject = _match.group(1).strip()
-                                    _body = _match.group(2).strip()
-                                    _words = _body.split()
-                                    _body_short = " ".join(_words[:5]) + ("..." if len(_words) > 5 else "")
-                                elif _sum_desc:
-                                    _subject = _sum_desc.split("-")[0].strip().strip("*").strip() or _primary_section
-                                    _body_short = ""
-                                else:
-                                    _subject = _primary_section
-                                    _body_short = (_orig_desc[:48] + "...") if len(_orig_desc) > 48 else _orig_desc
+                                _subject, _body_short = _compact_subject_body(
+                                    _orig_desc, _sum_desc, _primary_section,
+                                )
                                 _cb_col, _txt_col, _stat_col = st.columns([0.6, 6.4, 3.0])
                                 with _cb_col:
                                     st.checkbox(
@@ -10872,6 +10896,32 @@ def show_loan_detail():
             if _ld_compact_view:
                 import re as _re_ld_compact
                 _ld_smap = st.session_state.get(_ld_summary_map_key, {})
+
+                def _ld_compact_subject_body(_desc, _sum_text, _fallback_party):
+                    m = _re_ld_compact.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_text) if _sum_text else None
+                    if m:
+                        subj = m.group(1).strip()
+                        subj = _re_ld_compact.sub(r"^\s*\[[A-Z]+-\d+\]\s*", "", subj).strip()
+                        body = m.group(2).strip()
+                        words = body.split()
+                        body_short = " ".join(words[:6]) + ("..." if len(words) > 6 else "")
+                        if len(subj) >= 2:
+                            return subj, body_short
+                    code_m = _re_ld_compact.match(r"^\s*\[[A-Z]+-\d+\]\s*(.+)$", _desc)
+                    rest = code_m.group(1) if code_m else _desc
+                    cat_m = _re_ld_compact.match(
+                        r"^([A-Z][A-Za-z]+(?:\s+\([A-Za-z]+\))?)\s+(.+)$",
+                        rest,
+                    )
+                    if cat_m:
+                        subj = cat_m.group(1).strip()
+                        body = cat_m.group(2).strip()
+                        words = body.split()
+                        body_short = " ".join(words[:7]) + ("..." if len(words) > 7 else "")
+                        return subj, body_short
+                    short = (rest[:60] + "...") if len(rest) > 60 else rest
+                    return _fallback_party, short
+
                 for _c in _conditions:
                     _cnum = _c["num"]
                     _uid = f"{_ld_fkey}_{_cnum}"
@@ -10879,18 +10929,9 @@ def show_loan_detail():
                     _sections = _ld_sections_for_cond(_c)
                     _primary_section = _sections[0]
                     _sum_desc = str(_ld_smap.get(_orig_desc) or "").strip()
-                    _match = _re_ld_compact.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_desc) if _sum_desc else None
-                    if _match:
-                        _subject = _match.group(1).strip()
-                        _body = _match.group(2).strip()
-                        _words = _body.split()
-                        _body_short = " ".join(_words[:5]) + ("..." if len(_words) > 5 else "")
-                    elif _sum_desc:
-                        _subject = _sum_desc.split("-")[0].strip().strip("*").strip() or _primary_section
-                        _body_short = ""
-                    else:
-                        _subject = _primary_section
-                        _body_short = (_orig_desc[:48] + "...") if len(_orig_desc) > 48 else _orig_desc
+                    _subject, _body_short = _ld_compact_subject_body(
+                        _orig_desc, _sum_desc, _primary_section,
+                    )
                     _cb_col, _txt_col, _stat_col = st.columns([0.6, 6.4, 3.0])
                     with _cb_col:
                         st.checkbox(
