@@ -12236,7 +12236,7 @@ def show_loan_detail():
     # â”€â”€ Ask AI Assistant â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.markdown(
         '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-        'letter-spacing:0.5px;margin-top:16px;display:inline-block;">Ask AI Assistant</span>',
+        'letter-spacing:0.5px;margin-top:16px;display:inline-block;">Ask AI</span>',
         unsafe_allow_html=True,
     )
     _ai_chat_enabled = False
@@ -12261,7 +12261,7 @@ def show_loan_detail():
             with st.chat_message(_cm["role"]):
                 st.markdown(_cm["content"])
 
-        _user_q = st.chat_input("Ask anything about this loan...", key=f"loan_chat_input_{lid}")
+        _user_q = st.chat_input("Ask AI/Gemini anything about this loan...", key=f"loan_chat_input_{lid}")
         if _user_q:
             st.session_state[_chat_key].append({"role": "user", "content": _user_q})
             with st.chat_message("user"):
