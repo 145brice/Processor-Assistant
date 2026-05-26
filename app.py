@@ -1796,7 +1796,7 @@ def _save_session():
     except Exception:
         pass
     try:
-        if _data.get("authenticated"):
+        if _data.get("authenticated") and not _is_owner_admin_email(str(_data.get("user_email") or "")):
             import supabase_auth as _sa
             _save_result = _sa.save_browser_session(
                 _browser_session_id(),
@@ -1859,6 +1859,23 @@ def _env_truthy(name: str, default: str = "1") -> bool:
 _AUTO_ENTER_SANDBOX = _env_truthy("PA_AUTO_ENTER_SANDBOX", "0")
 _SCAN_HISTORY_FILE = os.path.join(os.path.dirname(__file__), "scan_history.json")
 _SCAN_HISTORY_DAYS = 7
+
+
+def _is_owner_admin_email(email: str = "") -> bool:
+    """Single-account owner/admin override for paid access."""
+    raw_email = str(email or st.session_state.get("user_email") or "").strip().lower()
+    if not raw_email or "@" not in raw_email:
+        return False
+    local_part = raw_email.split("@", 1)[0].strip().lower()
+    owner_local = str(os.getenv("PA_OWNER_EMAIL_LOCALPART", "145brice")).strip().lower()
+    if owner_local and local_part == owner_local:
+        return True
+    owner_emails = {
+        e.strip().lower()
+        for e in str(os.getenv("PA_OWNER_ADMIN_EMAILS", "")).split(",")
+        if e.strip()
+    }
+    return raw_email in owner_emails
 
 
 def _enter_sandbox(page: str = "dashboard") -> None:
@@ -2140,6 +2157,8 @@ def _clean_display_text(value) -> str:
 
 def _user_trial_profile() -> dict:
     """Load/create app profile used for 14-day trial gating."""
+    if _is_owner_admin_email():
+        return {"subscription_status": "active"}
     if not st.session_state.get("authenticated") or st.session_state.get("sandbox_mode"):
         return {}
     user_key = _current_auth_user_key()
@@ -2188,6 +2207,8 @@ def _trial_days_left(profile: dict) -> int:
 
 
 def _has_paid_access(profile: dict) -> bool:
+    if _is_owner_admin_email():
+        return True
     status = str((profile or {}).get("subscription_status") or "").lower()
     if status in {"active", "paid", "beta_active"}:
         return True
@@ -2824,6 +2845,8 @@ def _client_need_item(desc: str, party: str = "Borrower") -> tuple[str, str]:
 
 def _load_user_gemini_key_into_session(force: bool = False) -> str:
     """Load the signed-in user's Gemini key from Supabase into session state."""
+    if _is_owner_admin_email():
+        return str(st.session_state.get("user_gemini_api_key") or "")
     if st.session_state.get("sandbox_mode", False):
         st.session_state.user_gemini_api_key = ""
         return ""
@@ -2861,7 +2884,8 @@ def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: s
     st.session_state.supabase_user_id = result.get("supabase_user_id")
     st.session_state.user_email = result.get("email", "")
     st.session_state.user_name = result.get("display_name") or result.get("email", "user").split("@")[0]
-    st.session_state.user_role = result.get("role", "Processor")
+    _role = result.get("role", "Processor")
+    st.session_state.user_role = "Manager" if _is_owner_admin_email(st.session_state.user_email) else _role
     st.session_state.sandbox_mode = sandbox_mode
     st.session_state.force_login = False
     st.session_state.user_gemini_api_key = ""
@@ -2958,19 +2982,20 @@ def _handle_google_oauth_callback() -> bool:
             sandbox_mode=False,
             page="dashboard",
         )
-        try:
-            _profile_save = _sa.accept_terms(
-                _current_auth_user_key(),
-                email=oauth_result.get("email", ""),
-                display_name=local_user.get("display_name") or oauth_result.get("display_name", ""),
-                role=local_user.get("role") or oauth_result.get("role", "Processor"),
-            )
-            if _profile_save.get("_save_error"):
-                st.session_state["profile_save_error"] = _profile_save.get("_save_error")
-            else:
-                st.session_state.pop("profile_save_error", None)
-        except Exception as e:
-            st.session_state["profile_save_error"] = f"Cloud profile save failed: {e}"
+        if not _is_owner_admin_email(oauth_result.get("email", "")):
+            try:
+                _profile_save = _sa.accept_terms(
+                    _current_auth_user_key(),
+                    email=oauth_result.get("email", ""),
+                    display_name=local_user.get("display_name") or oauth_result.get("display_name", ""),
+                    role=local_user.get("role") or oauth_result.get("role", "Processor"),
+                )
+                if _profile_save.get("_save_error"):
+                    st.session_state["profile_save_error"] = _profile_save.get("_save_error")
+                else:
+                    st.session_state.pop("profile_save_error", None)
+            except Exception as e:
+                st.session_state["profile_save_error"] = f"Cloud profile save failed: {e}"
         st.session_state.pop("oauth_google_verifier", None)
         st.session_state.pop("oauth_google_flow_id", None)
         st.session_state.pop("oauth_error_message", None)
@@ -3605,7 +3630,7 @@ def show_sidebar():
                 if e.strip()
             }
             _current_email = str(st.session_state.get("user_email") or "").strip().lower()
-            if _admin_emails and _current_email in _admin_emails:
+            if (_admin_emails and _current_email in _admin_emails) or _is_owner_admin_email(_current_email):
                 st.markdown("---")
                 st.markdown("**Private Usage Counter**")
                 _presence_window = int(os.getenv("PA_ACTIVE_WINDOW_MINUTES", "15") or "15")
