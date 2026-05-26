@@ -872,6 +872,28 @@ p, li, label, [data-testid="stMarkdownContainer"] p,
 }
 [data-testid="stMarkdownContainer"] strong { color: #ffffff !important; }
 
+/* Loan AI chat input: keep Streamlit's pinned chat bar in the dark app theme */
+[data-testid="stChatInput"],
+[data-testid="stChatInput"] > div,
+[data-testid="stChatInput"] textarea,
+[data-testid="stChatInput"] input {
+    background: #111827 !important;
+    color: #e5e7eb !important;
+    border-color: #334155 !important;
+}
+[data-testid="stChatInput"] {
+    border-top: 1px solid #1f2937 !important;
+}
+[data-testid="stChatInput"] textarea::placeholder,
+[data-testid="stChatInput"] input::placeholder {
+    color: #94a3b8 !important;
+}
+[data-testid="stChatInput"] button {
+    background: #1f2937 !important;
+    color: #bfdbfe !important;
+    border: 1px solid #334155 !important;
+}
+
 /* Labels uppercase */
 label, .stSelectbox label, .stTextInput label, .stTextArea label,
 .stNumberInput label, .stDateInput label {
