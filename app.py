@@ -5164,134 +5164,131 @@ def show_dashboard():
                         st.session_state[_compact_view_key] = _compact_view
                         st.rerun()
 
-                    st.markdown(
-                        '<div class="pa-section" style="margin-top:14px;">'
-                        'Scan Order (Originals)'
-                        f'<span style="color:#64748b;font-size:11px;font-weight:600;margin-left:6px;">'
-                        f'{len(_norm_conds)} item{"s" if len(_norm_conds) != 1 else ""}</span>'
-                        '</div>',
-                        unsafe_allow_html=True,
-                    )
-                    if _compact_view:
-                        import re as _re_compact
-                        import html as _html_compact
-                        _smap_compact = st.session_state.get(_summary_map_key, {})
-
-                        def _compact_subject_body(_desc, _sum_text, _fallback_party):
-                            """Return (subject, body_short) for the one-line view.
-                            Prefers a clean Gemini summary; falls back to parsing
-                            "[PTD-XXXX] CategoryName ..." out of the original."""
-                            # 1. Try Gemini summary "**Subject** - body"
-                            m = _re_compact.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_text) if _sum_text else None
-                            if m:
-                                subj = m.group(1).strip()
-                                # Strip any [PTD-XXXX] code Gemini accidentally bolded
-                                subj = _re_compact.sub(r"^\s*\[[A-Z]+-\d+\]\s*", "", subj).strip()
-                                body = m.group(2).strip()
-                                words = body.split()
-                                body_short = " ".join(words[:6]) + ("..." if len(words) > 6 else "")
-                                if len(subj) >= 2:
-                                    return subj, body_short
-                            # 2. Parse "[PTD-XXXX] CategoryName description..." directly
-                            code_m = _re_compact.match(r"^\s*\[[A-Z]+-\d+\]\s*(.+)$", _desc)
-                            rest = code_m.group(1) if code_m else _desc
-                            cat_m = _re_compact.match(
-                                r"^([A-Z][A-Za-z]+(?:\s+\([A-Za-z]+\))?)\s+(.+)$",
-                                rest,
-                            )
-                            if cat_m:
-                                subj = cat_m.group(1).strip()
-                                body = cat_m.group(2).strip()
-                                words = body.split()
-                                body_short = " ".join(words[:7]) + ("..." if len(words) > 7 else "")
-                                return subj, body_short
-                            # 3. Last resort: party + truncated desc
-                            short = (rest[:60] + "...") if len(rest) > 60 else rest
-                            return _fallback_party, short
-
-                        for _cond_idx, _c in enumerate(_norm_conds):
-                            _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
-                            _sections = _scan_sections_for_condition(_c)
-                            _primary_section = _sections[0]
-                            _base_uid = f"{_scan_fkey}_{_cond_uid}"
-                            _uid = f"{_base_uid}_{_primary_section}"
-                            _orig_desc = str(_c.get("desc", ""))
-                            _sum_desc = str(_smap_compact.get(_orig_desc) or "").strip()
-                            _subject, _body_short = _compact_subject_body(
-                                _orig_desc, _sum_desc, _primary_section,
-                            )
-                            _cb_col, _txt_col, _stat_col = st.columns([0.6, 6.4, 3.0])
-                            with _cb_col:
-                                st.checkbox(
-                                    f'#{_c["num"]}', value=False,
-                                    key=f"{_uid}_chk",
-                                    label_visibility="collapsed",
-                                )
-                            with _txt_col:
-                                _tail = f' <span style="color:#94a3b8;"> - {_html_compact.escape(_body_short)}</span>' if _body_short else ''
-                                _cur_status = st.session_state.get(
-                                    f"{_base_uid}_stat", _c.get("status", "Needed")
-                                )
-                                _stat_dot_color = {
-                                    "Needed": "#f97316",
-                                    "Requested": "#eab308",
-                                    "Important": "#a855f7",
-                                    "Ready to Clear": "#22c55e",
-                                    "Cleared": "#3b82f6",
-                                }.get(_cur_status, "#64748b")
-                                st.markdown(
-                                    f'<div title="{_html_compact.escape(_orig_desc)}" '
-                                    f'style="font-size:12.5px;line-height:1.5;padding:5px 0 4px 0;'
-                                    f'border-bottom:1px solid rgba(255,255,255,0.05);'
-                                    f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
-                                    f'cursor:help;">'
-                                    f'<span style="display:inline-block;width:7px;height:7px;'
-                                    f'border-radius:50%;background:{_stat_dot_color};'
-                                    f'margin-right:6px;vertical-align:middle;"></span>'
-                                    f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
-                                    f'<b style="color:#ffffff;">{_html_compact.escape(_subject)}</b>'
-                                    f'{_tail}'
-                                    f'</div>',
-                                    unsafe_allow_html=True,
-                                )
-                            with _stat_col:
-                                _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c.get("status") in _COND_STATS_SCAN else 0
-                                st.selectbox(
-                                    "Status", _COND_STATS_SCAN, index=_sidx,
-                                    key=f"{_base_uid}_stat",
-                                    label_visibility="collapsed",
-                                )
-                    else:
-                        for _cond_idx, _c in enumerate(_norm_conds):
-                            _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
-                            _sections = _scan_sections_for_condition(_c)
-                            _primary_section = _sections[0]
-                            _cond_view = dict(_c)
-                            _cond_view["_scan_uid"] = _cond_uid
-                            _cond_view["_section_party"] = _primary_section
-                            _cond_view["_primary_section"] = _primary_section
-                            _render_original_card(_cond_view)
-
-                    st.markdown(
-                        '<div class="pa-section" style="margin-top:14px;">'
-                        'Summarized (Sorted by Party)'
-                        '</div>',
-                        unsafe_allow_html=True,
-                    )
-                    for _section_party in _SECTION_ORDER_SCAN:
-                        _section_conds = _conds_by_section.get(_section_party, [])
-                        if not _section_conds:
-                            continue
+                    _scan_conds_tab, _scan_summary_tab = st.tabs(["Conditions", "Summarized"])
+                    with _scan_conds_tab:
                         st.markdown(
-                            f'<div style="font-size:11px;font-weight:700;color:#93c5fd;'
-                            f'text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 6px 0;">'
-                            f'{_SECTION_LABEL_SCAN.get(_section_party, _section_party + " Conditions")} '
-                            f'<span style="color:#64748b;font-weight:600;text-transform:none;">'
-                            f'({len(_section_conds)})</span></div>',
+                            '<div class="pa-section" style="margin-top:10px;">'
+                            'Scan Order (Originals)'
+                            f'<span style="color:#64748b;font-size:11px;font-weight:600;margin-left:6px;">'
+                            f'{len(_norm_conds)} item{"s" if len(_norm_conds) != 1 else ""}</span>'
+                            '</div>',
                             unsafe_allow_html=True,
                         )
-                        for _c in _section_conds:
-                            _render_summary_card(_c)
+                        if _compact_view:
+                            import re as _re_compact
+                            import html as _html_compact
+                            _smap_compact = st.session_state.get(_summary_map_key, {})
+
+                            def _compact_subject_body(_desc, _sum_text, _fallback_party):
+                                """Return (subject, body_short) for the one-line view."""
+                                m = _re_compact.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_text) if _sum_text else None
+                                if m:
+                                    subj = m.group(1).strip()
+                                    subj = _re_compact.sub(r"^\s*\[[A-Z]+-\d+\]\s*", "", subj).strip()
+                                    body = m.group(2).strip()
+                                    words = body.split()
+                                    body_short = " ".join(words[:6]) + ("..." if len(words) > 6 else "")
+                                    if len(subj) >= 2:
+                                        return subj, body_short
+                                code_m = _re_compact.match(r"^\s*\[[A-Z]+-\d+\]\s*(.+)$", _desc)
+                                rest = code_m.group(1) if code_m else _desc
+                                cat_m = _re_compact.match(
+                                    r"^([A-Z][A-Za-z]+(?:\s+\([A-Za-z]+\))?)\s+(.+)$",
+                                    rest,
+                                )
+                                if cat_m:
+                                    subj = cat_m.group(1).strip()
+                                    body = cat_m.group(2).strip()
+                                    words = body.split()
+                                    body_short = " ".join(words[:7]) + ("..." if len(words) > 7 else "")
+                                    return subj, body_short
+                                short = (rest[:60] + "...") if len(rest) > 60 else rest
+                                return _fallback_party, short
+
+                            for _cond_idx, _c in enumerate(_norm_conds):
+                                _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
+                                _sections = _scan_sections_for_condition(_c)
+                                _primary_section = _sections[0]
+                                _base_uid = f"{_scan_fkey}_{_cond_uid}"
+                                _uid = f"{_base_uid}_{_primary_section}"
+                                _orig_desc = str(_c.get("desc", ""))
+                                _sum_desc = str(_smap_compact.get(_orig_desc) or "").strip()
+                                _subject, _body_short = _compact_subject_body(
+                                    _orig_desc, _sum_desc, _primary_section,
+                                )
+                                _cb_col, _txt_col, _stat_col = st.columns([0.5, 7.2, 2.3])
+                                with _cb_col:
+                                    st.checkbox(
+                                        f'#{_c["num"]}', value=False,
+                                        key=f"{_uid}_chk",
+                                        label_visibility="collapsed",
+                                    )
+                                with _txt_col:
+                                    _tail = f' <span style="color:#94a3b8;"> - {_html_compact.escape(_body_short)}</span>' if _body_short else ''
+                                    _cur_status = st.session_state.get(
+                                        f"{_base_uid}_stat", _c.get("status", "Needed")
+                                    )
+                                    _stat_dot_color = {
+                                        "Needed": "#f97316",
+                                        "Requested": "#eab308",
+                                        "Important": "#a855f7",
+                                        "Ready to Clear": "#22c55e",
+                                        "Cleared": "#3b82f6",
+                                    }.get(_cur_status, "#64748b")
+                                    st.markdown(
+                                        f'<div title="{_html_compact.escape(_orig_desc)}" '
+                                        f'style="font-size:12px;line-height:1.25;padding:2px 0 1px 0;'
+                                        f'border-bottom:1px solid rgba(255,255,255,0.04);'
+                                        f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+                                        f'cursor:help;">'
+                                        f'<span style="display:inline-block;width:6px;height:6px;'
+                                        f'border-radius:50%;background:{_stat_dot_color};'
+                                        f'margin-right:5px;vertical-align:middle;"></span>'
+                                        f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
+                                        f'<b style="color:#ffffff;">{_html_compact.escape(_subject)}</b>'
+                                        f'{_tail}'
+                                        f'</div>',
+                                        unsafe_allow_html=True,
+                                    )
+                                with _stat_col:
+                                    _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c.get("status") in _COND_STATS_SCAN else 0
+                                    st.selectbox(
+                                        "Status", _COND_STATS_SCAN, index=_sidx,
+                                        key=f"{_base_uid}_stat",
+                                        label_visibility="collapsed",
+                                    )
+                        else:
+                            for _cond_idx, _c in enumerate(_norm_conds):
+                                _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
+                                _sections = _scan_sections_for_condition(_c)
+                                _primary_section = _sections[0]
+                                _cond_view = dict(_c)
+                                _cond_view["_scan_uid"] = _cond_uid
+                                _cond_view["_section_party"] = _primary_section
+                                _cond_view["_primary_section"] = _primary_section
+                                _render_original_card(_cond_view)
+
+                    with _scan_summary_tab:
+                        st.markdown(
+                            '<div class="pa-section" style="margin-top:10px;">'
+                            'Summarized (Sorted by Party)'
+                            '</div>',
+                            unsafe_allow_html=True,
+                        )
+                        for _section_party in _SECTION_ORDER_SCAN:
+                            _section_conds = _conds_by_section.get(_section_party, [])
+                            if not _section_conds:
+                                continue
+                            st.markdown(
+                                f'<div style="font-size:11px;font-weight:700;color:#93c5fd;'
+                                f'text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 6px 0;">'
+                                f'{_SECTION_LABEL_SCAN.get(_section_party, _section_party + " Conditions")} '
+                                f'<span style="color:#64748b;font-weight:600;text-transform:none;">'
+                                f'({len(_section_conds)})</span></div>',
+                                unsafe_allow_html=True,
+                            )
+                            for _c in _section_conds:
+                                _render_summary_card(_c)
 
                     def _scan_condition_checked_for_section(_cond, _section_party):
                         _cond_key = _cond.get("_scan_uid", _cond["num"])
