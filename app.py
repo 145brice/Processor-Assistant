@@ -10997,141 +10997,144 @@ def show_loan_detail():
                     unsafe_allow_html=True,
                 )
 
-        st.markdown(
-            '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-            'letter-spacing:0.5px;margin:8px 0 6px 0;">Scan Order (Originals) '
-            f'<span style="color:#64748b;font-weight:600;font-size:11px;'
-            f'text-transform:none;letter-spacing:0;">{len(_conditions)} item'
-            f'{"s" if len(_conditions) != 1 else ""}</span></div>',
-            unsafe_allow_html=True,
-        )
-        if _ld_compact_view:
-            import re as _re_ld_compact
-            _ld_smap = st.session_state.get(_ld_summary_map_key, {})
-
-            def _ld_compact_subject_body(_desc, _sum_text, _fallback_party):
-                m = _re_ld_compact.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_text) if _sum_text else None
-                if m:
-                    subj = m.group(1).strip()
-                    subj = _re_ld_compact.sub(r"^\s*\[[A-Z]+-\d+\]\s*", "", subj).strip()
-                    body = m.group(2).strip()
-                    words = body.split()
-                    body_short = " ".join(words[:6]) + ("..." if len(words) > 6 else "")
-                    if len(subj) >= 2:
-                        return subj, body_short
-                code_m = _re_ld_compact.match(r"^\s*\[[A-Z]+-\d+\]\s*(.+)$", _desc)
-                rest = code_m.group(1) if code_m else _desc
-                cat_m = _re_ld_compact.match(
-                    r"^([A-Z][A-Za-z]+(?:\s+\([A-Za-z]+\))?)\s+(.+)$",
-                    rest,
-                )
-                if cat_m:
-                    subj = cat_m.group(1).strip()
-                    body = cat_m.group(2).strip()
-                    words = body.split()
-                    body_short = " ".join(words[:7]) + ("..." if len(words) > 7 else "")
-                    return subj, body_short
-                short = (rest[:60] + "...") if len(rest) > 60 else rest
-                return _fallback_party, short
-
-            for _c in _conditions:
-                _cnum = _c["num"]
-                _uid = f"{_ld_fkey}_{_cnum}"
-                _orig_desc = str(_c.get("desc", ""))
-                _sections = _ld_sections_for_cond(_c)
-                _primary_section = _sections[0]
-                _sum_desc = str(_ld_smap.get(_orig_desc) or "").strip()
-                _subject, _body_short = _ld_compact_subject_body(
-                    _orig_desc, _sum_desc, _primary_section,
-                )
-                _cb_col, _txt_col, _note_col, _stat_col, _act_col = st.columns([0.6, 5.0, 2.8, 2.2, 2.4])
-                with _cb_col:
-                    st.checkbox(
-                        f"#{_cnum}", value=False,
-                        key=f"{_uid}_chk",
-                        label_visibility="collapsed",
-                    )
-                _status_labels = list(COND_STATUSES_LD.keys())
-                _cur_status = st.session_state.get(
-                    f"{_uid}_stat", _c.get("status", "Needed")
-                )
-                with _txt_col:
-                    _tail = f' <span style="color:#94a3b8;"> - {_html_ld.escape(_body_short)}</span>' if _body_short else ''
-                    _stat_dot_color = {
-                        "Needed": "#f97316",
-                        "Requested": "#eab308",
-                        "Important": "#a855f7",
-                        "Ready to Clear": "#22c55e",
-                        "Cleared": "#3b82f6",
-                    }.get(_cur_status, "#64748b")
-                    st.markdown(
-                        f'<div title="{_html_ld.escape(_orig_desc)}" '
-                        f'style="font-size:12.5px;line-height:1.5;padding:5px 0 4px 0;'
-                        f'border-bottom:1px solid rgba(255,255,255,0.05);'
-                        f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
-                        f'cursor:help;">'
-                        f'<span style="display:inline-block;width:7px;height:7px;'
-                        f'border-radius:50%;background:{_stat_dot_color};'
-                        f'margin-right:6px;vertical-align:middle;"></span>'
-                        f'<b style="color:#3b82f6;">#{_cnum}</b> '
-                        f'<b style="color:#ffffff;">{_html_ld.escape(_subject)}</b>'
-                        f'{_tail}'
-                        f'</div>',
-                        unsafe_allow_html=True,
-                    )
-                with _note_col:
-                    st.text_input(
-                        "Note",
-                        key=f"{_uid}_note",
-                        value=str(_c.get("notes", "") or ""),
-                        label_visibility="collapsed",
-                        placeholder="Notes",
-                    )
-                with _stat_col:
-                    _sidx = _status_labels.index(_cur_status) if _cur_status in _status_labels else 0
-                    st.selectbox(
-                        "Status", _status_labels, index=_sidx,
-                        key=f"{_uid}_stat",
-                        label_visibility="collapsed",
-                    )
-                with _act_col:
-                    _guide_label, _guide_url = _ld_guideline_url_for_condition(_orig_desc)
-                    st.markdown(
-                        f'<a href="{_guide_url}" target="_blank" rel="noopener noreferrer" '
-                        f'title="Open {_guide_label}" style="display:inline-block;padding:2px 8px;'
-                        f'border:1px solid rgba(59,130,246,0.45);border-radius:6px;'
-                        f'font-size:10px;color:#bfdbfe;text-decoration:none;margin-right:6px;">Guide</a>',
-                        unsafe_allow_html=True,
-                    )
-                    if st.button("Email", key=f"{_uid}_email_compact", use_container_width=True):
-                        st.session_state[f"{_uid}_chk"] = True
-                        st.session_state[f"ld_auto_draft_{lid}"] = True
-                        st.rerun()
-                    if st.button("Flag ?", key=f"{_uid}_flag_q_compact", use_container_width=True):
-                        _ld_flag_condition_question(_cnum, _orig_desc)
-        else:
-            for _c in _conditions:
-                _render_ld_original_card(_c)
-
-        st.markdown(
-            '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-            'letter-spacing:0.5px;margin:8px 0 6px 0;">Summarized (Sorted by Party)</div>',
-            unsafe_allow_html=True,
-        )
-        for _section in _LD_SECTION_ORDER:
-            _section_conds = _ld_conds_by_section.get(_section, [])
-            if not _section_conds:
-                continue
+        _conds_tab, _summary_tab = st.tabs(["Conditions", "Summarized"])
+        with _conds_tab:
             st.markdown(
-                f'<div style="font-size:11px;font-weight:700;color:#93c5fd;'
-                f'text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 6px 0;">'
-                f'{_LD_SECTION_LABEL.get(_section, _section + " Conditions")} '
-                f'<span style="color:#64748b;font-weight:600;text-transform:none;">'
-                f'({len(_section_conds)})</span></div>',
+                '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+                'letter-spacing:0.5px;margin:8px 0 6px 0;">Scan Order (Originals) '
+                f'<span style="color:#64748b;font-weight:600;font-size:11px;'
+                f'text-transform:none;letter-spacing:0;">{len(_conditions)} item'
+                f'{"s" if len(_conditions) != 1 else ""}</span></div>',
                 unsafe_allow_html=True,
             )
-            for _c in _section_conds:
-                _render_ld_summary_card(_c)
+            if _ld_compact_view:
+                import re as _re_ld_compact
+                _ld_smap = st.session_state.get(_ld_summary_map_key, {})
+
+                def _ld_compact_subject_body(_desc, _sum_text, _fallback_party):
+                    m = _re_ld_compact.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_text) if _sum_text else None
+                    if m:
+                        subj = m.group(1).strip()
+                        subj = _re_ld_compact.sub(r"^\s*\[[A-Z]+-\d+\]\s*", "", subj).strip()
+                        body = m.group(2).strip()
+                        words = body.split()
+                        body_short = " ".join(words[:6]) + ("..." if len(words) > 6 else "")
+                        if len(subj) >= 2:
+                            return subj, body_short
+                    code_m = _re_ld_compact.match(r"^\s*\[[A-Z]+-\d+\]\s*(.+)$", _desc)
+                    rest = code_m.group(1) if code_m else _desc
+                    cat_m = _re_ld_compact.match(
+                        r"^([A-Z][A-Za-z]+(?:\s+\([A-Za-z]+\))?)\s+(.+)$",
+                        rest,
+                    )
+                    if cat_m:
+                        subj = cat_m.group(1).strip()
+                        body = cat_m.group(2).strip()
+                        words = body.split()
+                        body_short = " ".join(words[:7]) + ("..." if len(words) > 7 else "")
+                        return subj, body_short
+                    short = (rest[:60] + "...") if len(rest) > 60 else rest
+                    return _fallback_party, short
+
+                for _c in _conditions:
+                    _cnum = _c["num"]
+                    _uid = f"{_ld_fkey}_{_cnum}"
+                    _orig_desc = str(_c.get("desc", ""))
+                    _sections = _ld_sections_for_cond(_c)
+                    _primary_section = _sections[0]
+                    _sum_desc = str(_ld_smap.get(_orig_desc) or "").strip()
+                    _subject, _body_short = _ld_compact_subject_body(
+                        _orig_desc, _sum_desc, _primary_section,
+                    )
+                    _cb_col, _txt_col, _note_col, _stat_col, _act_col = st.columns([0.55, 6.4, 2.2, 1.8, 1.6])
+                    with _cb_col:
+                        st.checkbox(
+                            f"#{_cnum}", value=False,
+                            key=f"{_uid}_chk",
+                            label_visibility="collapsed",
+                        )
+                    _status_labels = list(COND_STATUSES_LD.keys())
+                    _cur_status = st.session_state.get(
+                        f"{_uid}_stat", _c.get("status", "Needed")
+                    )
+                    with _txt_col:
+                        _tail = f' <span style="color:#94a3b8;"> - {_html_ld.escape(_body_short)}</span>' if _body_short else ''
+                        _stat_dot_color = {
+                            "Needed": "#f97316",
+                            "Requested": "#eab308",
+                            "Important": "#a855f7",
+                            "Ready to Clear": "#22c55e",
+                            "Cleared": "#3b82f6",
+                        }.get(_cur_status, "#64748b")
+                        st.markdown(
+                            f'<div title="{_html_ld.escape(_orig_desc)}" '
+                            f'style="font-size:12px;line-height:1.25;padding:2px 0 1px 0;'
+                            f'border-bottom:1px solid rgba(255,255,255,0.04);'
+                            f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+                            f'cursor:help;">'
+                            f'<span style="display:inline-block;width:6px;height:6px;'
+                            f'border-radius:50%;background:{_stat_dot_color};'
+                            f'margin-right:5px;vertical-align:middle;"></span>'
+                            f'<b style="color:#3b82f6;">#{_cnum}</b> '
+                            f'<b style="color:#ffffff;">{_html_ld.escape(_subject)}</b>'
+                            f'{_tail}'
+                            f'</div>',
+                            unsafe_allow_html=True,
+                        )
+                    with _note_col:
+                        st.text_input(
+                            "Note",
+                            key=f"{_uid}_note",
+                            value=str(_c.get("notes", "") or ""),
+                            label_visibility="collapsed",
+                            placeholder="Notes",
+                        )
+                    with _stat_col:
+                        _sidx = _status_labels.index(_cur_status) if _cur_status in _status_labels else 0
+                        st.selectbox(
+                            "Status", _status_labels, index=_sidx,
+                            key=f"{_uid}_stat",
+                            label_visibility="collapsed",
+                        )
+                    with _act_col:
+                        _guide_label, _guide_url = _ld_guideline_url_for_condition(_orig_desc)
+                        st.markdown(
+                            f'<a href="{_guide_url}" target="_blank" rel="noopener noreferrer" '
+                            f'title="Open {_guide_label}" style="display:inline-block;padding:1px 6px;'
+                            f'border:1px solid rgba(59,130,246,0.4);border-radius:5px;'
+                            f'font-size:9.5px;color:#bfdbfe;text-decoration:none;margin-right:4px;">Guide</a>',
+                            unsafe_allow_html=True,
+                        )
+                        if st.button("Email", key=f"{_uid}_email_compact", use_container_width=True):
+                            st.session_state[f"{_uid}_chk"] = True
+                            st.session_state[f"ld_auto_draft_{lid}"] = True
+                            st.rerun()
+                        if st.button("?", key=f"{_uid}_flag_q_compact", use_container_width=True):
+                            _ld_flag_condition_question(_cnum, _orig_desc)
+            else:
+                for _c in _conditions:
+                    _render_ld_original_card(_c)
+
+        with _summary_tab:
+            st.markdown(
+                '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+                'letter-spacing:0.5px;margin:8px 0 6px 0;">Summarized (Sorted by Party)</div>',
+                unsafe_allow_html=True,
+            )
+            for _section in _LD_SECTION_ORDER:
+                _section_conds = _ld_conds_by_section.get(_section, [])
+                if not _section_conds:
+                    continue
+                st.markdown(
+                    f'<div style="font-size:11px;font-weight:700;color:#93c5fd;'
+                    f'text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 6px 0;">'
+                    f'{_LD_SECTION_LABEL.get(_section, _section + " Conditions")} '
+                    f'<span style="color:#64748b;font-weight:600;text-transform:none;">'
+                    f'({len(_section_conds)})</span></div>',
+                    unsafe_allow_html=True,
+                )
+                for _c in _section_conds:
+                    _render_ld_summary_card(_c)
 
         # Collect checked conditions for the email draft below. Each condition
         # is counted once even if it appears in multiple buckets (the checkbox
