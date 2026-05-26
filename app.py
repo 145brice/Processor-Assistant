@@ -12115,6 +12115,22 @@ def show_loan_detail():
         unsafe_allow_html=True,
     )
     qa1, qa2, qa3, qa3b, qa4, qa5 = st.columns(6)
+    from datetime import datetime as _qa_dt
+
+    def _qa_parse_date(_raw):
+        _raw = str(_raw or "").strip()
+        if not _raw:
+            return None
+        for _fmt in (
+            "%Y-%m-%d", "%B %d, %Y", "%b %d, %Y",
+            "%m/%d/%Y", "%m/%d/%y", "%m-%d-%Y", "%m-%d-%y",
+        ):
+            try:
+                return _qa_dt.strptime(_raw, _fmt).date()
+            except Exception:
+                pass
+        return None
+
     with qa1:
         _new_status = st.selectbox("Change Status", STATUS_OPTIONS,
                                    index=STATUS_OPTIONS.index(status) if status in STATUS_OPTIONS else 0,
@@ -12124,8 +12140,7 @@ def show_loan_detail():
             log_activity(lid, "status", f"Status changed to {_new_status}", user=my_name)
             st.rerun()
     with qa2:
-        from datetime import datetime as _qa_dt
-        _cd_val = _qa_dt.strptime(_closing, "%Y-%m-%d").date() if _closing else None
+        _cd_val = _qa_parse_date(_closing)
         _new_cd = st.date_input("Closing", value=_cd_val, key="detail_closing")
         _new_cd_str = str(_new_cd) if _new_cd else ""
         if _new_cd_str and _new_cd_str != _closing:
@@ -12133,7 +12148,7 @@ def show_loan_detail():
             log_activity(lid, "dates", f"Closing date changed to {_new_cd_str}", user=my_name)
             st.rerun()
     with qa3:
-        _lk_val = _qa_dt.strptime(_lock, "%Y-%m-%d").date() if _lock else None
+        _lk_val = _qa_parse_date(_lock)
         _new_lk = st.date_input("Lock Expiry", value=_lk_val, key="detail_lock")
         _new_lk_str = str(_new_lk) if _new_lk else ""
         if _new_lk_str and _new_lk_str != _lock:
@@ -12141,7 +12156,7 @@ def show_loan_detail():
             log_activity(lid, "dates", f"Lock expiry changed to {_new_lk_str}", user=my_name)
             st.rerun()
     with qa3b:
-        _cm_val = _qa_dt.strptime(_commitment, "%Y-%m-%d").date() if _commitment else None
+        _cm_val = _qa_parse_date(_commitment)
         _new_cm = st.date_input("Commitment", value=_cm_val, key="detail_commitment")
         _new_cm_str = str(_new_cm) if _new_cm else ""
         if _new_cm_str and _new_cm_str != _commitment:
