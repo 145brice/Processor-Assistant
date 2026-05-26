@@ -882,14 +882,14 @@ p, li, label, [data-testid="stMarkdownContainer"] p,
 [data-testid="stBottomBlockContainer"] {
     border-top: 1px solid #1f2937 !important;
     box-shadow: 0 -10px 24px rgba(0,0,0,0.24) !important;
-    padding-top: 18px !important;
+    padding-top: 30px !important;
     position: relative !important;
 }
 [data-testid="stBottomBlockContainer"]::before {
     content: "Ask AI";
     position: absolute;
-    top: 5px;
-    left: 64px;
+    top: 9px;
+    left: 7.5%;
     color: #93c5fd;
     font-size: 11px;
     font-weight: 800;
