@@ -3370,8 +3370,6 @@ def show_login_page():
             st.caption("Google sign-in will appear automatically once Supabase OAuth is configured.")
     except Exception as e:
         st.caption(f"Google sign-in unavailable: {e}")
-    st.markdown('</div>', unsafe_allow_html=True)
-    return
 
     st.markdown("""
     <div class="login-divider">
@@ -3386,7 +3384,9 @@ def show_login_page():
             email = st.text_input("Email", placeholder="you@example.com")
             password = st.text_input("Password", type="password", placeholder="........")
             submitted = st.form_submit_button("Sign In", use_container_width=True, type="primary")
-            if submitted and email and password:
+            if submitted and not accepted_terms:
+                st.error("Please accept the AI/review disclaimer to continue.")
+            elif submitted and email and password:
                 from db import login
                 result = login(email, password)
                 if result.get("success"):
@@ -3409,7 +3409,9 @@ def show_login_page():
             )
             submitted = st.form_submit_button("Create Account", use_container_width=True, type="primary")
             if submitted:
-                if not tos:
+                if not accepted_terms:
+                    st.error("Please accept the AI/review disclaimer to continue.")
+                elif not tos:
                     st.error("Please check the acknowledgment above")
                 elif password != confirm:
                     st.error("Passwords do not match")
