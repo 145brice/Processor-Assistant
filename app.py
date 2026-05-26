@@ -11119,7 +11119,12 @@ def show_loan_detail():
                     short = (rest[:60] + "...") if len(rest) > 60 else rest
                     return _fallback_party, short
 
-                for _c in _conditions:
+                def _ld_current_condition_status(_c):
+                    _cnum = _c["num"]
+                    _uid = f"{_ld_fkey}_{_cnum}"
+                    return st.session_state.get(f"{_uid}_stat", _c.get("status", "Needed"))
+
+                def _render_ld_compact_condition_row(_c):
                     _cnum = _c["num"]
                     _uid = f"{_ld_fkey}_{_cnum}"
                     _orig_desc = str(_c.get("desc", ""))
@@ -11137,9 +11142,7 @@ def show_loan_detail():
                             label_visibility="collapsed",
                         )
                     _status_labels = list(COND_STATUSES_LD.keys())
-                    _cur_status = st.session_state.get(
-                        f"{_uid}_stat", _c.get("status", "Needed")
-                    )
+                    _cur_status = _ld_current_condition_status(_c)
                     with _txt_col:
                         _tail = f' <span style="color:#94a3b8;"> - {_html_ld.escape(_body_short)}</span>' if _body_short else ''
                         _stat_dot_color = {
@@ -11179,9 +11182,67 @@ def show_loan_detail():
                             key=f"{_uid}_stat",
                             label_visibility="collapsed",
                         )
+
+                _active_conditions = [
+                    _c for _c in _conditions
+                    if _ld_current_condition_status(_c) != "Cleared"
+                ]
+                _cleared_conditions = [
+                    _c for _c in _conditions
+                    if _ld_current_condition_status(_c) == "Cleared"
+                ]
+                st.markdown(
+                    f'<div style="font-size:11px;font-weight:800;color:#93c5fd;'
+                    f'text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px 0;">'
+                    f'Open Conditions <span style="color:#64748b;text-transform:none;">'
+                    f'({_html_ld.escape(str(len(_active_conditions)))})</span></div>',
+                    unsafe_allow_html=True,
+                )
+                if _active_conditions:
+                    for _c in _active_conditions:
+                        _render_ld_compact_condition_row(_c)
+                else:
+                    st.caption("No open conditions.")
+                if _cleared_conditions:
+                    st.markdown(
+                        f'<div style="font-size:11px;font-weight:800;color:#22c55e;'
+                        f'text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 4px 0;'
+                        f'padding-top:8px;border-top:1px solid rgba(34,197,94,0.18);">'
+                        f'Cleared Conditions <span style="color:#64748b;text-transform:none;">'
+                        f'({_html_ld.escape(str(len(_cleared_conditions)))})</span></div>',
+                        unsafe_allow_html=True,
+                    )
+                    for _c in _cleared_conditions:
+                        _render_ld_compact_condition_row(_c)
             else:
-                for _c in _conditions:
+                _active_conditions = [
+                    _c for _c in _conditions
+                    if st.session_state.get(f"{_ld_fkey}_{_c['num']}_stat", _c.get("status", "Needed")) != "Cleared"
+                ]
+                _cleared_conditions = [
+                    _c for _c in _conditions
+                    if st.session_state.get(f"{_ld_fkey}_{_c['num']}_stat", _c.get("status", "Needed")) == "Cleared"
+                ]
+                st.markdown(
+                    f'<div style="font-size:11px;font-weight:800;color:#93c5fd;'
+                    f'text-transform:uppercase;letter-spacing:0.5px;margin:8px 0 4px 0;">'
+                    f'Open Conditions <span style="color:#64748b;text-transform:none;">'
+                    f'({len(_active_conditions)})</span></div>',
+                    unsafe_allow_html=True,
+                )
+                for _c in _active_conditions:
                     _render_ld_original_card(_c)
+                if _cleared_conditions:
+                    st.markdown(
+                        f'<div style="font-size:11px;font-weight:800;color:#22c55e;'
+                        f'text-transform:uppercase;letter-spacing:0.5px;margin:16px 0 4px 0;'
+                        f'padding-top:8px;border-top:1px solid rgba(34,197,94,0.18);">'
+                        f'Cleared Conditions <span style="color:#64748b;text-transform:none;">'
+                        f'({len(_cleared_conditions)})</span></div>',
+                        unsafe_allow_html=True,
+                    )
+                    for _c in _cleared_conditions:
+                        _render_ld_original_card(_c)
 
         with _summary_tab:
             st.markdown(
