@@ -10951,6 +10951,52 @@ def show_loan_detail():
             st.session_state[_ld_compact_view_key] = _ld_compact_view
             st.rerun()
 
+        _ld_top_checked = []
+        for _c in _conditions:
+            _cnum = _c["num"]
+            _uid = f"{_ld_fkey}_{_cnum}"
+            if st.session_state.get(f"{_uid}_chk", False):
+                _ld_top_checked.append(_c)
+        _ld_top_action_cols = st.columns([1.15, 1.25, 1.05, 3.2])
+        with _ld_top_action_cols[0]:
+            if st.button(
+                "Draft Email",
+                key=f"ld_top_draft_{lid}",
+                type="primary",
+                use_container_width=True,
+                disabled=not bool(_ld_top_checked),
+                help="Draft an email using all checked conditions.",
+            ):
+                st.session_state[f"ld_auto_draft_{lid}"] = True
+                st.rerun()
+        with _ld_top_action_cols[1]:
+            if st.button(
+                "Check Guidelines",
+                key=f"ld_top_guidelines_{lid}",
+                use_container_width=True,
+                disabled=not bool(_ld_top_checked),
+                help="Open guideline checks for all checked conditions.",
+            ):
+                for _c in _ld_top_checked:
+                    _cnum = _c["num"]
+                    _uid = f"{_ld_fkey}_{_cnum}"
+                    st.session_state[f"{_uid}_guide_open"] = True
+                    st.session_state.pop(f"{_uid}_guide_results", None)
+                st.session_state[_ld_compact_view_key] = False
+                st.rerun()
+        with _ld_top_action_cols[2]:
+            if _ld_top_checked:
+                st.markdown(
+                    f'<div style="padding-top:8px;font-size:11px;color:#93c5fd;'
+                    f'font-weight:700;">{len(_ld_top_checked)} checked</div>',
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    '<div style="padding-top:8px;font-size:11px;color:#64748b;">check items first</div>',
+                    unsafe_allow_html=True,
+                )
+
         st.markdown(
             '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
             'letter-spacing:0.5px;margin:8px 0 6px 0;">Scan Order (Originals) '
