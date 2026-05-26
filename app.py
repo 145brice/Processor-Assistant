@@ -2914,7 +2914,12 @@ def _client_need_item(desc: str, party: str = "Borrower") -> tuple[str, str]:
 
 def _load_user_gemini_key_into_session(force: bool = False) -> str:
     """Load the signed-in user's Gemini key from Supabase into session state."""
-    if _is_owner_admin_email():
+    # Owner admin used to short-circuit here to avoid a cloud-gated login loop,
+    # but that meant the Gemini key never reloaded from Supabase after a fresh
+    # session (e.g. Railway redeploy). Only honor the short-circuit when we
+    # already have the key in memory; otherwise fall through to the Supabase
+    # load like every other user.
+    if _is_owner_admin_email() and st.session_state.get("user_gemini_api_key") and not force:
         return str(st.session_state.get("user_gemini_api_key") or "")
     if st.session_state.get("sandbox_mode", False):
         st.session_state.user_gemini_api_key = ""
