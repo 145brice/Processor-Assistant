@@ -12198,40 +12198,17 @@ def show_loan_detail():
     # â”€â”€ Team Visibility â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     _ld_docs = loan.get("documents", [])
     _ld_doc_count = len(_ld_docs)
-    _ld_borrower_email = ""
-    _ld_contacts = loan.get("contacts", {}) or {}
-    for _ld_ck in ("borrower", "co_borrower"):
-        _ld_ce = (_ld_contacts.get(_ld_ck) or {}).get("email", "")
-        if _ld_ce:
-            _ld_borrower_email = _ld_ce
-            break
 
     st.markdown(
         '<span style="font-size:13px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
         'letter-spacing:0.5px;margin-top:16px;display:inline-block;">Documents</span>',
         unsafe_allow_html=True,
     )
-    _td1, _td2 = st.columns([2, 1])
-    with _td1:
-        st.markdown(
-            f'<div style="font-size:14px;color:#d1d5db;padding-top:6px;">'
-            f'<b style="color:#3b82f6;">{_ld_doc_count}</b> document(s) added to this loan</div>',
-            unsafe_allow_html=True,
-        )
-    with _td2:
-        _loan_num_str = loan.get("loan_num", str(lid))
-        _borrower_str = loan.get("borrower", "")
-        _mailto_subject = f"Loan {_loan_num_str} {_borrower_str} Document Request"
-        _mailto_body = (
-            f"Hello,%0A%0A"
-            f"Please find below the document checklist for Loan #{_loan_num_str} {_borrower_str}.%0A%0A"
-            f"Documents received: {_ld_doc_count}%0A%0A"
-            f"Please upload or email any outstanding documents at your earliest convenience.%0A%0A"
-            f"Thank you"
-        )
-        _mailto_to = _ld_borrower_email or ""
-        _mailto_link = f"mailto:{_mailto_to}?subject={_mailto_subject}&body={_mailto_body}"
-        st.link_button("Email Documents", _mailto_link, use_container_width=True)
+    st.markdown(
+        f'<div style="font-size:14px;color:#d1d5db;padding-top:6px;">'
+        f'<b style="color:#3b82f6;">{_ld_doc_count}</b> document(s) added to this loan</div>',
+        unsafe_allow_html=True,
+    )
 
     # â”€â”€ Ask AI Assistant â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.markdown(
