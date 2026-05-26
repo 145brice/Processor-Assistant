@@ -2320,6 +2320,21 @@ _PARTY_KEYWORDS_THIRD_PARTY = [
         "fannie mae class", "freddie mac class", "fnma class", "fhlmc class",
         "framework class", "counseling certificate", "education certificate",
         "course completion",
+        # Earnest money: the borrower is the one providing proof (canceled
+        # check, wire receipt, bank statement showing it cleared). Without
+        # this precedence entry, "earnest money credit on final CD" matches
+        # "final cd" -> Title, "EMD per ALTA" matches "alta" -> Title, etc.
+        "earnest money", "earnest deposit", " emd ", " emd.", " emd,",
+        "good faith deposit", "emd receipt", "earnest money receipt",
+        # Letters of explanation: always the borrower's task.
+        "letter of explanation", " loe ", " loe.", " loe,",
+        "explanation letter", "explanation needed",
+        # Gift funds: borrower (donor signs gift letter, borrower provides
+        # paper trail). Easily mis-routed by "donor bank statement".
+        "gift letter", "gift funds", "gift donor", "donor letter",
+        "donor statement",
+        # Name affidavit / AKA / signature affidavit: borrower signs.
+        "name affidavit", "aka affidavit", "signature affidavit",
     ]),
     # Loan-processor internal tasks (must come before Appraiser/Underwriter
     # so "copy of the appraisal invoice" routes here, not to Appraiser).
@@ -2403,7 +2418,7 @@ _PARTY_KEYWORDS_BORROWER_ACTION = [
 ]
 
 
-_CONDITION_ROUTING_VERSION = "v20260525e"
+_CONDITION_ROUTING_VERSION = "v20260526a"
 
 
 def _condition_override_parties(desc: str):
@@ -4852,50 +4867,7 @@ def show_dashboard():
                             _cond_view["_primary_section"] = _primary_section
                             _conds_by_section.setdefault(_section, []).append(_cond_view)
 
-                    # 2x3 grid bucketing: Borrower / Third Party / Party Comms.
-                    # Top row of the grid renders the Gemini-summarized email version;
-                    # bottom row renders the originals with the full interactive
-                    # controls (status, parties, Guide). A condition that routes to
-                    # multiple parties appears in every bucket those parties span.
-                    _BUCKETS_SCAN = ["Borrower", "Third Party", "Party Comms"]
-                    _BUCKET_PARTIES_SCAN = {
-                        "Borrower": ["Borrower"],
-                        "Third Party": ["Title", "Insurance", "Appraiser", "Employer"],
-                        "Party Comms": ["Realtor", "Seller", "Closer", "Processor", "Underwriter"],
-                    }
-                    _BUCKET_LABEL_SCAN = {
-                        "Borrower": "Borrower",
-                        "Third Party": "Third Party",
-                        "Party Comms": "Party Comms",
-                    }
-
-                    def _bucket_for_section(_section_party):
-                        for _b, _parties in _BUCKET_PARTIES_SCAN.items():
-                            if _section_party in _parties:
-                                return _b
-                        return "Party Comms"
-
-                    _conds_by_bucket = {b: [] for b in _BUCKETS_SCAN}
-                    for _cond_idx, _cond in enumerate(_norm_conds):
-                        _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
-                        _sections = _scan_sections_for_condition(_cond)
-                        _primary_section = _sections[0]
-                        _primary_bucket = _bucket_for_section(_primary_section)
-                        _seen_buckets = []
-                        for _section in _sections:
-                            _b = _bucket_for_section(_section)
-                            if _b in _seen_buckets:
-                                continue
-                            _seen_buckets.append(_b)
-                            _cond_view = dict(_cond)
-                            _cond_view["_scan_uid"] = _cond_uid
-                            _cond_view["_section_party"] = _section
-                            _cond_view["_primary_section"] = _primary_section
-                            _cond_view["_bucket"] = _b
-                            _cond_view["_primary_bucket"] = _primary_bucket
-                            _conds_by_bucket[_b].append(_cond_view)
-
-                    # Pre-fetch summaries (always on; the top row is the summary).
+                    # Pre-fetch summaries (right column is always the summary).
                     _plain_map_key = f"{_scan_fkey}_plain_map"
                     _plain_sig_key = f"{_scan_fkey}_plain_sig"
                     _summary_map_key = f"{_scan_fkey}_summary_map"
@@ -4921,7 +4893,6 @@ def show_dashboard():
                             except Exception as _se:
                                 st.warning(f"Could not summarize: {_se}")
                                 st.session_state[_summary_map_key] = {}
-                    _summary_on = True  # top row of the 2x3 grid always shows summaries
 
                     def _needs_status_label(_raw_status: str) -> str:
                         s = str(_raw_status or "").strip().lower()
@@ -4988,7 +4959,7 @@ def show_dashboard():
                     import html as _html
                     import re as _re_needs
                     _needs_rows = []
-                    _summary_map_for_needs = st.session_state.get(_summary_map_key, {}) if _summary_on else {}
+                    _summary_map_for_needs = st.session_state.get(_summary_map_key, {})
                     for _cond_idx, _cond in enumerate(_norm_conds):
                         _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
                         _cond_for_needs = dict(_cond)
@@ -5173,44 +5144,51 @@ def show_dashboard():
                                 st.session_state.pop(f"{_uid}_guide_open", None)
                                 st.rerun()
 
-                    def _render_bucket_column(_bucket, _renderer):
-                        _bucket_conds = _conds_by_bucket.get(_bucket, [])
+                    # 2-column layout:
+                    #   Left  = originals in PDF scan order (full interactive controls).
+                    #   Right = Gemini summaries grouped by party (display-only).
+                    _left_col, _right_col = st.columns(2)
+
+                    with _left_col:
                         st.markdown(
-                            f'<div style="font-size:11px;font-weight:700;color:#93c5fd;text-transform:uppercase;'
-                            f'letter-spacing:0.4px;margin:2px 0 6px 0;">{_BUCKET_LABEL_SCAN[_bucket]} '
-                            f'<span style="color:#64748b;font-weight:600;text-transform:none;">'
-                            f'({len(_bucket_conds)})</span></div>',
+                            '<div class="pa-section" style="margin-top:14px;">'
+                            'Scan Order (Originals)'
+                            f'<span style="color:#64748b;font-size:11px;font-weight:600;margin-left:6px;">'
+                            f'{len(_norm_conds)} item{"s" if len(_norm_conds) != 1 else ""}</span>'
+                            '</div>',
                             unsafe_allow_html=True,
                         )
-                        if not _bucket_conds:
+                        for _cond_idx, _c in enumerate(_norm_conds):
+                            _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
+                            _sections = _scan_sections_for_condition(_c)
+                            _primary_section = _sections[0]
+                            _cond_view = dict(_c)
+                            _cond_view["_scan_uid"] = _cond_uid
+                            _cond_view["_section_party"] = _primary_section
+                            _cond_view["_primary_section"] = _primary_section
+                            _render_original_card(_cond_view)
+
+                    with _right_col:
+                        st.markdown(
+                            '<div class="pa-section" style="margin-top:14px;">'
+                            'Summarized (Sorted by Party)'
+                            '</div>',
+                            unsafe_allow_html=True,
+                        )
+                        for _section_party in _SECTION_ORDER_SCAN:
+                            _section_conds = _conds_by_section.get(_section_party, [])
+                            if not _section_conds:
+                                continue
                             st.markdown(
-                                '<div style="color:#64748b;font-size:11px;font-style:italic;'
-                                'padding:8px 0;">No conditions</div>',
+                                f'<div style="font-size:11px;font-weight:700;color:#93c5fd;'
+                                f'text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 6px 0;">'
+                                f'{_SECTION_LABEL_SCAN.get(_section_party, _section_party + " Conditions")} '
+                                f'<span style="color:#64748b;font-weight:600;text-transform:none;">'
+                                f'({len(_section_conds)})</span></div>',
                                 unsafe_allow_html=True,
                             )
-                            return
-                        for _c in _bucket_conds:
-                            _renderer(_c)
-
-                    # Row 1: Summarized (email-style)
-                    st.markdown(
-                        '<div class="pa-section" style="margin-top:14px;">Summarized (email version)</div>',
-                        unsafe_allow_html=True,
-                    )
-                    _sum_cols = st.columns(3)
-                    for _i, _bucket in enumerate(_BUCKETS_SCAN):
-                        with _sum_cols[_i]:
-                            _render_bucket_column(_bucket, _render_summary_card)
-
-                    # Row 2: Originals (full interactive)
-                    st.markdown(
-                        '<div class="pa-section" style="margin-top:18px;">All Conditions (Original)</div>',
-                        unsafe_allow_html=True,
-                    )
-                    _orig_cols = st.columns(3)
-                    for _i, _bucket in enumerate(_BUCKETS_SCAN):
-                        with _orig_cols[_i]:
-                            _render_bucket_column(_bucket, _render_original_card)
+                            for _c in _section_conds:
+                                _render_summary_card(_c)
 
                     def _scan_condition_checked_for_section(_cond, _section_party):
                         _cond_key = _cond.get("_scan_uid", _cond["num"])
@@ -10575,27 +10553,40 @@ def show_loan_detail():
             if "party" not in _c:
                 _c["party"] = "Borrower"
 
-        # 2x3 grid: top row = Gemini summary (email-style, display-only),
-        # bottom row = originals with full interactive controls. Both rows
-        # split into Borrower / Third Party / Party Comms columns.
-        _LD_BUCKETS = ["Borrower", "Third Party", "Party Comms"]
-        _LD_BUCKET_PARTIES = {
-            "Borrower": ["Borrower", "Co-Borrower"],
-            "Third Party": ["Title", "Insurance", "Appraiser", "Employer"],
-            "Party Comms": ["Realtor", "Seller", "Closer", "Underwriter",
-                            "Jr Underwriter", "Loan Officer", "Manager"],
+        # 2-column layout:
+        #   Left  = originals in stored/scan order (full interactive controls).
+        #   Right = Gemini summaries grouped by party (display-only).
+        _LD_SECTION_ORDER = [
+            "Borrower", "Title", "Insurance", "Appraiser",
+            "Employer", "Realtor", "Seller", "Closer",
+            "Processor", "Underwriter",
+        ]
+        _LD_SECTION_LABEL = {
+            "Borrower": "Client Conditions",
+            "Title": "Title Conditions",
+            "Insurance": "Insurance Conditions",
+            "Appraiser": "Appraisal Conditions",
+            "Employer": "Employment Conditions",
+            "Realtor": "Realtor Conditions",
+            "Seller": "Seller Conditions",
+            "Closer": "Closer Conditions",
+            "Processor": "Processor Conditions",
+            "Underwriter": "Underwriting Conditions",
         }
-        _LD_BUCKET_LABEL = {
-            "Borrower": "Borrower",
-            "Third Party": "Third Party",
-            "Party Comms": "Party Comms",
+        _LD_PARTY_ALIASES = {
+            "Buyer": "Borrower",
+            "Client": "Borrower",
+            "Co-Borrower": "Borrower",
+            "HOI": "Insurance",
+            "Hazard Insurance": "Insurance",
+            "Insurance Agent": "Insurance",
+            "Title Company": "Title",
+            "Escrow": "Title",
+            "Appraisal": "Appraiser",
+            "Jr Underwriter": "Underwriter",
+            "Loan Officer": "Underwriter",
+            "Manager": "Underwriter",
         }
-
-        def _ld_bucket_for_party(_party):
-            for _b, _parties in _LD_BUCKET_PARTIES.items():
-                if _party in _parties:
-                    return _b
-            return "Party Comms"
 
         def _ld_parties_for_cond(_c):
             _raw = _c.get("parties") or _c.get("all_parties") or _c.get("party") or "Borrower"
@@ -10605,19 +10596,18 @@ def show_loan_detail():
                 _list = [str(_raw).strip()]
             return _list or ["Borrower"]
 
-        _ld_conds_by_bucket = {b: [] for b in _LD_BUCKETS}
-        _ld_primary_bucket = {}  # cond num -> primary bucket
+        def _ld_sections_for_cond(_c):
+            _sections = []
+            for _p in _ld_parties_for_cond(_c):
+                _canon = _LD_PARTY_ALIASES.get(_p.strip(), _p.strip())
+                if _canon in _LD_SECTION_ORDER and _canon not in _sections:
+                    _sections.append(_canon)
+            return _sections or ["Borrower"]
+
+        _ld_conds_by_section = {s: [] for s in _LD_SECTION_ORDER}
         for _c in _conditions:
-            _parties = _ld_parties_for_cond(_c)
-            _primary_bkt = _ld_bucket_for_party(_parties[0])
-            _ld_primary_bucket[str(_c["num"])] = _primary_bkt
-            _seen = []
-            for _p in _parties:
-                _b = _ld_bucket_for_party(_p)
-                if _b in _seen:
-                    continue
-                _seen.append(_b)
-                _ld_conds_by_bucket[_b].append(_c)
+            for _s in _ld_sections_for_cond(_c):
+                _ld_conds_by_section[_s].append(_c)
 
         # Pre-fetch summaries (top row of the grid is the email-style summary).
         _ld_summary_map_key = f"{_ld_fkey}_summary_map"
@@ -10673,10 +10663,9 @@ def show_loan_detail():
                 unsafe_allow_html=True,
             )
 
-        def _render_ld_original_card(_c, _bucket):
+        def _render_ld_original_card(_c):
             _cnum = _c["num"]
             _uid = f"{_ld_fkey}_{_cnum}"
-            _is_primary = _ld_primary_bucket.get(str(_cnum)) == _bucket
             with st.container(border=True):
                 _orig_desc = str(_c.get("desc", ""))
                 _parties = _ld_parties_for_cond(_c)
@@ -10687,14 +10676,7 @@ def show_loan_detail():
                     f'font-size:9px;font-weight:700;">{_html_ld.escape(str(_p))}</span>'
                     for _p in _parties
                 )
-                if _is_primary:
-                    st.checkbox(f"#{_cnum}", value=False, key=f"{_uid}_chk")
-                else:
-                    st.markdown(
-                        f'<div style="font-size:11px;color:#64748b;padding:2px 0;">'
-                        f'#{_cnum} - shared (controls under primary bucket)</div>',
-                        unsafe_allow_html=True,
-                    )
+                st.checkbox(f"#{_cnum}", value=False, key=f"{_uid}_chk")
                 _desc_html = (
                     f'<div style="font-size:12px;line-height:1.35;padding:2px 0;color:#e5e7eb;">'
                     f'{_html_ld.escape(_orig_desc)}</div>'
@@ -10703,30 +10685,29 @@ def show_loan_detail():
                     _desc_html += f'<div style="margin-top:2px;">{_chips}</div>'
                 st.markdown(_desc_html, unsafe_allow_html=True)
 
-                if _is_primary:
-                    _status_labels = list(COND_STATUSES_LD.keys())
-                    _cstatus = _c.get("status", "Needed")
-                    _sidx = _status_labels.index(_cstatus) if _cstatus in _status_labels else 0
-                    st.selectbox(
-                        "Status", _status_labels, index=_sidx,
-                        key=f"{_uid}_stat", label_visibility="collapsed",
-                    )
-                    _default_parties = [p for p in _parties if p in PARTY_OPTIONS_LD]
-                    st.multiselect(
-                        "Parties", PARTY_OPTIONS_LD,
-                        default=_default_parties,
-                        key=f"{_uid}_party", label_visibility="collapsed",
-                        placeholder="Parties",
-                    )
-                    if st.button(
-                        "Guide", key=f"{_uid}_guide",
-                        use_container_width=True,
-                        help="Check vs. Fannie/Freddie guidelines",
-                    ):
-                        st.session_state[f"{_uid}_guide_open"] = True
-                        st.session_state.pop(f"{_uid}_guide_results", None)
+                _status_labels = list(COND_STATUSES_LD.keys())
+                _cstatus = _c.get("status", "Needed")
+                _sidx = _status_labels.index(_cstatus) if _cstatus in _status_labels else 0
+                st.selectbox(
+                    "Status", _status_labels, index=_sidx,
+                    key=f"{_uid}_stat", label_visibility="collapsed",
+                )
+                _default_parties = [p for p in _parties if p in PARTY_OPTIONS_LD]
+                st.multiselect(
+                    "Parties", PARTY_OPTIONS_LD,
+                    default=_default_parties,
+                    key=f"{_uid}_party", label_visibility="collapsed",
+                    placeholder="Parties",
+                )
+                if st.button(
+                    "Guide", key=f"{_uid}_guide",
+                    use_container_width=True,
+                    help="Check vs. Fannie/Freddie guidelines",
+                ):
+                    st.session_state[f"{_uid}_guide_open"] = True
+                    st.session_state.pop(f"{_uid}_guide_results", None)
 
-            if _is_primary and st.session_state.get(f"{_uid}_guide_open"):
+            if st.session_state.get(f"{_uid}_guide_open"):
                 if st.button("Close guide", key=f"{_uid}_guide_close",
                              use_container_width=True):
                     for _k in (f"{_uid}_guide_open", f"{_uid}_guide_results"):
@@ -10778,49 +10759,41 @@ def show_loan_detail():
                         unsafe_allow_html=True,
                     )
 
-        def _render_ld_bucket_column(_bucket, _renderer):
-            _bucket_conds = _ld_conds_by_bucket.get(_bucket, [])
+        # Two-column layout
+        _ld_left, _ld_right = st.columns(2)
+
+        with _ld_left:
             st.markdown(
-                f'<div style="font-size:11px;font-weight:700;color:#93c5fd;text-transform:uppercase;'
-                f'letter-spacing:0.4px;margin:2px 0 6px 0;">{_LD_BUCKET_LABEL[_bucket]} '
-                f'<span style="color:#64748b;font-weight:600;text-transform:none;">'
-                f'({len(_bucket_conds)})</span></div>',
+                '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+                'letter-spacing:0.5px;margin:8px 0 6px 0;">Scan Order (Originals) '
+                f'<span style="color:#64748b;font-weight:600;font-size:11px;'
+                f'text-transform:none;letter-spacing:0;">{len(_conditions)} item'
+                f'{"s" if len(_conditions) != 1 else ""}</span></div>',
                 unsafe_allow_html=True,
             )
-            if not _bucket_conds:
+            for _c in _conditions:
+                _render_ld_original_card(_c)
+
+        with _ld_right:
+            st.markdown(
+                '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+                'letter-spacing:0.5px;margin:8px 0 6px 0;">Summarized (Sorted by Party)</div>',
+                unsafe_allow_html=True,
+            )
+            for _section in _LD_SECTION_ORDER:
+                _section_conds = _ld_conds_by_section.get(_section, [])
+                if not _section_conds:
+                    continue
                 st.markdown(
-                    '<div style="color:#64748b;font-size:11px;font-style:italic;'
-                    'padding:8px 0;">No conditions</div>',
+                    f'<div style="font-size:11px;font-weight:700;color:#93c5fd;'
+                    f'text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 6px 0;">'
+                    f'{_LD_SECTION_LABEL.get(_section, _section + " Conditions")} '
+                    f'<span style="color:#64748b;font-weight:600;text-transform:none;">'
+                    f'({len(_section_conds)})</span></div>',
                     unsafe_allow_html=True,
                 )
-                return
-            for _c in _bucket_conds:
-                if _renderer is _render_ld_original_card:
-                    _renderer(_c, _bucket)
-                else:
-                    _renderer(_c)
-
-        # Row 1: Summarized (email-style)
-        st.markdown(
-            '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-            'letter-spacing:0.5px;margin:8px 0 6px 0;">Summarized (email version)</div>',
-            unsafe_allow_html=True,
-        )
-        _ld_sum_cols = st.columns(3)
-        for _i, _bucket in enumerate(_LD_BUCKETS):
-            with _ld_sum_cols[_i]:
-                _render_ld_bucket_column(_bucket, _render_ld_summary_card)
-
-        # Row 2: Originals (full interactive)
-        st.markdown(
-            '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-            'letter-spacing:0.5px;margin:14px 0 6px 0;">All Conditions (Original)</div>',
-            unsafe_allow_html=True,
-        )
-        _ld_orig_cols = st.columns(3)
-        for _i, _bucket in enumerate(_LD_BUCKETS):
-            with _ld_orig_cols[_i]:
-                _render_ld_bucket_column(_bucket, _render_ld_original_card)
+                for _c in _section_conds:
+                    _render_ld_summary_card(_c)
 
         # Collect checked conditions for the email draft below. Each condition
         # is counted once even if it appears in multiple buckets (the checkbox
