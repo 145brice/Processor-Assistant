@@ -10782,6 +10782,28 @@ def show_loan_detail():
             st.success(f"Condition #{_cnum} flagged as a question for the team.")
             st.rerun()
 
+        def _ld_flag_checked_questions(_checked_conditions: list[dict]):
+            _who = st.session_state.get("user_name", "") or "User"
+            _checked_nums = {str(_c.get("num")) for _c in _checked_conditions}
+            _updated = []
+            for _row in _conditions:
+                _cnum = str(_row.get("num"))
+                if _cnum not in _checked_nums:
+                    _updated.append(dict(_row))
+                    continue
+                _new_row = dict(_row)
+                _note_key = f"{_ld_fkey}_{_cnum}_note"
+                _typed_note = str(st.session_state.get(_note_key, "") or "").strip()
+                _question_txt = _typed_note if _typed_note else f"Question raised on condition #{_cnum}: {str(_row.get('desc', ''))[:140]}"
+                _stamp = f"[QUESTION] {_who}: {_question_txt}"
+                _existing_notes = str(_new_row.get("notes", "") or "").strip()
+                _new_row["notes"] = f"{_existing_notes}\n{_stamp}".strip() if _existing_notes else _stamp
+                _updated.append(_new_row)
+            update_loan(lid, conditions=_updated)
+            log_activity(lid, "condition_question", f"{len(_checked_conditions)} condition(s) flagged as question", user=my_name)
+            st.success(f"Flagged {len(_checked_conditions)} checked condition(s) as questions.")
+            st.rerun()
+
         def _render_ld_summary_card(_c):
             _orig_desc = str(_c.get("desc", ""))
             _smap = st.session_state.get(_ld_summary_map_key, {})
@@ -10872,7 +10894,7 @@ def show_loan_detail():
                         st.session_state[f"{_uid}_guide_open"] = True
                         st.session_state.pop(f"{_uid}_guide_results", None)
                 with _a3:
-                    if st.button("Flag ?", key=f"{_uid}_flag_q", use_container_width=True):
+                    if st.button("Flag Question", key=f"{_uid}_flag_q", use_container_width=True):
                         _ld_flag_condition_question(_cnum, _orig_desc)
 
             if st.session_state.get(f"{_uid}_guide_open"):
@@ -10954,7 +10976,7 @@ def show_loan_detail():
             _uid = f"{_ld_fkey}_{_cnum}"
             if st.session_state.get(f"{_uid}_chk", False):
                 _ld_top_checked.append(_c)
-        _ld_top_action_cols = st.columns([1.15, 1.25, 1.05, 3.2])
+        _ld_top_action_cols = st.columns([1.05, 1.25, 1.15, 0.9, 2.65])
         with _ld_top_action_cols[0]:
             if st.button(
                 "Draft Email",
@@ -10974,14 +10996,18 @@ def show_loan_detail():
                 disabled=not bool(_ld_top_checked),
                 help="Open guideline checks for all checked conditions.",
             ):
-                for _c in _ld_top_checked:
-                    _cnum = _c["num"]
-                    _uid = f"{_ld_fkey}_{_cnum}"
-                    st.session_state[f"{_uid}_guide_open"] = True
-                    st.session_state.pop(f"{_uid}_guide_results", None)
-                st.session_state[_ld_compact_view_key] = False
+                st.session_state[f"{_ld_fkey}_top_guides_open"] = True
                 st.rerun()
         with _ld_top_action_cols[2]:
+            if st.button(
+                "Flag Question",
+                key=f"ld_top_flag_question_{lid}",
+                use_container_width=True,
+                disabled=not bool(_ld_top_checked),
+                help="Flag all checked conditions as questions for the loan team.",
+            ):
+                _ld_flag_checked_questions(_ld_top_checked)
+        with _ld_top_action_cols[3]:
             if _ld_top_checked:
                 st.markdown(
                     f'<div style="padding-top:8px;font-size:11px;color:#93c5fd;'
@@ -10993,6 +11019,21 @@ def show_loan_detail():
                     '<div style="padding-top:8px;font-size:11px;color:#64748b;">check items first</div>',
                     unsafe_allow_html=True,
                 )
+        if st.session_state.get(f"{_ld_fkey}_top_guides_open") and _ld_top_checked:
+            _guide_rows = []
+            for _c in _ld_top_checked:
+                _guide_label, _guide_url = _ld_guideline_url_for_condition(str(_c.get("desc", "")))
+                _guide_rows.append(
+                    f'<a href="{_guide_url}" target="_blank" rel="noopener noreferrer" '
+                    f'style="display:inline-block;margin:0 6px 6px 0;padding:2px 8px;'
+                    f'border:1px solid rgba(59,130,246,0.42);border-radius:5px;'
+                    f'font-size:11px;color:#bfdbfe;text-decoration:none;">'
+                    f'#{_html_ld.escape(str(_c.get("num", "")))} {_html_ld.escape(_guide_label)}</a>'
+                )
+            st.markdown(
+                '<div style="margin:4px 0 8px 0;">' + "".join(_guide_rows) + '</div>',
+                unsafe_allow_html=True,
+            )
 
         _conds_tab, _summary_tab = st.tabs(["Conditions", "Summarized"])
         with _conds_tab:
@@ -11043,7 +11084,7 @@ def show_loan_detail():
                     _subject, _body_short = _ld_compact_subject_body(
                         _orig_desc, _sum_desc, _primary_section,
                     )
-                    _cb_col, _txt_col, _note_col, _stat_col, _act_col = st.columns([0.55, 6.4, 2.2, 1.8, 1.6])
+                    _cb_col, _txt_col, _note_col, _stat_col = st.columns([0.45, 6.9, 2.35, 2.0])
                     with _cb_col:
                         st.checkbox(
                             f"#{_cnum}", value=False,
@@ -11065,7 +11106,7 @@ def show_loan_detail():
                         }.get(_cur_status, "#64748b")
                         st.markdown(
                             f'<div title="{_html_ld.escape(_orig_desc)}" '
-                            f'style="font-size:12px;line-height:1.25;padding:2px 0 1px 0;'
+                            f'style="font-size:12.5px;line-height:1.35;padding:2px 0 1px 0;'
                             f'border-bottom:1px solid rgba(255,255,255,0.04);'
                             f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
                             f'cursor:help;">'
@@ -11093,21 +11134,6 @@ def show_loan_detail():
                             key=f"{_uid}_stat",
                             label_visibility="collapsed",
                         )
-                    with _act_col:
-                        _guide_label, _guide_url = _ld_guideline_url_for_condition(_orig_desc)
-                        st.markdown(
-                            f'<a href="{_guide_url}" target="_blank" rel="noopener noreferrer" '
-                            f'title="Open {_guide_label}" style="display:inline-block;padding:1px 6px;'
-                            f'border:1px solid rgba(59,130,246,0.4);border-radius:5px;'
-                            f'font-size:9.5px;color:#bfdbfe;text-decoration:none;margin-right:4px;">Guide</a>',
-                            unsafe_allow_html=True,
-                        )
-                        if st.button("Email", key=f"{_uid}_email_compact", use_container_width=True):
-                            st.session_state[f"{_uid}_chk"] = True
-                            st.session_state[f"ld_auto_draft_{lid}"] = True
-                            st.rerun()
-                        if st.button("?", key=f"{_uid}_flag_q_compact", use_container_width=True):
-                            _ld_flag_condition_question(_cnum, _orig_desc)
             else:
                 for _c in _conditions:
                     _render_ld_original_card(_c)
