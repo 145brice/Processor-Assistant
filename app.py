@@ -11011,7 +11011,6 @@ def show_loan_detail():
             key=f"{_ld_compact_view_key}_toggle",
             help="One-line `**Subject** - short note` per condition. Toggle off for full text plus status / parties / Guide controls.",
         )
-        st.caption("Compact build: status pills, no dropdowns")
         if _ld_compact_view != bool(st.session_state.get(_ld_compact_view_key, True)):
             st.session_state[_ld_compact_view_key] = _ld_compact_view
             st.rerun()
@@ -11135,17 +11134,18 @@ def show_loan_detail():
                     _subject, _body_short = _ld_compact_subject_body(
                         _orig_desc, _sum_desc, _primary_section,
                     )
-                    _cb_col, _body_col = st.columns([0.45, 8.55])
+                    _cb_col, _txt_col, _note_col, _stat_col = st.columns([0.45, 6.9, 2.35, 2.0])
                     with _cb_col:
                         st.checkbox(
                             f"#{_cnum}", value=False,
                             key=f"{_uid}_chk",
                             label_visibility="collapsed",
                         )
+                    _status_labels = list(COND_STATUSES_LD.keys())
                     _cur_status = _ld_current_condition_status(_c)
-                    with _body_col:
+                    with _txt_col:
                         _tail = f' <span style="color:#94a3b8;"> - {_html_ld.escape(_body_short)}</span>' if _body_short else ''
-                        _status_color = {
+                        _stat_dot_color = {
                             "Needed": "#f97316",
                             "Requested": "#eab308",
                             "Important": "#a855f7",
@@ -11154,12 +11154,12 @@ def show_loan_detail():
                         }.get(_cur_status, "#64748b")
                         st.markdown(
                             f'<div title="{_html_ld.escape(_orig_desc)}" '
-                            f'style="font-size:12.5px;line-height:1.35;padding:2px 0 4px 0;'
+                            f'style="font-size:12.5px;line-height:1.35;padding:2px 0 1px 0;'
                             f'border-bottom:1px solid rgba(255,255,255,0.04);'
                             f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
                             f'cursor:help;">'
                             f'<span style="display:inline-block;width:6px;height:6px;'
-                            f'border-radius:50%;background:{_status_color};'
+                            f'border-radius:50%;background:{_stat_dot_color};'
                             f'margin-right:5px;vertical-align:middle;"></span>'
                             f'<b style="color:#3b82f6;">#{_cnum}</b> '
                             f'<b style="color:#ffffff;">{_html_ld.escape(_subject)}</b>'
@@ -11167,13 +11167,20 @@ def show_loan_detail():
                             f'</div>',
                             unsafe_allow_html=True,
                         )
-                        st.markdown(
-                            f'<span style="display:inline-block;margin:0 0 10px 0;padding:2px 8px;'
-                            f'border:1px solid {_status_color};border-radius:999px;'
-                            f'background:rgba(15,23,42,0.55);color:#ffffff;'
-                            f'font-size:10px;font-weight:800;line-height:1.2;">'
-                            f'{_html_ld.escape(_cur_status)}</span>',
-                            unsafe_allow_html=True,
+                    with _note_col:
+                        st.text_input(
+                            "Note",
+                            key=f"{_uid}_note",
+                            value=str(_c.get("notes", "") or ""),
+                            label_visibility="collapsed",
+                            placeholder="Notes",
+                        )
+                    with _stat_col:
+                        _sidx = _status_labels.index(_cur_status) if _cur_status in _status_labels else 0
+                        st.selectbox(
+                            "Status", _status_labels, index=_sidx,
+                            key=f"{_uid}_stat",
+                            label_visibility="collapsed",
                         )
 
                 _active_conditions = [
@@ -11282,15 +11289,14 @@ def show_loan_detail():
                 _cnum = _c["num"]
                 _uid = f"{_ld_fkey}_{_cnum}"
                 _row = dict(_c)
-                _row["status"] = st.session_state.get(f"{_uid}_stat", _ld_current_condition_status(_row))
+                _row["status"] = st.session_state.get(f"{_uid}_stat", _row.get("status", "Needed"))
                 _row["parties"] = st.session_state.get(f"{_uid}_party") or _ld_parties_for_cond(_row)
                 _row["party"] = _row["parties"][0] if _row["parties"] else _row.get("party", "Borrower")
-                if f"{_uid}_note" in st.session_state:
-                    _note_txt = str(st.session_state.get(f"{_uid}_note", "") or "").strip()
-                    if _note_txt:
-                        _row["notes"] = _note_txt
-                    else:
-                        _row.pop("notes", None)
+                _note_txt = str(st.session_state.get(f"{_uid}_note", "") or "").strip()
+                if _note_txt:
+                    _row["notes"] = _note_txt
+                else:
+                    _row.pop("notes", None)
                 _updated_conds.append(_row)
             update_loan(lid, conditions=_updated_conds)
             log_activity(lid, "conditions", "Updated condition status/party/notes", user=my_name)
