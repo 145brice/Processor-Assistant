@@ -1101,15 +1101,55 @@ Skip these (do NOT output rows for them):
         with urllib.request.urlopen(req, timeout=75) as resp:
             data = json.loads(resp.read().decode("utf-8"))
         txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
-        valid = [
-            ln.strip() for ln in txt.splitlines()
-            if ln.strip().startswith("|") and ln.count("|") >= 4
-        ]
+        valid = _parse_approval_condition_rows(txt)
         conditions = "\n".join(valid)
         _note = f"gemini - {model}" if provider == "gemini" else f"gemini_fallback - {model}"
         return conditions, _log("CLOUD", "approval_pdf_extract", f"{len(valid)} conditions - {_note}"), txt[:12000]
     except Exception as e:
         return "", _log("SCRIPT", "approval_pdf_extract", _friendly_cloud_error(e)), ""
+
+
+def _parse_approval_condition_rows(text: str) -> list[str]:
+    """Return pipe rows from Gemini output, tolerating common formatting drift."""
+    rows = []
+    pending = []
+
+    def _append_pipe_row(line: str) -> bool:
+        cleaned = line.strip().strip("`")
+        if not cleaned or cleaned.lower().startswith(("global#", "where:", "example output")):
+            return False
+        if "|" not in cleaned:
+            return False
+        parts = [p.strip() for p in cleaned.strip("|").split("|")]
+        if len(parts) < 4:
+            return False
+        if not re.search(r"\d", parts[0]):
+            return False
+        while len(parts) < 5:
+            parts.append("High Confidence" if len(parts) == 4 else "")
+        rows.append("| " + " | ".join(parts[:5]) + " |")
+        return True
+
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("```"):
+            continue
+        if _append_pipe_row(line):
+            continue
+        plain = re.sub(r"^\s*(?:[-*]|\d{1,3}[\.)])\s*", "", line).strip()
+        if plain:
+            pending.append(plain)
+
+    if rows:
+        return rows
+
+    for idx, desc in enumerate(pending, start=1):
+        if len(desc) < 12:
+            continue
+        if re.match(r"(?i)^(?:here are|the following|conditions?:|section|prior to)\b", desc):
+            continue
+        rows.append(f"| {idx} | {desc} | Borrower | Needed | Best Guess |")
+    return rows
 
 
 def translate_conditions_to_plain(descriptions: list[str], api_key_override: str = "") -> tuple[list[str], str]:
