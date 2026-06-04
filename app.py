@@ -11134,7 +11134,7 @@ def show_loan_detail():
                     _subject, _body_short = _ld_compact_subject_body(
                         _orig_desc, _sum_desc, _primary_section,
                     )
-                    _cb_col, _txt_col, _stat_col = st.columns([0.45, 8.2, 1.8])
+                    _cb_col, _body_col = st.columns([0.45, 8.55])
                     with _cb_col:
                         st.checkbox(
                             f"#{_cnum}", value=False,
@@ -11143,7 +11143,7 @@ def show_loan_detail():
                         )
                     _status_labels = list(COND_STATUSES_LD.keys())
                     _cur_status = _ld_current_condition_status(_c)
-                    with _txt_col:
+                    with _body_col:
                         _tail = f' <span style="color:#94a3b8;"> - {_html_ld.escape(_body_short)}</span>' if _body_short else ''
                         _stat_dot_color = {
                             "Needed": "#f97316",
@@ -11154,7 +11154,7 @@ def show_loan_detail():
                         }.get(_cur_status, "#64748b")
                         st.markdown(
                             f'<div title="{_html_ld.escape(_orig_desc)}" '
-                            f'style="font-size:12.5px;line-height:1.35;padding:2px 0 1px 0;'
+                            f'style="font-size:12.5px;line-height:1.35;padding:2px 0 4px 0;'
                             f'border-bottom:1px solid rgba(255,255,255,0.04);'
                             f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
                             f'cursor:help;">'
@@ -11167,7 +11167,6 @@ def show_loan_detail():
                             f'</div>',
                             unsafe_allow_html=True,
                         )
-                    with _stat_col:
                         _sidx = _status_labels.index(_cur_status) if _cur_status in _status_labels else 0
                         st.selectbox(
                             "Status", _status_labels, index=_sidx,
