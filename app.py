@@ -11011,6 +11011,7 @@ def show_loan_detail():
             key=f"{_ld_compact_view_key}_toggle",
             help="One-line `**Subject** - short note` per condition. Toggle off for full text plus status / parties / Guide controls.",
         )
+        st.caption("Compact build: status pills, no dropdowns")
         if _ld_compact_view != bool(st.session_state.get(_ld_compact_view_key, True)):
             st.session_state[_ld_compact_view_key] = _ld_compact_view
             st.rerun()
