@@ -11134,7 +11134,7 @@ def show_loan_detail():
                     _subject, _body_short = _ld_compact_subject_body(
                         _orig_desc, _sum_desc, _primary_section,
                     )
-                    _cb_col, _txt_col, _note_col, _stat_col = st.columns([0.45, 6.9, 2.35, 2.0])
+                    _cb_col, _txt_col, _stat_col = st.columns([0.45, 8.2, 1.8])
                     with _cb_col:
                         st.checkbox(
                             f"#{_cnum}", value=False,
@@ -11166,14 +11166,6 @@ def show_loan_detail():
                             f'{_tail}'
                             f'</div>',
                             unsafe_allow_html=True,
-                        )
-                    with _note_col:
-                        st.text_input(
-                            "Note",
-                            key=f"{_uid}_note",
-                            value=str(_c.get("notes", "") or ""),
-                            label_visibility="collapsed",
-                            placeholder="Notes",
                         )
                     with _stat_col:
                         _sidx = _status_labels.index(_cur_status) if _cur_status in _status_labels else 0
@@ -11292,11 +11284,12 @@ def show_loan_detail():
                 _row["status"] = st.session_state.get(f"{_uid}_stat", _row.get("status", "Needed"))
                 _row["parties"] = st.session_state.get(f"{_uid}_party") or _ld_parties_for_cond(_row)
                 _row["party"] = _row["parties"][0] if _row["parties"] else _row.get("party", "Borrower")
-                _note_txt = str(st.session_state.get(f"{_uid}_note", "") or "").strip()
-                if _note_txt:
-                    _row["notes"] = _note_txt
-                else:
-                    _row.pop("notes", None)
+                if f"{_uid}_note" in st.session_state:
+                    _note_txt = str(st.session_state.get(f"{_uid}_note", "") or "").strip()
+                    if _note_txt:
+                        _row["notes"] = _note_txt
+                    else:
+                        _row.pop("notes", None)
                 _updated_conds.append(_row)
             update_loan(lid, conditions=_updated_conds)
             log_activity(lid, "conditions", "Updated condition status/party/notes", user=my_name)
