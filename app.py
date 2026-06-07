@@ -4670,6 +4670,13 @@ def show_dashboard():
                     _ma1, _ma2, _ma3 = st.columns([1, 1, 2])
                     with _ma1:
                         if st.button("Open Loan", key=f"ds_open_{_bidx}"):
+                            st.session_state.pending_scan_merge = {
+                                "loan_id": _lm_loan_id,
+                                "batch_index": _bidx,
+                                "file": _batch.get("file", ""),
+                                "type": _batch.get("type", ""),
+                                "result": _r,
+                            }
                             st.session_state.detail_loan_id = _lm_loan_id
                             st.session_state.page = "loan_detail"
                             st.rerun()
@@ -10205,7 +10212,7 @@ def show_loan_detail():
             f'<div style="background:rgba(251,191,36,0.10);border:1px solid rgba(251,191,36,0.35);'
             f'border-radius:6px;padding:10px 12px;margin:8px 0;color:#fbbf24;font-size:13px;">'
             f'<b>Pending scanned {_ps_type}:</b> {_ps_file}<br>'
-            f'<span style="color:#d1d5db;">You opened this loan to verify the possible match. Merge it here to save parsed contacts and dates to this loan.</span>'
+            f'<span style="color:#d1d5db;">You opened this loan to review the scan. Merge it here to save parsed conditions, contacts, dates, and document metadata to this loan.</span>'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -10241,7 +10248,7 @@ def show_loan_detail():
 
         _pm1, _pm2, _pm3 = st.columns([1, 1, 1])
         with _pm1:
-            if st.button("Merge Scanned Contract Into This Loan", key=f"detail_pending_merge_{lid}", type="primary", use_container_width=True):
+            if st.button("Merge Scan Into This Loan", key=f"detail_pending_merge_{lid}", type="primary", use_container_width=True):
                 from crm import attach_document as _attach_doc
                 _existing_conds = loan.get("conditions", []) or []
                 _existing_contacts = loan.get("contacts", {}) or {}
