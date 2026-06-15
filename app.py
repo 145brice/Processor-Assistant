@@ -31,6 +31,37 @@ st.markdown("""
 <meta http-equiv="Expires" content="0">
 """, unsafe_allow_html=True)
 
+# --- Google Analytics (GA4) ---
+# Streamlit strips <script> from st.markdown, and a plain iframe script would
+# only track the component iframe. So inject gtag.js into the TOP window via a
+# components.html bootstrapper, guarded so it loads exactly once per session.
+import streamlit.components.v1 as _ga_components
+_GA_MEASUREMENT_ID = os.getenv("GA_MEASUREMENT_ID", "G-5B9883RY9R")
+if _GA_MEASUREMENT_ID:
+    _ga_components.html(
+        f"""
+<script>
+(function() {{
+  var doc = window.parent.document;
+  var ID = "{_GA_MEASUREMENT_ID}";
+  if (doc.getElementById('pa-ga4')) return;  // already loaded
+  var s = doc.createElement('script');
+  s.id = 'pa-ga4';
+  s.async = true;
+  s.src = 'https://www.googletagmanager.com/gtag/js?id=' + ID;
+  doc.head.appendChild(s);
+  var w = window.parent;
+  w.dataLayer = w.dataLayer || [];
+  function gtag(){{ w.dataLayer.push(arguments); }}
+  w.gtag = gtag;
+  gtag('js', new Date());
+  gtag('config', ID);
+}})();
+</script>
+""",
+        height=0,
+    )
+
 # --- Custom CSS ---
 st.markdown(r"""
 <style>
