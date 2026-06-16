@@ -1545,7 +1545,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
 .pipeline-scroll [data-testid="stButton"] > button[data-testid*="open_"],
 .pipeline-scroll [data-testid="stButton"] > button[data-testid*="notesbtn_"],
 .pipeline-scroll [data-testid="stButton"] > button[data-testid*="docsbtn_"] {
-    font-size: 8px !important;
+    font-size: 11px !important;
     padding: 0 4px !important;
     height: 14px !important;
     min-height: 14px !important;
@@ -1553,7 +1553,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
 }
 .pipeline-scroll [data-testid="stSelectbox"] select,
 .pipeline-scroll [data-testid="stSelectbox"] > div > div {
-    font-size: 10px !important;
+    font-size: 11px !important;
     min-height: 22px !important;
     height: 22px !important;
     padding: 1px 6px !important;
@@ -1588,42 +1588,42 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
 .pipeline-scroll button {
     height: 24px !important;
     min-height: 24px !important;
-    font-size: 10px !important;
+    font-size: 11px !important;
     padding: 0 6px !important;
     line-height: 1 !important;
     border-radius: 0 !important;
 }
 .pipeline-scroll button p {
-    font-size: 10px !important;
+    font-size: 11px !important;
     line-height: 1 !important;
     margin: 0 !important;
 }
 .pipeline-scroll [data-testid="stSelectbox"] > div > div {
     min-height: 24px !important;
     height: 24px !important;
-    font-size: 10px !important;
+    font-size: 11px !important;
     padding: 0 6px !important;
     border-radius: 0 !important;
 }
 .pipeline-scroll [data-testid="stExpander"] summary {
     padding: 2px 8px !important;
-    font-size: 10px !important;
+    font-size: 11px !important;
     min-height: 0 !important;
 }
 .pipeline-scroll .pa-loan-grid {
     grid-template-columns: 90px 1fr 80px 130px 110px 50px 30px 20px !important;
     gap: 4px !important;
-    font-size: 10px !important;
+    font-size: 11px !important;
     line-height: 1.1 !important;
     margin-bottom: 2px !important;
 }
 .pipeline-scroll .loan-num,
 .pipeline-scroll .loan-name { font-size: 11px !important; line-height: 1.2 !important; }
 .pipeline-scroll .loan-due,
-.pipeline-scroll .loan-missing { font-size: 9px !important; line-height: 1.1 !important; }
+.pipeline-scroll .loan-missing { font-size: 11px !important; line-height: 1.1 !important; }
 .pipeline-scroll .badge,
 .pipeline-scroll .status-chip {
-    font-size: 9px !important;
+    font-size: 11px !important;
     padding: 1px 6px !important;
     line-height: 1.2 !important;
 }
@@ -1633,7 +1633,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
 [class*="st-key-docsbtn_"] button {
     height: 26px !important;
     min-height: 26px !important;
-    font-size: 10px !important;
+    font-size: 11px !important;
     padding: 0 6px !important;
     line-height: 1 !important;
     box-shadow: none !important;
@@ -1642,7 +1642,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
 [class*="st-key-open_"] button p,
 [class*="st-key-notesbtn_"] button p,
 [class*="st-key-docsbtn_"] button p {
-    font-size: 10px !important;
+    font-size: 11px !important;
     line-height: 1 !important;
     margin: 0 !important;
 }
@@ -1650,7 +1650,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
 [class*="st-key-assign_"] [data-testid="stSelectbox"] > div > div {
     height: 26px !important;
     min-height: 26px !important;
-    font-size: 10px !important;
+    font-size: 11px !important;
     padding: 0 6px !important;
     border-radius: 0 !important;
 }
@@ -1663,6 +1663,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
 }
 [class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-baseweb="select"] span,
 [class*="st-key-assign_"] [data-baseweb="select"] span {
+    font-size: 11px !important;
     line-height: 1.2 !important;
 }
 [class*="st-key-st_"]:not([class*="st-key-st_yes_"]):not([class*="st-key-st_no_"]) [data-testid="stSelectbox"],
@@ -6178,15 +6179,15 @@ def _pipeline_cond_row(c, contacts=None, loan_num="", borrower=""):
             _remind_btn = (
                 f'<a href="{_gurl}" target="_blank" style="margin-left:6px;padding:1px 7px;'
                 f'background:rgba(66,133,244,0.1);border:1px solid rgba(66,133,244,0.3);'
-                f'border-radius:3px;color:#4285f4;font-size:9px;font-weight:700;'
+                f'border-radius:3px;color:#4285f4;font-size:11px;font-weight:700;'
                 f'text-decoration:none;white-space:nowrap;">Remind</a>'
             )
 
     return (
         f'<div style="display:flex;align-items:center;gap:8px;padding:3px 0;border-bottom:1px solid rgba(255,255,255,0.05);">'
-        f'<span style="font-size:10px;padding:1px 7px;border-radius:3px;font-weight:600;background:{_bg};color:{_clr};white-space:nowrap;">{_status}</span>'
+        f'<span style="font-size:11px;padding:1px 7px;border-radius:3px;font-weight:600;background:{_bg};color:{_clr};white-space:nowrap;">{_status}</span>'
         f'<span style="font-size:11px;color:#d1d5db;">{c.get("text","")}</span>'
-        f'<span style="font-size:9px;color:#6b7280;margin-left:auto;white-space:nowrap;">{_party_str}</span>'
+        f'<span style="font-size:11px;color:#6b7280;margin-left:auto;white-space:nowrap;">{_party_str}</span>'
         f'{_remind_btn}'
         f'</div>'
     )
@@ -6977,7 +6978,7 @@ def show_pipeline():
                 parts.append(f"+{created_by}")
             if assigned_to:
                 parts.append(f"{assigned_to}")
-            team_line = f'<div style="font-size:9px;color:#9ca3af;margin-top:0px;">{" | ".join(parts)}</div>'
+            team_line = f'<div style="font-size:11px;color:#9ca3af;margin-top:0px;">{" | ".join(parts)}</div>'
 
         # Lock expiry badge
         _lock_exp = loan.get("lock_expiry", "")
@@ -6997,7 +6998,7 @@ def show_pipeline():
                     _lock_clr, _lock_lbl = "#3b82f6", f"Lock {_lock_exp}"
                 _lock_badge = (
                     f'<span style="background:{_lock_clr};color:#fff;'
-                    f'padding:1px 6px;border-radius:3px;font-size:10px;font-weight:500;">{_lock_lbl}</span>'
+                    f'padding:1px 6px;border-radius:3px;font-size:11px;font-weight:500;">{_lock_lbl}</span>'
                 )
             except Exception:
                 pass
@@ -7048,7 +7049,7 @@ def show_pipeline():
         if _missing_txt and _missing_txt != "None":
             _inline_badges += (
                 f'&nbsp;<span style="background:rgba(245,158,11,0.1);color:#f59e0b;padding:1px 5px;'
-                f'border-radius:3px;font-size:9px;font-weight:500;border:1px solid rgba(245,158,11,0.3);">'
+                f'border-radius:3px;font-size:11px;font-weight:500;border:1px solid rgba(245,158,11,0.3);">'
                 f'Missing</span>'
             )
         # â”€â”€ 24hr response countdown badge (loan-level, not condition-level) â”€â”€
@@ -7060,13 +7061,13 @@ def show_pipeline():
                 if _elapsed > 86400:
                     _inline_badges += (
                         f'&nbsp;<span style="background:rgba(239,68,68,0.15);color:#ef4444;padding:1px 6px;'
-                        f'border-radius:3px;font-size:9px;font-weight:700;border:1px solid rgba(239,68,68,0.4);">'
+                        f'border-radius:3px;font-size:11px;font-weight:700;border:1px solid rgba(239,68,68,0.4);">'
                         f'NO RESPONSE {int((_elapsed-86400)/3600)}h overdue</span>'
                     )
                 else:
                     _inline_badges += (
                         f'&nbsp;<span style="background:rgba(245,158,11,0.1);color:#f59e0b;padding:1px 6px;'
-                        f'border-radius:3px;font-size:9px;font-weight:600;border:1px solid rgba(245,158,11,0.3);">'
+                        f'border-radius:3px;font-size:11px;font-weight:600;border:1px solid rgba(245,158,11,0.3);">'
                         f' {_hrs_left:.1f}h to respond</span>'
                     )
             except Exception:
@@ -7100,7 +7101,7 @@ def show_pipeline():
             _tip_html = "".join(_tip_rows) if _tip_rows else '<div style="color:#9ca3af;font-size:11px;">No contact details</div>'
             _tooltip = (
                 f'<span class="pa-tip-box">'
-                f'<div style="color:#3b82f6;font-size:10px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
+                f'<div style="color:#3b82f6;font-size:11px;font-weight:700;text-transform:uppercase;margin-bottom:4px;">{_clabel}</div>'
                 f'<div style="color:#ffffff;font-size:13px;font-weight:600;margin-bottom:4px;">{_cname}</div>'
                 f'{_tip_html}'
                 f'</span>'
@@ -7111,7 +7112,7 @@ def show_pipeline():
         _contacts_line = ""
         if _contact_chips:
             _contacts_line = (
-                f'<div style="font-size:9px;color:#9ca3af;margin-top:2px;margin-bottom:4px;">'
+                f'<div style="font-size:11px;color:#9ca3af;margin-top:2px;margin-bottom:4px;">'
                 + " | ".join(_contact_chips) + '</div>'
             )
 
@@ -7153,14 +7154,14 @@ def show_pipeline():
         # â”€â”€ Remove link â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         if _del_open:
             _remove_html = (
-                f'<a href="?confirm_del={lid}" style="color:#ef4444;font-size:9px;font-weight:600;'
+                f'<a href="?confirm_del={lid}" style="color:#ef4444;font-size:11px;font-weight:600;'
                 f'text-decoration:none;margin-left:6px;">Confirm?</a>'
-                f'<a href="?cancel_del={lid}" style="color:#6b7280;font-size:9px;'
+                f'<a href="?cancel_del={lid}" style="color:#6b7280;font-size:11px;'
                 f'text-decoration:none;margin-left:4px;">Cancel</a>'
             )
         else:
             _remove_html = (
-                f'<a href="?del={lid}" style="color:#ef4444;font-size:9px;font-weight:500;'
+                f'<a href="?del={lid}" style="color:#ef4444;font-size:11px;font-weight:500;'
                 f'text-decoration:none;opacity:0.6;">x</a>'
             )
 
@@ -7169,21 +7170,21 @@ def show_pipeline():
             f'<div class="pa-loan-grid" style="border-left:3px solid {_status_clr};background:#161b2b;padding:2px 6px 3px 6px;margin-bottom:0;">'
             # Line 1: loan# | borrower | status | badges | bar | % | x
             f'<div style="display:flex;align-items:center;gap:6px;min-height:20px;">'
-            f'<span style="width:96px;font-size:10px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">#{_loan_num}</span>'
-            f'<span style="width:170px;font-size:10px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{_borrower}</span>'
-            f'<span style="width:88px;font-size:10px;color:{_status_clr};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{emoji}{status}</span>'
+            f'<span style="width:96px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">#{_loan_num}</span>'
+            f'<span style="width:170px;font-size:11px;color:#d1d5db;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{_borrower}</span>'
+            f'<span style="width:88px;font-size:11px;color:{_status_clr};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{emoji}{status}</span>'
             f'<span style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{_inline_badges}</span>'
             f'<div style="width:60px;flex-shrink:0;background:rgba(255,255,255,0.1);height:4px;border-radius:2px;">'
             f'<div style="background:{_bar_color};width:{_pct}%;height:100%;border-radius:2px;"></div></div>'
-            f'<span style="width:34px;font-size:10px;color:{_bar_color};font-weight:700;text-align:right;flex-shrink:0;">{_pct}%</span>'
+            f'<span style="width:34px;font-size:11px;color:{_bar_color};font-weight:700;text-align:right;flex-shrink:0;">{_pct}%</span>'
             f'<span style="width:16px;flex-shrink:0;text-align:right;">{_remove_html}</span>'
             f'</div>'
             # Line 2: Close and Lock on their own line
             f'<div style="display:flex;gap:16px;min-height:16px;padding:2px 0 1px 0;">'
-            f'<span style="font-size:10px;color:#6b7280;">Close: <span style="color:#9ca3af;">{_closing_dt}</span></span>'
-            f'<span style="font-size:10px;color:#6b7280;">Lock: <span style="color:#9ca3af;">{_lock_dt if _lock_dt else "-"}</span></span>'
+            f'<span style="font-size:11px;color:#6b7280;">Close: <span style="color:#9ca3af;">{_closing_dt}</span></span>'
+            f'<span style="font-size:11px;color:#6b7280;">Lock: <span style="color:#9ca3af;">{_lock_dt if _lock_dt else "-"}</span></span>'
             f'</div>'
-            + (f'<div style="font-size:9px;color:#9ca3af;padding:1px 0 0 0;">{_contacts_line}</div>' if _contacts_line else '')
+            + (f'<div style="font-size:11px;color:#9ca3af;padding:1px 0 0 0;">{_contacts_line}</div>' if _contacts_line else '')
             + f'</div>',
             unsafe_allow_html=True,
         )
@@ -7272,10 +7273,10 @@ def show_pipeline():
             _activity_html = ""
             if _status_changes:
                 _activity_html = (
-                    '<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+                    '<div style="font-size:11px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
                     'letter-spacing:0.8px;margin:10px 0 6px 0;">Status History</div>'
                     + "".join([
-                        f'<div style="display:flex;gap:10px;padding:2px 0;font-size:10px;border-bottom:1px solid rgba(255,255,255,0.04);">'
+                        f'<div style="display:flex;gap:10px;padding:2px 0;font-size:11px;border-bottom:1px solid rgba(255,255,255,0.04);">'
                         f'<span style="color:#6b7280;white-space:nowrap;">{a["ts"]}</span>'
                         f'<span style="color:#d1d5db;">{a.get("detail","")}</span>'
                         f'<span style="color:#9ca3af;margin-left:auto;white-space:nowrap;">{a.get("user","") or "-"}</span>'
@@ -7286,11 +7287,11 @@ def show_pipeline():
             st.markdown(
                 f'<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);'
                 f'border-radius:6px;padding:10px 14px;margin-bottom:4px;">'
-                f'<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+                f'<div style="font-size:11px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
                 f'letter-spacing:0.8px;margin-bottom:6px;">Notes</div>'
                 f'<div style="font-size:12px;color:#d1d5db;line-height:1.5;">{_notes_txt}</div>'
                 + (
-                    f'<div style="font-size:10px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+                    f'<div style="font-size:11px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
                     f'letter-spacing:0.8px;margin:10px 0 6px 0;">Conditions</div>'
                     + "".join([_pipeline_cond_row(c, contacts=loan.get("contacts",{}), loan_num=loan.get("loan_num",""), borrower=loan.get("borrower","")) for c in _conds])
                     if _conds else '<div style="color:#6b7280;font-size:11px;margin-top:8px;">No conditions.</div>'
@@ -7343,13 +7344,13 @@ def show_pipeline():
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);'
                     'border-radius:8px;padding:10px 12px;margin-top:6px;">'
-                    '<div style="font-size:10px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:6px;">HOI / Insurance</div>'
+                    '<div style="font-size:11px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:6px;">HOI / Insurance</div>'
                     + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;margin-bottom:4px;">{_name}</div>' if _name else '')
                     + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">{_phone}</div>' if _phone else '')
                     + (f'<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">'
                        f'<span style="color:#9ca3af;font-size:11px;">{_email}</span>'
                        f'<a href="{_gmail_hoi}" target="_blank" style="padding:2px 8px;background:rgba(66,133,244,0.12);'
-                       f'border:1px solid rgba(66,133,244,0.35);border-radius:4px;color:#4285f4;font-size:10px;'
+                       f'border:1px solid rgba(66,133,244,0.35);border-radius:4px;color:#4285f4;font-size:11px;'
                        f'font-weight:700;text-decoration:none;">Gmail</a></div>' if _email else '')
                     + ('' if (_name or _phone or _email) else '<span style="color:#9ca3af;font-size:11px;">Not set</span>')
                     + '</div>',
@@ -7398,13 +7399,13 @@ def show_pipeline():
                 st.markdown(
                     '<div style="background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);'
                     'border-radius:8px;padding:10px 12px;margin-top:6px;">'
-                    '<div style="font-size:10px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Title Company</div>'
+                    '<div style="font-size:11px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:6px;">Title Company</div>'
                     + (f'<div style="color:#ffffff;font-size:12px;font-weight:600;margin-bottom:4px;">{_name}</div>' if _name else '')
                     + (f'<div style="color:#9ca3af;font-size:11px;margin-bottom:2px;">{_phone}</div>' if _phone else '')
                     + (f'<div style="display:flex;align-items:center;gap:8px;margin-top:4px;">'
                        f'<span style="color:#9ca3af;font-size:11px;">{_email}</span>'
                        f'<a href="{_gmail_ttl}" target="_blank" style="padding:2px 8px;background:rgba(66,133,244,0.12);'
-                       f'border:1px solid rgba(66,133,244,0.35);border-radius:4px;color:#4285f4;font-size:10px;'
+                       f'border:1px solid rgba(66,133,244,0.35);border-radius:4px;color:#4285f4;font-size:11px;'
                        f'font-weight:700;text-decoration:none;">Gmail</a></div>' if _email else '')
                     + ('' if (_name or _phone or _email) else '<span style="color:#9ca3af;font-size:11px;">Not set</span>')
                     + '</div>',
