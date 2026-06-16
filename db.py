@@ -8,11 +8,46 @@ import os
 import sqlite3
 import hashlib
 import json
+import time
+import threading
 import urllib.request
 import urllib.error
 from datetime import datetime
 
 DB_PATH = os.path.join(os.path.dirname(__file__), "processor.db")
+
+# ── App-level login rate limiting ───────────────────────────────────────────
+# Supabase has its own limits, but throttle at the app too so a single email
+# can't be brute-forced from one deployment. In-process (per container); resets
+# on redeploy, which is fine for slowing brute force.
+_LOGIN_ATTEMPTS: dict[str, list[float]] = {}
+_LOGIN_LOCK = threading.Lock()
+_LOGIN_MAX_FAILS = int(os.getenv("PA_LOGIN_MAX_FAILS", "5") or "5")
+_LOGIN_WINDOW = int(os.getenv("PA_LOGIN_WINDOW_SECONDS", "300") or "300")
+
+
+def _login_lockout_remaining(email: str) -> int:
+    """Return seconds until login is allowed again, or 0 if not locked."""
+    now = time.time()
+    with _LOGIN_LOCK:
+        fails = [t for t in _LOGIN_ATTEMPTS.get(email, []) if now - t < _LOGIN_WINDOW]
+        _LOGIN_ATTEMPTS[email] = fails
+        if len(fails) >= _LOGIN_MAX_FAILS:
+            return int(_LOGIN_WINDOW - (now - fails[0])) + 1
+    return 0
+
+
+def _login_record_failure(email: str) -> None:
+    now = time.time()
+    with _LOGIN_LOCK:
+        fails = [t for t in _LOGIN_ATTEMPTS.get(email, []) if now - t < _LOGIN_WINDOW]
+        fails.append(now)
+        _LOGIN_ATTEMPTS[email] = fails
+
+
+def _login_clear_failures(email: str) -> None:
+    with _LOGIN_LOCK:
+        _LOGIN_ATTEMPTS.pop(email, None)
 
 
 ROLE_OPTIONS = ["Processor", "Loan Officer", "Jr Underwriter", "Manager"]
@@ -259,6 +294,10 @@ def signup(email: str, password: str, display_name: str = "", role: str = "Proce
 def login(email: str, password: str) -> dict:
     try:
         email = (email or "").strip().lower()
+        _locked = _login_lockout_remaining(email)
+        if _locked > 0:
+            _mins = max(1, _locked // 60)
+            return {"error": f"Too many failed login attempts. Try again in about {_mins} minute(s)."}
         conn = _get_conn()
         row = conn.execute(
             "SELECT id, password_hash, display_name, role FROM users WHERE email = ?", (email,)
@@ -279,6 +318,7 @@ def login(email: str, password: str) -> dict:
                     sb_login = _login_via_supabase_auth(email, password)
                     if sb_login.get("ok"):
                         sb_user_id = sb_login.get("supabase_user_id")
+            _login_clear_failures(email)
             return {
                 "success": True,
                 "user_id": str(row["id"]),
@@ -300,6 +340,7 @@ def login(email: str, password: str) -> dict:
                 display_name=sb.get("display_name", ""),
                 role=sb.get("role", "Processor"),
             )
+            _login_clear_failures(email)
             return {
                 "success": True,
                 "user_id": local["user_id"],
@@ -308,6 +349,7 @@ def login(email: str, password: str) -> dict:
                 "display_name": local["display_name"],
                 "role": local["role"],
             }
+        _login_record_failure(email)
         return {"error": "Invalid email or password"}
     except Exception as e:
         return {"error": str(e)}

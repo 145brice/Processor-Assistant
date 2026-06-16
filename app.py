@@ -3004,11 +3004,22 @@ def _load_user_gemini_key_into_session(force: bool = False) -> str:
     if st.session_state.get("user_gemini_api_key") and not force:
         return st.session_state.user_gemini_api_key
 
+    # This runs on every rerun. When the key is empty we DO want to retry (so a
+    # transient Supabase blip during login self-heals), but not on literally
+    # every interaction. Back off to at most once per interval so many concurrent
+    # keyless sessions don't hammer Supabase.
+    _RETRY_INTERVAL = 15  # seconds
+    _now = time.time()
+    _last = float(st.session_state.get("_gemini_key_last_attempt", 0) or 0)
+    if not force and (_now - _last) < _RETRY_INTERVAL:
+        return str(st.session_state.get("user_gemini_api_key") or "")
+
     user_keys = _auth_user_key_candidates()
     if not user_keys:
         st.session_state.user_gemini_api_key = ""
         return ""
 
+    st.session_state["_gemini_key_last_attempt"] = _now
     try:
         import supabase_auth as _sa
         loaded = ""
@@ -3021,6 +3032,8 @@ def _load_user_gemini_key_into_session(force: bool = False) -> str:
                 break
         st.session_state.user_gemini_api_key = loaded
     except Exception:
+        # Transient failure: leave the retry timer so the next rerun after the
+        # interval tries again rather than giving up for the session.
         st.session_state.user_gemini_api_key = ""
     return st.session_state.user_gemini_api_key
 

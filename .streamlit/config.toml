@@ -1,0 +1,9 @@
+[server]
+# Cap uploads so a huge PDF can't exhaust container memory (default is 200 MB).
+# Mortgage docs are well under this; raise via env/redeploy if a real file needs it.
+maxUploadSize = 40
+maxMessageSize = 50
+headless = true
+
+[browser]
+gatherUsageStats = false
