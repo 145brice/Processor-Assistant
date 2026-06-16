@@ -13,9 +13,73 @@ _TRASH_FILE     = os.path.join(os.path.dirname(__file__), "pipeline_trash.json")
 _REMOVED_DIR    = os.path.join(os.path.dirname(__file__), "removed")
 _REMOVED_CFG    = os.path.join(os.path.dirname(__file__), "removed_config.json")
 _DOCS_DIR       = os.path.join(os.path.dirname(__file__), "loan_docs")
+# Pipeline load cache. All users share one Railway process, so this state must
+# be PER SESSION — otherwise concurrent users thrash each other's load flags and
+# force constant Supabase reloads (and could read each other's cached file).
+# Inside Streamlit we keep it in st.session_state; the module globals below are
+# only a fallback for non-Streamlit callers (scripts, API server).
 _CLOUD_LOAD_ATTEMPTED = False
 _CLOUD_LOAD_OK = False
 _CLOUD_LOADED_USER_KEY = None
+
+
+def _get_load_state() -> tuple:
+    """Return (attempted, ok, loaded_user_key) for the current session."""
+    try:
+        import streamlit as st
+        return (
+            bool(st.session_state.get("_crm_load_attempted", False)),
+            bool(st.session_state.get("_crm_load_ok", False)),
+            st.session_state.get("_crm_loaded_user_key", None),
+        )
+    except Exception:
+        return (_CLOUD_LOAD_ATTEMPTED, _CLOUD_LOAD_OK, _CLOUD_LOADED_USER_KEY)
+
+
+_UNSET = object()
+
+
+def _set_load_state(*, attempted=_UNSET, ok=_UNSET, loaded_user_key=_UNSET) -> None:
+    """Update load cache flags for the current session (only provided fields)."""
+    global _CLOUD_LOAD_ATTEMPTED, _CLOUD_LOAD_OK, _CLOUD_LOADED_USER_KEY
+    try:
+        import streamlit as st
+        if attempted is not _UNSET:
+            st.session_state["_crm_load_attempted"] = bool(attempted)
+        if ok is not _UNSET:
+            st.session_state["_crm_load_ok"] = bool(ok)
+        if loaded_user_key is not _UNSET:
+            st.session_state["_crm_loaded_user_key"] = loaded_user_key
+    except Exception:
+        if attempted is not _UNSET:
+            _CLOUD_LOAD_ATTEMPTED = bool(attempted)
+        if ok is not _UNSET:
+            _CLOUD_LOAD_OK = bool(ok)
+        if loaded_user_key is not _UNSET:
+            _CLOUD_LOADED_USER_KEY = loaded_user_key
+
+
+# Per-session copy of the loaded loans. Module fallback only for non-Streamlit.
+_LOANS_CACHE = None
+
+
+def _get_cached_loans():
+    """Return this session's cached loan list, or None if not cached."""
+    try:
+        import streamlit as st
+        return st.session_state.get("_crm_loans_cache", None)
+    except Exception:
+        return _LOANS_CACHE
+
+
+def _set_cached_loans(loans) -> None:
+    """Store the loan list in this session's cache."""
+    global _LOANS_CACHE
+    try:
+        import streamlit as st
+        st.session_state["_crm_loans_cache"] = loans
+    except Exception:
+        _LOANS_CACHE = loans
 
 
 def _current_user_key() -> str:
@@ -132,8 +196,6 @@ def _load() -> list:
     """Load pipeline from durable cloud snapshot first, JSON fallback second.
     Sandbox mode always loads fresh from pipeline.sample.json (skips Supabase)
     so demo users always see the curated seed data."""
-    global _CLOUD_LOAD_ATTEMPTED, _CLOUD_LOAD_OK, _CLOUD_LOADED_USER_KEY
-
     if _is_sandbox():
         sample = os.path.join(os.path.dirname(_PIPELINE_FILE), "pipeline.sample.json")
         path = sample if os.path.exists(sample) else _PIPELINE_FILE
@@ -146,12 +208,22 @@ def _load() -> list:
         return []
 
     user_key = _current_user_key()
-    if _CLOUD_LOADED_USER_KEY != user_key:
-        _CLOUD_LOAD_ATTEMPTED = False
-        _CLOUD_LOAD_OK = False
-        _CLOUD_LOADED_USER_KEY = user_key
-    if not _CLOUD_LOAD_ATTEMPTED:
-        _CLOUD_LOAD_ATTEMPTED = True
+    attempted, ok, loaded_user_key = _get_load_state()
+    if loaded_user_key != user_key:
+        # Different user in this session: drop the cache and force a reload.
+        attempted, ok = False, False
+        _set_load_state(attempted=False, ok=False, loaded_user_key=user_key)
+        _set_cached_loans(None)
+
+    # Already loaded this session for this user — serve the session cache and
+    # never read the process-shared pipeline.json (another user may own it now).
+    if attempted and ok:
+        cached = _get_cached_loans()
+        if cached is not None:
+            return cached
+
+    if not attempted:
+        _set_load_state(attempted=True)
         try:
             import supabase_sync
             snap = supabase_sync.load_pipeline_snapshot(user_key=user_key)
@@ -172,7 +244,8 @@ def _load() -> list:
                     if legacy.get("ok") and legacy.get("loans"):
                         loans = _stamp_missing_user_keys(legacy.get("loans") or [], user_key)
                         supabase_sync.save_pipeline_snapshot(loans, user_key=user_key)
-                _CLOUD_LOAD_OK = True
+                _set_load_state(ok=True)
+                _set_cached_loans(loans)
                 # Cache locally for faster reads and emergency fallback.
                 try:
                     with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
@@ -188,7 +261,8 @@ def _load() -> list:
                 ]
                 loans = _stamp_missing_user_keys(loans, user_key)
                 if loans:
-                    _CLOUD_LOAD_OK = True
+                    _set_load_state(ok=True)
+                    _set_cached_loans(loans)
                     supabase_sync.save_pipeline_snapshot(loans, user_key=user_key)
                     try:
                         with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
@@ -199,7 +273,8 @@ def _load() -> list:
             legacy = supabase_sync.load_loans_backup(user_key=user_key)
             if legacy.get("ok") and legacy.get("loans"):
                 loans = _stamp_missing_user_keys(legacy.get("loans") or [], user_key)
-                _CLOUD_LOAD_OK = True
+                _set_load_state(ok=True)
+                _set_cached_loans(loans)
                 supabase_sync.save_pipeline_snapshot(loans, user_key=user_key)
                 try:
                     with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
@@ -231,12 +306,14 @@ def _load() -> list:
             )
         # If Supabase is configured but has no snapshot yet, seed it from the
         # current JSON file instead of letting the next deploy lose the data.
-        if loans and not _CLOUD_LOAD_OK:
+        _, ok, _ = _get_load_state()
+        if loans and not ok:
             try:
                 import supabase_sync
                 supabase_sync.save_pipeline_snapshot(loans, user_key=_current_user_key())
             except Exception:
                 pass
+        _set_cached_loans(loans)
         return loans
     except (json.JSONDecodeError, OSError):
         return []
@@ -246,6 +323,9 @@ def _save(loans: list):
     """Save pipeline to JSON and durable Supabase snapshot when configured.
     Sandbox mode skips Supabase writes so demo edits stay session-local."""
     loans = _stamp_missing_user_keys(loans, _current_user_key())
+    # Keep this session's cache in sync so the next _load() serves fresh data
+    # without re-reading the process-shared file.
+    _set_cached_loans(loans)
     with open(_PIPELINE_FILE, "w", encoding="utf-8") as f:
         json.dump(loans, f, indent=2, ensure_ascii=False)
     if _is_sandbox():
