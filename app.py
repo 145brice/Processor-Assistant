@@ -1868,7 +1868,7 @@ _components.html("""
 
 # --- Session State Defaults ---
 DEFAULTS = {
-    "page": "dashboard",
+    "page": "overview",
     "authenticated": False,
     "user_id": None,
     "supabase_user_id": None,
@@ -1885,6 +1885,8 @@ DEFAULTS = {
     "reader_page": 1,
     "pipeline_add_open": False,
     "pipeline_import_open": False,
+    "onboarding_checklist_dismissed": False,
+    "default_landing_page": "overview",
     "scroll_to": None,
     "dti_income": 0.0,
     "dti_debt": 0.0,
@@ -1901,7 +1903,11 @@ DEFAULTS = {
 # â”€â”€ Persist auth across browser refreshes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 import json as _json_auth
 _SESSION_FILE = os.path.join(os.path.dirname(__file__), ".session_cache.json")
-_AUTH_KEYS = ["authenticated", "user_id", "supabase_user_id", "user_email", "user_name", "user_role", "sandbox_mode", "page"]
+_AUTH_KEYS = [
+    "authenticated", "user_id", "supabase_user_id", "user_email", "user_name",
+    "user_role", "sandbox_mode", "page", "onboarding_checklist_dismissed",
+    "default_landing_page",
+]
 
 
 def _browser_session_id() -> str:
@@ -2010,7 +2016,16 @@ def _is_owner_admin_email(email: str = "") -> bool:
     return raw_email in owner_emails
 
 
-def _enter_sandbox(page: str = "dashboard") -> None:
+def _preferred_landing_page() -> str:
+    page = str(st.session_state.get("default_landing_page") or "overview").strip().lower()
+    if page in {"scanner", "scan"}:
+        return "dashboard"
+    if page in {"dashboard", "pipeline", "overview"}:
+        return page
+    return "overview"
+
+
+def _enter_sandbox(page: str = "overview") -> None:
     """Authenticate directly into local sandbox mode."""
     st.session_state.authenticated = True
     st.session_state.user_id = "sandbox"
@@ -2021,6 +2036,8 @@ def _enter_sandbox(page: str = "dashboard") -> None:
     st.session_state.sandbox_mode = True
     st.session_state.user_gemini_api_key = ""
     st.session_state.force_login = False
+    if page == "overview" and st.session_state.get("onboarding_checklist_dismissed"):
+        page = _preferred_landing_page()
     st.session_state.page = page
     _save_session()
 
@@ -3040,11 +3057,8 @@ def _load_user_gemini_key_into_session(force: bool = False) -> str:
     return st.session_state.user_gemini_api_key
 
 
-def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: str = "dashboard") -> None:
-    """Normalize all successful auth paths into one session update.
-    If the user already has a saved Gemini key, default landing page becomes
-    'pipeline' (skip the scanner/onboarding entry point) regardless of the
-    caller's requested page."""
+def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: str = "overview") -> None:
+    """Normalize all successful auth paths into one session update."""
     st.session_state.authenticated = True
     st.session_state.user_id = result.get("user_id")
     st.session_state.supabase_user_id = result.get("supabase_user_id")
@@ -3056,14 +3070,10 @@ def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: s
     st.session_state.force_login = False
     st.session_state.user_gemini_api_key = ""
     _load_user_gemini_key_into_session(force=True)
-    # Returning users with a saved Gemini key land on pipeline; new users land
-    # on the Overview page so they see what the app does (and hit the onboarding
-    # wizard banner) before diving in.
-    if not sandbox_mode:
-        if st.session_state.get("user_gemini_api_key"):
-            page = "pipeline"
-        elif page == "dashboard":
-            page = "overview"
+    if page == "dashboard":
+        page = "overview"
+    if page == "overview" and st.session_state.get("onboarding_checklist_dismissed"):
+        page = _preferred_landing_page()
     st.session_state.page = page
     _save_session()
 
@@ -3512,6 +3522,9 @@ def render_no_credit_card_banner() -> None:
 
 
 def render_onboarding_checklist() -> None:
+    if st.session_state.get("onboarding_checklist_dismissed"):
+        return
+
     try:
         from crm import get_all_loans as _get_onboarding_loans
         loan_count = len(_visible_account_loans(_get_onboarding_loans()))
@@ -3575,6 +3588,32 @@ def render_onboarding_checklist() -> None:
         """,
         unsafe_allow_html=True,
     )
+    pref_options = {
+        "Scanner": "dashboard",
+        "Pipeline": "pipeline",
+        "Overview": "overview",
+    }
+    current_pref = _preferred_landing_page()
+    pref_labels = list(pref_options.keys())
+    current_label = next(
+        (label for label, value in pref_options.items() if value == current_pref),
+        "Scanner",
+    )
+    pc1, pc2 = st.columns([1.4, 1])
+    with pc1:
+        selected_pref = st.selectbox(
+            "After hiding this checklist, start me on",
+            pref_labels,
+            index=pref_labels.index(current_label),
+            key="onboarding_default_landing_choice",
+        )
+    with pc2:
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        if st.checkbox("Don't show this checklist again", key="onboarding_checklist_dismissed"):
+            st.session_state.default_landing_page = pref_options[selected_pref]
+            st.session_state.page = _preferred_landing_page()
+            _save_session()
+            st.rerun()
 
     for idx, step in enumerate(steps, start=1):
         c1, c2 = st.columns([4.2, 1.2])
@@ -3735,7 +3774,7 @@ def show_login_page():
     if _env_truthy("PA_SHOW_SANDBOX", "0"):
         st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
         if st.button("Try Sandbox - No Account Needed", type="primary", use_container_width=True):
-            _enter_sandbox(page="pipeline")
+            _enter_sandbox(page="overview")
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
         st.markdown(
@@ -3822,7 +3861,7 @@ def show_login_page():
                 from db import login
                 result = login(email, password)
                 if result.get("success"):
-                    _complete_login_session(result, sandbox_mode=False, page="dashboard")
+                    _complete_login_session(result, sandbox_mode=False, page="overview")
                     st.rerun()
                 else:
                     st.error(result.get("error", "Login failed"))
@@ -13039,7 +13078,7 @@ def main():
             render_site_footer()
             return
         if _AUTO_ENTER_SANDBOX:
-            _enter_sandbox(page="dashboard")
+            _enter_sandbox(page="overview")
             st.rerun()
         show_login_page()
         render_site_footer()
@@ -13064,6 +13103,10 @@ def main():
             return
         if _qp_page:
             st.session_state.page = str(_qp_page)
+        elif (st.session_state.get("page") == "overview"
+                and st.session_state.get("onboarding_checklist_dismissed")):
+            st.session_state.page = _preferred_landing_page()
+            _save_session()
         show_sidebar()
         show_persistent_header()
         _render_gemini_key_prompt()
