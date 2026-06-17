@@ -154,6 +154,41 @@ RETENTION_OPTIONS = {
 
 STATUS_OPTIONS = ["Pending", "Requested", "Cleared", "Overdue", "Closed"]
 
+_IMPORT_FIELD_ALIASES = {
+    "loan_num": (
+        "loan_num", "loan number", "loan #", "loan#", "loan no", "loan no.",
+        "loan id", "loan", "file #", "file number", "case #", "case number",
+    ),
+    "borrower": (
+        "borrower", "borrower name", "client", "client name", "name",
+        "borrower(s)", "borrowers", "buyer", "primary borrower",
+    ),
+    "status": ("status", "pipeline status", "loan status"),
+    "due_date": ("due_date", "due date", "due", "target date"),
+    "closing_date": ("closing_date", "closing date", "close date", "closing", "close"),
+    "lock_expiry": (
+        "lock_expiry", "lock expiry", "lock expiration", "lock expires",
+        "rate lock", "rate lock expiration", "lock exp",
+    ),
+    "commitment_date": (
+        "commitment_date", "commitment date", "commitment exp",
+        "commitment expiration", "approval expiration", "approval exp",
+    ),
+    "missing_docs": (
+        "missing_docs", "missing docs", "missing documents", "docs needed",
+        "documents needed", "conditions needed",
+    ),
+    "folder_path": ("folder_path", "folder path", "folder", "file path", "path"),
+    "created_by": ("created_by", "created by", "processor", "owner"),
+    "assigned_to": ("assigned_to", "assigned to", "assigned", "assignee"),
+    "loan_amount": ("loan_amount", "loan amount", "amount"),
+    "property": ("property", "property address", "address", "subject property"),
+    "loan_type": ("loan_type", "loan type", "program", "product"),
+    "notes": ("notes", "note", "comments", "comment"),
+    "conditions": ("conditions", "condition list"),
+    "contacts": ("contacts", "contact json"),
+}
+
 # Status → CSS color class name (used in app.py)
 STATUS_COLORS = {
     "Pending":   "#c0392b",   # red
@@ -423,6 +458,209 @@ def update_loan(loan_id: int, **kwargs):
             break
     if updated:
         _save(loans)
+
+
+def _import_lookup(row: dict, field: str):
+    aliases = _IMPORT_FIELD_ALIASES.get(field, (field,))
+    lowered = {str(k or "").strip().lower(): v for k, v in (row or {}).items()}
+    for alias in aliases:
+        if alias in lowered:
+            return lowered[alias]
+    return ""
+
+
+def _import_text(value) -> str:
+    if value is None:
+        return ""
+    if isinstance(value, (list, dict)):
+        return json.dumps(value, ensure_ascii=False)
+    return str(value).strip()
+
+
+def _import_date(value) -> str:
+    text = _import_text(value)
+    if not text:
+        return ""
+    if "T" in text and len(text) >= 10:
+        text = text[:10]
+    for fmt in (
+        "%Y-%m-%d", "%m/%d/%Y", "%m-%d-%Y", "%m.%d.%Y",
+        "%m/%d/%y", "%m-%d-%y", "%m.%d.%y",
+        "%B %d, %Y", "%B %d %Y", "%b %d, %Y", "%b %d %Y",
+    ):
+        try:
+            return datetime.strptime(text, fmt).strftime("%Y-%m-%d")
+        except ValueError:
+            pass
+    return text
+
+
+def _import_status(value) -> str:
+    text = _import_text(value)
+    if not text:
+        return "Pending"
+    normalized = text.strip().lower()
+    for status in STATUS_OPTIONS:
+        if normalized == status.lower():
+            return status
+    if normalized in ("clear", "complete", "completed", "done"):
+        return "Cleared"
+    if normalized in ("requested conditions", "request sent", "sent"):
+        return "Requested"
+    if normalized in ("past due", "late"):
+        return "Overdue"
+    return "Pending"
+
+
+def _import_money(value):
+    text = _import_text(value).replace("$", "").replace(",", "")
+    if not text:
+        return ""
+    try:
+        amount = float(text)
+    except ValueError:
+        return _import_text(value)
+    return int(amount) if amount.is_integer() else amount
+
+
+def _import_json_value(value, fallback):
+    if isinstance(value, (list, dict)):
+        return value
+    text = _import_text(value)
+    if not text:
+        return fallback
+    try:
+        parsed = json.loads(text)
+        if isinstance(fallback, list) and isinstance(parsed, list):
+            return parsed
+        if isinstance(fallback, dict) and isinstance(parsed, dict):
+            return parsed
+    except Exception:
+        pass
+    return fallback
+
+
+def _normalize_import_loan(row: dict, next_id: int, *, created_by: str = "",
+                           assigned_to: str = "") -> tuple[dict | None, str]:
+    if not isinstance(row, dict):
+        return None, "Row is not an object."
+
+    loan_num = _import_text(_import_lookup(row, "loan_num"))
+    borrower = _import_text(_import_lookup(row, "borrower"))
+    if not loan_num and isinstance(row.get("loan_num"), str):
+        loan_num = row.get("loan_num", "").strip()
+    if not borrower and isinstance(row.get("borrower"), str):
+        borrower = row.get("borrower", "").strip()
+    if not loan_num or not borrower:
+        return None, "Missing Loan # or Borrower."
+
+    closing_date = _import_date(_import_lookup(row, "closing_date"))
+    due_date = _import_date(_import_lookup(row, "due_date")) or closing_date
+    created = _import_date(row.get("created")) or datetime.now().isoformat()[:10]
+    updated = _import_date(row.get("updated")) or datetime.now().isoformat()[:10]
+    imported_created_by = _import_text(_import_lookup(row, "created_by")) or created_by
+    imported_assigned_to = _import_text(_import_lookup(row, "assigned_to")) or assigned_to
+    if imported_assigned_to == "(Unassigned)":
+        imported_assigned_to = ""
+
+    loan = {
+        "id": next_id,
+        "loan_num": loan_num,
+        "borrower": borrower,
+        "status": _import_status(_import_lookup(row, "status")),
+        "due_date": due_date,
+        "closing_date": closing_date or due_date,
+        "lock_expiry": _import_date(_import_lookup(row, "lock_expiry")),
+        "commitment_date": _import_date(_import_lookup(row, "commitment_date")),
+        "missing_docs": _import_text(_import_lookup(row, "missing_docs")),
+        "folder_path": _import_text(_import_lookup(row, "folder_path")),
+        "created_by": imported_created_by,
+        "assigned_to": imported_assigned_to,
+        "created": created,
+        "updated": updated,
+        "notes": _import_text(_import_lookup(row, "notes")),
+        "conditions": _import_json_value(_import_lookup(row, "conditions"), row.get("conditions", [])),
+        "contacts": _import_json_value(_import_lookup(row, "contacts"), row.get("contacts", {})),
+    }
+
+    for field in ("loan_amount", "property", "loan_type"):
+        value = _import_lookup(row, field)
+        if value not in (None, ""):
+            loan[field] = _import_money(value) if field == "loan_amount" else _import_text(value)
+
+    user_key = _current_user_key()
+    if user_key:
+        loan.setdefault("owner_user_key", user_key)
+        loan.setdefault("created_by_user_key", user_key)
+        if imported_assigned_to and imported_assigned_to == created_by:
+            loan.setdefault("assigned_user_key", user_key)
+
+    return loan, ""
+
+
+def bulk_import_loans(rows: list[dict], *, duplicate_strategy: str = "skip",
+                      created_by: str = "", assigned_to: str = "") -> dict:
+    """Import many loans in one migration-style save.
+
+    duplicate_strategy:
+      - skip: keep existing loans with the same loan number
+      - update: merge imported fields into matching existing loans
+    """
+    loans = _load()
+    existing_by_num = {
+        str(loan.get("loan_num", "")).strip().lower(): loan
+        for loan in loans
+        if str(loan.get("loan_num", "")).strip()
+    }
+    next_id = _next_id(loans)
+    added = updated = skipped = failed = 0
+    errors = []
+    imported_ids = []
+
+    for idx, row in enumerate(rows or [], start=1):
+        normalized, error = _normalize_import_loan(
+            row, next_id, created_by=created_by, assigned_to=assigned_to,
+        )
+        if error:
+            failed += 1
+            errors.append(f"Row {idx}: {error}")
+            continue
+
+        key = normalized["loan_num"].strip().lower()
+        existing = existing_by_num.get(key)
+        if existing:
+            if duplicate_strategy == "update":
+                preserved_id = existing.get("id")
+                for field, value in normalized.items():
+                    if field == "id":
+                        continue
+                    if value in ("", None, [], {}):
+                        continue
+                    existing[field] = value
+                existing["id"] = preserved_id
+                existing["updated"] = datetime.now().isoformat()[:10]
+                updated += 1
+                imported_ids.append(preserved_id)
+            else:
+                skipped += 1
+            continue
+
+        loans.append(normalized)
+        existing_by_num[key] = normalized
+        imported_ids.append(next_id)
+        next_id += 1
+        added += 1
+
+    if added or updated:
+        _save(loans)
+    return {
+        "added": added,
+        "updated": updated,
+        "skipped": skipped,
+        "failed": failed,
+        "errors": errors[:25],
+        "imported_ids": imported_ids,
+    }
 
 
 def attach_document(loan_id: int, filename: str, doc_type: str,
