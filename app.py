@@ -1903,6 +1903,7 @@ DEFAULTS = {
 # â”€â”€ Persist auth across browser refreshes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 import json as _json_auth
 _SESSION_FILE = os.path.join(os.path.dirname(__file__), ".session_cache.json")
+_BROWSER_SESSION_COOKIE = "pa_browser_sid"
 _AUTH_KEYS = [
     "authenticated", "user_id", "supabase_user_id", "user_email", "user_name",
     "user_role", "sandbox_mode", "page", "onboarding_checklist_dismissed",
@@ -1910,11 +1911,75 @@ _AUTH_KEYS = [
 ]
 
 
+def _browser_session_cookie_max_age() -> int:
+    try:
+        return max(1, int(os.getenv("PA_BROWSER_SESSION_MAX_DAYS", "30") or "30")) * 86400
+    except Exception:
+        return 30 * 86400
+
+
+def _valid_browser_session_id(value: str) -> str:
+    value = str(value or "").strip()
+    if 16 <= len(value) <= 160 and re.fullmatch(r"[A-Za-z0-9_\-]+", value):
+        return value
+    return ""
+
+
+def _set_browser_session_cookie(session_id: str) -> None:
+    session_id = _valid_browser_session_id(session_id)
+    if not session_id:
+        return
+    try:
+        _components.html(
+            f"""
+<script>
+(function() {{
+  const name = {_json_auth.dumps(_BROWSER_SESSION_COOKIE)};
+  const value = {_json_auth.dumps(session_id)};
+  const maxAge = {_browser_session_cookie_max_age()};
+  const secure = window.parent.location.protocol === 'https:' ? '; Secure' : '';
+  window.parent.document.cookie = name + '=' + encodeURIComponent(value) +
+    '; Max-Age=' + maxAge + '; Path=/; SameSite=Lax' + secure;
+}})();
+</script>
+""",
+            height=0,
+        )
+    except Exception:
+        pass
+
+
+def _delete_browser_session_cookie() -> None:
+    try:
+        _components.html(
+            f"""
+<script>
+(function() {{
+  const name = {_json_auth.dumps(_BROWSER_SESSION_COOKIE)};
+  const secure = window.parent.location.protocol === 'https:' ? '; Secure' : '';
+  window.parent.document.cookie = name + '=; Max-Age=0; Path=/; SameSite=Lax' + secure;
+}})();
+</script>
+""",
+            height=0,
+        )
+    except Exception:
+        pass
+
+
 def _browser_session_id() -> str:
-    """Ephemeral per-tab session id. Never store auth/session ids in shareable URLs."""
-    sid = str(st.session_state.get("_browser_session_id") or "").strip()
+    """Browser-private session id. Never store auth/session ids in shareable URLs."""
+    sid = _valid_browser_session_id(st.session_state.get("_browser_session_id") or "")
     if sid:
         return sid
+    try:
+        sid = _valid_browser_session_id(st.context.cookies.get(_BROWSER_SESSION_COOKIE, ""))
+        if sid:
+            st.session_state["_browser_session_id"] = sid
+            _set_browser_session_cookie(sid)
+            return sid
+    except Exception:
+        pass
     try:
         if st.query_params.get("pa_sid", ""):
             del st.query_params["pa_sid"]
@@ -1922,6 +1987,7 @@ def _browser_session_id() -> str:
         pass
     sid = secrets.token_urlsafe(24)
     st.session_state["_browser_session_id"] = sid
+    _set_browser_session_cookie(sid)
     return sid
 
 def _save_session():
@@ -1933,7 +1999,7 @@ def _save_session():
         except Exception:
             pass
     try:
-        if _data.get("authenticated") and not _is_owner_admin_email(str(_data.get("user_email") or "")):
+        if _data.get("authenticated"):
             import supabase_auth as _sa
             _save_result = _sa.save_browser_session(
                 _browser_session_id(),
@@ -1948,6 +2014,7 @@ def _save_session():
         st.session_state["browser_session_save_error"] = "Cloud session save failed."
 
 def _clear_session():
+    _sid = _browser_session_id()
     try:
         if os.path.exists(_SESSION_FILE):
             os.remove(_SESSION_FILE)
@@ -1955,7 +2022,12 @@ def _clear_session():
         pass
     try:
         import supabase_auth as _sa
-        _sa.clear_browser_session(_browser_session_id())
+        _sa.clear_browser_session(_sid)
+    except Exception:
+        pass
+    try:
+        st.session_state.pop("_browser_session_id", None)
+        _delete_browser_session_cookie()
     except Exception:
         pass
 
