@@ -3812,6 +3812,7 @@ def show_sidebar():
         _nav_btn("Overview", "overview")
         _nav_btn("Scanner",  "dashboard")
         _nav_btn("Pipeline", "pipeline")
+        _nav_btn("Bulk Import", "pipeline_import")
         _nav_btn("Pricing",  "pricing")
 
         # â•â•â•â•â•â•â•â•â•â•â• WORKSPACE: Reader / Email Watch / Team / Billing â•â•â•â•â•â•â•â•
@@ -6401,6 +6402,8 @@ def _pipeline_import_template_csv() -> str:
 def show_pipeline():
     """Color-coded CRM loan pipeline dashboard."""
     import os
+    if st.session_state.get("page") == "pipeline_import":
+        st.session_state.pipeline_import_open = True
     # Handle dash header chip click set status filter from query param
     _qp = st.query_params
     _qp_filter = _qp.get("pipefilter", "")
@@ -12927,7 +12930,7 @@ def main():
             show_dashboard()
         elif page == "overview":
             show_overview_page()
-        elif page == "pipeline":
+        elif page in ("pipeline", "pipeline_import"):
             show_pipeline()
         elif page == "team":
             show_team_page()
