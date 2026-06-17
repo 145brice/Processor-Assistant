@@ -3405,11 +3405,11 @@ def render_feature_highlights(heading: bool = True):
     if heading:
         st.markdown(
             '<div style="text-align:center;margin:4px 0 14px 0;">'
-            '<div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.4px;">'
-            'What Processor Assistant does</div>'
-            '<div style="font-size:14px;font-weight:700;color:#3b82f6;margin-top:5px;">'
-            'Made for processors, built by processors.</div>'
-            '<div style="font-size:12px;color:#9ca3af;margin-top:3px;">'
+            '<div style="font-size:clamp(24px,4.5vw,34px);font-weight:900;color:#fff;'
+            'letter-spacing:-0.5px;line-height:1.12;">'
+            'Made for processors,'
+            '<div style="color:#3b82f6;font-size:inherit;font-weight:inherit;">built by processors.</div></div>'
+            '<div style="font-size:13px;color:#9ca3af;margin-top:8px;">'
             'Read, write, and move loans faster.</div>'
             '</div>',
             unsafe_allow_html=True,
@@ -3432,10 +3432,17 @@ def render_feature_highlights(heading: bool = True):
               </div>
               <div style="font-size:15px;font-weight:800;color:#fff;">Smart Document Intelligence</div>
             </div>
-            <div style="font-size:13px;color:#d1d5db;line-height:1.6;">
-              Scans, parses, and <b style="color:#fff;">intelligently rewrites underwriting
-              conditions</b> based on the parties and context of each loan — turning raw
-              approval letters and conditions into clear, borrower-ready language automatically.
+            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+              <span style="color:#3b82f6;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
+              <span style="font-size:13px;color:#e5e7eb;line-height:1.45;"><b style="color:#fff;">Scans</b> any loan document instantly</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+              <span style="color:#3b82f6;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
+              <span style="font-size:13px;color:#e5e7eb;line-height:1.45;"><b style="color:#fff;">Parses</b> key data, conditions &amp; parties</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+              <span style="color:#3b82f6;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
+              <span style="font-size:13px;color:#e5e7eb;line-height:1.45;"><b style="color:#fff;">Intelligently rewrites</b> underwriting conditions by party &amp; context</span>
             </div>
           </div>
           <div style="flex:1;min-width:260px;border:1px solid rgba(34,197,94,0.35);
@@ -3452,10 +3459,17 @@ def render_feature_highlights(heading: bool = True):
               </div>
               <div style="font-size:15px;font-weight:800;color:#fff;">One-Click Email Workflows</div>
             </div>
-            <div style="font-size:13px;color:#d1d5db;line-height:1.6;">
-              <b style="color:#fff;">One-click order-outs</b>, automatic <b style="color:#fff;">inbox
-              monitoring</b>, and <b style="color:#fff;">multi-language email reading and writing</b> —
-              send, track, and respond to title, insurance, and borrower emails without leaving the app.
+            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+              <span style="color:#22c55e;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
+              <span style="font-size:13px;color:#e5e7eb;line-height:1.45;"><b style="color:#fff;">One-click order-outs</b> to title, insurance &amp; more</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+              <span style="color:#22c55e;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
+              <span style="font-size:13px;color:#e5e7eb;line-height:1.45;"><b style="color:#fff;">Automatic inbox monitoring</b> so nothing slips</span>
+            </div>
+            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+              <span style="color:#22c55e;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
+              <span style="font-size:13px;color:#e5e7eb;line-height:1.45;"><b style="color:#fff;">Multi-language email</b> reading &amp; writing</span>
             </div>
           </div>
         </div>
@@ -3570,10 +3584,12 @@ def show_login_page():
       <div style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">
         Processor Assistant
       </div>
-      <div style="font-size:14px;font-weight:700;color:#3b82f6;margin-top:7px;letter-spacing:0.2px;">
-        Made for processors, built by processors.
+      <div style="font-size:clamp(26px,5.5vw,38px);font-weight:900;color:#ffffff;
+           margin-top:14px;line-height:1.12;letter-spacing:-0.6px;">
+        Made for processors,
+        <div style="color:#3b82f6;font-size:inherit;font-weight:inherit;">built by processors.</div>
       </div>
-      <div style="font-size:11px;color:#9ca3af;margin-top:4px;letter-spacing:0.3px;">
+      <div style="font-size:11px;color:#9ca3af;margin-top:10px;letter-spacing:0.3px;">
         ONLINE MORTGAGE PROCESSING
       </div>
     </div>
