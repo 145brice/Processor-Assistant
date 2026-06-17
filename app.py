@@ -2467,7 +2467,7 @@ def _render_trial_gate(profile: dict) -> None:
         """
         Your 14-day beta trial has ended. To keep using Processor Assistant, start the beta plan.
 
-        Beta is **$49/mo** with a 14-day free trial. **No credit card needed for the free trial.**
+        Beta is **$49/mo** and starts with a **14-day free trial**.
         """
     )
     render_no_credit_card_banner()
@@ -3599,11 +3599,11 @@ def render_no_credit_card_banner() -> None:
              text-align:center;">
           <div style="font-size:20px;font-weight:900;color:#86efac;letter-spacing:0.8px;
                text-transform:uppercase;line-height:1.15;">
-            No Credit Card Needed
+            14-Day Free Trial
           </div>
           <div style="font-size:12px;font-weight:700;color:#dcfce7;margin-top:3px;
                text-transform:uppercase;letter-spacing:0.4px;">
-            Start the free trial without entering payment info
+            Try Processor Assistant before the beta plan starts
           </div>
         </div>
         """,
@@ -10580,9 +10580,9 @@ def show_pricing_page():
               <div style="font-size:12px;font-weight:800;color:#3b82f6;text-transform:uppercase;">Available Now</div>
               <div style="font-size:24px;font-weight:900;color:#fff;margin-top:6px;">Beta</div>
               <div style="font-size:34px;font-weight:900;color:#fff;margin:10px 0;">$49<span style="font-size:14px;color:#9ca3af;">/mo</span></div>
-              <div style="font-size:13px;color:#d1d5db;">Includes a 14-day free trial.</div>
+              <div style="font-size:13px;color:#d1d5db;">Start with a 14-day free trial.</div>
               <div style="font-size:18px;font-weight:900;color:#86efac;margin-top:8px;text-transform:uppercase;">
-                No Credit Card Needed
+                Try it free first
               </div>
               <hr style="border-color:rgba(255,255,255,0.08);margin:16px 0;">
               <div style="font-size:13px;color:#e5e7eb;line-height:1.7;">
