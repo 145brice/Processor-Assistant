@@ -3054,10 +3054,14 @@ def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: s
     st.session_state.force_login = False
     st.session_state.user_gemini_api_key = ""
     _load_user_gemini_key_into_session(force=True)
-    # Returning users with a saved Gemini key land on pipeline; new users go
-    # to dashboard so they hit the onboarding wizard banner.
-    if not sandbox_mode and st.session_state.get("user_gemini_api_key"):
-        page = "pipeline"
+    # Returning users with a saved Gemini key land on pipeline; new users land
+    # on the Overview page so they see what the app does (and hit the onboarding
+    # wizard banner) before diving in.
+    if not sandbox_mode:
+        if st.session_state.get("user_gemini_api_key"):
+            page = "pipeline"
+        elif page == "dashboard":
+            page = "overview"
     st.session_state.page = page
     _save_session()
 
@@ -3393,6 +3397,111 @@ def _render_condition(_c, _fkey, _party_options, _cond_statuses):
     return (_chk, _cstat, _cparties)
 
 
+def render_feature_highlights(heading: bool = True):
+    """Shared product highlights — the two headline capabilities plus support
+    points. Reused on the login page, the post-login Overview page, and Pricing
+    so the value prop stays identical everywhere."""
+    if heading:
+        st.markdown(
+            '<div style="text-align:center;margin:4px 0 14px 0;">'
+            '<div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.4px;">'
+            'What Processor Assistant does</div>'
+            '<div style="font-size:12px;color:#9ca3af;margin-top:4px;">'
+            'Built for mortgage processors — read, write, and move loans faster.</div>'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+    st.markdown(
+        """
+        <div style="display:flex;flex-wrap:wrap;gap:14px;margin:6px 0 8px 0;">
+          <div style="flex:1;min-width:260px;border:1px solid rgba(59,130,246,0.35);
+               border-radius:14px;padding:18px;background:rgba(59,130,246,0.07);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <div style="width:34px;height:34px;border-radius:9px;
+                   background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;
+                   align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 3v4a1 1 0 0 0 1 1h4"/>
+                  <path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/>
+                  <path d="M9 13h6M9 17h4"/>
+                </svg>
+              </div>
+              <div style="font-size:15px;font-weight:800;color:#fff;">Smart Document Intelligence</div>
+            </div>
+            <div style="font-size:13px;color:#d1d5db;line-height:1.6;">
+              Scans, parses, and <b style="color:#fff;">intelligently rewrites underwriting
+              conditions</b> based on the parties and context of each loan — turning raw
+              approval letters and conditions into clear, borrower-ready language automatically.
+            </div>
+          </div>
+          <div style="flex:1;min-width:260px;border:1px solid rgba(34,197,94,0.35);
+               border-radius:14px;padding:18px;background:rgba(34,197,94,0.07);">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+              <div style="width:34px;height:34px;border-radius:9px;
+                   background:linear-gradient(135deg,#22c55e,#15803d);display:flex;
+                   align-items:center;justify-content:center;flex-shrink:0;">
+                <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="#fff"
+                     stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="4" width="20" height="16" rx="2"/>
+                  <path d="m22 7-10 6L2 7"/>
+                </svg>
+              </div>
+              <div style="font-size:15px;font-weight:800;color:#fff;">One-Click Email Workflows</div>
+            </div>
+            <div style="font-size:13px;color:#d1d5db;line-height:1.6;">
+              <b style="color:#fff;">One-click order-outs</b>, automatic <b style="color:#fff;">inbox
+              monitoring</b>, and <b style="color:#fff;">multi-language email reading and writing</b> —
+              send, track, and respond to title, insurance, and borrower emails without leaving the app.
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0 4px 0;">
+          <span style="font-size:11px;color:#cbd5e1;background:rgba(148,163,184,0.12);
+                border:1px solid rgba(148,163,184,0.22);border-radius:999px;padding:4px 11px;">Pipeline tracking</span>
+          <span style="font-size:11px;color:#cbd5e1;background:rgba(148,163,184,0.12);
+                border:1px solid rgba(148,163,184,0.22);border-radius:999px;padding:4px 11px;">Auto data entry</span>
+          <span style="font-size:11px;color:#cbd5e1;background:rgba(148,163,184,0.12);
+                border:1px solid rgba(148,163,184,0.22);border-radius:999px;padding:4px 11px;">Compliance checks</span>
+          <span style="font-size:11px;color:#cbd5e1;background:rgba(148,163,184,0.12);
+                border:1px solid rgba(148,163,184,0.22);border-radius:999px;padding:4px 11px;">Doc expiry tracking</span>
+          <span style="font-size:11px;color:#cbd5e1;background:rgba(148,163,184,0.12);
+                border:1px solid rgba(148,163,184,0.22);border-radius:999px;padding:4px 11px;">Closing package prep</span>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def show_overview_page():
+    """Post-login landing that reuses the same value-prop highlights."""
+    _user = st.session_state.get("user_name", "") or "there"
+    st.markdown(
+        f'<div style="font-size:22px;font-weight:900;color:#fff;margin:2px 0 2px 0;">'
+        f'Welcome, {_user.split()[0] if _user else "there"} 👋</div>'
+        f'<div style="font-size:13px;color:#94a3b8;margin-bottom:14px;">'
+        f'Here\'s what you can do with Processor Assistant.</div>',
+        unsafe_allow_html=True,
+    )
+    render_feature_highlights(heading=False)
+    _c1, _c2, _c3 = st.columns([1, 1, 1])
+    with _c1:
+        if st.button("Start scanning", type="primary", use_container_width=True, key="overview_to_scanner"):
+            st.session_state.page = "dashboard"
+            _save_session()
+            st.rerun()
+    with _c2:
+        if st.button("View pipeline", use_container_width=True, key="overview_to_pipeline"):
+            st.session_state.page = "pipeline"
+            _save_session()
+            st.rerun()
+    with _c3:
+        if st.button("See pricing", use_container_width=True, key="overview_to_pricing"):
+            st.session_state.page = "pricing"
+            _save_session()
+            st.rerun()
+
+
 def show_login_page():
     """Login / Signup page."""
     _oauth_error = st.session_state.pop("oauth_error_message", "")
@@ -3463,6 +3572,10 @@ def show_login_page():
       </div>
     </div>
     """, unsafe_allow_html=True)
+
+    # Product highlights so visitors see what it does before signing in.
+    render_feature_highlights(heading=False)
+    st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
 
     if _env_truthy("PA_SHOW_SANDBOX", "0"):
         st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
@@ -3674,6 +3787,7 @@ def show_sidebar():
             return st.session_state[state_key]
 
         # â•â•â•â•â•â•â•â•â•â•â• PRIMARY NAV: Scanner + Pipeline (always visible) â•â•â•â•â•â•â•
+        _nav_btn("Overview", "overview")
         _nav_btn("Scanner",  "dashboard")
         _nav_btn("Pipeline", "pipeline")
         _nav_btn("Pricing",  "pricing")
@@ -6206,6 +6320,62 @@ def _pipeline_cond_row(c, contacts=None, loan_num="", borrower=""):
     )
 
 
+def _parse_pipeline_import_upload(uploaded_file):
+    import csv as _csv
+    import io as _io
+    import json as _json
+
+    raw = uploaded_file.read()
+    uploaded_file.seek(0)
+    name = (getattr(uploaded_file, "name", "") or "").lower()
+    errors = []
+
+    if name.endswith(".json"):
+        try:
+            data = _json.loads(raw.decode("utf-8-sig"))
+        except Exception as exc:
+            return [], [f"Could not read JSON: {exc}"]
+        if isinstance(data, dict):
+            data = data.get("loans") or data.get("pipeline") or data.get("data")
+        if not isinstance(data, list):
+            return [], ["JSON import must be a list of loans or an object with a loans list."]
+        rows = [row for row in data if isinstance(row, dict)]
+        if len(rows) != len(data):
+            errors.append("Some JSON entries were skipped because they were not objects.")
+        return rows, errors
+
+    if name.endswith(".csv"):
+        try:
+            text = raw.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            text = raw.decode("latin-1")
+        reader = _csv.DictReader(_io.StringIO(text))
+        if not reader.fieldnames:
+            return [], ["CSV import needs a header row."]
+        rows = []
+        for row in reader:
+            clean = {
+                str(k or "").strip(): ("" if v is None else str(v).strip())
+                for k, v in row.items()
+            }
+            if any(clean.values()):
+                rows.append(clean)
+        return rows, errors
+
+    return [], ["Upload a .csv or .json file."]
+
+
+def _pipeline_import_template_csv() -> str:
+    return (
+        "Loan #,Borrower,Status,Closing Date,Lock Expires,Commitment Exp.,"
+        "Missing Docs,Folder Path,Assigned To,Loan Amount,Property Address,"
+        "Loan Type,Notes\n"
+        "LN-2026-001,Jane Smith,Pending,2026-07-15,2026-07-10,2026-07-01,"
+        "\"Bank statements; updated paystub\",C:\\Loans\\SmithJ,Brice Leasure,"
+        "425000,\"123 Main St, Nashville TN\",Conventional,Imported from old pipeline\n"
+    )
+
+
 def show_pipeline():
     """Color-coded CRM loan pipeline dashboard."""
     import os
@@ -6221,7 +6391,7 @@ def show_pipeline():
         st.query_params.clear()
         st.rerun()
     from crm import (
-        get_all_loans, add_loan, set_status, delete_loan, update_loan,
+        get_all_loans, add_loan, bulk_import_loans, set_status, delete_loan, update_loan,
         STATUS_OPTIONS, STATUS_EMOJI, STATUS_COLORS,
         get_trash, restore_loan, permanently_delete, empty_trash,
         get_retention_days, set_retention_days, RETENTION_OPTIONS,
@@ -6239,11 +6409,14 @@ def show_pipeline():
 
     # â”€â”€ Top action bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.markdown('<div class="pa-pipe-controls">', unsafe_allow_html=True)
-    tb1, tb2, tb3, tb4, tb5 = st.columns([1.45, 1.9, 2.4, 1.8, 1.0])
+    tb1, tb2, tb3, tb4, tb5, tb6 = st.columns([1.25, 1.25, 1.9, 2.4, 1.8, 1.0])
     with tb1:
         if st.button("+Add Loan", use_container_width=True, type="primary"):
             st.session_state.pipeline_add_open = not st.session_state.get("pipeline_add_open", False)
     with tb2:
+        if st.button("Import", use_container_width=True):
+            st.session_state.pipeline_import_open = not st.session_state.get("pipeline_import_open", False)
+    with tb3:
         _opts = ["All"] + STATUS_OPTIONS
         _default = st.session_state.get("pipeline_filter_val", "All")
         if _default not in _opts:
@@ -6255,13 +6428,13 @@ def show_pipeline():
             label_visibility="collapsed",
         )
         st.session_state["pipeline_filter_val"] = filter_status
-    with tb3:
+    with tb4:
         search_loan = st.text_input(
             "Search", placeholder="Loan # or borrower name",
             key="pipeline_search",
             label_visibility="collapsed",
         )
-    with tb4:
+    with tb5:
         sort_by = st.selectbox(
             "Sort by", [
                 "Newest",
@@ -6279,7 +6452,7 @@ def show_pipeline():
             key="pipeline_sort",
             label_visibility="collapsed",
         )
-    with tb5:
+    with tb6:
         st.markdown('<div class="pa-myloans-toggle">', unsafe_allow_html=True)
         my_loans_only = st.checkbox("My loans", key="pipeline_myloans")
     st.markdown('</div></div>', unsafe_allow_html=True)
@@ -10013,6 +10186,10 @@ def show_pricing_page():
     st.title("Pricing")
     st.caption("Simple beta pricing while Processor Assistant is still early-access.")
 
+    # Remind shoppers what they're paying for before the price card.
+    render_feature_highlights(heading=True)
+    st.markdown('<div style="height:18px"></div>', unsafe_allow_html=True)
+
     _lo, _mid, _ro = st.columns([1, 2, 1])
     with _mid:
         st.markdown(
@@ -12638,6 +12815,8 @@ def main():
         page = st.session_state.page
         if page == "dashboard":
             show_dashboard()
+        elif page == "overview":
+            show_overview_page()
         elif page == "pipeline":
             show_pipeline()
         elif page == "team":
