@@ -2355,9 +2355,10 @@ def _render_trial_gate(profile: dict) -> None:
         """
         Your 14-day beta trial has ended. To keep using Processor Assistant, start the beta plan.
 
-        Beta is **$49/mo** with a 14-day free trial.
+        Beta is **$49/mo** with a 14-day free trial. **No credit card needed for the free trial.**
         """
     )
+    render_no_credit_card_banner()
     st.link_button("Start Beta Plan", "https://buy.stripe.com/bJe7sLdx87xM6mtaOSdfG00", type="primary")
 
     st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
@@ -3490,6 +3491,135 @@ def render_feature_highlights(heading: bool = True):
     )
 
 
+def render_no_credit_card_banner() -> None:
+    st.markdown(
+        """
+        <div style="margin:10px 0 12px 0;padding:13px 16px;border-radius:10px;
+             background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.45);
+             text-align:center;">
+          <div style="font-size:20px;font-weight:900;color:#86efac;letter-spacing:0.8px;
+               text-transform:uppercase;line-height:1.15;">
+            No Credit Card Needed
+          </div>
+          <div style="font-size:12px;font-weight:700;color:#dcfce7;margin-top:3px;
+               text-transform:uppercase;letter-spacing:0.4px;">
+            Start the free trial without entering payment info
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def render_onboarding_checklist() -> None:
+    try:
+        from crm import get_all_loans as _get_onboarding_loans
+        loan_count = len(_visible_account_loans(_get_onboarding_loans()))
+    except Exception:
+        loan_count = 0
+    has_ai_key = bool(st.session_state.get("sandbox_mode") or st.session_state.get("user_gemini_api_key"))
+    has_scans = bool(st.session_state.get("scan_batches") or _recent_scan_history())
+
+    steps = [
+        {
+            "title": "Set up AI key",
+            "detail": "Enable document reading and condition extraction.",
+            "done": has_ai_key,
+            "button": "Set Up Key",
+            "key": "onboard_ai_key",
+            "action": "ai_key",
+        },
+        {
+            "title": "Scan a loan document",
+            "detail": "Upload a PDF and let the scanner identify the file.",
+            "done": has_scans,
+            "button": "Open Scanner",
+            "key": "onboard_scanner",
+            "action": "scanner",
+        },
+        {
+            "title": "Review your pipeline",
+            "detail": "Open the live pipeline and check loan status.",
+            "done": loan_count > 0,
+            "button": "View Pipeline",
+            "key": "onboard_pipeline",
+            "action": "pipeline",
+        },
+        {
+            "title": "Bulk import existing loans",
+            "detail": "Bring in a CSV or JSON export from your old pipeline.",
+            "done": bool(st.session_state.get("onboarding_bulk_import_seen")),
+            "button": "Open Bulk Import",
+            "key": "onboard_bulk_import",
+            "action": "bulk_import",
+        },
+    ]
+    done_count = sum(1 for step in steps if step["done"])
+
+    st.markdown(
+        f"""
+        <div style="margin:14px 0 10px 0;padding:12px 14px;background:#161b2b;
+             border:1px solid #334155;border-radius:8px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
+            <div>
+              <div style="font-size:16px;font-weight:900;color:#ffffff;">Quick Start Checklist</div>
+              <div style="font-size:12px;color:#94a3b8;margin-top:2px;">
+                Click through these steps to get Processor Assistant ready for daily use.
+              </div>
+            </div>
+            <div style="font-size:13px;font-weight:800;color:#3b82f6;white-space:nowrap;">
+              {done_count}/{len(steps)} complete
+            </div>
+          </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+    for idx, step in enumerate(steps, start=1):
+        c1, c2 = st.columns([4.2, 1.2])
+        status = "Done" if step["done"] else "Next"
+        color = "#22c55e" if step["done"] else "#3b82f6"
+        marker = "OK" if step["done"] else str(idx)
+        with c1:
+            st.markdown(
+                f"""
+                <div style="min-height:54px;padding:9px 12px;margin-bottom:5px;
+                     background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);
+                     border-radius:7px;display:flex;align-items:center;gap:11px;">
+                  <div style="width:28px;height:28px;border-radius:999px;background:{color};
+                       color:#ffffff;font-size:12px;font-weight:900;display:flex;
+                       align-items:center;justify-content:center;flex-shrink:0;">
+                    {marker}
+                  </div>
+                  <div style="min-width:0;">
+                    <div style="font-size:13px;font-weight:800;color:#ffffff;">{step["title"]}</div>
+                    <div style="font-size:11px;color:#94a3b8;margin-top:2px;">{step["detail"]}</div>
+                  </div>
+                  <div style="margin-left:auto;font-size:10px;font-weight:900;color:{color};
+                       text-transform:uppercase;letter-spacing:0.6px;">{status}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with c2:
+            if st.button(step["button"], key=step["key"], use_container_width=True,
+                         type="primary" if not step["done"] else "secondary"):
+                if step["action"] == "ai_key":
+                    st.session_state.pop("gemini_onboarding_skipped", None)
+                    st.session_state["gemini_onboarding_step"] = 1
+                elif step["action"] == "scanner":
+                    st.session_state.page = "dashboard"
+                elif step["action"] == "pipeline":
+                    st.session_state.page = "pipeline"
+                elif step["action"] == "bulk_import":
+                    st.session_state.page = "pipeline"
+                    st.session_state.pipeline_import_open = True
+                    st.session_state.onboarding_bulk_import_seen = True
+                _save_session()
+                st.rerun()
+
+
 def show_overview_page():
     """Post-login landing that reuses the same value-prop highlights."""
     _user = st.session_state.get("user_name", "") or "there"
@@ -3500,6 +3630,8 @@ def show_overview_page():
         f'Here\'s what you can do with Processor Assistant.</div>',
         unsafe_allow_html=True,
     )
+    render_no_credit_card_banner()
+    render_onboarding_checklist()
     render_feature_highlights(heading=False)
     _c1, _c2, _c3 = st.columns([1, 1, 1])
     with _c1:
@@ -3597,6 +3729,7 @@ def show_login_page():
 
     # Product highlights so visitors see what it does before signing in.
     render_feature_highlights(heading=False)
+    render_no_credit_card_banner()
     st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
 
     if _env_truthy("PA_SHOW_SANDBOX", "0"):
@@ -3812,7 +3945,6 @@ def show_sidebar():
         _nav_btn("Overview", "overview")
         _nav_btn("Scanner",  "dashboard")
         _nav_btn("Pipeline", "pipeline")
-        _nav_btn("Bulk Import", "pipeline_import")
         _nav_btn("Pricing",  "pricing")
 
         # â•â•â•â•â•â•â•â•â•â•â• WORKSPACE: Reader / Email Watch / Team / Billing â•â•â•â•â•â•â•â•
@@ -4053,6 +4185,14 @@ def show_dashboard():
             '</div>',
             unsafe_allow_html=True,
         )
+
+    _scan_shortcut_left, _scan_shortcut_right = st.columns([4, 1.35])
+    with _scan_shortcut_right:
+        if st.button("Bulk Pipeline Import", key="scanner_bulk_pipeline_import",
+                     use_container_width=True, type="primary"):
+            st.session_state.page = "pipeline"
+            st.session_state.pipeline_import_open = True
+            st.rerun()
 
     if _recent_scans:
         with st.expander(f"Recent Scans ({len(_recent_scans)} saved for 7 days)", expanded=False):
@@ -6402,8 +6542,6 @@ def _pipeline_import_template_csv() -> str:
 def show_pipeline():
     """Color-coded CRM loan pipeline dashboard."""
     import os
-    if st.session_state.get("page") == "pipeline_import":
-        st.session_state.pipeline_import_open = True
     # Handle dash header chip click set status filter from query param
     _qp = st.query_params
     _qp_filter = _qp.get("pipefilter", "")
@@ -6434,12 +6572,12 @@ def show_pipeline():
 
     # â”€â”€ Top action bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.markdown('<div class="pa-pipe-controls">', unsafe_allow_html=True)
-    tb1, tb2, tb3, tb4, tb5, tb6 = st.columns([1.25, 1.25, 1.9, 2.4, 1.8, 1.0])
+    tb1, tb2, tb3, tb4, tb5, tb6 = st.columns([1.15, 1.75, 1.8, 2.35, 1.7, 1.0])
     with tb1:
         if st.button("+Add Loan", use_container_width=True, type="primary"):
             st.session_state.pipeline_add_open = not st.session_state.get("pipeline_add_open", False)
     with tb2:
-        if st.button("Import", use_container_width=True):
+        if st.button("Bulk Import CSV/JSON", use_container_width=True, type="primary"):
             st.session_state.pipeline_import_open = not st.session_state.get("pipeline_import_open", False)
     with tb3:
         _opts = ["All"] + STATUS_OPTIONS
@@ -10301,6 +10439,7 @@ def show_pricing_page():
 
     # Remind shoppers what they're paying for before the price card.
     render_feature_highlights(heading=True)
+    render_no_credit_card_banner()
     st.markdown('<div style="height:18px"></div>', unsafe_allow_html=True)
 
     _lo, _mid, _ro = st.columns([1, 2, 1])
@@ -10313,6 +10452,9 @@ def show_pricing_page():
               <div style="font-size:24px;font-weight:900;color:#fff;margin-top:6px;">Beta</div>
               <div style="font-size:34px;font-weight:900;color:#fff;margin:10px 0;">$49<span style="font-size:14px;color:#9ca3af;">/mo</span></div>
               <div style="font-size:13px;color:#d1d5db;">Includes a 14-day free trial.</div>
+              <div style="font-size:18px;font-weight:900;color:#86efac;margin-top:8px;text-transform:uppercase;">
+                No Credit Card Needed
+              </div>
               <hr style="border-color:rgba(255,255,255,0.08);margin:16px 0;">
               <div style="font-size:13px;color:#e5e7eb;line-height:1.7;">
                 Scanner, pipeline, recent scan history, saved non-sensitive loan data, and user account settings.
@@ -12930,7 +13072,7 @@ def main():
             show_dashboard()
         elif page == "overview":
             show_overview_page()
-        elif page in ("pipeline", "pipeline_import"):
+        elif page == "pipeline":
             show_pipeline()
         elif page == "team":
             show_team_page()
