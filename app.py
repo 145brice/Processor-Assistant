@@ -1884,6 +1884,7 @@ DEFAULTS = {
     "reader_open_file": None,
     "reader_page": 1,
     "pipeline_add_open": False,
+    "pipeline_import_open": False,
     "scroll_to": None,
     "dti_income": 0.0,
     "dti_debt": 0.0,
@@ -3406,8 +3407,10 @@ def render_feature_highlights(heading: bool = True):
             '<div style="text-align:center;margin:4px 0 14px 0;">'
             '<div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.4px;">'
             'What Processor Assistant does</div>'
-            '<div style="font-size:12px;color:#9ca3af;margin-top:4px;">'
-            'Built for mortgage processors — read, write, and move loans faster.</div>'
+            '<div style="font-size:14px;font-weight:700;color:#3b82f6;margin-top:5px;">'
+            'Made for processors, built by processors.</div>'
+            '<div style="font-size:12px;color:#9ca3af;margin-top:3px;">'
+            'Read, write, and move loans faster.</div>'
             '</div>',
             unsafe_allow_html=True,
         )
@@ -3567,7 +3570,10 @@ def show_login_page():
       <div style="font-size:22px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;line-height:1.1;">
         Processor Assistant
       </div>
-      <div style="font-size:11px;color:#9ca3af;margin-top:5px;letter-spacing:0.3px;">
+      <div style="font-size:14px;font-weight:700;color:#3b82f6;margin-top:7px;letter-spacing:0.2px;">
+        Made for processors, built by processors.
+      </div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:4px;letter-spacing:0.3px;">
         ONLINE MORTGAGE PROCESSING
       </div>
     </div>
@@ -6456,6 +6462,94 @@ def show_pipeline():
         st.markdown('<div class="pa-myloans-toggle">', unsafe_allow_html=True)
         my_loans_only = st.checkbox("My loans", key="pipeline_myloans")
     st.markdown('</div></div>', unsafe_allow_html=True)
+
+    if st.session_state.get("pipeline_import_open"):
+        with st.container(border=True):
+            st.markdown(
+                '<span style="font-size:14px;font-weight:700;color:#ffffff;">Bulk Pipeline Import</span>',
+                unsafe_allow_html=True,
+            )
+            st.caption("Import a CSV spreadsheet or exported pipeline JSON. Existing loans are matched by Loan #.")
+
+            im1, im2, im3 = st.columns([2.2, 1.4, 1.0])
+            with im1:
+                import_file = st.file_uploader(
+                    "Pipeline import file",
+                    type=["csv", "json"],
+                    key="pipeline_import_file",
+                    label_visibility="collapsed",
+                )
+            with im2:
+                import_mode_label = st.selectbox(
+                    "Duplicates",
+                    ["Skip matching loan numbers", "Update matching loan numbers"],
+                    key="pipeline_import_mode",
+                    label_visibility="collapsed",
+                )
+            with im3:
+                st.download_button(
+                    "CSV Template",
+                    _pipeline_import_template_csv(),
+                    file_name="pipeline_import_template.csv",
+                    mime="text/csv",
+                    use_container_width=True,
+                    key="pipeline_import_template",
+                )
+
+            import_rows = []
+            import_errors = []
+            if import_file:
+                import_rows, import_errors = _parse_pipeline_import_upload(import_file)
+                if import_errors:
+                    for err in import_errors[:5]:
+                        st.warning(err)
+                if import_rows:
+                    st.markdown(
+                        f'<div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);'
+                        f'border-radius:8px;padding:8px 12px;margin:4px 0;font-size:12px;color:#bfdbfe;">'
+                        f'Ready to import <b>{len(import_rows)}</b> loan row(s). Previewing the first 5 below.</div>',
+                        unsafe_allow_html=True,
+                    )
+                    st.dataframe(import_rows[:5], use_container_width=True, hide_index=True)
+
+            ia1, ia2, ia3 = st.columns([1.2, 1.2, 3])
+            with ia1:
+                if st.button("Run Import", key="pipeline_import_run", type="primary",
+                             use_container_width=True, disabled=not bool(import_rows)):
+                    strategy = "update" if import_mode_label.startswith("Update") else "skip"
+                    assigned_default = my_name if my_name in user_names else ""
+                    result = bulk_import_loans(
+                        import_rows,
+                        duplicate_strategy=strategy,
+                        created_by=my_name,
+                        assigned_to=assigned_default,
+                    )
+                    if result.get("added") or result.get("updated"):
+                        for loan_id in result.get("imported_ids", []):
+                            log_activity(
+                                loan_id,
+                                "bulk_import",
+                                f"Imported by pipeline migration ({strategy})",
+                                user=my_name,
+                            )
+                    st.session_state["pipeline_import_result"] = result
+                    st.rerun()
+            with ia2:
+                if st.button("Close Import", key="pipeline_import_close", use_container_width=True):
+                    st.session_state.pipeline_import_open = False
+                    st.session_state.pop("pipeline_import_result", None)
+                    st.rerun()
+
+            import_result = st.session_state.get("pipeline_import_result")
+            if import_result:
+                st.success(
+                    f'Import complete: {import_result.get("added", 0)} added, '
+                    f'{import_result.get("updated", 0)} updated, '
+                    f'{import_result.get("skipped", 0)} skipped, '
+                    f'{import_result.get("failed", 0)} failed.'
+                )
+                if import_result.get("errors"):
+                    st.warning(" | ".join(import_result["errors"][:5]))
 
     # â”€â”€ Add Loan form â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if st.session_state.get("pipeline_add_open"):
