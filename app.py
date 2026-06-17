@@ -1911,28 +1911,27 @@ _AUTH_KEYS = [
 
 
 def _browser_session_id() -> str:
-    """Stable browser id stored in URL query params for deploy-safe restores."""
-    sid = ""
-    try:
-        sid = str(st.query_params.get("pa_sid", "") or "").strip()
-    except Exception:
-        sid = ""
+    """Ephemeral per-tab session id. Never store auth/session ids in shareable URLs."""
+    sid = str(st.session_state.get("_browser_session_id") or "").strip()
     if sid:
         return sid
-    sid = secrets.token_urlsafe(24)
     try:
-        st.query_params["pa_sid"] = sid
+        if st.query_params.get("pa_sid", ""):
+            del st.query_params["pa_sid"]
     except Exception:
         pass
+    sid = secrets.token_urlsafe(24)
+    st.session_state["_browser_session_id"] = sid
     return sid
 
 def _save_session():
     _data = {k: st.session_state.get(k) for k in _AUTH_KEYS}
-    try:
-        with open(_SESSION_FILE, "w") as _f:
-            _json_auth.dump(_data, _f)
-    except Exception:
-        pass
+    if str(os.getenv("PA_ENABLE_LOCAL_SESSION_CACHE", "0")).strip().lower() in {"1", "true", "yes", "on"}:
+        try:
+            with open(_SESSION_FILE, "w") as _f:
+                _json_auth.dump(_data, _f)
+        except Exception:
+            pass
     try:
         if _data.get("authenticated") and not _is_owner_admin_email(str(_data.get("user_email") or "")):
             import supabase_auth as _sa
@@ -1965,7 +1964,7 @@ for key, val in DEFAULTS.items():
     if key not in st.session_state:
         st.session_state[key] = val
 
-# Restore from session file if not yet authenticated
+# Restore from saved session if not yet authenticated
 if not st.session_state.get("authenticated"):
     try:
         import supabase_auth as _sa
@@ -1978,15 +1977,16 @@ if not st.session_state.get("authenticated"):
     except Exception:
         pass
 
-    try:
-        if os.path.exists(_SESSION_FILE):
-            with open(_SESSION_FILE) as _f:
-                _cached = _json_auth.load(_f)
-            if _cached.get("authenticated") and _cached.get("user_id"):
-                for _k, _v in _cached.items():
-                    st.session_state[_k] = _v
-    except Exception:
-        pass
+    if str(os.getenv("PA_ENABLE_LOCAL_SESSION_CACHE", "0")).strip().lower() in {"1", "true", "yes", "on"}:
+        try:
+            if os.path.exists(_SESSION_FILE):
+                with open(_SESSION_FILE) as _f:
+                    _cached = _json_auth.load(_f)
+                if _cached.get("authenticated") and _cached.get("user_id"):
+                    for _k, _v in _cached.items():
+                        st.session_state[_k] = _v
+        except Exception:
+            pass
 
 
 def _env_truthy(name: str, default: str = "1") -> bool:
