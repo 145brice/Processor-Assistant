@@ -428,6 +428,29 @@ body a[kind="primary"][href] * {
 [data-testid="stFileUploader"] { background: rgba(255,255,255,0.02) !important; border: 1.5px dashed rgba(59,130,246,0.3) !important; border-radius: 14px !important; padding: 8px !important; transition: all 0.18s ease-in-out !important; }
 [data-testid="stFileUploader"]:hover { border-color: rgba(59,130,246,0.6) !important; background: rgba(59,130,246,0.04) !important; box-shadow: 0 0 24px rgba(59,130,246,0.12) !important; }
 [data-testid="stFileUploader"] section { background: transparent !important; }
+.pa-feature-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin: 10px 0 8px 0;
+    overflow: visible;
+}
+.pa-feature-chip {
+    display: inline-flex !important;
+    align-items: center;
+    min-height: 24px;
+    box-sizing: border-box;
+    font-size: 11px !important;
+    line-height: 1 !important;
+    color: #cbd5e1 !important;
+    background: rgba(148,163,184,0.12);
+    border: 1px solid rgba(148,163,184,0.22);
+    border-radius: 999px;
+    padding: 4px 11px;
+    white-space: nowrap;
+    vertical-align: middle;
+}
 [data-testid="stFileUploader"] button { background: rgba(59,130,246,0.08) !important; border: 1px solid rgba(59,130,246,0.3) !important; color: #3b82f6 !important; }
 [data-testid="stFileUploader"] small, [data-testid="stFileUploader"] span, [data-testid="stFileUploader"] p { color: #6b7280 !important; }
 [data-testid="stFileUploaderFile"] { background: rgba(255,255,255,0.03) !important; border: 1px solid rgba(255,255,255,0.08) !important; }
@@ -3556,17 +3579,12 @@ def render_feature_highlights(heading: bool = True):
             </div>
           </div>
         </div>
-        <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:10px 0 4px 0;">
-          <span style="font-size:11px;color:#cbd5e1;background:rgba(148,163,184,0.12);
-                border:1px solid rgba(148,163,184,0.22);border-radius:999px;padding:4px 11px;">Pipeline tracking</span>
-          <span style="font-size:11px;color:#cbd5e1;background:rgba(148,163,184,0.12);
-                border:1px solid rgba(148,163,184,0.22);border-radius:999px;padding:4px 11px;">Auto data entry</span>
-          <span style="font-size:11px;color:#cbd5e1;background:rgba(148,163,184,0.12);
-                border:1px solid rgba(148,163,184,0.22);border-radius:999px;padding:4px 11px;">Compliance checks</span>
-          <span style="font-size:11px;color:#cbd5e1;background:rgba(148,163,184,0.12);
-                border:1px solid rgba(148,163,184,0.22);border-radius:999px;padding:4px 11px;">Doc expiry tracking</span>
-          <span style="font-size:11px;color:#cbd5e1;background:rgba(148,163,184,0.12);
-                border:1px solid rgba(148,163,184,0.22);border-radius:999px;padding:4px 11px;">Closing package prep</span>
+        <div class="pa-feature-chip-row">
+          <span class="pa-feature-chip">Pipeline tracking</span>
+          <span class="pa-feature-chip">Auto data entry</span>
+          <span class="pa-feature-chip">Compliance checks</span>
+          <span class="pa-feature-chip">Doc expiry tracking</span>
+          <span class="pa-feature-chip">Closing package prep</span>
         </div>
         """,
         unsafe_allow_html=True,
