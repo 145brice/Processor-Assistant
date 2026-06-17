@@ -3605,6 +3605,9 @@ def render_no_credit_card_banner() -> None:
                text-transform:uppercase;letter-spacing:0.4px;">
             Try Processor Assistant before the beta plan starts
           </div>
+          <div style="font-size:11px;font-weight:600;color:#bbf7d0;margin-top:3px;">
+            No credit card needed
+          </div>
         </div>
         """,
         unsafe_allow_html=True,
@@ -10583,6 +10586,9 @@ def show_pricing_page():
               <div style="font-size:13px;color:#d1d5db;">Start with a 14-day free trial.</div>
               <div style="font-size:18px;font-weight:900;color:#86efac;margin-top:8px;text-transform:uppercase;">
                 Try it free first
+              </div>
+              <div style="font-size:11px;font-weight:600;color:#bbf7d0;margin-top:3px;">
+                No credit card needed
               </div>
               <hr style="border-color:rgba(255,255,255,0.08);margin:16px 0;">
               <div style="font-size:13px;color:#e5e7eb;line-height:1.7;">
