@@ -663,63 +663,102 @@ def clear_browser_session(session_id: str) -> dict:
 
 
 def get_user_presence_counts(active_window_minutes: int = 15) -> dict:
-    """Return all-time unique users plus 'active now' based on last_seen_at."""
+    """Return all-time unique users plus 'active now' from profiles/sessions."""
     try:
         api_key = _service_key() or _public_key()
         if not _supabase_url() or not api_key:
             return {"ok": False, "error": "Supabase not configured.", "total_users": 0, "active_now": 0}
 
-        params = urllib.parse.urlencode({
-            "key": "like.user_profile:%",
-            "select": "key,value_json",
-        })
-        url = f"{_supabase_url()}/rest/v1/settings?{params}"
-        result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
-        if not result.get("ok"):
-            return {"ok": False, "error": _settings_table_error(result.get("data") or {}), "total_users": 0, "active_now": 0}
+        def _fetch_rows(prefix: str) -> tuple[list, dict]:
+            params = urllib.parse.urlencode({
+                "key": f"like.{prefix}:%",
+                "select": "key,value_json",
+            })
+            url = f"{_supabase_url()}/rest/v1/settings?{params}"
+            result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
+            return (result.get("data") or [], result)
 
-        rows = result.get("data") or []
+        profile_rows, profile_result = _fetch_rows("user_profile")
+        if not profile_result.get("ok"):
+            return {"ok": False, "error": _settings_table_error(profile_result.get("data") or {}), "total_users": 0, "active_now": 0}
+        session_rows, session_result = _fetch_rows("browser_session")
+        if not session_result.get("ok"):
+            session_rows = []
+
         now = datetime.now(timezone.utc)
         cutoff_seconds = max(1, int(active_window_minutes)) * 60
-        total_users = 0
-        active_now = 0
-        unique_keys = set()
-        unique_emails = set()
+        active_identities = set()
+        profile_identities = set()
+        session_identities = set()
 
-        for row in rows:
-            key = str(row.get("key", ""))
-            if not key.startswith("user_profile:"):
-                continue
-            total_users += 1
-            unique_keys.add(key.removeprefix("user_profile:"))
+        def _payload(row: dict) -> dict:
             raw = row.get("value_json") or {}
             if isinstance(raw, str):
                 try:
                     raw = json.loads(raw)
                 except Exception:
                     raw = {}
-            if not isinstance(raw, dict):
+            return raw if isinstance(raw, dict) else {}
+
+        def _identity(raw: dict, fallback: str = "") -> str:
+            email = str(raw.get("email") or raw.get("google_email") or raw.get("user_email") or "").strip().lower()
+            if email:
+                return f"email:{email}"
+            user_key = str(raw.get("user_key") or raw.get("supabase_user_id") or raw.get("user_id") or "").strip()
+            if user_key:
+                return f"user:{user_key}"
+            fallback = str(fallback or "").strip()
+            return f"key:{fallback}" if fallback else ""
+
+        def _is_recent(raw: dict, field_names: tuple[str, ...]) -> bool:
+            for field_name in field_names:
+                timestamp = str(raw.get(field_name) or "").strip()
+                if not timestamp:
+                    continue
+                try:
+                    seen_at = datetime.fromisoformat(timestamp.replace("Z", "+00:00"))
+                    if seen_at.tzinfo is None:
+                        seen_at = seen_at.replace(tzinfo=timezone.utc)
+                    return (now - seen_at).total_seconds() <= cutoff_seconds
+                except Exception:
+                    continue
+            return False
+
+        for row in profile_rows:
+            key = str(row.get("key", ""))
+            if not key.startswith("user_profile:"):
                 continue
-            _email = str(raw.get("email") or raw.get("google_email") or "").strip().lower()
-            if _email:
-                unique_emails.add(_email)
-            last_seen = str(raw.get("last_seen_at") or "").strip()
-            if not last_seen:
+            raw = _payload(row)
+            identity = _identity(raw, key.removeprefix("user_profile:"))
+            if not identity:
                 continue
-            try:
-                seen_at = datetime.fromisoformat(last_seen.replace("Z", "+00:00"))
-                if seen_at.tzinfo is None:
-                    seen_at = seen_at.replace(tzinfo=timezone.utc)
-                if (now - seen_at).total_seconds() <= cutoff_seconds:
-                    active_now += 1
-            except Exception:
+            profile_identities.add(identity)
+            if _is_recent(raw, ("last_seen_at", "saved_at")):
+                active_identities.add(identity)
+
+        for row in session_rows:
+            key = str(row.get("key", ""))
+            if not key.startswith("browser_session:"):
                 continue
+            raw = _payload(row)
+            if not raw.get("authenticated"):
+                continue
+            identity = _identity(raw, key.removeprefix("browser_session:"))
+            if not identity:
+                continue
+            session_identities.add(identity)
+            if _is_recent(raw, ("saved_at", "last_seen_at")):
+                active_identities.add(identity)
+
+        all_identities = profile_identities | session_identities
 
         return {
             "ok": True,
-            "total_users": total_users,
-            "all_time_unique_users": len(unique_keys) or len(unique_emails) or total_users,
-            "active_now": active_now,
+            "total_users": len(all_identities),
+            "all_time_unique_users": len(all_identities),
+            "profile_users": len(profile_identities),
+            "session_users": len(session_identities),
+            "active_now": len(active_identities),
             "window_minutes": int(active_window_minutes),
         }
     except Exception as e:
