@@ -8,6 +8,7 @@ Spaced out processing to be easy on the CPU.
 import re
 import time
 import io
+import os
 from pypdf import PdfReader
 
 
