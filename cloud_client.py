@@ -1155,10 +1155,11 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
 
 def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes, api_key_override: str = "") -> tuple[str, str, str]:
     """
-    Compatibility wrapper that never uploads PDF bytes.
+    Extract approval-letter conditions.
 
-    Text and condition extraction happen locally; only sanitized condition rows
-    may be sent to the configured cloud model.
+    Default path (PA_PDF_VISION on) sends the PDF to Gemini's vision for the most
+    complete extraction. If PA_PDF_VISION is false, or vision is unavailable/errors,
+    it falls back to the privacy-safe path: local OCR -> redact -> sanitized text.
     Returns: (pipe_delimited_conditions, log_line, text_hint)
 
     api_key_override: if provided, uses this key directly (bypasses cloud_config).
@@ -1167,35 +1168,34 @@ def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes, api_key_override: 
     try:
         import ai_engine
         text = ai_engine.extract_text_from_pdf(pdf_bytes)
-    except Exception as e:
-        return "", _log("SCRIPT", "approval_pdf_extract", f"Local PDF read failed: {str(e)[:80]}"), ""
-    if len(text.strip()) < 50:
-        return "", _log("PRIVACY BLOCK", "approval_pdf_extract", "Image-only PDF; local OCR required"), ""
-    # De-noise: multi-page approval sheets repeat the loan-summary header on every
-    # page, burying the conditions. Strip the repeats before extraction so the
-    # model sees dense condition text. Keep the original text for loan matching.
-    clean_text = _strip_repeated_boilerplate(text)
-    local_conditions = ai_engine.extract_conditions(clean_text, "Approval Letter")
-    if not local_conditions.strip():
-        return "", _log("SCRIPT", "approval_pdf_extract", "No local condition rows found"), text[:12000]
-    _, local_only_replacements, _ = redact_for_cloud(clean_text)
-    conditions, log = enhance_conditions(
-        clean_text,
-        "Approval Letter",
-        local_conditions,
-        known_values=local_only_replacements.values(),
-    )
-    return conditions, log, text[:12000]
+    except Exception:
+        text = ""
 
-    # Legacy inline-PDF implementation retained below for reference only.
-    # It is unreachable because document bytes must never leave the machine.
+    def _local_text_path() -> tuple[str, str, str]:
+        # Privacy-safe path: redact locally and send only sanitized text. Used as
+        # the fallback whenever PDF vision is disabled or unavailable.
+        if len(text.strip()) < 50:
+            return "", _log("PRIVACY BLOCK", "approval_pdf_extract", "Image-only PDF; local OCR required"), ""
+        clean_text = _strip_repeated_boilerplate(text)
+        local_conditions = ai_engine.extract_conditions(clean_text, "Approval Letter")
+        if not local_conditions.strip():
+            return "", _log("SCRIPT", "approval_pdf_extract", "No local condition rows found"), text[:12000]
+        _, repl, _ = redact_for_cloud(clean_text)
+        conds, lg = enhance_conditions(
+            clean_text, "Approval Letter", local_conditions, known_values=repl.values())
+        return conds, lg, text[:12000]
+
+    # PDF vision reads dense approval sheets far better than redacted OCR text,
+    # but it sends the PDF to the cloud model. Controlled by PA_PDF_VISION
+    # (default on); set it to false to force the privacy-safe local-text path.
+    _pdf_vision_on = (os.getenv("PA_PDF_VISION", "true").strip().lower() in ("1", "true", "yes", "on"))
     if api_key_override:
         provider = "gemini"
     else:
         cfg = get_config()
-        if not cfg.get("enabled") or not cfg.get("api_key"):
-            return "", _log("SCRIPT", "approval_pdf_extract", "No Gemini key available"), ""
         provider = cfg.get("provider", DEFAULT_PROVIDER)
+    if not _pdf_vision_on:
+        return _local_text_path()
     system = (
         "You are a precise mortgage processor reading underwriting approval letters. "
         "You extract every single numbered condition exactly as written in the PDF — "
@@ -1276,7 +1276,7 @@ Skip these (do NOT output rows for them):
             api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or ""
             model = DEFAULT_MODELS["gemini"]
         if not api_key:
-            return "", _log("SCRIPT", "approval_pdf_extract", "Gemini key missing for PDF OCR fallback"), ""
+            return _local_text_path()
 
         payload = json.dumps({
             "system_instruction": {"parts": [{"text": system}]},
@@ -1302,10 +1302,13 @@ Skip these (do NOT output rows for them):
         txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
         valid = _parse_approval_condition_rows(txt)
         conditions = "\n".join(valid)
+        if not valid:
+            # Vision returned nothing usable - fall back to the privacy text path.
+            return _local_text_path()
         _note = f"gemini - {model}" if provider == "gemini" else f"gemini_fallback - {model}"
         return conditions, _log("CLOUD", "approval_pdf_extract", f"{len(valid)} conditions - {_note}"), txt[:12000]
-    except Exception as e:
-        return "", _log("SCRIPT", "approval_pdf_extract", _friendly_cloud_error(e)), ""
+    except Exception:
+        return _local_text_path()
 
 
 def _parse_approval_condition_rows(text: str) -> list[str]:
