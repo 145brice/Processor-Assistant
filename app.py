@@ -711,8 +711,8 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 .scan-scroll .cond-row { display:flex; align-items:center; gap:6px; padding:3px 0; border-bottom:1px dashed rgba(255,255,255,0.06); }
 .scan-scroll .cond-num { color:#3b82f6; font-weight:800; font-size:11px; min-width:22px; }
 .scan-scroll .cond-desc { color:#e5e7eb; font-size:12px; line-height:1.35; flex:1; }
-.scan-scroll .pa-section { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.6px; margin:6px 0 2px 0; }
-.scan-scroll .pa-needs-list {
+.scan-scroll .pa-section, .pa-section { font-size:10px; font-weight:700; color:#9ca3af; text-transform:uppercase; letter-spacing:0.6px; margin:6px 0 2px 0; }
+.scan-scroll .pa-needs-list, .pa-needs-list {
     margin: 4px 0 12px 0;
     padding: 8px 10px;
     border: 1px solid rgba(59,130,246,0.16);
@@ -720,7 +720,7 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     border-radius: 8px;
     background: rgba(15,23,42,0.34);
 }
-.scan-scroll .pa-need-row {
+.scan-scroll .pa-need-row, .pa-need-row {
     display: flex;
     align-items: flex-start;
     gap: 7px;
@@ -729,9 +729,9 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     font-size: 12.5px;
     line-height: 1.42;
 }
-.scan-scroll .pa-need-bullet { color: #94a3b8; font-weight: 800; line-height: 1.45; }
-.scan-scroll .pa-need-subject { color: #ffffff; font-weight: 700; font-size: inherit; line-height: inherit; }
-.scan-scroll .pa-need-body { color: #dbeafe; font-weight: 500; }
+.scan-scroll .pa-need-bullet, .pa-need-bullet { color: #60a5fa; font-weight: 900; line-height: 1.45; }
+.scan-scroll .pa-need-subject, .pa-need-subject { color: #ffffff; font-weight: 750; font-size: inherit; line-height: inherit; }
+.scan-scroll .pa-need-body, .pa-need-body { color: #dbeafe; font-weight: 500; }
 /* Guide-button panel: dark theme override so the publisher buttons aren't
    blinding white. */
 .pa-guide-btns + div a[data-testid="stBaseLinkButton-secondary"],
@@ -823,7 +823,7 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
     padding: 3px 8px !important;
     margin-bottom: 3px !important;
 }
-.scan-scroll .pa-need-status {
+.scan-scroll .pa-need-status, .pa-need-status {
     display: inline-block;
     margin-left: 7px;
     padding: 1px 5px;
@@ -2705,6 +2705,32 @@ def _infer_condition_party(desc: str) -> str:
 
 def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
     """Convert extractor output into UI condition rows."""
+    def _clean_desc(value: str) -> str:
+        text = " ".join(str(value or "").split()).strip(" -*\t")
+        text = re.sub(r"(?i)\s*\b(?:Needed|Requested|Cleared|Waived)\s*$", "", text).strip()
+        # Remove lender condition codes when the same code/title was repeated
+        # on both sides of a separator by PDF text extraction.
+        repeated = re.match(
+            r"^([A-Z0-9-]{5,})\s+(.{5,90}?)\s*-\s*\1\s+\2\b(.*)$",
+            text,
+            flags=re.I,
+        )
+        if repeated:
+            text = f"{repeated.group(2)}{repeated.group(3)}".strip()
+        text = re.sub(r"^[A-Z0-9-]{5,}\s+(?=(?:Debts?|Payoff|Assets?|Income|Credit)\b)", "", text, flags=re.I)
+        return re.sub(r"\s+", " ", text).strip(" -.;")
+
+    def _is_extractor_chrome(value: str) -> bool:
+        low = str(value or "").strip().lower()
+        return (
+            not low
+            or low in {"condition", "responsible", "status", "-----------"}
+            or "condition(s) extracted from document" in low
+            or "each row above is actual text" in low
+            or "select conditions below to draft emails" in low
+            or low.startswith("| # | condition")
+        )
+
     rows = []
     if isinstance(raw_conditions, list):
         source = raw_conditions
@@ -2736,18 +2762,18 @@ def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
                         "confidence": parts[4] if len(parts) >= 5 else "",
                     })
                 continue
-            cleaned = line.strip(" -*\t")
-            if cleaned and "No specific conditions found" not in cleaned:
+            cleaned = _clean_desc(line)
+            if cleaned and not _is_extractor_chrome(cleaned) and "No specific conditions found" not in cleaned:
                 source.append({"desc": cleaned})
     else:
         source = []
 
     for idx, item in enumerate(source):
         cond = dict(item) if isinstance(item, dict) else {"desc": str(item)}
-        desc = (cond.get("desc") or cond.get("description") or "").strip()
-        if not desc or desc.lower() in {"condition", "-----------"}:
+        desc = _clean_desc(cond.get("desc") or cond.get("description") or "")
+        if _is_extractor_chrome(desc):
             continue
-        cond["num"] = str(cond.get("num") or idx + 1)
+        cond["num"] = str(len(rows) + 1)
         cond["desc"] = desc
         _override_parties = _condition_override_parties(desc)
         if _override_parties:
@@ -3025,6 +3051,9 @@ def _to_client_language(desc: str, party: str = "Borrower") -> str:
     if ("vom" in low) or ("verification of mortgage" in low):
         return "Please share contact information for your current or previous mortgage company so we can send the required form."
 
+    if "debt" in low and any(k in low for k in ("paid directly", "paid at closing", "from proceeds")):
+        return "Please provide the payoff statement for the listed account so it can be paid at closing."
+
     if ("please sign" in low) and ("attached" in low):
         return "Please sign the attached form(s) and return them."
 
@@ -3077,6 +3106,7 @@ def _client_need_subject(desc: str) -> str:
         ("Invoice", ["invoice"]),
         ("Tax Bill", ["tax bill"]),
         ("Payoff", ["payoff"]),
+        ("Debt Payoff", ["debts to be paid", "debt to be paid", "paid directly from proceeds"]),
         ("Verification of Mortgage", ["verification of mortgage", " vom"]),
     ]
     for subject, needles in topic_rules:
@@ -5417,16 +5447,16 @@ def show_dashboard():
                         st.session_state[_plain_sig_key] = _plain_sig
 
                     if st.session_state.get(_summary_sig_key) != _plain_sig:
-                        _gem_key = st.session_state.get("user_gemini_api_key", "")
-                        with st.spinner("Summarizing conditions..."):
-                            try:
-                                import cloud_client as _cc_sum
-                                _summarized, _sum_log = _cc_sum.translate_conditions_to_summarized(_originals, api_key_override=_gem_key)
-                                st.session_state[_summary_map_key] = dict(zip(_originals, _summarized))
-                                st.session_state[_summary_sig_key] = _plain_sig
-                            except Exception as _se:
-                                st.warning(f"Could not summarize: {_se}")
-                                st.session_state[_summary_map_key] = {}
+                        # Local scans stay local. Build the polished summary from
+                        # deterministic wording instead of silently calling Gemini.
+                        st.session_state[_summary_map_key] = {
+                            original: (
+                                f"**{_client_need_subject(original)}** - "
+                                f"{_client_need_item(original, 'Borrower')[1]}"
+                            )
+                            for original in _originals
+                        }
+                        st.session_state[_summary_sig_key] = _plain_sig
 
                     def _needs_status_label(_raw_status: str) -> str:
                         s = str(_raw_status or "").strip().lower()
