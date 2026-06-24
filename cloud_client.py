@@ -549,30 +549,47 @@ def enhance_conditions(text: str, doc_type: str,
         "educated inference from a new or unclear format, label it Best Guess. Never "
         "invent conditions that are not present in the document."
     )
-    prompt = f"""Review this {doc_type} and the conditions a script already extracted.
+    prompt = f"""Extract EVERY underwriting condition from this {doc_type}.
+
+The DOCUMENT below is the source of truth. The SCRIPT-EXTRACTED list is only a
+partial hint - it routinely MISSES conditions, so never limit yourself to it.
 
 DOCUMENT (first 24000 chars):
 {safe_text[:24000]}
 
-SCRIPT-EXTRACTED CONDITIONS:
+SCRIPT-EXTRACTED CONDITIONS (partial hint only - expect to find more):
 {safe_conditions[:4000]}
 
-Your job:
-1. Keep all valid conditions from the script list
-2. Add any conditions the script missed
-3. Fix any descriptions that are vague or truncated
-4. Assign the correct responsible party for each
-5. For approval letters, keep each chronological numbered condition as ONE row.
-   If item 1 has wrapped/detail lines under it, combine those lines into item 1.
-   Do not split wrapped details into extra conditions or extra checkboxes.
-6. Preserve the whole condition text. Do not shorten it.
-7. Mark confidence as High Confidence for clear lender condition rows, or Best Guess when the format is unclear.
-8. Treat HOI/homeowner/hazard insurance items as Borrower tasks; the borrower should provide their current insurance agent/contact, especially for HOI invoices.
-9. Treat Real Estate Certification/FHA Amendatory Clause items as Borrower-facing even though buyers, sellers, and agents all sign.
-10. Treat Final Seller/Selling Disclosure items as Borrower-facing because they come from the sale of the borrower's current home.
-11. Include every Borrower/Client condition section, even if the rows are not numbered.
-12. Do not drop borrower rows that begin with "Borrower to provide", "Borrower must", "Buyer to provide", or "All borrowers must".
-13. Closing Disclosure routing: seller CD / sale-of-current-home CD goes to Borrower; subject-property CD, initial CD, final CD, preliminary CD, or full title package request goes to Title.
+How conditions appear (lenders use hundreds of different layouts):
+- Rows are often tagged with a signoff/code column: S = Prior to Submission,
+  A = Final Approval/Approved, C = Prior to Closing, F = Prior to Funding,
+  P = Post-Close/Shipping (some lenders use PTA / PTD / PTF / PTP instead).
+  EVERY row carrying such a code is a separate condition.
+- Conditions may be numbered, lettered, bulleted, or written as standalone
+  requirement paragraphs under a section header (Final Approval, Prior to Closing,
+  Prior to Funding, etc.).
+- The code/number is sometimes printed AFTER the condition text or in its own
+  column - match each requirement to its text regardless of where the code sits.
+
+Rules:
+1. Read the ENTIRE document top to bottom - every section, every page. A typical
+   approval letter has 10-30 conditions. If you are about to return only a few,
+   you have missed many: scan again before answering.
+2. Output one row per distinct requirement. Fold wrapped/detail lines (sub-items
+   "1.", "2.", indented detail, and dated status notes like "01/24 - ...") INTO
+   their parent condition's row - do not split them into separate conditions.
+3. Include internal / underwriter / processor / funding conditions too - route
+   them to the correct party rather than dropping them.
+4. Preserve the full condition wording. Do not shorten or paraphrase.
+5. Mark High Confidence for clear condition rows, Best Guess when the format is unclear.
+6. Treat HOI / homeowner / hazard insurance items as Borrower tasks; the borrower
+   provides their current insurance agent/contact.
+7. Treat Real Estate Certification / FHA Amendatory Clause items as Borrower-facing.
+8. Treat Final Seller/Selling Disclosure and any sale-of-current-home items as Borrower-facing.
+9. Closing Disclosure routing: seller CD / sale-of-current-home CD goes to Borrower;
+   subject-property CD, initial/final/preliminary CD, or full title package goes to Title.
+10. Do not drop rows beginning with "Borrower to provide/must", "Buyer to provide",
+    "Provide", "Please provide", or "All borrowers must".
 
 Return ONLY the conditions - no intro text, no headers, no explanations.
 Use this exact pipe-delimited format, one condition per line:
