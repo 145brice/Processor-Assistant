@@ -5569,10 +5569,21 @@ def show_dashboard():
                     }
 
                     def _is_title_need_condition(_c) -> bool:
+                        # Borrower-facing items belong only on the Client tab, even if
+                        # they also carry a Title tag.
+                        if _is_client_need_condition(_c):
+                            return False
                         return "Title" in _scan_sections_for_condition(_c)
 
                     def _is_other_third_party_condition(_c) -> bool:
-                        return bool(set(_scan_sections_for_condition(_c)) & _THIRD_PARTY_SECTIONS)
+                        # Exclude anything already routed to Client or Title so the
+                        # three tabs stay mutually exclusive.
+                        if _is_client_need_condition(_c):
+                            return False
+                        _secs = set(_scan_sections_for_condition(_c))
+                        if "Title" in _secs:
+                            return False
+                        return bool(_secs & _THIRD_PARTY_SECTIONS)
 
                     def _other_party_audience(_c) -> str:
                         for _p in _scan_sections_for_condition(_c):
