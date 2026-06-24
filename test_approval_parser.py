@@ -1,4 +1,5 @@
 import unittest
+from unittest.mock import Mock, patch
 
 import ai_engine
 
@@ -46,6 +47,24 @@ class ApprovalParserTests(unittest.TestCase):
         self.assertEqual(len(rows), 12)
         self.assertIn("Income Documentation", result)
         self.assertIn("Government ID", result)
+
+    def test_force_ocr_prefers_text_with_more_condition_signals(self):
+        embedded = "3365-4-4-59 Debts to be paid directly from proceeds."
+        ocr = " ".join(APPROVAL_WITH_NUMERIC_CODES.split())
+
+        fake_page = Mock()
+        fake_page.extract_text.return_value = embedded
+        fake_reader = Mock()
+        fake_reader.pages = [fake_page]
+
+        with (
+            patch.object(ai_engine, "PdfReader", return_value=fake_reader),
+            patch.object(ai_engine, "_extract_text_with_local_ocr", return_value=ocr),
+            patch.object(ai_engine.time, "sleep"),
+        ):
+            selected = ai_engine.extract_text_from_pdf(b"pdf", force_ocr=True)
+
+        self.assertEqual(selected, ocr)
 
 
 if __name__ == "__main__":

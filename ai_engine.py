@@ -16,8 +16,22 @@ from pypdf import PdfReader
 # PDF Text Extraction (in memory, never saved to disk)
 # ---------------------------------------------------------------------------
 
-def extract_text_from_pdf(pdf_bytes: bytes) -> str:
-    """Extract text locally from PDF bytes, with optional local OCR fallback."""
+def _approval_text_score(text: str) -> int:
+    """Estimate how useful extracted text is for approval-condition parsing."""
+    value = str(text or "")
+    numeric_codes = len(re.findall(r'(?<!\d)\d{3,7}(?:-\d{1,5}){2,7}(?!\d)', value))
+    lender_codes = len(re.findall(r'\bW[A-Z]{2}\d{2}\b', value))
+    numbered = len(re.findall(r'(?m)^\s*\d{1,3}[\.)\:]\s+\S', value))
+    condition_words = len(re.findall(
+        r'(?i)\b(?:condition|provide|payoff|appraisal|insurance|title|income|asset|'
+        r'employment|credit|closing|statement|document)\b',
+        value,
+    ))
+    return (numeric_codes * 100) + (lender_codes * 80) + (numbered * 25) + condition_words
+
+
+def extract_text_from_pdf(pdf_bytes: bytes, *, force_ocr: bool = False) -> str:
+    """Extract text locally, optionally comparing every page against local OCR."""
     reader = PdfReader(io.BytesIO(pdf_bytes))
     text = ""
     for page in reader.pages:
@@ -26,10 +40,15 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
             text += page_text + "\n"
         time.sleep(0.05)  # gentle pause per page - no CPU spike
     text = text.strip()
-    if len(text) >= 50:
+    if len(text) >= 50 and not force_ocr:
         return text
     ocr_text = _extract_text_with_local_ocr(pdf_bytes)
-    return ocr_text.strip() or text
+    ocr_text = ocr_text.strip()
+    if not ocr_text:
+        return text
+    if force_ocr:
+        return ocr_text if _approval_text_score(ocr_text) > _approval_text_score(text) else text
+    return ocr_text or text
 
 
 def _extract_text_with_local_ocr(pdf_bytes: bytes) -> str:
@@ -5124,7 +5143,10 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         user_history: Optional user history for context
         user_approved_cloud: If True, allows cloud AI augmentation for cloud-enabled doc types
     """
-    text = extract_text_from_pdf(pdf_bytes)
+    text = extract_text_from_pdf(
+        pdf_bytes,
+        force_ocr=doc_type in {"Approval Letter", "Purchase Contract"},
+    )
 
     # Image-based (scanned) PDFs — for certain doc types we can still succeed
     # with a stub result so the file is logged in the pipeline rather than erroring.
