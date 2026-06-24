@@ -19,6 +19,46 @@ ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY") or os.getenv("CLAUDE_API_KEY"
 DEFAULT_GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 DEFAULT_CLAUDE_MODEL = os.getenv("CLAUDE_MODEL", "claude-sonnet-4-5")
 
+# Optional Vertex AI routing for Zero Data Retention / enterprise data terms.
+# When VERTEX_PROJECT is set and GEMINI_USE_VERTEX is truthy, Gemini calls go to
+# Vertex (service-account auth) instead of the public Developer API. Bodies match.
+VERTEX_PROJECT = (os.getenv("VERTEX_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT") or "").strip()
+VERTEX_LOCATION = (os.getenv("VERTEX_LOCATION") or "us-central1").strip()
+_USE_VERTEX = bool(VERTEX_PROJECT and (os.getenv("GEMINI_USE_VERTEX") or "").strip().lower()
+                   in ("1", "true", "yes", "on"))
+_vertex_token_cache: Dict[str, Any] = {"token": "", "exp": 0.0}
+
+
+def _vertex_access_token() -> str:
+    """Cached OAuth token from Application Default Credentials for Vertex AI."""
+    import time
+    if _vertex_token_cache["token"] and _vertex_token_cache["exp"] - 60 > time.time():
+        return _vertex_token_cache["token"]
+    import google.auth
+    from google.auth.transport.requests import Request as _GoogleAuthRequest
+    creds, _ = google.auth.default(
+        scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    creds.refresh(_GoogleAuthRequest())
+    _vertex_token_cache["token"] = creds.token
+    _vertex_token_cache["exp"] = creds.expiry.timestamp() if creds.expiry else time.time() + 3000
+    return creds.token
+
+
+def _gemini_target(model: str) -> tuple:
+    """Return (url, headers) for a Gemini-format request, routed to Vertex when
+    configured, otherwise the public Developer API."""
+    if _USE_VERTEX:
+        url = (
+            f"https://{VERTEX_LOCATION}-aiplatform.googleapis.com/v1/projects/{VERTEX_PROJECT}"
+            f"/locations/{VERTEX_LOCATION}/publishers/google/models/{model}:generateContent"
+        )
+        return url, {"Authorization": f"Bearer {_vertex_access_token()}"}
+    url = (
+        f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent"
+        f"?key={GEMINI_API_KEY}"
+    )
+    return url, {}
+
 app = FastAPI(
     title="Processor Language API",
     version="1.0.0",
@@ -172,55 +212,52 @@ def enforce_and_record_usage(customer_id: str, endpoint: str, plan: str) -> Dict
 
 
 async def call_gemini_extract_conditions(pdf_bytes: bytes) -> Dict[str, Any]:
-    if not GEMINI_API_KEY:
+    import ai_engine
+    import cloud_client
+
+    text = ai_engine.extract_text_from_pdf(pdf_bytes)
+    if len(text.strip()) < 50:
         return {
             "conditions": [],
             "confidence": 0.0,
-            "notes": "GEMINI_API_KEY is not configured",
+            "notes": "Local OCR could not read the PDF; document bytes were not uploaded.",
         }
+    local_conditions = ai_engine.extract_conditions(text, "Approval Letter")
+    if not local_conditions.strip():
+        return {"conditions": [], "confidence": 0.0, "notes": "Local parser found no conditions."}
 
-    encoded = base64.b64encode(pdf_bytes).decode("utf-8")
-    prompt = (
-        "Extract underwriting/approval conditions from this mortgage document. "
-        "Return strict JSON: {\"conditions\": [string], \"confidence\": number, \"notes\": string}."
+    from privacy_filter import redact_for_cloud
+    _, local_only_replacements, _ = redact_for_cloud(text)
+    enhanced, log = cloud_client.enhance_conditions(
+        local_conditions,
+        "Approval Letter",
+        local_conditions,
+        known_values=local_only_replacements.values(),
     )
-
-    url = (
-        f"https://generativelanguage.googleapis.com/v1beta/models/{DEFAULT_GEMINI_MODEL}:generateContent"
-        f"?key={GEMINI_API_KEY}"
-    )
-
-    payload = {
-        "contents": [
-            {
-                "parts": [
-                    {"text": prompt},
-                    {"inline_data": {"mime_type": "application/pdf", "data": encoded}},
-                ]
-            }
-        ],
-        "generationConfig": {"responseMimeType": "application/json"},
+    conditions = [
+        line.strip()
+        for line in enhanced.splitlines()
+        if line.strip().startswith("|")
+    ]
+    return {
+        "conditions": conditions,
+        "confidence": 1.0 if conditions else 0.0,
+        "notes": f"PDF processed locally; cloud received sanitized condition rows only. {log}",
     }
-
-    async with httpx.AsyncClient(timeout=60) as client:
-        resp = await client.post(url, json=payload)
-    if resp.status_code >= 400:
-        return {"conditions": [], "confidence": 0.0, "notes": f"Gemini error: {resp.text[:200]}"}
-
-    data = resp.json()
-    text = (
-        data.get("candidates", [{}])[0]
-        .get("content", {})
-        .get("parts", [{}])[0]
-        .get("text", "{}")
-    )
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        return {"conditions": [], "confidence": 0.0, "notes": "Gemini returned non-JSON content"}
 
 
 async def call_claude_translate(condition_text: str, audience: str) -> Dict[str, Any]:
+    from privacy_filter import redact_for_cloud, require_cloud_safe
+
+    safe_condition, _, leaks = redact_for_cloud(condition_text)
+    if leaks:
+        return {
+            "rewritten_condition": condition_text,
+            "audience": audience,
+            "readability": "unknown",
+            "notes": "Privacy gate blocked cloud translation: " + ", ".join(leaks),
+        }
+    require_cloud_safe(safe_condition)
     if not ANTHROPIC_API_KEY:
         return {
             "rewritten_condition": condition_text,
@@ -232,7 +269,7 @@ async def call_claude_translate(condition_text: str, audience: str) -> Dict[str,
     system = "You rewrite mortgage conditions so non-underwriters can understand them."
     user = (
         f"Rewrite this condition for a {audience}. Return strict JSON with keys "
-        f"rewritten_condition, audience, readability, notes.\nCondition: {condition_text}"
+        f"rewritten_condition, audience, readability, notes.\nCondition: {safe_condition}"
     )
     headers = {
         "x-api-key": ANTHROPIC_API_KEY,

@@ -21,6 +21,8 @@ import urllib.error
 import time
 from datetime import datetime
 
+from privacy_filter import redact_for_cloud, require_cloud_safe
+
 _APP_DIR  = os.path.dirname(os.path.abspath(__file__))
 _CFG_FILE = os.path.join(_APP_DIR, "cloud_config.json")
 _LOG_FILE = os.path.join(_APP_DIR, "cloud_log.txt")
@@ -35,6 +37,50 @@ DEFAULT_MODELS = {
 CLAUDE_ENDPOINT  = "https://api.anthropic.com/v1/messages"
 OPENAI_ENDPOINT  = "https://api.openai.com/v1/chat/completions"
 GEMINI_ENDPOINT  = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Vertex AI routing (optional, for Zero Data Retention / enterprise data terms)
+#
+# When VERTEX_PROJECT is set AND GEMINI_USE_VERTEX is truthy, every Gemini-format
+# request is sent to Vertex AI (service-account auth) instead of the public
+# Developer API (?key=). The request/response bodies are identical, so only the
+# URL and auth header change. With ZDR approved on the project, this path retains
+# no prompt/response data. If the env vars are unset, behavior is unchanged.
+# ─────────────────────────────────────────────────────────────────────────────
+VERTEX_PROJECT  = (os.getenv("VERTEX_PROJECT") or os.getenv("GOOGLE_CLOUD_PROJECT") or "").strip()
+VERTEX_LOCATION = (os.getenv("VERTEX_LOCATION") or "us-central1").strip()
+_USE_VERTEX     = bool(VERTEX_PROJECT and (os.getenv("GEMINI_USE_VERTEX") or "").strip().lower()
+                       in ("1", "true", "yes", "on"))
+VERTEX_ENDPOINT = ("https://{loc}-aiplatform.googleapis.com/v1/projects/{proj}"
+                   "/locations/{loc}/publishers/google/models/{model}:generateContent")
+
+_vertex_token_cache = {"token": "", "exp": 0.0}
+
+
+def _vertex_access_token() -> str:
+    """Return a cached OAuth access token for Vertex from Application Default
+    Credentials (service account JSON via GOOGLE_APPLICATION_CREDENTIALS, or the
+    attached service account on GCP/Railway). Cached until ~1 min before expiry."""
+    if _vertex_token_cache["token"] and _vertex_token_cache["exp"] - 60 > time.time():
+        return _vertex_token_cache["token"]
+    import google.auth  # lazy import; only needed on the Vertex path
+    from google.auth.transport.requests import Request as _GoogleAuthRequest
+    creds, _ = google.auth.default(
+        scopes=["https://www.googleapis.com/auth/cloud-platform"])
+    creds.refresh(_GoogleAuthRequest())
+    _vertex_token_cache["token"] = creds.token
+    _vertex_token_cache["exp"] = creds.expiry.timestamp() if creds.expiry else time.time() + 3000
+    return creds.token
+
+
+def _gemini_target(model: str, api_key: str) -> tuple[str, dict]:
+    """Return (url, headers) for a Gemini-format request, routed to Vertex AI
+    when configured, otherwise the public Developer API. Bodies are identical."""
+    if _USE_VERTEX:
+        url = VERTEX_ENDPOINT.format(loc=VERTEX_LOCATION, proj=VERTEX_PROJECT, model=model)
+        return url, {"Content-Type": "application/json",
+                     "Authorization": f"Bearer {_vertex_access_token()}"}
+    return GEMINI_ENDPOINT.format(model=model, key=api_key), {"Content-Type": "application/json"}
 
 
 def _parse_ai_json(text: str) -> dict:
@@ -335,10 +381,10 @@ def _generate_gemini(prompt: str, system: str, model: str,
         "contents": [{"parts": [{"text": full_prompt}]}],
         "generationConfig": _gen_cfg,
     }).encode("utf-8")
-    url = GEMINI_ENDPOINT.format(model=model, key=api_key)
+    url, _gem_headers = _gemini_target(model, api_key)
     req = urllib.request.Request(
         url, data=payload,
-        headers={"Content-Type": "application/json"},
+        headers=_gem_headers,
         method="POST",
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -435,10 +481,28 @@ def clear_log():
 # ─────────────────────────────────────────────────────────────────────────────
 
 def enhance_conditions(text: str, doc_type: str,
-                       script_conditions: str) -> tuple[str, str]:
+                       script_conditions: str,
+                       known_values=None) -> tuple[str, str]:
     cfg = get_config()
     if not cfg.get("enabled") or not cfg.get("api_key"):
         return script_conditions, _log("SCRIPT", "condition_extraction", "Cloud disabled")
+
+    safe_text, text_replacements, text_leaks = redact_for_cloud(
+        text,
+        known_values=known_values,
+    )
+    safe_conditions, _, condition_leaks = redact_for_cloud(
+        script_conditions,
+        known_values=list(known_values or []) + list(text_replacements.values()),
+    )
+    leaks = sorted(set(text_leaks + condition_leaks))
+    if leaks:
+        return script_conditions, _log("PRIVACY BLOCK", "condition_extraction", ", ".join(leaks))
+    try:
+        require_cloud_safe(safe_text)
+        require_cloud_safe(safe_conditions)
+    except ValueError as e:
+        return script_conditions, _log("PRIVACY BLOCK", "condition_extraction", str(e))
 
     system = (
         "You are an expert mortgage condition parser. Extract only real lender "
@@ -450,10 +514,10 @@ def enhance_conditions(text: str, doc_type: str,
     prompt = f"""Review this {doc_type} and the conditions a script already extracted.
 
 DOCUMENT (first 5000 chars):
-{text[:5000]}
+{safe_text[:5000]}
 
 SCRIPT-EXTRACTED CONDITIONS:
-{script_conditions[:3000]}
+{safe_conditions[:3000]}
 
 Your job:
 1. Keep all valid conditions from the script list
@@ -502,7 +566,7 @@ Confidence options: High Confidence, Best Guess"""
                 else:
                     renumbered.append(ln)
             result = "\n".join(renumbered)
-            log = _log("CLOUD", "condition_extraction",
+            log = _log("CLOUD-SANITIZED", "condition_extraction",
                        f"{len(valid)} conditions  {provider}  {cfg.get('model')}")
             return result, log
         else:
@@ -804,10 +868,10 @@ def chat(messages: list[dict], system: str = "") -> str:
             "contents": _gem_contents,
             "generationConfig": {"maxOutputTokens": 1024, "temperature": 0.3},
         }).encode("utf-8")
-        url = GEMINI_ENDPOINT.format(model=model, key=api_key)
+        url, _gem_headers = _gemini_target(model, api_key)
         req = urllib.request.Request(
             url, data=payload,
-            headers={"Content-Type": "application/json"},
+            headers=_gem_headers,
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
@@ -844,58 +908,61 @@ def chat(messages: list[dict], system: str = "") -> str:
 
 def extract_purchase_contract_ai(raw_text: str) -> tuple[dict, str]:
     """
-    Use cloud AI to extract purchase contract fields from any state form.
+    Use cloud AI only to normalize already-redacted contract terms.
+
+    Identifying fields are removed locally before any network request.
     Returns (extracted_dict, log_line).
     """
     cfg = get_config()
     if not cfg.get("enabled") or not cfg.get("api_key"):
         return {}, _log("SCRIPT", "pc_extract", "Cloud disabled")
 
-    # Send the full document — modern Claude handles 100k+ tokens easily.
-    # Truncate only if absurdly large (> 80k chars ≈ 20k tokens).
-    full_text = raw_text if len(raw_text) <= 80000 else raw_text[:80000]
+    sanitized, _, leaks = redact_for_cloud(raw_text)
+    if leaks:
+        return {}, _log("PRIVACY BLOCK", "pc_extract", ", ".join(leaks))
+    try:
+        require_cloud_safe(sanitized)
+    except ValueError as e:
+        return {}, _log("PRIVACY BLOCK", "pc_extract", str(e))
+    if not sanitized.strip():
+        return {}, _log("SCRIPT", "pc_extract", "No safe contract terms to send")
+    safe_text = sanitized[:16000]
 
     system = (
-        "You analyze residential purchase contracts and return a structured JSON "
-        "object. Output only valid JSON — no markdown fences, no commentary."
+        "You normalize de-identified residential purchase-contract clauses. "
+        "Never infer or invent identities, addresses, exact amounts, exact dates, "
+        "or contact details. Preserve every bracketed redaction placeholder. "
+        "Output only valid JSON with no markdown or commentary."
     )
-    # User's chat prompt that worked perfectly, wrapped to return JSON instead of prose.
-    prompt = f"""Please analyze this purchase contract and extract the following information:
+    prompt = f"""Review only the sanitized contract language below.
 
-- Purchase Price
-- Property Address
-- Closing Date
-- Listing Agent Name (separate the name, brokerage, phone, email)
-- Selling Agent Name (separate the name, brokerage, phone, email)
-- Title Company
-- Buyer Name(s)
-- Seller Name(s)
-- Earnest Money Deposit
-- Down Payment Amount
-- Loan Amount
-- Any special conditions or contingencies
+Return valid JSON in exactly this shape:
+{{
+  "contingencies": {{"inspection": "", "appraisal": "", "financing": ""}},
+  "addendums": [],
+  "special_conditions": []
+}}
 
-Return the results as valid JSON in EXACTLY this shape (use empty string "" for any
-field genuinely not present in the document):
+Rules:
+- Rewrite clauses clearly without changing their legal meaning.
+- Keep bracketed placeholders exactly as written.
+- Do not identify any person, company, property, or transaction.
+- Do not reconstruct redacted amounts, dates, addresses, or identifiers.
+- Use an empty value when the sanitized text does not support an answer.
 
-{_PC_JSON_TEMPLATE}
-
-For amounts use digits only ("474500"). For dates keep the format you find ("MM/DD/YYYY"
-or "Month DD, YYYY"). Never put a phone number or email in a name field.
-
-CONTRACT TEXT:
-{full_text}"""
+SANITIZED CONTRACT LANGUAGE:
+{safe_text}"""
 
     try:
         provider = cfg.get("provider", DEFAULT_PROVIDER)
         response = _generate(prompt, system, provider, cfg["api_key"], cfg["model"])
-        import json as _json
         data = _parse_ai_json(response)
-
-        # Post-process: filter out obvious boilerplate in extracted values
-        data = _clean_extracted_contract_data(data)
-
-        log = _log("CLOUD", "pc_extract", f"{provider}  {cfg.get('model')}")
+        data = {
+            "contingencies": data.get("contingencies", {}),
+            "addendums": data.get("addendums", []),
+            "special_conditions": data.get("special_conditions", []),
+        }
+        log = _log("CLOUD-SANITIZED", "pc_extract", f"{provider}  {cfg.get('model')}")
         return data, log
     except Exception as e:
         return {}, _log("SCRIPT", "pc_extract", f"Cloud error: {str(e)[:80]}")
@@ -903,10 +970,25 @@ CONTRACT TEXT:
 
 def extract_purchase_contract_ai_from_pdf(pdf_bytes: bytes) -> tuple[dict, str, str]:
     """
-    OCR + extraction path for scanned/image-only Purchase Contracts.
-    Uses Gemini inline PDF understanding to return structured JSON directly.
+    Compatibility wrapper that never uploads PDF bytes.
+
+    Text extraction is local. Image-only PDFs require a local OCR installation.
     Returns: (extracted_dict, log_line, ocr_text_hint)
     """
+    try:
+        import ai_engine
+        text = ai_engine.extract_text_from_pdf(pdf_bytes)
+    except Exception as e:
+        return {}, _log("SCRIPT", "pc_pdf_extract", f"Local PDF read failed: {str(e)[:80]}"), ""
+    if len(text.strip()) < 50:
+        return {}, _log("PRIVACY BLOCK", "pc_pdf_extract", "Image-only PDF; local OCR required"), ""
+    local_data = ai_engine.extract_purchase_contract(text)
+    safe_terms = ai_engine.build_purchase_contract_cloud_text(local_data)
+    ai_terms, log = extract_purchase_contract_ai(safe_terms)
+    return ai_engine._merge_pc_data(local_data, ai_terms), log, text
+
+    # Legacy inline-PDF implementation retained below for reference only.
+    # It is unreachable because document bytes must never leave the machine.
     cfg = get_config()
     if not cfg.get("enabled") or not cfg.get("api_key"):
         return {}, _log("SCRIPT", "pc_pdf_extract", "Cloud disabled"), ""
@@ -966,10 +1048,10 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
                 "responseMimeType": "application/json",
             },
         }).encode("utf-8")
-        url = GEMINI_ENDPOINT.format(model=model, key=api_key)
+        url, _gem_headers = _gemini_target(model, api_key)
         req = urllib.request.Request(
             url, data=payload,
-            headers={"Content-Type": "application/json"},
+            headers=_gem_headers,
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=60) as resp:
@@ -984,12 +1066,36 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
 
 def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes, api_key_override: str = "") -> tuple[str, str, str]:
     """
-    OCR + extraction path for Approval Letters via Gemini inline PDF understanding.
+    Compatibility wrapper that never uploads PDF bytes.
+
+    Text and condition extraction happen locally; only sanitized condition rows
+    may be sent to the configured cloud model.
     Returns: (pipe_delimited_conditions, log_line, text_hint)
 
     api_key_override: if provided, uses this key directly (bypasses cloud_config).
     Caller passes the user's onboarding Gemini API key.
     """
+    try:
+        import ai_engine
+        text = ai_engine.extract_text_from_pdf(pdf_bytes)
+    except Exception as e:
+        return "", _log("SCRIPT", "approval_pdf_extract", f"Local PDF read failed: {str(e)[:80]}"), ""
+    if len(text.strip()) < 50:
+        return "", _log("PRIVACY BLOCK", "approval_pdf_extract", "Image-only PDF; local OCR required"), ""
+    local_conditions = ai_engine.extract_conditions(text, "Approval Letter")
+    if not local_conditions.strip():
+        return "", _log("SCRIPT", "approval_pdf_extract", "No local condition rows found"), text[:12000]
+    _, local_only_replacements, _ = redact_for_cloud(text)
+    conditions, log = enhance_conditions(
+        local_conditions,
+        "Approval Letter",
+        local_conditions,
+        known_values=local_only_replacements.values(),
+    )
+    return conditions, log, text[:12000]
+
+    # Legacy inline-PDF implementation retained below for reference only.
+    # It is unreachable because document bytes must never leave the machine.
     if api_key_override:
         provider = "gemini"
     else:
@@ -1092,10 +1198,10 @@ Skip these (do NOT output rows for them):
                 "maxOutputTokens": 8192,
             },
         }).encode("utf-8")
-        url = GEMINI_ENDPOINT.format(model=model, key=api_key)
+        url, _gem_headers = _gemini_target(model, api_key)
         req = urllib.request.Request(
             url, data=payload,
-            headers={"Content-Type": "application/json"},
+            headers=_gem_headers,
             method="POST",
         )
         with urllib.request.urlopen(req, timeout=75) as resp:
@@ -1211,9 +1317,9 @@ def translate_conditions_to_plain(descriptions: list[str], api_key_override: str
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {"temperature": 0.2, "maxOutputTokens": 8192},
         }).encode("utf-8")
-        url = GEMINI_ENDPOINT.format(model=model, key=api_key)
+        url, _gem_headers = _gemini_target(model, api_key)
         req = urllib.request.Request(url, data=payload,
-                                     headers={"Content-Type": "application/json"},
+                                     headers=_gem_headers,
                                      method="POST")
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
@@ -1308,9 +1414,9 @@ def translate_conditions_to_summarized(descriptions: list[str], api_key_override
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {"temperature": 0.2, "maxOutputTokens": 8192},
         }).encode("utf-8")
-        url = GEMINI_ENDPOINT.format(model=model, key=api_key)
+        url, _gem_headers = _gemini_target(model, api_key)
         req = urllib.request.Request(url, data=payload,
-                                     headers={"Content-Type": "application/json"},
+                                     headers=_gem_headers,
                                      method="POST")
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))

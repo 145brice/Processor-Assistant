@@ -8,3 +8,11 @@ cryptography
 
 fastapi
 uvicorn[standard]
+
+# Optional: only needed when GEMINI_USE_VERTEX is enabled (Vertex AI / ZDR path).
+google-auth
+
+# Optional local OCR path for scanned PDFs. Tesseract desktop must also be installed.
+pymupdf
+pytesseract
+Pillow

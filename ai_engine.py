@@ -17,7 +17,7 @@ from pypdf import PdfReader
 # ---------------------------------------------------------------------------
 
 def extract_text_from_pdf(pdf_bytes: bytes) -> str:
-    """Extract text from PDF bytes in memory. 2-sec pause per page to stay light."""
+    """Extract text locally from PDF bytes, with optional local OCR fallback."""
     reader = PdfReader(io.BytesIO(pdf_bytes))
     text = ""
     for page in reader.pages:
@@ -25,7 +25,52 @@ def extract_text_from_pdf(pdf_bytes: bytes) -> str:
         if page_text:
             text += page_text + "\n"
         time.sleep(0.05)  # gentle pause per page - no CPU spike
-    return text.strip()
+    text = text.strip()
+    if len(text) >= 50:
+        return text
+    ocr_text = _extract_text_with_local_ocr(pdf_bytes)
+    return ocr_text.strip() or text
+
+
+def _extract_text_with_local_ocr(pdf_bytes: bytes) -> str:
+    """OCR image-only PDFs locally when PyMuPDF, Pillow, and Tesseract exist."""
+    try:
+        import fitz
+        import pytesseract
+        from PIL import Image
+    except Exception:
+        return ""
+
+    configured_cmd = str(os.getenv("TESSERACT_CMD") or "").strip()
+    candidates = [
+        configured_cmd,
+        r"C:\Program Files\Tesseract-OCR\tesseract.exe",
+        r"C:\Program Files (x86)\Tesseract-OCR\tesseract.exe",
+        os.path.join(
+            os.getenv("LOCALAPPDATA", ""),
+            "Programs",
+            "Tesseract-OCR",
+            "tesseract.exe",
+        ),
+    ]
+    for candidate in candidates:
+        if candidate and os.path.isfile(candidate):
+            pytesseract.pytesseract.tesseract_cmd = candidate
+            break
+
+    pages = []
+    try:
+        document = fitz.open(stream=pdf_bytes, filetype="pdf")
+        for page in document:
+            pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
+            image = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
+            page_text = pytesseract.image_to_string(image)
+            if page_text:
+                pages.append(page_text)
+        document.close()
+    except Exception:
+        return ""
+    return "\n".join(pages)
 
 
 # ---------------------------------------------------------------------------
@@ -4914,6 +4959,36 @@ def _merge_pc_data(regex_data: dict, ai_data: dict) -> dict:
     return merged
 
 
+def build_purchase_contract_cloud_text(local_data: dict) -> str:
+    """Build the minimum de-identified contract summary allowed to reach cloud AI."""
+    transaction = local_data.get("transaction", {}) if isinstance(local_data, dict) else {}
+    contingencies = local_data.get("contingencies", {}) if isinstance(local_data, dict) else {}
+    addendums = local_data.get("addendums", []) if isinstance(local_data, dict) else []
+
+    lines = ["DE-IDENTIFIED PURCHASE CONTRACT TERMS"]
+    placeholder_fields = [
+        ("purchase_price", "Purchase price", "[PURCHASE_PRICE]"),
+        ("closing_date", "Closing date", "[CLOSING_DATE]"),
+        ("earnest_money", "Earnest money", "[EARNEST_MONEY]"),
+        ("down_payment", "Down payment", "[DOWN_PAYMENT]"),
+        ("seller_concessions", "Seller concessions", "[SELLER_CONCESSIONS]"),
+    ]
+    for key, label, placeholder in placeholder_fields:
+        if transaction.get(key):
+            lines.append(f"{label}: {placeholder}")
+
+    for key in ("inspection", "appraisal", "financing"):
+        value = contingencies.get(key)
+        if value:
+            lines.append(f"{key.title()} contingency: {value}")
+
+    for item in addendums:
+        if str(item or "").strip():
+            lines.append(f"Addendum: {str(item).strip()}")
+
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------------------
 # Main Processing Function
 # ---------------------------------------------------------------------------
@@ -4949,7 +5024,6 @@ def _user_gemini_key() -> str:
 def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_approved_cloud: bool = False) -> dict:
     """
     Main processing function. Takes PDF bytes, returns structured results.
-    For Approval Letters: ALWAYS uses Gemini (no local regex fallback).
     PDF is only held in memory for processing.
 
     Args:
@@ -4958,50 +5032,6 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         user_history: Optional user history for context
         user_approved_cloud: If True, allows cloud AI augmentation for cloud-enabled doc types
     """
-    # Approval Letters: always route through Gemini (handles both text + scanned PDFs)
-    if doc_type == "Approval Letter":
-        _gem_key = _user_gemini_key()
-        if not _gem_key:
-            return {
-                "success": False,
-                "error": "Approval Letter scanning needs a Gemini API key. Add one in onboarding or settings.",
-                "conditions": "",
-                "risks": "",
-                "text_length": 0,
-            }
-        try:
-            import cloud_client as _cc
-            _pdf_conditions, _pdf_ai_log, _pdf_text = _cc.extract_approval_conditions_ai_from_pdf(pdf_bytes, api_key_override=_gem_key)
-            if _pdf_conditions:
-                return {
-                    "success": True,
-                    "text_length": len(_pdf_text or ""),
-                    "doc_type": doc_type,
-                    "bank_rules": "",
-                    "conditions": _pdf_conditions,
-                    "extracted_data": {},
-                    "raw_text": (_pdf_text or "")[:12000],
-                    "ai_log": _pdf_ai_log,
-                    "image_only": False,
-                    "ocr_via_cloud": True,
-                }
-            return {
-                "success": False,
-                "error": f"Gemini did not return any conditions. {_pdf_ai_log}",
-                "conditions": "",
-                "risks": "",
-                "text_length": 0,
-                "ai_log": _pdf_ai_log,
-            }
-        except Exception as e:
-            return {
-                "success": False,
-                "error": f"Gemini extraction failed: {e}",
-                "conditions": "",
-                "risks": "",
-                "text_length": 0,
-            }
-
     text = extract_text_from_pdf(pdf_bytes)
 
     # Image-based (scanned) PDFs — for certain doc types we can still succeed
@@ -5011,6 +5041,18 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         "Government ID", "Appraisal", "Purchase Contract",
     }
     if not text or len(text.strip()) < 50:
+        if doc_type in {"Purchase Contract", "Approval Letter"}:
+            return {
+                "success": False,
+                "error": (
+                    f"{doc_type} is image-only and local OCR could not read it. "
+                    "Install Tesseract OCR locally; the PDF will not be sent to cloud AI."
+                ),
+                "conditions": "",
+                "risks": "",
+                "text_length": len(text) if text else 0,
+                "privacy_blocked_pdf_upload": True,
+            }
         # For scanned/image-only Purchase Contracts, try cloud PDF extraction
         # before falling back to image-only logging.
         if doc_type == "Approval Letter" and user_approved_cloud:
@@ -5146,97 +5188,49 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         result["extracted_data"] = extract_government_id(text)
     elif doc_type == "Purchase Contract":
         result["conditions"] = ""
-        result["extracted_data"] = {}
-        result["raw_text"] = text[:12000]  # retained for optional AI re-extraction
-
-        # ── Cloud AI extraction ────────────────────────────────────────────
-        # When the user explicitly approves cloud AI for this scan, AI WINS
-        # over regex — because the user opted into AI specifically to get
-        # better results than regex. Only fall back to a regex value if AI
-        # returned an empty string for that field.
-        if user_approved_cloud and _has_sensitive_content(text):
-            result["ai_log"] = "Cloud AI blocked — document contains sensitive identifiers (SSN/DOB/Account/Routing)"
-            user_approved_cloud = False
-        if not user_approved_cloud:
-            result.update({
-                "success": False,
-                "error": "Purchase Contract parsing requires Cloud AI. Turn Cloud AI on and scan again.",
-            })
-            return result
+        local_data = extract_purchase_contract(text)
+        result["extracted_data"] = local_data
+        result["raw_text"] = text[:12000]
+        result["privacy_mode"] = "local extraction; sanitized terms only"
         if user_approved_cloud:
             try:
                 import cloud_client as _cc
                 if _cc.is_enabled():
-                    ai_data, ai_log = _cc.extract_purchase_contract_ai(text)
-                    # Store raw AI response for debugging
+                    safe_terms = build_purchase_contract_cloud_text(local_data)
+                    ai_data, ai_log = _cc.extract_purchase_contract_ai(safe_terms)
                     result["ai_raw"] = ai_data
                     if ai_data:
-                        # AI takes priority — pass AI first so its values win
-                        result["extracted_data"] = ai_data
-                        result["ai_log"] = ai_log
-                    else:
-                        result.update({
-                            "success": False,
-                            "error": f"Cloud AI did not return purchase contract fields. {ai_log or 'Cloud returned no data'}",
-                        })
-                        return result
-                else:
-                    result.update({
-                        "success": False,
-                        "error": "Purchase Contract parsing requires Cloud AI. Add/save your Gemini or Claude key and scan again.",
-                        "ai_log": "Cloud not enabled",
-                    })
-                    return result
+                        result["extracted_data"] = _merge_pc_data(local_data, ai_data)
+                    result["ai_log"] = ai_log
             except Exception as _e:
-                result.update({
-                    "success": False,
-                    "error": f"Cloud AI purchase contract parsing failed: {type(_e).__name__}: {str(_e)[:120]}",
-                })
-                return result
+                result["ai_log"] = f"Sanitized cloud enhancement skipped: {type(_e).__name__}"
     elif doc_type == "Approval Letter":
-        result["conditions"] = ""
+        local_conditions = extract_conditions(text, doc_type, user_history)
+        result["conditions"] = local_conditions
         result["extracted_data"] = {}
-        result["raw_text"] = text[:12000]  # retained for optional AI re-extraction
-
-        # ── Cloud AI augmentation for Approval Letter ──────────────────
-        if user_approved_cloud and _has_sensitive_content(text):
-            result["ai_log"] = "Cloud AI blocked — document contains sensitive identifiers (SSN/DOB/Account/Routing)"
-            user_approved_cloud = False
-        if not user_approved_cloud:
-            result.update({
-                "success": False,
-                "error": "Approval Letter parsing requires Cloud AI. Turn Cloud AI on and scan again.",
-            })
+        result["raw_text"] = text[:12000]
+        result["privacy_mode"] = "local extraction; sanitized conditions only"
+        if not local_conditions.strip():
+            result["success"] = False
+            result["error"] = "No approval conditions were found by the local parser."
             return result
         if user_approved_cloud:
             try:
                 import cloud_client as _cc
                 if _cc.is_enabled():
+                    from privacy_filter import redact_for_cloud
+                    _, local_only_replacements, _ = redact_for_cloud(text)
                     enhanced_conditions, ai_log = _cc.enhance_conditions(
-                        text, doc_type, ""
+                        local_conditions,
+                        doc_type,
+                        local_conditions,
+                        known_values=local_only_replacements.values(),
                     )
                     if enhanced_conditions:
                         result["conditions"] = enhanced_conditions
                     result["ai_log"] = ai_log
-                    if not enhanced_conditions:
-                        result.update({
-                            "success": False,
-                            "error": f"Cloud AI did not return approval conditions. {ai_log or 'Cloud returned no data'}",
-                        })
-                        return result
-                else:
-                    result.update({
-                        "success": False,
-                        "error": "Approval Letter parsing requires Cloud AI. Add/save your Gemini or Claude key and scan again.",
-                        "ai_log": "Cloud not enabled",
-                    })
-                    return result
             except Exception as _e:
-                result.update({
-                    "success": False,
-                    "error": f"Cloud AI approval parsing failed: {type(_e).__name__}: {str(_e)[:120]}",
-                })
-                return result
+                result["ai_log"] = f"Sanitized cloud enhancement skipped: {type(_e).__name__}"
     elif doc_type in ("Loan Estimate (LE)", "Loan Estimate"):
         result["conditions"] = ""
         result["extracted_data"] = extract_loan_estimate(text)
