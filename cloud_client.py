@@ -170,6 +170,35 @@ def _parse_ai_json(text: str) -> dict:
         raise ValueError(f"Unbalanced JSON in AI response: {str(e)[:80]}")
 
 
+_LEFTOVER_PLACEHOLDER_RE = re.compile(r"\[[A-Z][A-Z0-9_]*\]")
+_PLACEHOLDER_LABELS = {
+    "AMOUNT": "the amount",
+    "PERSON": "the named party",
+    "EMAIL": "the email",
+    "PHONE": "the phone number",
+    "SSN": "the SSN",
+    "ACCOUNT_NUMBER": "the account number",
+    "DATE_OF_BIRTH": "the date of birth",
+    "EXACT_DATE": "the date",
+    "ADDRESS": "the property address",
+    "KNOWN_VALUE": "the provided detail",
+    "INCOME_INFORMATION_REDACTED": "income information",
+    "PROPERTY_IDENTIFIER_REDACTED": "the property identifier",
+}
+
+
+def _neutralize_placeholders(text: str) -> str:
+    """Replace any redaction placeholders the model didn't echo back verbatim with
+    neutral wording, so one un-restored token never discards an otherwise-valid
+    extraction. Privacy is unaffected: placeholders contain no real PII (the
+    outbound text was already verified cloud-safe before the call)."""
+    def _label(match: re.Match[str]) -> str:
+        token = match.group(0)[1:-1]
+        base = re.sub(r"_\d+$", "", token)
+        return _PLACEHOLDER_LABELS.get(base, _PLACEHOLDER_LABELS.get(token, "the redacted detail"))
+    return _LEFTOVER_PLACEHOLDER_RE.sub(_label, text)
+
+
 def _filter_invoice_conditions(conditions: list[dict]) -> list[dict]:
     """Remove internal invoice items, but keep HOI/current-agent requests."""
     filtered = []
@@ -520,11 +549,11 @@ def enhance_conditions(text: str, doc_type: str,
     )
     prompt = f"""Review this {doc_type} and the conditions a script already extracted.
 
-DOCUMENT (first 5000 chars):
-{safe_text[:5000]}
+DOCUMENT (first 24000 chars):
+{safe_text[:24000]}
 
 SCRIPT-EXTRACTED CONDITIONS:
-{safe_conditions[:3000]}
+{safe_conditions[:4000]}
 
 Your job:
 1. Keep all valid conditions from the script list
@@ -557,11 +586,9 @@ Confidence options: High Confidence, Best Guess"""
         response = _generate(prompt, system, provider, cfg["api_key"], cfg["model"])
         response = restore_local_placeholders(response, local_replacements)
         if has_unresolved_placeholders(response):
-            return script_conditions, _log(
-                "SCRIPT",
-                "condition_extraction",
-                "Cloud response left unresolved privacy placeholders",
-            )
+            # A leftover placeholder is already-redacted (no real PII), so neutralize
+            # it to readable wording instead of throwing away the whole extraction.
+            response = _neutralize_placeholders(response)
         valid = [
             ln.strip() for ln in response.split("\n")
             if ln.strip().startswith("|") and ln.count("|") >= 4
@@ -1101,7 +1128,7 @@ def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes, api_key_override: 
         return "", _log("SCRIPT", "approval_pdf_extract", "No local condition rows found"), text[:12000]
     _, local_only_replacements, _ = redact_for_cloud(text)
     conditions, log = enhance_conditions(
-        local_conditions,
+        text,
         "Approval Letter",
         local_conditions,
         known_values=local_only_replacements.values(),
