@@ -11363,12 +11363,20 @@ def show_loan_detail():
 
     if _conditions:
         # Normalize each condition so desc/num/party are present.
-        for _c in _conditions:
+        import hashlib as _hashlib_ld
+        for _idx, _c in enumerate(_conditions):
             _c["desc"] = _c.get("desc", _c.get("description", ""))
             if "num" not in _c:
-                _c["num"] = str(_conditions.index(_c) + 1)
+                _c["num"] = str(_idx + 1)
             if "party" not in _c:
                 _c["party"] = "Borrower"
+            _fingerprint = _hashlib_ld.sha1(
+                f"{_idx}|{_c.get('num', '')}|{_c.get('desc', '')}".encode("utf-8")
+            ).hexdigest()[:10]
+            _c["_ui_key"] = f"{_idx}_{_fingerprint}"
+
+        def _ld_uid(_c):
+            return f"{_ld_fkey}_{_c.get('_ui_key', _c.get('num', 'condition'))}"
 
         # 2-column layout:
         #   Left  = originals in stored/scan order (full interactive controls).
@@ -11479,15 +11487,17 @@ def show_loan_detail():
                 return "FHA", "https://www.hud.gov/hud-partners/single-family-handbook-4000-1"
             return "DU/Fannie Mae", f"https://selling-guide.fanniemae.com/#q={_q}"
 
-        def _ld_flag_condition_question(_cnum: str, _desc: str):
+        def _ld_flag_condition_question(_target: dict):
+            _cnum = str(_target.get("num", ""))
+            _desc = str(_target.get("desc", ""))
             _who = st.session_state.get("user_name", "") or "User"
-            _note_key = f"{_ld_fkey}_{_cnum}_note"
+            _note_key = f"{_ld_uid(_target)}_note"
             _typed_note = str(st.session_state.get(_note_key, "") or "").strip()
             _question_txt = _typed_note if _typed_note else f"Question raised on condition #{_cnum}: {_desc[:140]}"
             _stamp = f"[QUESTION] {_who}: {_question_txt}"
             _updated = []
             for _row in _conditions:
-                if str(_row.get("num")) != str(_cnum):
+                if _row.get("_ui_key") != _target.get("_ui_key"):
                     _updated.append(dict(_row))
                     continue
                 _new_row = dict(_row)
@@ -11501,15 +11511,15 @@ def show_loan_detail():
 
         def _ld_flag_checked_questions(_checked_conditions: list[dict]):
             _who = st.session_state.get("user_name", "") or "User"
-            _checked_nums = {str(_c.get("num")) for _c in _checked_conditions}
+            _checked_keys = {_c.get("_ui_key") for _c in _checked_conditions}
             _updated = []
             for _row in _conditions:
                 _cnum = str(_row.get("num"))
-                if _cnum not in _checked_nums:
+                if _row.get("_ui_key") not in _checked_keys:
                     _updated.append(dict(_row))
                     continue
                 _new_row = dict(_row)
-                _note_key = f"{_ld_fkey}_{_cnum}_note"
+                _note_key = f"{_ld_uid(_row)}_note"
                 _typed_note = str(st.session_state.get(_note_key, "") or "").strip()
                 _question_txt = _typed_note if _typed_note else f"Question raised on condition #{_cnum}: {str(_row.get('desc', ''))[:140]}"
                 _stamp = f"[QUESTION] {_who}: {_question_txt}"
@@ -11555,7 +11565,7 @@ def show_loan_detail():
 
         def _render_ld_original_card(_c):
             _cnum = _c["num"]
-            _uid = f"{_ld_fkey}_{_cnum}"
+            _uid = _ld_uid(_c)
             with st.container(border=True):
                 _orig_desc = str(_c.get("desc", ""))
                 _parties = _ld_parties_for_cond(_c)
@@ -11612,7 +11622,7 @@ def show_loan_detail():
                         st.session_state.pop(f"{_uid}_guide_results", None)
                 with _a3:
                     if st.button("Flag Question", key=f"{_uid}_flag_q", use_container_width=True):
-                        _ld_flag_condition_question(_cnum, _orig_desc)
+                        _ld_flag_condition_question(_c)
 
             if st.session_state.get(f"{_uid}_guide_open"):
                 if st.button("Close guide", key=f"{_uid}_guide_close",
@@ -11689,8 +11699,7 @@ def show_loan_detail():
 
         _ld_top_checked = []
         for _c in _conditions:
-            _cnum = _c["num"]
-            _uid = f"{_ld_fkey}_{_cnum}"
+            _uid = _ld_uid(_c)
             if st.session_state.get(f"{_uid}_chk", False):
                 _ld_top_checked.append(_c)
         _ld_top_action_cols = st.columns([1.05, 1.25, 1.15, 0.9, 2.65])
@@ -11792,13 +11801,12 @@ def show_loan_detail():
                     return _fallback_party, short
 
                 def _ld_current_condition_status(_c):
-                    _cnum = _c["num"]
-                    _uid = f"{_ld_fkey}_{_cnum}"
+                    _uid = _ld_uid(_c)
                     return st.session_state.get(f"{_uid}_stat", _c.get("status", "Needed"))
 
                 def _render_ld_compact_condition_row(_c):
                     _cnum = _c["num"]
-                    _uid = f"{_ld_fkey}_{_cnum}"
+                    _uid = _ld_uid(_c)
                     _orig_desc = str(_c.get("desc", ""))
                     _sections = _ld_sections_for_cond(_c)
                     _primary_section = _sections[0]
@@ -11889,11 +11897,11 @@ def show_loan_detail():
             else:
                 _active_conditions = [
                     _c for _c in _conditions
-                    if st.session_state.get(f"{_ld_fkey}_{_c['num']}_stat", _c.get("status", "Needed")) != "Cleared"
+                    if st.session_state.get(f"{_ld_uid(_c)}_stat", _c.get("status", "Needed")) != "Cleared"
                 ]
                 _cleared_conditions = [
                     _c for _c in _conditions
-                    if st.session_state.get(f"{_ld_fkey}_{_c['num']}_stat", _c.get("status", "Needed")) == "Cleared"
+                    if st.session_state.get(f"{_ld_uid(_c)}_stat", _c.get("status", "Needed")) == "Cleared"
                 ]
                 st.markdown(
                     f'<div style="font-size:11px;font-weight:800;color:#93c5fd;'
@@ -11942,8 +11950,7 @@ def show_loan_detail():
         # only renders in the primary bucket).
         _ld_checked = []
         for _c in _conditions:
-            _cnum = _c["num"]
-            _uid = f"{_ld_fkey}_{_cnum}"
+            _uid = _ld_uid(_c)
             if not st.session_state.get(f"{_uid}_chk", False):
                 continue
             _cparties = st.session_state.get(f"{_uid}_party") or _ld_parties_for_cond(_c)
@@ -11958,9 +11965,9 @@ def show_loan_detail():
         if st.button("Save Condition Updates", key=f"ld_save_condition_updates_{lid}", use_container_width=True):
             _updated_conds = []
             for _c in _conditions:
-                _cnum = _c["num"]
-                _uid = f"{_ld_fkey}_{_cnum}"
+                _uid = _ld_uid(_c)
                 _row = dict(_c)
+                _row.pop("_ui_key", None)
                 _row["status"] = st.session_state.get(f"{_uid}_stat", _row.get("status", "Needed"))
                 _row["parties"] = st.session_state.get(f"{_uid}_party") or _ld_parties_for_cond(_row)
                 _row["party"] = _row["parties"][0] if _row["parties"] else _row.get("party", "Borrower")

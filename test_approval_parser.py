@@ -36,7 +36,17 @@ class ApprovalParserTests(unittest.TestCase):
         self.assertIn("Government ID", result)
         self.assertNotIn("Each row above", "\n".join(rows))
 
+    def test_flattened_numeric_code_stream_extracts_all_conditions(self):
+        flattened = " ".join(APPROVAL_WITH_NUMERIC_CODES.split())
+        result = ai_engine.extract_conditions(flattened, "Approval Letter")
+        rows = [
+            line for line in result.splitlines()
+            if line.strip().startswith("|") and line.strip()[1:].lstrip()[:1].isdigit()
+        ]
+        self.assertEqual(len(rows), 12)
+        self.assertIn("Income Documentation", result)
+        self.assertIn("Government ID", result)
+
 
 if __name__ == "__main__":
     unittest.main()
-

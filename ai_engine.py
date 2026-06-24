@@ -264,9 +264,59 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
             r'conditions?\s+(?:of\s+approval|list|summary))\b'
         )
         for idx, line in enumerate(lines):
-            if condition_heading.search(line.strip()):
-                lines = lines[idx + 1:]
+            heading_match = condition_heading.search(line.strip())
+            if heading_match:
+                remainder = line.strip()[heading_match.end():].strip(" :-–—")
+                lines = ([remainder] if remainder else []) + lines[idx + 1:]
                 break
+
+    # Some LOS-generated PDFs flatten an entire condition table into one text
+    # stream. Segment on numeric condition IDs before relying on line boundaries.
+    if approval_mode:
+        flattened = re.sub(r'\s+', ' ', "\n".join(lines)).strip()
+        numeric_code_re = re.compile(r'(?<!\d)(\d{3,7}(?:-\d{1,5}){2,7})(?!\d)')
+        numeric_matches = list(numeric_code_re.finditer(flattened))
+        if len(numeric_matches) >= 2:
+            for match_idx, match in enumerate(numeric_matches):
+                start = match.end()
+                end = (
+                    numeric_matches[match_idx + 1].start()
+                    if match_idx + 1 < len(numeric_matches)
+                    else len(flattened)
+                )
+                code = match.group(1)
+                desc = flattened[start:end].strip(" :-–—")
+                # Remove duplicated code/title and table-column tails.
+                desc = re.sub(
+                    rf'^(?P<title>.{{5,100}}?)\s*-\s*{re.escape(code)}\s+(?P=title)\b',
+                    r'\g<title>',
+                    desc,
+                    flags=re.I,
+                ).strip()
+                desc = re.sub(
+                    r'(?i)\s+(?:Needed|Received|Cleared|Waived|Pending|Satisfied)\s*$',
+                    '',
+                    desc,
+                ).strip()
+                desc = re.sub(
+                    r'(?i)\s+(?:Borrower|Title|Underwriter|Insurance|Closer|Appraiser|'
+                    r'Employer|Realtor|Seller|Processor)\s*$',
+                    '',
+                    desc,
+                ).strip()
+                if _is_junk_line(desc) or _is_approval_metadata_line(desc) or len(desc) < 12:
+                    continue
+                lower = desc.lower()
+                if lower in seen:
+                    continue
+                seen.add(lower)
+                cond_num += 1
+                conditions.append({
+                    "num": str(cond_num),
+                    "desc": desc,
+                    "party": _guess_party(desc),
+                    "status": "Needed",
+                })
 
     # ---------------------------------------------------------------
     # FORMAT A: Lender condition-code format
@@ -287,6 +337,7 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
     lender_numeric_code = re.compile(
         r'^(?P<code>\d{3,7}(?:-\d{1,5}){2,7})\s*(?:[-:]\s*)?(?P<desc>.+)$'
     )
+    parsed_flat_numeric = len(conditions) >= 2
 
     found_code_format = False
     current_cond = None  # accumulates multi-line condition text
@@ -325,6 +376,8 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
     for raw_line in lines:
         line = raw_line.strip()
         if not line:
+            continue
+        if parsed_flat_numeric and numeric_code_re.search(line):
             continue
 
         numeric_m = lender_numeric_code.match(line)
