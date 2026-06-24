@@ -189,6 +189,35 @@ _PLACEHOLDER_LABELS = {
 }
 
 
+def _strip_repeated_boilerplate(text: str, min_repeats: int = 3) -> str:
+    """Drop lines that repeat across pages - the loan-summary header/footer that
+    prints identically on every page and buries the real conditions in noise.
+
+    A line must appear at least ``min_repeats`` times to count as boilerplate, and
+    short lines (signoff codes like 'A'/'C', bare numbers) are never stripped so
+    condition markers survive. The first occurrence of each repeated line is kept
+    for context; later duplicates are removed."""
+    from collections import Counter
+    lines = text.split("\n")
+
+    def _norm(s: str) -> str:
+        return re.sub(r"\s+", " ", s.strip()).lower()
+
+    counts = Counter(_norm(l) for l in lines if len(_norm(l)) >= 8)
+    repeated = {k for k, c in counts.items() if c >= min_repeats}
+    if not repeated:
+        return text
+    out, seen = [], set()
+    for l in lines:
+        n = _norm(l)
+        if n in repeated:
+            if n in seen:
+                continue
+            seen.add(n)
+        out.append(l)
+    return "\n".join(out)
+
+
 def _neutralize_placeholders(text: str) -> str:
     """Replace any redaction placeholders the model didn't echo back verbatim with
     neutral wording, so one un-restored token never discards an otherwise-valid
@@ -1142,12 +1171,16 @@ def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes, api_key_override: 
         return "", _log("SCRIPT", "approval_pdf_extract", f"Local PDF read failed: {str(e)[:80]}"), ""
     if len(text.strip()) < 50:
         return "", _log("PRIVACY BLOCK", "approval_pdf_extract", "Image-only PDF; local OCR required"), ""
-    local_conditions = ai_engine.extract_conditions(text, "Approval Letter")
+    # De-noise: multi-page approval sheets repeat the loan-summary header on every
+    # page, burying the conditions. Strip the repeats before extraction so the
+    # model sees dense condition text. Keep the original text for loan matching.
+    clean_text = _strip_repeated_boilerplate(text)
+    local_conditions = ai_engine.extract_conditions(clean_text, "Approval Letter")
     if not local_conditions.strip():
         return "", _log("SCRIPT", "approval_pdf_extract", "No local condition rows found"), text[:12000]
-    _, local_only_replacements, _ = redact_for_cloud(text)
+    _, local_only_replacements, _ = redact_for_cloud(clean_text)
     conditions, log = enhance_conditions(
-        text,
+        clean_text,
         "Approval Letter",
         local_conditions,
         known_values=local_only_replacements.values(),
