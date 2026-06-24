@@ -4104,13 +4104,17 @@ def show_sidebar():
             return st.session_state[state_key]
 
         # â•â•â•â•â•â•â•â•â•â•â• PRIMARY NAV: Scanner + Pipeline (always visible) â•â•â•â•â•â•â•
-        _nav_btn("Overview", "overview")
         _nav_btn("Scanner",  "dashboard")
         _nav_btn("Pipeline", "pipeline")
+        _nav_btn("Overview", "overview")
         _nav_btn("Pricing",  "pricing")
 
+        # Everything below is secondary - hidden behind one collapsed group so the
+        # first impression stays focused on Scanner + Pipeline.
+        _more_open = _section_header("More Tools", "_sec_open_more", default_open=False)
+
         # â•â•â•â•â•â•â•â•â•â•â• WORKSPACE: Reader / Email Watch / Team / Billing â•â•â•â•â•â•â•â•
-        if _section_header("Workspace", "_sec_open_workspace", default_open=False):
+        if _more_open and _section_header("Workspace", "_sec_open_workspace", default_open=False):
             _nav_btn("Reader", "reader")
 
             # Email Watch with sub-nav
@@ -4151,14 +4155,14 @@ def show_sidebar():
                 _nav_btn("History", "history")
 
         # â•â•â•â•â•â•â•â•â•â•â• TOOLS flat top-level collapses (no parent wrapper) â•â•â•
-        if _section_header("Quick Tools", "_sec_open_quick", default_open=False):
+        if _more_open and _section_header("Quick Tools", "_sec_open_quick", default_open=False):
             _nav_btn("Loan Snapshot",  "snapshot",      "nav_snapshot")
             _nav_btn("Report Issue",   "report_issue",  "nav_report_issue")
             _nav_btn("Missing Docs",   "missing_docs",  "nav_missing_docs")
             _nav_btn("Doc Expiry",     "doc_expiry",    "nav_doc_expiry")
             _nav_btn("Spanish Reply",  "spanish_reply", "nav_spanish")
 
-        if _section_header("Advanced Tools", "_sec_open_advanced", default_open=False):
+        if _more_open and _section_header("Advanced Tools", "_sec_open_advanced", default_open=False):
             _nav_btn("Income Verifier",    "income_verifier",    "nav_income_verifier")
             _nav_btn("Auto Data Entry",    "auto_data_entry",    "nav_auto_data_entry")
             _nav_btn("Credit Summary",     "credit_summary",     "nav_credit_summary")
@@ -4166,14 +4170,14 @@ def show_sidebar():
             _nav_btn("Condition Clearer",  "condition_clearer",  "nav_condition_clearer")
             _nav_btn("Compliance Checker", "compliance_checker", "nav_compliance_checker")
 
-        if _section_header("Pipeline Advanced", "_sec_open_pipeline", default_open=False):
+        if _more_open and _section_header("Pipeline Advanced", "_sec_open_pipeline", default_open=False):
             _nav_btn("Closing Package",  "closing_package",  "nav_closing_package")
             _nav_btn("Guideline Checker","guideline_checker","nav_guideline_checker")
             _nav_btn("Fraud Detector",   "fraud_detector",   "nav_fraud_detector")
             _nav_btn("Multi-Borrower",   "multi_borrower",   "nav_multi_borrower")
             _nav_btn("LOS Export",       "los_export",       "nav_los_export")
 
-        if _section_header("Advanced Automation", "_sec_open_automation", default_open=False):
+        if _more_open and _section_header("Advanced Automation", "_sec_open_automation", default_open=False):
             _nav_btn("Rate Lock Monitor",     "rate_lock_monitor",     "nav_rate_lock_monitor")
             _nav_btn("Underwriting Tracker",  "underwriting_tracker",  "nav_underwriting_tracker")
             _nav_btn("Document Classifier",   "document_classifier",   "nav_document_classifier")
@@ -4300,6 +4304,15 @@ def show_dashboard():
     _has_upload = bool(st.session_state.get("dash_uploader"))
     _recent_scans = _recent_scan_history()
 
+    # New user = no AI key set up yet. Show step-by-step directions alongside the
+    # scanner so the first impression is "here's how to start," not a wall of tools.
+    _has_ai_key = False
+    try:
+        import cloud_client as _cc_onb
+        _has_ai_key = bool(_cc_onb.get_config().get("api_key"))
+    except Exception:
+        pass
+
     # â”€â”€ Header: hero when empty, compact when active â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if not _has_batches and not _has_upload:
         _loan_ct = 0
@@ -4333,6 +4346,25 @@ def show_dashboard():
             """,
             unsafe_allow_html=True,
         )
+
+        if not _has_ai_key:
+            st.markdown(
+                '<div style="margin:6px 0 10px 0;padding:16px 18px;background:#0f1729;'
+                'border:1px solid #1e3a5f;border-radius:10px;">'
+                '<div style="font-size:14px;font-weight:700;color:#ffffff;margin-bottom:12px;">'
+                'Get set up in 3 quick steps</div>'
+                '<div style="font-size:12.5px;color:#cbd5e1;line-height:2.0;">'
+                '<div><b style="color:#3b82f6;">1.</b> &nbsp;Add your free Google Gemini key in AI Settings.</div>'
+                '<div><b style="color:#3b82f6;">2.</b> &nbsp;Drop a loan document below - it auto-detects the type.</div>'
+                '<div><b style="color:#3b82f6;">3.</b> &nbsp;Review the parsed conditions, client needs &amp; contacts.</div>'
+                '</div></div>',
+                unsafe_allow_html=True,
+            )
+            if st.button("Open AI Settings to add your key", key="onb_open_ai_settings",
+                         use_container_width=True, type="primary"):
+                st.session_state.page = "ai_settings"
+                _save_session()
+                st.rerun()
     else:
         st.markdown(
             '<div style="display:flex;align-items:center;gap:10px;margin:4px 0 10px 0;">'
@@ -5526,49 +5558,92 @@ def show_dashboard():
                         _sections = _scan_sections_for_condition(_cond)
                         return "Borrower" in _sections
 
-                    st.markdown('<div class="pa-section" style="margin-top:8px;">Client Needs List</div>', unsafe_allow_html=True)
+                    st.markdown('<div class="pa-section" style="margin-top:8px;">Needs List</div>', unsafe_allow_html=True)
                     import html as _html
                     import re as _re_needs
-                    _needs_rows = []
                     _summary_map_for_needs = st.session_state.get(_summary_map_key, {})
-                    for _cond_idx, _cond in enumerate(_norm_conds):
-                        _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
-                        _cond_for_needs = dict(_cond)
-                        _cond_for_needs["_scan_uid"] = _cond_uid
-                        if not _is_client_need_condition(_cond_for_needs):
-                            continue
-                        _base_uid = f"{_scan_fkey}_{_cond_uid}"
-                        _row_status = st.session_state.get(f"{_base_uid}_stat", _cond.get("status", "Needed"))
-                        _status_label = _needs_status_label(_row_status)
-                        _orig_text = str(_cond.get("desc", ""))
-                        # If Summarized is on AND Gemini gave us "**Subject** - body",
-                        # parse it out and use it as the Needs List entry so the list
-                        # matches the processor email format.
-                        _sum_text = str(_summary_map_for_needs.get(_orig_text, "")).strip()
-                        _sum_match = _re_needs.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_text) if _sum_text else None
-                        if _sum_match:
-                            _subject = _sum_match.group(1).strip()
-                            _body = _sum_match.group(2).strip()
+
+                    # Third-party (non-borrower, non-title) responsible parties.
+                    _THIRD_PARTY_SECTIONS = {
+                        "Insurance", "Appraiser", "Employer", "Realtor", "Seller", "Closer",
+                    }
+
+                    def _is_title_need_condition(_c) -> bool:
+                        return "Title" in _scan_sections_for_condition(_c)
+
+                    def _is_other_third_party_condition(_c) -> bool:
+                        return bool(set(_scan_sections_for_condition(_c)) & _THIRD_PARTY_SECTIONS)
+
+                    def _other_party_audience(_c) -> str:
+                        for _p in _scan_sections_for_condition(_c):
+                            if _p in _THIRD_PARTY_SECTIONS:
+                                return _p
+                        return "Borrower"
+
+                    def _build_needs_rows(_membership_fn, _audience):
+                        _rows = []
+                        for _cond_idx, _cond in enumerate(_norm_conds):
+                            _cond_uid = f"{_cond_idx}_{_cond.get('num', _cond_idx)}"
+                            _cond_for_needs = dict(_cond)
+                            _cond_for_needs["_scan_uid"] = _cond_uid
+                            if not _membership_fn(_cond_for_needs):
+                                continue
+                            _base_uid = f"{_scan_fkey}_{_cond_uid}"
+                            _row_status = st.session_state.get(f"{_base_uid}_stat", _cond.get("status", "Needed"))
+                            _status_label = _needs_status_label(_row_status)
+                            _orig_text = str(_cond.get("desc", ""))
+                            # If Gemini gave us "**Subject** - body", reuse it so the row
+                            # matches the processor email format; otherwise derive wording
+                            # for the audience this tab represents.
+                            _sum_text = str(_summary_map_for_needs.get(_orig_text, "")).strip()
+                            _sum_match = _re_needs.match(r"^\s*\*\*(.+?)\*\*\s*-\s*(.+)$", _sum_text) if _sum_text else None
+                            if _sum_match:
+                                _subject = _sum_match.group(1).strip()
+                                _body = _sum_match.group(2).strip()
+                            else:
+                                _aud = _audience(_cond_for_needs) if callable(_audience) else _audience
+                                _subject, _body = _client_need_item(_orig_text, _aud)
+                            _rows.append(
+                                '<div class="pa-need-row">'
+                                '<span class="pa-need-bullet">-</span>'
+                                '<div>'
+                                f'<b class="pa-need-subject" style="color:#ffffff;font-weight:700;font-size:inherit;line-height:inherit;">{_html.escape(_subject)}</b>'
+                                f'<span class="pa-need-body" style="color:#dbeafe;"> - {_html.escape(_body)}</span>'
+                                f'<span class="pa-need-status">{_html.escape(_status_label)}</span>'
+                                '</div>'
+                                '</div>'
+                            )
+                        return _rows
+
+                    _client_rows = _build_needs_rows(_is_client_need_condition, "Borrower")
+                    _title_rows = _build_needs_rows(_is_title_need_condition, "Title")
+                    _other_rows = _build_needs_rows(_is_other_third_party_condition, _other_party_audience)
+
+                    _needs_client_tab, _needs_title_tab, _needs_other_tab = st.tabs([
+                        f"Client ({len(_client_rows)})",
+                        f"Title ({len(_title_rows)})",
+                        f"Other 3rd Party ({len(_other_rows)})",
+                    ])
+
+                    def _render_needs_tab(_rows, _empty_msg):
+                        if _rows:
+                            st.markdown('<div class="pa-needs-list">' + "".join(_rows) + '</div>', unsafe_allow_html=True)
                         else:
-                            _subject, _body = _client_need_item(_orig_text, "Borrower")
-                        _needs_rows.append(
-                            '<div class="pa-need-row">'
-                            '<span class="pa-need-bullet">-</span>'
-                            '<div>'
-                            f'<b class="pa-need-subject" style="color:#ffffff;font-weight:700;font-size:inherit;line-height:inherit;">{_html.escape(_subject)}</b>'
-                            f'<span class="pa-need-body" style="color:#dbeafe;"> - {_html.escape(_body)}</span>'
-                            f'<span class="pa-need-status">{_html.escape(_status_label)}</span>'
-                            '</div>'
-                            '</div>'
-                        )
-                    if _needs_rows:
-                        st.markdown('<div class="pa-needs-list">' + "".join(_needs_rows) + '</div>', unsafe_allow_html=True)
-                        # Visual breathing room between the Client Needs List and
-                        # the parsed conditions list below it.
-                        st.markdown(
-                            '<div style="height:28px;border-top:1px dashed rgba(255,255,255,0.08);margin:28px 0 12px 0;"></div>',
-                            unsafe_allow_html=True,
-                        )
+                            st.caption(_empty_msg)
+
+                    with _needs_client_tab:
+                        _render_needs_tab(_client_rows, "No client conditions parsed for this document.")
+                    with _needs_title_tab:
+                        _render_needs_tab(_title_rows, "No title conditions parsed for this document.")
+                    with _needs_other_tab:
+                        _render_needs_tab(_other_rows, "No other third-party conditions parsed for this document.")
+
+                    # Visual breathing room between the Needs List and the parsed
+                    # conditions list below it.
+                    st.markdown(
+                        '<div style="height:28px;border-top:1px dashed rgba(255,255,255,0.08);margin:28px 0 12px 0;"></div>',
+                        unsafe_allow_html=True,
+                    )
 
                     # â”€â”€ 2x3 grid: top row = Gemini summary (email-style, display-only),
                     # bottom row = originals with full interactive controls (status,
