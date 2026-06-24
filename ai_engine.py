@@ -5367,19 +5367,18 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
             try:
                 import cloud_client as _cc
                 if _cc.is_enabled():
-                    from privacy_filter import redact_for_cloud
-                    _, local_only_replacements, _ = redact_for_cloud(text)
-                    enhanced_conditions, ai_log = _cc.enhance_conditions(
-                        local_conditions,
-                        doc_type,
-                        local_conditions,
-                        known_values=local_only_replacements.values(),
-                    )
-                    if enhanced_conditions:
-                        result["conditions"] = enhanced_conditions
+                    # Route through the approval extractor: PDF vision first (best
+                    # accuracy - reads the whole letter), with automatic fallback to
+                    # the redacted full-text path. The old call only handed the model
+                    # the few script-found rows, so it could never find more.
+                    _pdf_conditions, ai_log, _pdf_text = _cc.extract_approval_conditions_ai_from_pdf(pdf_bytes)
+                    if _pdf_conditions:
+                        result["conditions"] = _pdf_conditions
+                        if _pdf_text:
+                            result["raw_text"] = (_pdf_text or "")[:12000]
                     result["ai_log"] = ai_log
             except Exception as _e:
-                result["ai_log"] = f"Sanitized cloud enhancement skipped: {type(_e).__name__}"
+                result["ai_log"] = f"Cloud enhancement skipped: {type(_e).__name__}"
     elif doc_type in ("Loan Estimate (LE)", "Loan Estimate"):
         result["conditions"] = ""
         result["extracted_data"] = extract_loan_estimate(text)
