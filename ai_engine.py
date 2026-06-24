@@ -47,7 +47,12 @@ def extract_text_from_pdf(pdf_bytes: bytes, *, force_ocr: bool = False) -> str:
     if not ocr_text:
         return text
     if force_ocr:
-        return ocr_text if _approval_text_score(ocr_text) > _approval_text_score(text) else text
+        # Hybrid approval PDFs often have one searchable text row and the rest
+        # rendered as page images. Keep both local sources so the parser sees
+        # every condition instead of selecting the deceptively small text layer.
+        if not text:
+            return ocr_text
+        return f"{text}\n\n[LOCAL OCR TEXT]\n{ocr_text}"
     return ocr_text or text
 
 
@@ -83,7 +88,10 @@ def _extract_text_with_local_ocr(pdf_bytes: bytes) -> str:
         for page in document:
             pix = page.get_pixmap(matrix=fitz.Matrix(2, 2), alpha=False)
             image = Image.frombytes("RGB", (pix.width, pix.height), pix.samples)
-            page_text = pytesseract.image_to_string(image)
+            page_text = pytesseract.image_to_string(
+                image,
+                config="--oem 3 --psm 6 -c preserve_interword_spaces=1",
+            )
             if page_text:
                 pages.append(page_text)
         document.close()
@@ -542,7 +550,7 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
     # FORMAT B: Traditional numbered/bulleted/section-based conditions
     # Only runs if Format A didn't find anything
     # ---------------------------------------------------------------
-    if not conditions:
+    if not conditions or approval_mode:
         in_section = False
         section_start = re.compile(
             r'(?i)(?:prior\s+to\s+(?:closing|funding|docs|CTC|clear)|'
@@ -717,6 +725,29 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
                 "party": _guess_party(cleaned),
                 "status": "Needed",
             })
+
+        # Embedded PDF text and OCR can contain the same condition with minor
+        # spacing differences. Collapse those duplicates after both sources run.
+        deduped = []
+        normalized_seen = []
+        for condition in conditions:
+            desc = re.sub(r'\s+', ' ', str(condition.get("desc", ""))).strip()
+            norm = re.sub(r'[^a-z0-9]+', ' ', desc.lower()).strip()
+            if not norm:
+                continue
+            duplicate = any(
+                norm == prior
+                or (min(len(norm), len(prior)) >= 24 and (norm in prior or prior in norm))
+                for prior in normalized_seen
+            )
+            if duplicate:
+                continue
+            normalized_seen.append(norm)
+            row = dict(condition)
+            row["num"] = str(len(deduped) + 1)
+            row["desc"] = desc
+            deduped.append(row)
+        conditions = deduped
 
     time.sleep(0.3)
 
@@ -5269,6 +5300,10 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         "text_length": len(text),
         "doc_type": doc_type,
         "bank_rules": "",
+        "local_extraction_mode": (
+            "pdf_text+local_ocr" if "[LOCAL OCR TEXT]" in text
+            else "single_local_text_source"
+        ),
     }
 
     if doc_type == "Bank Statement":

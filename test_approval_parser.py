@@ -64,7 +64,23 @@ class ApprovalParserTests(unittest.TestCase):
         ):
             selected = ai_engine.extract_text_from_pdf(b"pdf", force_ocr=True)
 
-        self.assertEqual(selected, ocr)
+        self.assertIn(embedded, selected)
+        self.assertIn("[LOCAL OCR TEXT]", selected)
+        self.assertIn(ocr, selected)
+
+    def test_hybrid_embedded_and_ocr_text_deduplicates_to_twelve(self):
+        embedded = (
+            "LOAN APPROVAL CONDITIONS\n"
+            "3365-4-4-59 Debts to be paid directly from proceeds: "
+            "Account Number 42051917169 Amount $331.00"
+        )
+        hybrid = f"{embedded}\n\n[LOCAL OCR TEXT]\n{APPROVAL_WITH_NUMERIC_CODES}"
+        result = ai_engine.extract_conditions(hybrid, "Approval Letter")
+        rows = [
+            line for line in result.splitlines()
+            if line.strip().startswith("|") and line.strip()[1:].lstrip()[:1].isdigit()
+        ]
+        self.assertEqual(len(rows), 12)
 
 
 if __name__ == "__main__":

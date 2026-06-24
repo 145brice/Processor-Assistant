@@ -5144,6 +5144,13 @@ def show_dashboard():
                 # â”€â”€ AI usage badge + raw AI dump (debugging) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 _r_ai_log = _r.get("ai_log", "")
                 _r_ai_raw = _r.get("ai_raw")
+                _local_mode = str(_r.get("local_extraction_mode") or "").strip()
+                if _local_mode:
+                    st.caption(
+                        "Local extraction: "
+                        + _local_mode.replace("_", " ").replace("+", " + ")
+                        + f" · {_r.get('text_length', 0):,} characters"
+                    )
                 if _r_ai_log:
                     if "CLOUD" in _r_ai_log.upper():
                         st.markdown(
