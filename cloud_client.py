@@ -21,7 +21,12 @@ import urllib.error
 import time
 from datetime import datetime
 
-from privacy_filter import redact_for_cloud, require_cloud_safe
+from privacy_filter import (
+    has_unresolved_placeholders,
+    redact_for_cloud,
+    require_cloud_safe,
+    restore_local_placeholders,
+)
 
 _APP_DIR  = os.path.dirname(os.path.abspath(__file__))
 _CFG_FILE = os.path.join(_APP_DIR, "cloud_config.json")
@@ -491,10 +496,12 @@ def enhance_conditions(text: str, doc_type: str,
         text,
         known_values=known_values,
     )
-    safe_conditions, _, condition_leaks = redact_for_cloud(
+    safe_conditions, condition_replacements, condition_leaks = redact_for_cloud(
         script_conditions,
         known_values=list(known_values or []) + list(text_replacements.values()),
     )
+    local_replacements = dict(text_replacements)
+    local_replacements.update(condition_replacements)
     leaks = sorted(set(text_leaks + condition_leaks))
     if leaks:
         return script_conditions, _log("PRIVACY BLOCK", "condition_extraction", ", ".join(leaks))
@@ -548,15 +555,22 @@ Confidence options: High Confidence, Best Guess"""
     try:
         provider = cfg.get("provider", DEFAULT_PROVIDER)
         response = _generate(prompt, system, provider, cfg["api_key"], cfg["model"])
+        response = restore_local_placeholders(response, local_replacements)
+        if has_unresolved_placeholders(response):
+            return script_conditions, _log(
+                "SCRIPT",
+                "condition_extraction",
+                "Cloud response left unresolved privacy placeholders",
+            )
         valid = [
             ln.strip() for ln in response.split("\n")
             if ln.strip().startswith("|") and ln.count("|") >= 4
         ]
         script_count = sum(
             1 for ln in script_conditions.split("\n")
-            if ln.strip().startswith("|") and ln.count("|") >= 4
+            if re.match(r"^\|\s*\d+\s*\|", ln.strip())
         )
-        if len(valid) >= max(1, script_count // 2):
+        if len(valid) >= max(1, script_count):
             renumbered = []
             for i, ln in enumerate(valid, 1):
                 parts = [p.strip() for p in ln.split("|")]
@@ -570,11 +584,11 @@ Confidence options: High Confidence, Best Guess"""
                        f"{len(valid)} conditions  {provider}  {cfg.get('model')}")
             return result, log
         else:
-            existing = {ln.strip() for ln in script_conditions.split("\n") if "|" in ln}
-            for ln in valid:
-                existing.add(ln.strip())
-            merged = "\n".join(sorted(existing))
-            return merged, _log("CLOUD+SCRIPT", "condition_extraction", "merged — Cloud returned few")
+            return script_conditions, _log(
+                "SCRIPT",
+                "condition_extraction",
+                "Cloud returned fewer conditions; kept local extraction",
+            )
     except Exception as e:
         return script_conditions, _log("SCRIPT", "condition_extraction",
                                        _friendly_cloud_error(e))

@@ -96,6 +96,35 @@ class PrivacyFilterTests(unittest.TestCase):
         self.assertNotIn("Jane Marie Doe", prompt)
         self.assertNotIn("123-45-6789", prompt)
 
+    def test_condition_placeholders_are_restored_locally(self):
+        def fake_generate(prompt, system, provider, api_key, model):
+            self.assertNotIn("WEDS 517655504100", prompt)
+            return "| 1 | Provide payoff for [KNOWN_VALUE_1] | Borrower | Needed | High Confidence |"
+
+        with (
+            patch.object(
+                cloud_client,
+                "get_config",
+                return_value={
+                    "enabled": True,
+                    "provider": "gemini",
+                    "api_key": "test",
+                    "model": "test-model",
+                },
+            ),
+            patch.object(cloud_client, "_generate", side_effect=fake_generate),
+            patch.object(cloud_client, "_log", return_value="[TEST]"),
+        ):
+            result, _ = cloud_client.enhance_conditions(
+                "| 1 | Provide payoff for WEDS 517655504100 | Borrower | Needed | High Confidence |",
+                "Approval Letter",
+                "| 1 | Provide payoff for WEDS 517655504100 | Borrower | Needed | High Confidence |",
+                known_values=["WEDS 517655504100"],
+            )
+
+        self.assertIn("WEDS 517655504100", result)
+        self.assertNotIn("[KNOWN_VALUE_", result)
+
     def test_pdf_compatibility_wrapper_never_uploads_pdf_bytes(self):
         local_data = {
             "transaction": {"purchase_price": "500000", "closing_date": "07/31/2026"},

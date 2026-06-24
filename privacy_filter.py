@@ -160,3 +160,20 @@ def require_cloud_safe(text: str) -> None:
     leaks = find_sensitive_fragments(text)
     if leaks:
         raise ValueError("Cloud privacy gate blocked: " + ", ".join(leaks))
+
+
+def restore_local_placeholders(text: str, replacements: dict[str, str]) -> str:
+    """Restore cloud-safe placeholders after the response returns locally."""
+    restored = str(text or "")
+    for placeholder in sorted(replacements, key=len, reverse=True):
+        restored = re.sub(
+            re.escape(placeholder),
+            lambda _match, value=replacements[placeholder]: value,
+            restored,
+            flags=re.I,
+        )
+    return restored
+
+
+def has_unresolved_placeholders(text: str) -> bool:
+    return bool(_PLACEHOLDER_RE.search(str(text or "")))

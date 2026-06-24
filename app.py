@@ -4803,9 +4803,17 @@ def show_dashboard():
             _try_cloud = _dash_cc.is_enabled()
         except Exception:
             pass
+        _use_cloud_enhancement = False
+        if _try_cloud:
+            _use_cloud_enhancement = st.checkbox(
+                "Enhance locally extracted conditions with sanitized AI",
+                value=False,
+                key="dash_use_sanitized_ai",
+                help="Off by default. The PDF remains local; only redacted condition text is sent.",
+            )
 
         _checked_visible = [_vi for _vi in _visible if st.session_state.get(f"dash_sel_{_vi}", True)]
-        _scan_clicked = st.button(f"Scan with AI ({len(_checked_visible)} selected)" if _try_cloud else f"Scan ({len(_checked_visible)} selected)",
+        _scan_clicked = st.button(f"Scan + sanitized AI ({len(_checked_visible)} selected)" if _use_cloud_enhancement else f"Scan locally ({len(_checked_visible)} selected)",
                                   key="dash_scan", type="primary", disabled=len(_checked_visible) == 0)
         if _scan_clicked:
             # Build the actual list of (bytes, name, type) to scan
@@ -4846,7 +4854,7 @@ def show_dashboard():
 
             # â”€â”€ Cloud AI: auto-enable when cloud is on no consent prompt needed â”€
             _dash_cloud_doc_types = {"Purchase Contract", "Approval Letter"}
-            _dash_user_approved_cloud = _try_cloud
+            _dash_user_approved_cloud = _use_cloud_enhancement
 
             # Run scans
             from doc_verify import _match_borrower as _mb
@@ -4860,7 +4868,7 @@ def show_dashboard():
             for _sq_i, (_sq_bytes, _sq_name, _sq_type) in enumerate(_scan_queue):
                 _sq_will_use_cloud = (_sq_type in _dash_cloud_doc_types and _dash_user_approved_cloud)
                 _sq_status = (
-                    f"Calling {_provider_name} for {_sq_name}... (2-5 sec)"
+                    f"Sending sanitized condition text to {_provider_name} for {_sq_name}..."
                     if _sq_will_use_cloud
                     else f"Scanning {_sq_i + 1} of {_sq_total}: {_sq_name}..."
                 )
@@ -4873,7 +4881,7 @@ def show_dashboard():
                     continue
                 _sq_approved = _dash_user_approved_cloud if _sq_type in _dash_cloud_doc_types else False
                 if _sq_will_use_cloud:
-                    with st.spinner(f"Sending {_sq_name} to {_provider_name} for AI extraction..."):
+                    with st.spinner(f"Enhancing sanitized condition text with {_provider_name}..."):
                         _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
                 else:
                     _result = _proc(_sq_bytes, _sq_type, user_approved_cloud=_sq_approved)
@@ -12217,9 +12225,15 @@ def show_loan_detail():
         except Exception:
             pass
 
-        # Auto-approve cloud when enabled user configured their key intentionally
         _cloud_doc_types = {"Purchase Contract", "Approval Letter"}
-        _user_approved_cloud = _cloud_enabled and _scan_dtype in _cloud_doc_types
+        _detail_use_cloud = False
+        if _cloud_enabled and _scan_dtype in _cloud_doc_types:
+            _detail_use_cloud = st.checkbox(
+                "Enhance locally extracted text with sanitized AI",
+                value=False,
+                key=f"detail_use_sanitized_ai_{lid}",
+            )
+        _user_approved_cloud = _detail_use_cloud
 
         _scan_btn_label = (
             f"Scan with AI" if _user_approved_cloud else "Scan"
