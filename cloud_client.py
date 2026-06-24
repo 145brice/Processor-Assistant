@@ -182,6 +182,8 @@ _PLACEHOLDER_LABELS = {
     "EXACT_DATE": "the date",
     "ADDRESS": "the property address",
     "KNOWN_VALUE": "the provided detail",
+    "INCOME_AMOUNT": "the income amount",
+    "PROPERTY_IDENTIFIER": "the property identifier",
     "INCOME_INFORMATION_REDACTED": "income information",
     "PROPERTY_IDENTIFIER_REDACTED": "the property identifier",
 }

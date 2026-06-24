@@ -79,11 +79,17 @@ _PATTERNS: list[tuple[str, re.Pattern[str], str]] = [
     ),
 ]
 
-_INCOME_LINE_RE = re.compile(
-    r"(?im)^.*\b(?:income|salary|wages?|earnings?|commission|bonus|monthly\s+gross)\b.*$"
+# Value-level redaction: keep the skeleton word ("income", "parcel") so the
+# document still reads as a document, but strip the sensitive figure/identifier
+# next to it. Group 1 is kept verbatim; group 2 (the value) is replaced.
+_INCOME_VALUE_RE = re.compile(
+    r"(?i)(\b(?:income|salary|wages?|earnings?|commission|bonus|monthly\s+gross)\b"
+    r"(?:[^\n\d$]{0,24}?))"
+    r"(\$?[ \t]*\d[\d,]*(?:\.\d{2})?)"
 )
-_LEGAL_DESCRIPTION_RE = re.compile(
-    r"(?im)^.*\b(?:legal\s+description|parcel|apn|tax\s+id|lot\s+\d+|block\s+\d+)\b.*$"
+_LEGAL_VALUE_RE = re.compile(
+    r"(?i)(\b(?:legal\s+description|parcel|apn|tax\s+id)\b[ \t]*(?:no\.?|number|#|:)?[ \t]*)"
+    r"([A-Z0-9][A-Z0-9.\-]{4,})"
 )
 _LABELED_NAME_VALUE_RE = re.compile(
     r"(?m)\b(?i:borrower|co-borrower|applicant|buyer|seller|property\s+owner|"
@@ -125,9 +131,9 @@ def redact_for_cloud(
     )
 
     if remove_income_lines:
-        sanitized = _INCOME_LINE_RE.sub("[INCOME_INFORMATION_REDACTED]", sanitized)
+        sanitized = _INCOME_VALUE_RE.sub(lambda m: m.group(1) + "[INCOME_AMOUNT]", sanitized)
     if remove_legal_descriptions:
-        sanitized = _LEGAL_DESCRIPTION_RE.sub("[PROPERTY_IDENTIFIER_REDACTED]", sanitized)
+        sanitized = _LEGAL_VALUE_RE.sub(lambda m: m.group(1) + "[PROPERTY_IDENTIFIER]", sanitized)
 
     counters: dict[str, int] = {}
     for kind, pattern, base_placeholder in _PATTERNS:
@@ -149,9 +155,9 @@ def find_sensitive_fragments(text: str) -> list[str]:
     """Return sensitive-data categories still visible outside approved placeholders."""
     scrubbed = _PLACEHOLDER_RE.sub("", str(text or ""))
     leaks = [kind for kind, pattern, _ in _PATTERNS if pattern.search(scrubbed)]
-    if _INCOME_LINE_RE.search(scrubbed):
+    if _INCOME_VALUE_RE.search(scrubbed):
         leaks.append("income")
-    if _LEGAL_DESCRIPTION_RE.search(scrubbed):
+    if _LEGAL_VALUE_RE.search(scrubbed):
         leaks.append("property_identifier")
     return sorted(set(leaks))
 
