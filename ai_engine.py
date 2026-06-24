@@ -282,6 +282,11 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
     bare_code = re.compile(r'^(W[A-Z]{2}\d{2})\s+')
     # Also match loan-number-prefixed rows: "5000002228902-Appraisal ..."
     loan_prefix = re.compile(r'^\d{8,}\s*[\-–]\s*')
+    # Numeric lender condition IDs used by LOS exports:
+    # "3365-4-4-59 Debts to be paid directly ..."
+    lender_numeric_code = re.compile(
+        r'^(?P<code>\d{3,7}(?:-\d{1,5}){2,7})\s*(?:[-:]\s*)?(?P<desc>.+)$'
+    )
 
     found_code_format = False
     current_cond = None  # accumulates multi-line condition text
@@ -320,6 +325,35 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
     for raw_line in lines:
         line = raw_line.strip()
         if not line:
+            continue
+
+        numeric_m = lender_numeric_code.match(line)
+        if numeric_m:
+            found_code_format = True
+            _flush_condition(current_cond)
+            code = numeric_m.group("code")
+            rest = numeric_m.group("desc").strip()
+            # Some PDF exports repeat the code/title around a separator.
+            rest = re.sub(
+                rf'^(?P<title>.{{5,100}}?)\s*-\s*{re.escape(code)}\s+(?P=title)\b',
+                r'\g<title>',
+                rest,
+                flags=re.I,
+            ).strip()
+            status = "Needed"
+            status_m = re.search(
+                r'(?i)\b(Needed|Received|Cleared|Waived|Pending|Satisfied)\s*$',
+                rest,
+            )
+            if status_m:
+                status = status_m.group(1).capitalize()
+                rest = rest[:status_m.start()].strip()
+            current_cond = {
+                "desc": rest,
+                "party": _guess_party(rest),
+                "status": status,
+                "code": code,
+            }
             continue
 
         # Check for condition code header
@@ -584,6 +618,11 @@ def extract_conditions(pdf_text: str, doc_type: str, user_history=None) -> str:
                 continue
 
             cleaned = re.sub(r'^[\s]*(?:\d{1,3}[\.\)\:]|[a-zA-Z][\.\)]|[\-\*\u2022])\s*', '', line).strip(" -.;")
+            cleaned = re.sub(
+                r'^\d{3,7}(?:-\d{1,5}){2,7}\s*(?:[-:]\s*)?',
+                '',
+                cleaned,
+            ).strip()
             if len(cleaned) < 12:
                 continue
             is_borrower_line = (
