@@ -109,10 +109,11 @@ st.markdown(r"""
 }
 /* Light theme sidebar + button overrides */
 [data-theme="light"] [data-testid="stSidebar"] { background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important; border-right: 1px solid #e2e8f0 !important; }
-[data-theme="light"] [data-testid="stSidebar"] button, [data-theme="light"] [data-testid="stSidebar"] button[kind], [data-theme="light"] [data-testid="stSidebar"] [data-testid*="baseButton"] { background: rgba(0,0,0,0.04) !important; border: 1px solid #e2e8f0 !important; color: #334155 !important; }
+[data-theme="light"] [data-testid="stSidebar"] button, [data-theme="light"] [data-testid="stSidebar"] button[kind], [data-theme="light"] [data-testid="stSidebar"] [data-testid*="baseButton"] { background: transparent !important; border: 1px solid transparent !important; color: #475569 !important; }
+[data-theme="light"] [data-testid="stSidebar"] button:hover { background: rgba(0,0,0,0.04) !important; border-color: transparent !important; color: #1e293b !important; }
 [data-theme="light"] [data-testid="stSidebar"] button p, [data-theme="light"] [data-testid="stSidebar"] button span, [data-theme="light"] [data-testid="stSidebar"] button div { color: #334155 !important; }
-[data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] { background: rgba(37,99,235,0.08) !important; border: 1px solid #2563eb !important; color: #2563eb !important; }
-[data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] p, [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] span { color: #2563eb !important; }
+[data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] { background: var(--accent-light) !important; border: 1px solid transparent !important; color: var(--accent) !important; font-weight: 600 !important; box-shadow: inset 3px 0 0 var(--accent) !important; }
+[data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] p, [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] span { color: var(--accent) !important; font-weight: 600 !important; }
 [data-theme="light"] [data-testid="stSidebar"] button:focus, [data-theme="light"] [data-testid="stSidebar"] button:focus-visible, [data-theme="light"] [data-testid="stSidebar"] button:active { background: rgba(0,0,0,0.06) !important; border-color: #cbd5e1 !important; color: #334155 !important; }
 [data-theme="light"] [data-testid="stSidebar"] button:focus p, [data-theme="light"] [data-testid="stSidebar"] button:focus p, [data-theme="light"] [data-testid="stSidebar"] button:active p { color: #334155 !important; }
 /* Light theme: primary + file-uploader buttons match the neutral gray
@@ -361,15 +362,15 @@ body.pa-sidebar-hidden [data-testid="stMain"] > div[data-testid="stMainBlockCont
 [data-testid="stSidebar"] > div:first-child { padding: 0.1rem 1rem 1rem 1rem !important; }
 [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding-top: 0 !important; margin-top: 0 !important; }
 [data-testid="stSidebar"] .block-container { padding-top: 0 !important; }
-[data-testid="stSidebar"] button, [data-testid="stSidebar"] button[kind], [data-testid="stSidebar"] [data-testid*="baseButton"] { background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; border-radius: var(--radius-sm) !important; font-size: 20px !important; font-weight: 500 !important; text-align: left !important; padding: 12px 16px !important; margin-bottom: 4px !important; width: 100% !important; box-shadow: none !important; transition: all 0.2s ease !important; height: auto !important; min-height: 50px !important; opacity: 1 !important; display: block !important; visibility: visible !important; }
-[data-testid="stSidebar"] button p, [data-testid="stSidebar"] button span, [data-testid="stSidebar"] button div { font-size: 20px !important; }
+[data-testid="stSidebar"] button, [data-testid="stSidebar"] button[kind], [data-testid="stSidebar"] [data-testid*="baseButton"] { background: transparent !important; border: 1px solid transparent !important; color: #c0c0c0 !important; border-radius: 8px !important; font-size: 14px !important; font-weight: 500 !important; letter-spacing: 0.1px !important; text-align: left !important; padding: 9px 13px !important; margin-bottom: 2px !important; width: 100% !important; box-shadow: none !important; transition: all 0.15s ease !important; height: auto !important; min-height: 38px !important; opacity: 1 !important; display: block !important; visibility: visible !important; }
+[data-testid="stSidebar"] button p, [data-testid="stSidebar"] button span, [data-testid="stSidebar"] button div { font-size: 14px !important; }
 [data-testid="stSidebar"] button p, [data-testid="stSidebar"] button span, [data-testid="stSidebar"] button div { background: transparent !important; color: #c0c0c0 !important; }
-[data-testid="stSidebar"] button[kind="primary"] { background: rgba(59,130,246,0.08) !important; border: 1px solid var(--accent) !important; color: var(--accent) !important; font-weight: 600 !important; box-shadow: 0 0 8px rgba(59,130,246,0.18) !important; }
+[data-testid="stSidebar"] button[kind="primary"] { background: rgba(59,130,246,0.12) !important; border: 1px solid transparent !important; color: var(--accent) !important; font-weight: 600 !important; box-shadow: inset 3px 0 0 var(--accent) !important; }
 [data-testid="stSidebar"] button[kind="primary"] p, [data-testid="stSidebar"] button[kind="primary"] span, [data-testid="stSidebar"] button[kind="primary"] div { color: var(--accent) !important; font-weight: 600 !important; background: transparent !important; }
-[data-testid="stSidebar"] button[kind="primary"]:hover { background: rgba(59,130,246,0.14) !important; border-color: var(--accent) !important; color: var(--accent) !important; box-shadow: 0 0 14px rgba(59,130,246,0.35) !important; }
-[data-testid="stSidebar"] button[kind="primary"]:focus, [data-testid="stSidebar"] button[kind="primary"]:active { background: rgba(59,130,246,0.08) !important; color: var(--accent) !important; border-color: var(--accent) !important; }
-[data-testid="stSidebar"] button:hover { background: rgba(59,130,246,0.12) !important; border-color: rgba(59,130,246,0.35) !important; color: var(--accent) !important; outline: none !important; box-shadow: none !important; }
-[data-testid="stSidebar"] button:focus, [data-testid="stSidebar"] button:focus-visible, [data-testid="stSidebar"] button:active, [data-testid="stSidebar"] button[data-focused="true"] { background: rgba(255,255,255,0.07) !important; border-color: rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; outline: none !important; box-shadow: none !important; }
+[data-testid="stSidebar"] button[kind="primary"]:hover { background: rgba(59,130,246,0.16) !important; border-color: transparent !important; color: var(--accent) !important; box-shadow: inset 3px 0 0 var(--accent) !important; }
+[data-testid="stSidebar"] button[kind="primary"]:focus, [data-testid="stSidebar"] button[kind="primary"]:active { background: rgba(59,130,246,0.12) !important; color: var(--accent) !important; border-color: transparent !important; box-shadow: inset 3px 0 0 var(--accent) !important; }
+[data-testid="stSidebar"] button:hover { background: rgba(255,255,255,0.06) !important; border-color: transparent !important; color: var(--slate-900) !important; outline: none !important; box-shadow: none !important; }
+[data-testid="stSidebar"] button:focus, [data-testid="stSidebar"] button:focus-visible, [data-testid="stSidebar"] button:active, [data-testid="stSidebar"] button[data-focused="true"] { background: transparent !important; border-color: transparent !important; color: #c0c0c0 !important; outline: none !important; box-shadow: none !important; }
 [data-testid="stSidebar"] button:focus p, [data-testid="stSidebar"] button:focus-visible p, [data-testid="stSidebar"] button:active p { color: #c0c0c0 !important; background: transparent !important; }
 button { text-align: left !important; justify-content: flex-start !important; }
 button * { text-align: left !important; }
@@ -4102,8 +4103,8 @@ def show_sidebar():
         )
 
         st.markdown(
-            '<div style="padding:0 0 16px 0;margin:8px 0 0 0;">'
-            '<div style="font-size:27px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;line-height:1.05;">'
+            '<div style="padding:0 0 14px 0;margin:6px 0 0 0;">'
+            '<div style="font-size:19px;font-weight:800;color:var(--slate-900);letter-spacing:-0.4px;line-height:1.1;">'
             'Processor Assistant</div>'
             '</div>',
             unsafe_allow_html=True,
@@ -4114,7 +4115,7 @@ def show_sidebar():
             st.markdown(
                 '<div style="width:100%;display:flex;align-items:center;justify-content:center;'
                 'text-align:center;margin:8px 0 12px 0;">'
-                '<span style="display:block;width:100%;font-size:18px;color:#3b82f6;letter-spacing:1px;'
+                '<span style="display:block;width:100%;font-size:12px;color:var(--accent);letter-spacing:1px;'
                 'font-weight:600;text-transform:uppercase;text-align:center;">Sandbox Mode</span></div>',
                 unsafe_allow_html=True,
             )
@@ -4122,9 +4123,9 @@ def show_sidebar():
             role_color = {"Loan Officer": "var(--amber)", "Manager": "var(--accent)",
                           "Jr Underwriter": "var(--red)"}.get(user_role, "var(--accent)")
             st.markdown(
-                f'<div style="font-size:18px;font-weight:700;color:var(--slate-900);'
-                f'margin-bottom:2px;">{user_name}</div>'
-                f'<div style="font-size:15px;color:{role_color};font-weight:600;'
+                f'<div style="font-size:13px;font-weight:700;color:var(--slate-900);'
+                f'margin-bottom:1px;">{user_name}</div>'
+                f'<div style="font-size:11px;color:{role_color};font-weight:600;'
                 f'margin-bottom:10px;">{user_role}</div>',
                 unsafe_allow_html=True,
             )
