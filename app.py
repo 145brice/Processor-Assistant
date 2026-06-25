@@ -120,17 +120,17 @@ st.markdown(r"""
    so these win over Streamlit's solid primary-color styling. */
 html[data-theme="light"] [data-testid="stMain"] button[kind="primary"],
 html[data-theme="light"] [data-testid="stForm"] button[kind="primary"],
-html[data-theme="light"] [data-testid="stFileUploader"] button { background: rgba(0,0,0,0.04) !important; border: 1px solid #e2e8f0 !important; color: #334155 !important; box-shadow: none !important; }
+html[data-theme="light"] [data-testid="stFileUploader"] button { background: #eceff3 !important; border: 1px solid #c3ccd8 !important; color: #2b3648 !important; box-shadow: none !important; }
 html[data-theme="light"] [data-testid="stMain"] button[kind="primary"] p,
 html[data-theme="light"] [data-testid="stMain"] button[kind="primary"] span,
 html[data-theme="light"] [data-testid="stForm"] button[kind="primary"] p,
 html[data-theme="light"] [data-testid="stForm"] button[kind="primary"] span,
 html[data-theme="light"] [data-testid="stFileUploader"] button p,
-html[data-theme="light"] [data-testid="stFileUploader"] button span { color: #334155 !important; }
+html[data-theme="light"] [data-testid="stFileUploader"] button span { color: #2b3648 !important; }
 html[data-theme="light"] [data-testid="stMain"] button[kind="primary"]:hover,
 html[data-theme="light"] [data-testid="stForm"] button[kind="primary"]:hover,
-html[data-theme="light"] [data-testid="stFileUploader"] button:hover { background: rgba(0,0,0,0.07) !important; border-color: #cbd5e1 !important; color: #334155 !important; box-shadow: none !important; }
-html[data-theme="light"] [data-testid="stFileUploader"] button svg { fill: #334155 !important; color: #334155 !important; }
+html[data-theme="light"] [data-testid="stFileUploader"] button:hover { background: #dfe4ea !important; border-color: #aab6c5 !important; color: #2b3648 !important; box-shadow: none !important; }
+html[data-theme="light"] [data-testid="stFileUploader"] button svg { fill: #2b3648 !important; color: #2b3648 !important; }
 html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !important; }
 .stApp { background: var(--bg-page) !important; }
 .stApp::before {
