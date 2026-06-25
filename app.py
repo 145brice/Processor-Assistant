@@ -115,15 +115,17 @@ st.markdown(r"""
 [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] p, [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] span { color: #2563eb !important; }
 [data-theme="light"] [data-testid="stSidebar"] button:focus, [data-theme="light"] [data-testid="stSidebar"] button:focus-visible, [data-theme="light"] [data-testid="stSidebar"] button:active { background: rgba(0,0,0,0.06) !important; border-color: #cbd5e1 !important; color: #334155 !important; }
 [data-theme="light"] [data-testid="stSidebar"] button:focus p, [data-theme="light"] [data-testid="stSidebar"] button:focus p, [data-theme="light"] [data-testid="stSidebar"] button:active p { color: #334155 !important; }
-/* Light theme main-content primary buttons: soft pale-blue fill, dark blue text */
-[data-theme="light"] [data-testid="stMain"] button[kind="primary"],
-[data-theme="light"] [data-testid="stForm"] button[kind="primary"] { background: #e8effb !important; border: 1px solid #c3d6f5 !important; color: #2f5298 !important; box-shadow: none !important; }
-[data-theme="light"] [data-testid="stMain"] button[kind="primary"] p,
-[data-theme="light"] [data-testid="stMain"] button[kind="primary"] span,
-[data-theme="light"] [data-testid="stForm"] button[kind="primary"] p,
-[data-theme="light"] [data-testid="stForm"] button[kind="primary"] span { color: #2f5298 !important; }
-[data-theme="light"] [data-testid="stMain"] button[kind="primary"]:hover,
-[data-theme="light"] [data-testid="stForm"] button[kind="primary"]:hover { background: #dbe7fb !important; border-color: #a9c4ef !important; color: #2f5298 !important; box-shadow: none !important; }
+/* Light theme: soft pale-blue fill + dark blue text for all blue buttons
+   (primary buttons everywhere except the sidebar, plus the file-uploader button) */
+[data-theme="light"] button[kind="primary"],
+[data-theme="light"] [data-testid="stFileUploader"] button { background: #d8e6fa !important; border: 1px solid #b3cbf0 !important; color: #2b4d94 !important; box-shadow: none !important; }
+[data-theme="light"] button[kind="primary"] p,
+[data-theme="light"] button[kind="primary"] span,
+[data-theme="light"] [data-testid="stFileUploader"] button p,
+[data-theme="light"] [data-testid="stFileUploader"] button span { color: #2b4d94 !important; }
+[data-theme="light"] button[kind="primary"]:hover,
+[data-theme="light"] [data-testid="stFileUploader"] button:hover { background: #c8dcf7 !important; border-color: #9dbcec !important; color: #2b4d94 !important; box-shadow: none !important; }
+[data-theme="light"] [data-testid="stFileUploader"] button svg { fill: #2b4d94 !important; color: #2b4d94 !important; }
 html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !important; }
 .stApp { background: var(--bg-page) !important; }
 .stApp::before {
