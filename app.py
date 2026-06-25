@@ -115,17 +115,18 @@ st.markdown(r"""
 [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] p, [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] span { color: #2563eb !important; }
 [data-theme="light"] [data-testid="stSidebar"] button:focus, [data-theme="light"] [data-testid="stSidebar"] button:focus-visible, [data-theme="light"] [data-testid="stSidebar"] button:active { background: rgba(0,0,0,0.06) !important; border-color: #cbd5e1 !important; color: #334155 !important; }
 [data-theme="light"] [data-testid="stSidebar"] button:focus p, [data-theme="light"] [data-testid="stSidebar"] button:focus p, [data-theme="light"] [data-testid="stSidebar"] button:active p { color: #334155 !important; }
-/* Light theme: soft pale-blue fill + dark blue text for all blue buttons
-   (primary buttons everywhere except the sidebar, plus the file-uploader button) */
+/* Light theme: every blue button matches the light "Upload" button + info box
+   (very light blue fill, medium blue text). Primary buttons everywhere except
+   the sidebar, plus the file-uploader button. */
 [data-theme="light"] button[kind="primary"],
-[data-theme="light"] [data-testid="stFileUploader"] button { background: #d8e6fa !important; border: 1px solid #b3cbf0 !important; color: #2b4d94 !important; box-shadow: none !important; }
+[data-theme="light"] [data-testid="stFileUploader"] button { background: rgba(59,130,246,0.08) !important; border: 1px solid #cfe0f7 !important; color: #3f6bc4 !important; box-shadow: none !important; }
 [data-theme="light"] button[kind="primary"] p,
 [data-theme="light"] button[kind="primary"] span,
 [data-theme="light"] [data-testid="stFileUploader"] button p,
-[data-theme="light"] [data-testid="stFileUploader"] button span { color: #2b4d94 !important; }
+[data-theme="light"] [data-testid="stFileUploader"] button span { color: #3f6bc4 !important; }
 [data-theme="light"] button[kind="primary"]:hover,
-[data-theme="light"] [data-testid="stFileUploader"] button:hover { background: #c8dcf7 !important; border-color: #9dbcec !important; color: #2b4d94 !important; box-shadow: none !important; }
-[data-theme="light"] [data-testid="stFileUploader"] button svg { fill: #2b4d94 !important; color: #2b4d94 !important; }
+[data-theme="light"] [data-testid="stFileUploader"] button:hover { background: rgba(59,130,246,0.14) !important; border-color: #b9d2f1 !important; color: #3f6bc4 !important; box-shadow: none !important; }
+[data-theme="light"] [data-testid="stFileUploader"] button svg { fill: #3f6bc4 !important; color: #3f6bc4 !important; }
 html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !important; }
 .stApp { background: var(--bg-page) !important; }
 .stApp::before {
