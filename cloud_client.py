@@ -24,6 +24,7 @@ from datetime import datetime
 from privacy_filter import (
     has_unresolved_placeholders,
     redact_for_cloud,
+    redact_gemini_output,
     require_cloud_safe,
     restore_local_placeholders,
 )
@@ -42,6 +43,24 @@ DEFAULT_MODELS = {
 CLAUDE_ENDPOINT  = "https://api.anthropic.com/v1/messages"
 OPENAI_ENDPOINT  = "https://api.openai.com/v1/chat/completions"
 GEMINI_ENDPOINT  = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+
+GEMINI_RESPONSE_PRIVACY_INSTRUCTION = (
+    "MANDATORY RESPONSE PRIVACY RULE: Before returning your answer, redact all "
+    "Social Security numbers (SSNs), personal names, street or property addresses, "
+    "phone numbers, email addresses, account and routing numbers, dates of birth, "
+    "income figures, and any other personally identifiable information. Perform "
+    "this redaction in your RESPONSE even if the input is not redacted. Return only "
+    "the cleaned loan conditions, rewritten text, or requested structured output. "
+    "Never repeat sensitive values from the input."
+)
+
+
+def _gemini_system(system: str) -> str:
+    return f"{str(system or '').strip()}\n\n{GEMINI_RESPONSE_PRIVACY_INSTRUCTION}".strip()
+
+
+def _gemini_prompt(prompt: str) -> str:
+    return f"{str(prompt or '').strip()}\n\n{GEMINI_RESPONSE_PRIVACY_INSTRUCTION}".strip()
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Vertex AI routing (optional, for Zero Data Retention / enterprise data terms)
@@ -437,7 +456,8 @@ def _generate_claude(prompt: str, system: str, model: str,
 
 def _generate_gemini(prompt: str, system: str, model: str,
                      api_key: str, timeout: int) -> str:
-    full_prompt = f"{system}\n\n{prompt}" if system else prompt
+    source_text = f"{system}\n\n{prompt}" if system else prompt
+    full_prompt = f"{_gemini_system(system)}\n\n{_gemini_prompt(prompt)}"
     # If the system prompt asks for JSON, force JSON mode so Gemini doesn't wrap output
     _gen_cfg = {"maxOutputTokens": 8192, "temperature": 0.15}
     if system and "json" in system.lower():
@@ -454,7 +474,8 @@ def _generate_gemini(prompt: str, system: str, model: str,
     )
     with urllib.request.urlopen(req, timeout=timeout) as resp:
         data = json.loads(resp.read().decode("utf-8"))
-        return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        return redact_gemini_output(raw, source_text=source_text)
 
 
 def _generate_openai(prompt: str, system: str, model: str,
@@ -632,7 +653,13 @@ Confidence options: High Confidence, Best Guess"""
     try:
         provider = cfg.get("provider", DEFAULT_PROVIDER)
         response = _generate(prompt, system, provider, cfg["api_key"], cfg["model"])
-        response = restore_local_placeholders(response, local_replacements)
+        if provider != "gemini":
+            response = restore_local_placeholders(response, local_replacements)
+        else:
+            response = redact_gemini_output(
+                response,
+                source_text=f"{text}\n{script_conditions}",
+            )
         if has_unresolved_placeholders(response):
             # A leftover placeholder is already-redacted (no real PII), so neutralize
             # it to readable wording instead of throwing away the whole extraction.
@@ -659,14 +686,17 @@ Confidence options: High Confidence, Best Guess"""
                        f"{len(valid)} conditions  {provider}  {cfg.get('model')}")
             return result, log
         else:
-            return script_conditions, _log(
+            fallback = safe_conditions if provider == "gemini" else script_conditions
+            return fallback, _log(
                 "SCRIPT",
                 "condition_extraction",
                 "Cloud returned fewer conditions; kept local extraction",
             )
     except Exception as e:
-        return script_conditions, _log("SCRIPT", "condition_extraction",
-                                       _friendly_cloud_error(e))
+        provider = cfg.get("provider", DEFAULT_PROVIDER)
+        fallback = safe_conditions if provider == "gemini" else script_conditions
+        return fallback, _log("SCRIPT", "condition_extraction",
+                              _friendly_cloud_error(e))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -950,8 +980,8 @@ def chat(messages: list[dict], system: str = "") -> str:
         for i, m in enumerate(messages):
             role = "user" if m["role"] == "user" else "model"
             text = m["content"]
-            if i == 0 and system:
-                text = f"{system}\n\n{text}"
+            if i == 0:
+                text = f"{_gemini_system(system)}\n\n{_gemini_prompt(text)}"
             _gem_contents.append({"role": role, "parts": [{"text": text}]})
         payload = json.dumps({
             "contents": _gem_contents,
@@ -965,7 +995,9 @@ def chat(messages: list[dict], system: str = "") -> str:
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-            return data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            raw = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            source_text = "\n".join(str(m.get("content", "")) for m in messages)
+            return redact_gemini_output(raw, source_text=f"{system}\n{source_text}")
 
     elif provider == "openai":
         _msgs = []
@@ -1123,12 +1155,12 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
 
         payload = json.dumps({
             "system_instruction": {
-                "parts": [{"text": system}]
+                "parts": [{"text": _gemini_system(system)}]
             },
             "contents": [{
                 "parts": [
                     {"inline_data": {"mime_type": "application/pdf", "data": base64.b64encode(pdf_bytes).decode("utf-8")}},
-                    {"text": prompt},
+                    {"text": _gemini_prompt(prompt)},
                 ]
             }],
             "generationConfig": {
@@ -1145,7 +1177,10 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
         )
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-        txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        txt = redact_gemini_output(
+            data["candidates"][0]["content"]["parts"][0]["text"].strip(),
+            source_text=prompt,
+        )
         parsed = _clean_extracted_contract_data(_parse_ai_json(txt))
         _note = f"gemini  {model}" if provider == "gemini" else f"gemini_fallback  {model}"
         return parsed, _log("CLOUD", "pc_pdf_extract", _note), ""
@@ -1279,11 +1314,11 @@ Skip these (do NOT output rows for them):
             return _local_text_path()
 
         payload = json.dumps({
-            "system_instruction": {"parts": [{"text": system}]},
+            "system_instruction": {"parts": [{"text": _gemini_system(system)}]},
             "contents": [{
                 "parts": [
                     {"inline_data": {"mime_type": "application/pdf", "data": base64.b64encode(pdf_bytes).decode("utf-8")}},
-                    {"text": prompt},
+                    {"text": _gemini_prompt(prompt)},
                 ]
             }],
             "generationConfig": {
@@ -1299,7 +1334,10 @@ Skip these (do NOT output rows for them):
         )
         with urllib.request.urlopen(req, timeout=75) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-        txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        txt = redact_gemini_output(
+            data["candidates"][0]["content"]["parts"][0]["text"].strip(),
+            source_text=text,
+        )
         valid = _parse_approval_condition_rows(txt)
         conditions = "\n".join(valid)
         if not valid:
@@ -1377,17 +1415,20 @@ def translate_conditions_to_plain(descriptions: list[str], api_key_override: str
 
     system = (
         "You translate mortgage underwriting conditions into short, polite, "
-        "plain-English requests for homebuyers. You preserve every fact, dollar "
-        "amount, date, address, and document name. You drop industry jargon and "
-        "acronyms but keep the request specific and actionable."
+        "plain-English requests for homebuyers. Keep the request specific and "
+        "actionable while redacting all personal and identifying information."
     )
     # Number each condition and request a JSON array back, preserving order.
     numbered_input = "\n".join(f"{i+1}. {d}" for i, d in enumerate(descriptions))
+    safe_fallback = [
+        redact_gemini_output(item, source_text=numbered_input)
+        for item in descriptions
+    ]
     prompt = (
         "Rewrite each mortgage approval condition as a short, polite request a "
         "homebuyer can act on. RULES:\n\n"
-        "1. Keep every fact: dollar amounts, dates, addresses, document names, "
-        "counts, percentages. Never omit specifics.\n"
+        "1. Preserve non-identifying requirements, but redact names, SSNs, addresses, "
+        "phone numbers, emails, account/routing numbers, birth dates, and income.\n"
         "2. Be concise. Target 1-2 short sentences per condition. Aim for fewer "
         "words than the original.\n"
         "3. Start each one with a friendly opener (vary them — don't repeat the "
@@ -1409,8 +1450,8 @@ def translate_conditions_to_plain(descriptions: list[str], api_key_override: str
 
     try:
         payload = json.dumps({
-            "system_instruction": {"parts": [{"text": system}]},
-            "contents": [{"parts": [{"text": prompt}]}],
+            "system_instruction": {"parts": [{"text": _gemini_system(system)}]},
+            "contents": [{"parts": [{"text": _gemini_prompt(prompt)}]}],
             "generationConfig": {"temperature": 0.2, "maxOutputTokens": 8192},
         }).encode("utf-8")
         url, _gem_headers = _gemini_target(model, api_key)
@@ -1419,7 +1460,10 @@ def translate_conditions_to_plain(descriptions: list[str], api_key_override: str
                                      method="POST")
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-        txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        txt = redact_gemini_output(
+            data["candidates"][0]["content"]["parts"][0]["text"].strip(),
+            source_text=numbered_input,
+        )
         # Strip ```json fences if present
         if txt.startswith("```"):
             txt = re.sub(r"^```(?:json)?\s*", "", txt)
@@ -1427,12 +1471,12 @@ def translate_conditions_to_plain(descriptions: list[str], api_key_override: str
         out = json.loads(txt)
         if not isinstance(out, list) or len(out) != len(descriptions):
             # Length mismatch — fall back to originals to keep UI consistent
-            return list(descriptions), _log("CLOUD", "translate_plain",
+            return safe_fallback, _log("CLOUD", "translate_plain",
                                             f"Length mismatch: got {len(out) if isinstance(out, list) else '?'} expected {len(descriptions)}")
-        cleaned = [str(s).strip() or descriptions[i] for i, s in enumerate(out)]
+        cleaned = [str(s).strip() or safe_fallback[i] for i, s in enumerate(out)]
         return cleaned, _log("CLOUD", "translate_plain", f"{len(cleaned)} translated - gemini - {model}")
     except Exception as e:
-        return list(descriptions), _log("SCRIPT", "translate_plain", _friendly_cloud_error(e))
+        return safe_fallback, _log("SCRIPT", "translate_plain", _friendly_cloud_error(e))
 
 
 def translate_conditions_to_summarized(descriptions: list[str], api_key_override: str = "") -> tuple[list[str], str]:
@@ -1459,10 +1503,14 @@ def translate_conditions_to_summarized(descriptions: list[str], api_key_override
         "You compress mortgage underwriting conditions into the exact bullet "
         "format a senior loan processor uses when emailing clients. Each item "
         "is one line: a bold short subject (1-3 words), then ' - ', then ONE "
-        "short specific instruction. Preserve every fact, dollar amount, date, "
-        "address, and document name. Drop industry jargon and acronyms."
+        "short specific instruction. Redact all personal and identifying "
+        "information. Drop industry jargon and acronyms."
     )
     numbered_input = "\n".join(f"{i+1}. {d}" for i, d in enumerate(descriptions))
+    safe_fallback = [
+        redact_gemini_output(item, source_text=numbered_input)
+        for item in descriptions
+    ]
     prompt = (
         "Compress each condition into the EXACT format below. This is how a "
         "senior loan processor writes to clients.\n\n"
@@ -1476,11 +1524,10 @@ def translate_conditions_to_summarized(descriptions: list[str], api_key_override
         "      Payoff, Tax Bill, Statement, Invoice, Funds to Close,\n"
         "      Letter of Explanation, Motivation Letter, Closing Disclosure,\n"
         "      Verification of Mortgage, Gift Funds, ID, Driver's License.\n"
-        "  * For property-specific items use the street part of the address as\n"
-        "    the subject, e.g. '18111 Wildemere'.\n\n"
+        "  * Never use a street address or personal name as the subject.\n\n"
         "Body rules:\n"
         "  * ONE short sentence. No fluff. No 'In order to' / 'Please be advised'.\n"
-        "  * Keep every fact: amounts, dates, addresses, document names.\n"
+        "  * Keep non-identifying requirements and document names; redact PII.\n"
         "  * Drop section tags like [PTD-1], [PTF-1], [AC-1].\n"
         "  * Replace acronyms: VOM = mortgage payment history, LQI = loan\n"
         "    quality re-check, LOE = letter of explanation, SLR = second-level\n"
@@ -1506,8 +1553,8 @@ def translate_conditions_to_summarized(descriptions: list[str], api_key_override
 
     try:
         payload = json.dumps({
-            "system_instruction": {"parts": [{"text": system}]},
-            "contents": [{"parts": [{"text": prompt}]}],
+            "system_instruction": {"parts": [{"text": _gemini_system(system)}]},
+            "contents": [{"parts": [{"text": _gemini_prompt(prompt)}]}],
             "generationConfig": {"temperature": 0.2, "maxOutputTokens": 8192},
         }).encode("utf-8")
         url, _gem_headers = _gemini_target(model, api_key)
@@ -1516,15 +1563,18 @@ def translate_conditions_to_summarized(descriptions: list[str], api_key_override
                                      method="POST")
         with urllib.request.urlopen(req, timeout=60) as resp:
             data = json.loads(resp.read().decode("utf-8"))
-        txt = data["candidates"][0]["content"]["parts"][0]["text"].strip()
+        txt = redact_gemini_output(
+            data["candidates"][0]["content"]["parts"][0]["text"].strip(),
+            source_text=numbered_input,
+        )
         if txt.startswith("```"):
             txt = re.sub(r"^```(?:json)?\s*", "", txt)
             txt = re.sub(r"\s*```$", "", txt).strip()
         out = json.loads(txt)
         if not isinstance(out, list) or len(out) != len(descriptions):
-            return list(descriptions), _log("CLOUD", "translate_summary",
+            return safe_fallback, _log("CLOUD", "translate_summary",
                                             f"Length mismatch: got {len(out) if isinstance(out, list) else '?'} expected {len(descriptions)}")
-        cleaned = [str(s).strip() or descriptions[i] for i, s in enumerate(out)]
+        cleaned = [str(s).strip() or safe_fallback[i] for i, s in enumerate(out)]
         return cleaned, _log("CLOUD", "translate_summary", f"{len(cleaned)} summarized - gemini - {model}")
     except Exception as e:
-        return list(descriptions), _log("SCRIPT", "translate_summary", _friendly_cloud_error(e))
+        return safe_fallback, _log("SCRIPT", "translate_summary", _friendly_cloud_error(e))

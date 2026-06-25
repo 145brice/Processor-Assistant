@@ -183,3 +183,34 @@ def restore_local_placeholders(text: str, replacements: dict[str, str]) -> str:
 
 def has_unresolved_placeholders(text: str) -> bool:
     return bool(_PLACEHOLDER_RE.search(str(text or "")))
+
+
+_SOURCE_PROPER_NAME_RE = re.compile(
+    r"\b[A-Z][a-zA-Z'.-]{1,30}(?:[ \t]+[A-Z][a-zA-Z'.-]{1,30}){1,4}\b"
+)
+_PROPER_NAME_EXCLUSIONS = {
+    "Approval Letter",
+    "Closing Disclosure",
+    "Loan Estimate",
+    "Purchase Contract",
+    "Bank Statement",
+    "Credit Report",
+    "Homeowners Insurance",
+    "Social Security",
+    "High Confidence",
+    "Best Guess",
+}
+
+
+def redact_gemini_output(text: str, *, source_text: str = "") -> str:
+    """Redact sensitive values from a Gemini response before callers receive it."""
+    source = str(source_text or "")
+    known_values = [
+        match.group(0)
+        for match in _SOURCE_PROPER_NAME_RE.finditer(source)
+        if match.group(0) not in _PROPER_NAME_EXCLUSIONS
+    ]
+    _, source_replacements, _ = redact_for_cloud(source, known_values=known_values)
+    source_values = list(source_replacements.values()) + known_values
+    sanitized, _, _ = redact_for_cloud(str(text or ""), known_values=source_values)
+    return sanitized

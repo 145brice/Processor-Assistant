@@ -1,8 +1,9 @@
 import unittest
 from unittest.mock import patch
+import json
 
 import cloud_client
-from privacy_filter import find_sensitive_fragments, redact_for_cloud
+from privacy_filter import find_sensitive_fragments, redact_for_cloud, redact_gemini_output
 
 
 SENSITIVE_TEXT = """
@@ -96,7 +97,7 @@ class PrivacyFilterTests(unittest.TestCase):
         self.assertNotIn("Jane Marie Doe", prompt)
         self.assertNotIn("123-45-6789", prompt)
 
-    def test_condition_placeholders_are_restored_locally(self):
+    def test_gemini_condition_output_does_not_restore_sensitive_values(self):
         def fake_generate(prompt, system, provider, api_key, model):
             self.assertNotIn("WEDS 517655504100", prompt)
             return "| 1 | Provide payoff for [KNOWN_VALUE_1] | Borrower | Needed | High Confidence |"
@@ -122,8 +123,100 @@ class PrivacyFilterTests(unittest.TestCase):
                 known_values=["WEDS 517655504100"],
             )
 
-        self.assertIn("WEDS 517655504100", result)
-        self.assertNotIn("[KNOWN_VALUE_", result)
+        self.assertNotIn("WEDS 517655504100", result)
+        self.assertFalse(find_sensitive_fragments(result))
+
+    def test_gemini_transport_includes_instruction_and_redacts_response(self):
+        captured = {}
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self):
+                body = {
+                    "candidates": [{
+                        "content": {
+                            "parts": [{
+                                "text": (
+                                    "Jane Marie Doe at 123 Main Street can be reached "
+                                    "at (312) 555-0199. SSN 123-45-6789."
+                                )
+                            }]
+                        }
+                    }]
+                }
+                return json.dumps(body).encode("utf-8")
+
+        def fake_urlopen(request, timeout):
+            captured["payload"] = json.loads(request.data.decode("utf-8"))
+            return FakeResponse()
+
+        with patch("urllib.request.urlopen", side_effect=fake_urlopen):
+            output = cloud_client._generate_gemini(
+                "Borrower Name: Jane Marie Doe\nProperty Address: 123 Main Street",
+                "Rewrite the loan condition.",
+                "gemini-test",
+                "test-key",
+                30,
+            )
+
+        sent_text = captured["payload"]["contents"][0]["parts"][0]["text"]
+        self.assertIn("MANDATORY RESPONSE PRIVACY RULE", sent_text)
+        self.assertNotIn("Jane Marie Doe", output)
+        self.assertNotIn("123 Main Street", output)
+        self.assertNotIn("(312) 555-0199", output)
+        self.assertNotIn("123-45-6789", output)
+        self.assertFalse(find_sensitive_fragments(output))
+
+    def test_output_redactor_removes_sensitive_values_from_response(self):
+        output = redact_gemini_output(
+            "Contact Jane Marie Doe at jane@example.com or (312) 555-0199. "
+            "SSN: 123-45-6789. Address: 123 Main Street, Chicago, IL 60601.",
+            source_text=SENSITIVE_TEXT,
+        )
+        for sensitive in (
+            "Jane Marie Doe",
+            "jane@example.com",
+            "(312) 555-0199",
+            "123-45-6789",
+            "123 Main Street",
+        ):
+            self.assertNotIn(sensitive, output)
+        self.assertFalse(find_sensitive_fragments(output))
+
+    def test_gemini_translation_fallback_is_also_redacted(self):
+        descriptions = [
+            "Jane Marie Doe must provide documents for 123 Main Street. "
+            "Call (312) 555-0199."
+        ]
+
+        class FakeResponse:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, exc_type, exc, tb):
+                return False
+
+            def read(self):
+                return json.dumps({
+                    "candidates": [{"content": {"parts": [{"text": "[]"}]}}]
+                }).encode("utf-8")
+
+        with patch("urllib.request.urlopen", return_value=FakeResponse()):
+            output, _ = cloud_client.translate_conditions_to_plain(
+                descriptions,
+                api_key_override="test-key",
+            )
+
+        self.assertEqual(len(output), 1)
+        self.assertNotIn("Jane Marie Doe", output[0])
+        self.assertNotIn("123 Main Street", output[0])
+        self.assertNotIn("(312) 555-0199", output[0])
+        self.assertFalse(find_sensitive_fragments(output[0]))
 
     def test_pdf_compatibility_wrapper_never_uploads_pdf_bytes(self):
         local_data = {
