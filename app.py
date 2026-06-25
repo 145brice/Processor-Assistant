@@ -340,7 +340,8 @@ body.pa-sidebar-hidden [data-testid="stMain"] > div[data-testid="stMainBlockCont
 [data-testid="stSidebar"] > div:first-child { padding: 0.1rem 1rem 1rem 1rem !important; }
 [data-testid="stSidebar"] [data-testid="stSidebarUserContent"] { padding-top: 0 !important; margin-top: 0 !important; }
 [data-testid="stSidebar"] .block-container { padding-top: 0 !important; }
-[data-testid="stSidebar"] button, [data-testid="stSidebar"] button[kind], [data-testid="stSidebar"] [data-testid*="baseButton"] { background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; border-radius: var(--radius-sm) !important; font-size: 13px !important; font-weight: 500 !important; text-align: left !important; padding: 8px 12px !important; margin-bottom: 3px !important; width: 100% !important; box-shadow: none !important; transition: all 0.2s ease !important; height: auto !important; min-height: 36px !important; opacity: 1 !important; display: block !important; visibility: visible !important; }
+[data-testid="stSidebar"] button, [data-testid="stSidebar"] button[kind], [data-testid="stSidebar"] [data-testid*="baseButton"] { background: rgba(255,255,255,0.07) !important; border: 1px solid rgba(255,255,255,0.1) !important; color: #c0c0c0 !important; border-radius: var(--radius-sm) !important; font-size: 20px !important; font-weight: 500 !important; text-align: left !important; padding: 12px 16px !important; margin-bottom: 4px !important; width: 100% !important; box-shadow: none !important; transition: all 0.2s ease !important; height: auto !important; min-height: 50px !important; opacity: 1 !important; display: block !important; visibility: visible !important; }
+[data-testid="stSidebar"] button p, [data-testid="stSidebar"] button span, [data-testid="stSidebar"] button div { font-size: 20px !important; }
 [data-testid="stSidebar"] button p, [data-testid="stSidebar"] button span, [data-testid="stSidebar"] button div { background: transparent !important; color: #c0c0c0 !important; }
 [data-testid="stSidebar"] button[kind="primary"] { background: rgba(59,130,246,0.08) !important; border: 1px solid var(--accent) !important; color: var(--accent) !important; font-weight: 600 !important; box-shadow: 0 0 8px rgba(59,130,246,0.18) !important; }
 [data-testid="stSidebar"] button[kind="primary"] p, [data-testid="stSidebar"] button[kind="primary"] span, [data-testid="stSidebar"] button[kind="primary"] div { color: var(--accent) !important; font-weight: 600 !important; background: transparent !important; }
@@ -4065,7 +4066,7 @@ def show_sidebar():
 
         # ── Theme toggle ──────────────────────────────────────────────────────
         if "theme" not in st.session_state:
-            st.session_state["theme"] = "dark"
+            st.session_state["theme"] = "light"
         _is_light = st.session_state["theme"] == "light"
         _theme_label = "☀️ Light" if not _is_light else "🌙 Dark"
         if st.button(_theme_label, key="theme_toggle", use_container_width=True):
@@ -4081,7 +4082,7 @@ def show_sidebar():
 
         st.markdown(
             '<div style="padding:0 0 16px 0;margin:8px 0 0 0;">'
-            '<div style="font-size:18px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;">'
+            '<div style="font-size:27px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;">'
             'Processor Assistant</div>'
             '</div>',
             unsafe_allow_html=True,
@@ -4092,7 +4093,7 @@ def show_sidebar():
             st.markdown(
                 '<div style="width:100%;display:flex;align-items:center;justify-content:center;'
                 'text-align:center;margin:8px 0 12px 0;">'
-                '<span style="display:block;width:100%;font-size:12px;color:#3b82f6;letter-spacing:1px;'
+                '<span style="display:block;width:100%;font-size:18px;color:#3b82f6;letter-spacing:1px;'
                 'font-weight:600;text-transform:uppercase;text-align:center;">Sandbox Mode</span></div>',
                 unsafe_allow_html=True,
             )
@@ -4100,9 +4101,9 @@ def show_sidebar():
             role_color = {"Loan Officer": "var(--amber)", "Manager": "var(--accent)",
                           "Jr Underwriter": "var(--red)"}.get(user_role, "var(--accent)")
             st.markdown(
-                f'<div style="font-size:12px;font-weight:700;color:var(--slate-900);'
+                f'<div style="font-size:18px;font-weight:700;color:var(--slate-900);'
                 f'margin-bottom:2px;">{user_name}</div>'
-                f'<div style="font-size:10px;color:{role_color};font-weight:600;'
+                f'<div style="font-size:15px;color:{role_color};font-weight:600;'
                 f'margin-bottom:10px;">{user_role}</div>',
                 unsafe_allow_html=True,
             )
