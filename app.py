@@ -5711,10 +5711,10 @@ def show_dashboard():
                     with _needs_other_tab:
                         _render_needs_tab(_other_rows, "No other third-party conditions parsed for this document.")
 
-                    # Visual breathing room between the Needs List and the parsed
+                    # Slim divider between the Needs List and the parsed
                     # conditions list below it.
                     st.markdown(
-                        '<div style="height:28px;border-top:1px dashed rgba(255,255,255,0.08);margin:28px 0 12px 0;"></div>',
+                        '<div style="border-top:1px solid var(--slate-200);margin:10px 0 6px 0;"></div>',
                         unsafe_allow_html=True,
                     )
 
@@ -5930,7 +5930,7 @@ def show_dashboard():
                                 _subject, _body_short = _compact_subject_body(
                                     _orig_desc, _sum_desc, _primary_section,
                                 )
-                                _cb_col, _txt_col, _stat_col = st.columns([0.5, 7.2, 2.3])
+                                _cb_col, _txt_col, _party_col, _stat_col = st.columns([0.5, 5.2, 2.2, 2.1])
                                 with _cb_col:
                                     st.checkbox(
                                         f'#{_c["num"]}', value=False,
@@ -5964,6 +5964,15 @@ def show_dashboard():
                                         f'{_tail}'
                                         f'</div>',
                                         unsafe_allow_html=True,
+                                    )
+                                with _party_col:
+                                    _default_parties = [p for p in _sections if p in _PARTY_OPTS_SCAN]
+                                    st.multiselect(
+                                        "Responsible parties", _PARTY_OPTS_SCAN,
+                                        default=_default_parties,
+                                        key=f"{_base_uid}_party",
+                                        label_visibility="collapsed",
+                                        placeholder="Parties",
                                     )
                                 with _stat_col:
                                     _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c.get("status") in _COND_STATS_SCAN else 0
