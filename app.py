@@ -115,15 +115,15 @@ st.markdown(r"""
 [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] p, [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] span { color: #2563eb !important; }
 [data-theme="light"] [data-testid="stSidebar"] button:focus, [data-theme="light"] [data-testid="stSidebar"] button:focus-visible, [data-theme="light"] [data-testid="stSidebar"] button:active { background: rgba(0,0,0,0.06) !important; border-color: #cbd5e1 !important; color: #334155 !important; }
 [data-theme="light"] [data-testid="stSidebar"] button:focus p, [data-theme="light"] [data-testid="stSidebar"] button:focus p, [data-theme="light"] [data-testid="stSidebar"] button:active p { color: #334155 !important; }
-/* Light theme main-content primary buttons: muted blue fill, white text (readable) */
+/* Light theme main-content primary buttons: soft pale-blue fill, dark blue text */
 [data-theme="light"] [data-testid="stMain"] button[kind="primary"],
-[data-theme="light"] [data-testid="stForm"] button[kind="primary"] { background: #4f74c9 !important; border: 1px solid #4f74c9 !important; color: #ffffff !important; box-shadow: none !important; }
+[data-theme="light"] [data-testid="stForm"] button[kind="primary"] { background: #e8effb !important; border: 1px solid #c3d6f5 !important; color: #2f5298 !important; box-shadow: none !important; }
 [data-theme="light"] [data-testid="stMain"] button[kind="primary"] p,
 [data-theme="light"] [data-testid="stMain"] button[kind="primary"] span,
 [data-theme="light"] [data-testid="stForm"] button[kind="primary"] p,
-[data-theme="light"] [data-testid="stForm"] button[kind="primary"] span { color: #ffffff !important; }
+[data-theme="light"] [data-testid="stForm"] button[kind="primary"] span { color: #2f5298 !important; }
 [data-theme="light"] [data-testid="stMain"] button[kind="primary"]:hover,
-[data-theme="light"] [data-testid="stForm"] button[kind="primary"]:hover { background: #3d5ca8 !important; border-color: #3d5ca8 !important; color: #ffffff !important; box-shadow: none !important; }
+[data-theme="light"] [data-testid="stForm"] button[kind="primary"]:hover { background: #dbe7fb !important; border-color: #a9c4ef !important; color: #2f5298 !important; box-shadow: none !important; }
 html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !important; }
 .stApp { background: var(--bg-page) !important; }
 .stApp::before {
