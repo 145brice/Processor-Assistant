@@ -115,18 +115,22 @@ st.markdown(r"""
 [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] p, [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] span { color: #2563eb !important; }
 [data-theme="light"] [data-testid="stSidebar"] button:focus, [data-theme="light"] [data-testid="stSidebar"] button:focus-visible, [data-theme="light"] [data-testid="stSidebar"] button:active { background: rgba(0,0,0,0.06) !important; border-color: #cbd5e1 !important; color: #334155 !important; }
 [data-theme="light"] [data-testid="stSidebar"] button:focus p, [data-theme="light"] [data-testid="stSidebar"] button:focus p, [data-theme="light"] [data-testid="stSidebar"] button:active p { color: #334155 !important; }
-/* Light theme: every blue button matches the light "Upload" button + info box
-   (very light blue fill, medium blue text). Primary buttons everywhere except
-   the sidebar, plus the file-uploader button. */
-[data-theme="light"] button[kind="primary"],
-[data-theme="light"] [data-testid="stFileUploader"] button { background: rgba(59,130,246,0.08) !important; border: 1px solid #cfe0f7 !important; color: #3f6bc4 !important; box-shadow: none !important; }
-[data-theme="light"] button[kind="primary"] p,
-[data-theme="light"] button[kind="primary"] span,
-[data-theme="light"] [data-testid="stFileUploader"] button p,
-[data-theme="light"] [data-testid="stFileUploader"] button span { color: #3f6bc4 !important; }
-[data-theme="light"] button[kind="primary"]:hover,
-[data-theme="light"] [data-testid="stFileUploader"] button:hover { background: rgba(59,130,246,0.14) !important; border-color: #b9d2f1 !important; color: #3f6bc4 !important; box-shadow: none !important; }
-[data-theme="light"] [data-testid="stFileUploader"] button svg { fill: #3f6bc4 !important; color: #3f6bc4 !important; }
+/* Light theme: primary + file-uploader buttons match the neutral gray
+   Scanner/Pipeline nav buttons (no blue fill). High-specificity html[] prefix
+   so these win over Streamlit's solid primary-color styling. */
+html[data-theme="light"] [data-testid="stMain"] button[kind="primary"],
+html[data-theme="light"] [data-testid="stForm"] button[kind="primary"],
+html[data-theme="light"] [data-testid="stFileUploader"] button { background: rgba(0,0,0,0.04) !important; border: 1px solid #e2e8f0 !important; color: #334155 !important; box-shadow: none !important; }
+html[data-theme="light"] [data-testid="stMain"] button[kind="primary"] p,
+html[data-theme="light"] [data-testid="stMain"] button[kind="primary"] span,
+html[data-theme="light"] [data-testid="stForm"] button[kind="primary"] p,
+html[data-theme="light"] [data-testid="stForm"] button[kind="primary"] span,
+html[data-theme="light"] [data-testid="stFileUploader"] button p,
+html[data-theme="light"] [data-testid="stFileUploader"] button span { color: #334155 !important; }
+html[data-theme="light"] [data-testid="stMain"] button[kind="primary"]:hover,
+html[data-theme="light"] [data-testid="stForm"] button[kind="primary"]:hover,
+html[data-theme="light"] [data-testid="stFileUploader"] button:hover { background: rgba(0,0,0,0.07) !important; border-color: #cbd5e1 !important; color: #334155 !important; box-shadow: none !important; }
+html[data-theme="light"] [data-testid="stFileUploader"] button svg { fill: #334155 !important; color: #334155 !important; }
 html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !important; }
 .stApp { background: var(--bg-page) !important; }
 .stApp::before {
