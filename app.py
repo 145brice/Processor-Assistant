@@ -181,6 +181,7 @@ html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !importa
     max-width: 100% !important;
     padding-left: var(--pa-main-gutter) !important;
     padding-right: var(--pa-main-gutter) !important;
+    padding-top: 66px !important;
     box-sizing: border-box !important;
 }
 /* Force just the user-content visible leave header/content default so scrolling works */
@@ -4102,7 +4103,7 @@ def show_sidebar():
 
         st.markdown(
             '<div style="padding:0 0 16px 0;margin:8px 0 0 0;">'
-            '<div style="font-size:27px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;">'
+            '<div style="font-size:27px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;line-height:1.05;">'
             'Processor Assistant</div>'
             '</div>',
             unsafe_allow_html=True,
