@@ -4431,10 +4431,10 @@ def show_dashboard():
         st.markdown(
             '<div style="display:flex;align-items:center;gap:10px;margin:4px 0 10px 0;">'
             '<div style="width:26px;height:26px;border-radius:7px;'
-            'background:linear-gradient(135deg,#3b82f6,#1d4ed8);'
+            'background:var(--accent-light);'
             'display:flex;align-items:center;justify-content:center;">'
             '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" '
-            'stroke="#0a0a0a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'
+            'stroke="var(--accent)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round">'
             '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/>'
             '</svg></div>'
             '<div style="font-size:18px;font-weight:800;color:var(--slate-900);letter-spacing:-0.3px;">Scanner</div>'
@@ -5755,7 +5755,7 @@ def show_dashboard():
                             f'<div style="border:1px solid rgba(255,255,255,0.10);border-radius:8px;'
                             f'padding:8px 10px;margin-bottom:6px;background:rgba(255,255,255,0.02);">'
                             f'<div style="font-size:12px;line-height:1.4;">'
-                            f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
+                            f'<b style="color:var(--accent);">#{_c["num"]}</b> '
                             f'<span style="color:var(--slate-700);">{_desc_html}</span>{_conf_badge}</div>'
                             + (f'<div style="margin-top:4px;">{_route_chips}</div>' if _route_chips else '')
                             + '</div>',
@@ -5943,22 +5943,23 @@ def show_dashboard():
                                         f"{_base_uid}_stat", _c.get("status", "Needed")
                                     )
                                     _stat_dot_color = {
-                                        "Needed": "#f97316",
-                                        "Requested": "#eab308",
-                                        "Important": "#a855f7",
-                                        "Ready to Clear": "#22c55e",
-                                        "Cleared": "#3b82f6",
+                                        "Needed": "var(--amber)",
+                                        "Requested": "var(--gold)",
+                                        "Important": "var(--purple)",
+                                        "Ready to Clear": "var(--green)",
+                                        "Cleared": "var(--accent)",
                                     }.get(_cur_status, "var(--slate-500)")
                                     st.markdown(
                                         f'<div title="{_html_compact.escape(_orig_desc)}" '
-                                        f'style="font-size:12px;line-height:1.25;padding:2px 0 1px 0;'
-                                        f'border-bottom:1px solid rgba(255,255,255,0.04);'
+                                        f'style="font-size:12px;line-height:1.25;padding:5px 9px;'
+                                        f'background:var(--bg-subtle);border:1px solid var(--slate-200);'
+                                        f'border-radius:6px;margin-bottom:3px;'
                                         f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
                                         f'cursor:help;">'
                                         f'<span style="display:inline-block;width:6px;height:6px;'
                                         f'border-radius:50%;background:{_stat_dot_color};'
                                         f'margin-right:5px;vertical-align:middle;"></span>'
-                                        f'<b style="color:#3b82f6;">#{_c["num"]}</b> '
+                                        f'<b style="color:var(--accent);">#{_c["num"]}</b> '
                                         f'<b style="color:var(--slate-900);">{_html_compact.escape(_subject)}</b>'
                                         f'{_tail}'
                                         f'</div>',
