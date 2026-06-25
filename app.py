@@ -227,6 +227,8 @@ header[data-testid="stHeader"], [data-testid="stHeader"], .stAppHeader {
     line-height: 1 !important;
 }
 #pa-sidebar-toggle:hover { background: #2563eb !important; }
+html[data-theme="light"] #pa-sidebar-toggle { background: var(--accent-light) !important; color: var(--accent) !important; border: 1px solid #cfe0f7 !important; box-shadow: 0 1px 3px rgba(0,0,0,0.12) !important; }
+html[data-theme="light"] #pa-sidebar-toggle:hover { background: rgba(59,130,246,0.16) !important; }
 body.pa-sidebar-hidden #pa-sidebar-toggle { left: 12px !important; height: 48px !important; }
 body.pa-sidebar-hidden [data-testid="stSidebar"] {
     width: 0 !important;
@@ -4387,10 +4389,10 @@ def show_dashboard():
             <div style="margin:4px 0 8px 0;padding:8px 12px;
                  background:var(--bg-white);border:1px solid var(--slate-300);border-radius:6px;
                  display:flex;align-items:center;gap:10px;">
-              <div style="width:24px;height:24px;border-radius:4px;background:#2563eb;
+              <div style="width:24px;height:24px;border-radius:4px;background:var(--accent-light);
                    display:flex;align-items:center;justify-content:center;flex-shrink:0;">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                     stroke="var(--slate-900)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                     stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
                   <rect x="3" y="4" width="18" height="16" rx="2"/>
                   <path d="M7 8h10M7 12h10M7 16h6"/>
                 </svg>
@@ -7721,9 +7723,9 @@ def show_pipeline():
 
         # Color left-border by status
         border_colors = {
-            "Pending":   "#ef4444",
-            "Requested": "#f59e0b",
-            "Cleared":   "#3b82f6",
+            "Pending":   "var(--red)",
+            "Requested": "var(--amber)",
+            "Cleared":   "var(--accent)",
             "Overdue":   "var(--slate-600)",
             "Closed":    "var(--slate-600)",
         }
@@ -7749,16 +7751,16 @@ def show_pipeline():
                 _lock_d = _dt_datetime.strptime(_lock_exp, "%Y-%m-%d").date()
                 _lock_days = (_lock_d - _dt_date.today()).days
                 if _lock_days < 0:
-                    _lock_clr, _lock_lbl = "#ef4444", f"LOCK EXPIRED ({abs(_lock_days)}d ago)"
+                    _lock_clr, _lock_bg, _lock_lbl = "var(--red)", "var(--red-bg)", f"LOCK EXPIRED ({abs(_lock_days)}d ago)"
                 elif _lock_days <= 7:
-                    _lock_clr, _lock_lbl = "#ef4444", f"Lock expires in {_lock_days}d"
+                    _lock_clr, _lock_bg, _lock_lbl = "var(--red)", "var(--red-bg)", f"Lock expires in {_lock_days}d"
                 elif _lock_days <= 14:
-                    _lock_clr, _lock_lbl = "#f59e0b", f"Lock {_lock_days}d"
+                    _lock_clr, _lock_bg, _lock_lbl = "var(--amber)", "var(--amber-bg)", f"Lock {_lock_days}d"
                 else:
-                    _lock_clr, _lock_lbl = "#3b82f6", f"Lock {_lock_exp}"
+                    _lock_clr, _lock_bg, _lock_lbl = "var(--accent)", "var(--accent-light)", f"Lock {_lock_exp}"
                 _lock_badge = (
-                    f'<span style="background:{_lock_clr};color:#fff;'
-                    f'padding:1px 6px;border-radius:3px;font-size:11px;font-weight:500;">{_lock_lbl}</span>'
+                    f'<span style="background:{_lock_bg};color:{_lock_clr};border:1px solid {_lock_clr};'
+                    f'padding:1px 6px;border-radius:3px;font-size:11px;font-weight:600;">{_lock_lbl}</span>'
                 )
             except Exception:
                 pass
@@ -7796,11 +7798,11 @@ def show_pipeline():
 
         # Progress bar color
         if _pct >= 75:
-            _bar_color = "#3b82f6"
+            _bar_color = "var(--accent)"
         elif _pct >= 40:
-            _bar_color = "#f59e0b"
+            _bar_color = "var(--amber)"
         else:
-            _bar_color = "#ef4444"
+            _bar_color = "var(--red)"
 
         # â”€â”€ Inline badges â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         _inline_badges = ""
@@ -7808,8 +7810,8 @@ def show_pipeline():
             _inline_badges += f"&nbsp;{_lock_badge}"
         if _missing_txt and _missing_txt != "None":
             _inline_badges += (
-                f'&nbsp;<span style="background:rgba(245,158,11,0.1);color:#f59e0b;padding:1px 5px;'
-                f'border-radius:3px;font-size:11px;font-weight:500;border:1px solid rgba(245,158,11,0.3);">'
+                f'&nbsp;<span style="background:var(--amber-bg);color:var(--amber);padding:1px 5px;'
+                f'border-radius:3px;font-size:11px;font-weight:500;border:1px solid var(--amber-border);">'
                 f'Missing</span>'
             )
         # â”€â”€ 24hr response countdown badge (loan-level, not condition-level) â”€â”€
