@@ -7963,7 +7963,7 @@ def show_pipeline():
 
         # â”€â”€ Single compact row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         st.markdown(
-            f'<div class="pa-loan-grid" style="border-left:3px solid {_status_clr};background:var(--bg-subtle);padding:2px 6px 3px 6px;margin-bottom:0;">'
+            f'<div class="pa-loan-grid" style="border-left:6px solid {_status_clr};background:var(--bg-subtle);padding:2px 6px 3px 10px;margin-bottom:0;">'
             # Line 1: loan# | borrower | status | badges | bar | % | x
             f'<div style="display:flex;align-items:center;gap:6px;min-height:20px;">'
             f'<span style="width:96px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">#{_loan_num}</span>'
