@@ -67,15 +67,15 @@ st.markdown(r"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
 :root {
-    /* Dark theme (default) */
+    /* Dark theme (default) — softened, lower-saturation accents */
     --bg-page: #0f1117; --bg-white: #1a1f2e; --bg-subtle: #161b2b;
-    --accent: #2563eb; --accent-dark: #1d4ed8; --accent-light: rgba(59, 130, 246, 0.1);
-    --green: #16a34a; --green-bg: #14532d; --green-border: rgba(34, 197, 94, 0.4);
-    --red: #ef4444; --red-bg: #7f1d1d; --red-border: rgba(239, 68, 68, 0.4);
-    --amber: #fcd34d; --amber-bg: #78350f; --amber-border: rgba(245, 158, 11, 0.4);
-    --purple: #c7d2fe; --purple-bg: #1e1b4b; --purple-border: rgba(99, 102, 241, 0.4);
-    --pink: #fed7aa; --pink-bg: #7c2d12; --pink-border: rgba(234, 88, 12, 0.4);
-    --gold: #fcd34d; --gold-bg: rgba(251, 191, 36, 0.1);
+    --accent: #5b82d6; --accent-dark: #4368b8; --accent-light: rgba(91, 130, 214, 0.12);
+    --green: #5aa978; --green-bg: #1c3a2a; --green-border: rgba(90, 169, 120, 0.35);
+    --red: #d97070; --red-bg: #4a2424; --red-border: rgba(217, 112, 112, 0.35);
+    --amber: #e0c264; --amber-bg: #4a3a18; --amber-border: rgba(224, 194, 100, 0.35);
+    --purple: #b3aae0; --purple-bg: #28244a; --purple-border: rgba(150, 140, 210, 0.35);
+    --pink: #d9a47e; --pink-bg: #4a2f1c; --pink-border: rgba(217, 164, 126, 0.35);
+    --gold: #e0c264; --gold-bg: rgba(224, 194, 100, 0.10);
     --slate-900: #ffffff; --slate-700: #e0e0e0; --slate-600: #94a3b8;
     --slate-500: #64748b; --slate-400: #64748b; --slate-300: #334155;
     --slate-200: #1e293b; --slate-100: #161b2b;
@@ -132,6 +132,21 @@ html[data-theme="light"] [data-testid="stMain"] button[kind="primary"]:hover,
 html[data-theme="light"] [data-testid="stForm"] button[kind="primary"]:hover,
 html[data-theme="light"] [data-testid="stFileUploader"] button:hover { background: #dfe4ea !important; border-color: #aab6c5 !important; color: #2b3648 !important; box-shadow: none !important; }
 html[data-theme="light"] [data-testid="stFileUploader"] button svg { fill: #2b3648 !important; color: #2b3648 !important; }
+/* Dark theme: soften the solid bright-blue primary + uploader buttons to a
+   muted translucent blue (high-specificity so it wins over Streamlit). */
+html[data-theme="dark"] [data-testid="stMain"] button[kind="primary"],
+html[data-theme="dark"] [data-testid="stForm"] button[kind="primary"],
+html[data-theme="dark"] [data-testid="stFileUploader"] button { background: rgba(91,130,214,0.16) !important; border: 1px solid rgba(91,130,214,0.4) !important; color: #aac1ec !important; box-shadow: none !important; }
+html[data-theme="dark"] [data-testid="stMain"] button[kind="primary"] p,
+html[data-theme="dark"] [data-testid="stMain"] button[kind="primary"] span,
+html[data-theme="dark"] [data-testid="stForm"] button[kind="primary"] p,
+html[data-theme="dark"] [data-testid="stForm"] button[kind="primary"] span,
+html[data-theme="dark"] [data-testid="stFileUploader"] button p,
+html[data-theme="dark"] [data-testid="stFileUploader"] button span { color: #aac1ec !important; }
+html[data-theme="dark"] [data-testid="stMain"] button[kind="primary"]:hover,
+html[data-theme="dark"] [data-testid="stForm"] button[kind="primary"]:hover,
+html[data-theme="dark"] [data-testid="stFileUploader"] button:hover { background: rgba(91,130,214,0.24) !important; border-color: rgba(91,130,214,0.6) !important; color: #c4d4f2 !important; box-shadow: none !important; }
+html[data-theme="dark"] [data-testid="stFileUploader"] button svg { fill: #aac1ec !important; color: #aac1ec !important; }
 html, body, [class*="css"] { font-family: 'Segoe UI', Arial, sans-serif !important; }
 .stApp { background: var(--bg-page) !important; }
 .stApp::before {
