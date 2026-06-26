@@ -92,8 +92,8 @@ st.markdown(r"""
 /* Light theme overrides */
 :root[data-theme="light"] {
     --bg-page: #f8fafc; --bg-white: #ffffff; --bg-subtle: #f1f5f9;
-    --slate-900: #0b1220; --slate-700: #28323f; --slate-600: #3b4757;
-    --slate-500: #525e72; --slate-400: #8694a6; --slate-300: #c0cbd9;
+    --slate-900: #060b14; --slate-700: #18212c; --slate-600: #283341;
+    --slate-500: #3a4554; --slate-400: #5d6a7c; --slate-300: #b3bfce;
     --slate-200: #dde3ea; --slate-100: #eef1f5;
     /* Muted accent + status colors, deepened for stronger contrast on white */
     --accent: #34539c; --accent-dark: #284183;
