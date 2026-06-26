@@ -70,7 +70,7 @@ st.markdown(r"""
     /* Dark theme (default) — softened, lower-saturation accents */
     --bg-page: #0f1117; --bg-white: #1a1f2e; --bg-subtle: #161b2b;
     --accent: #5b82d6; --accent-dark: #4368b8; --accent-light: rgba(91, 130, 214, 0.12);
-    --green: #5aa978; --green-bg: #1c3a2a; --green-border: rgba(90, 169, 120, 0.35);
+    --green: #5aa978; --green-dark: #3f7d59; --green-bg: #1c3a2a; --green-border: rgba(90, 169, 120, 0.35);
     --red: #d97070; --red-bg: #4a2424; --red-border: rgba(217, 112, 112, 0.35);
     --amber: #e0c264; --amber-bg: #4a3a18; --amber-border: rgba(224, 194, 100, 0.35);
     --purple: #b3aae0; --purple-bg: #28244a; --purple-border: rgba(150, 140, 210, 0.35);
@@ -97,7 +97,7 @@ st.markdown(r"""
     /* Muted accent + status colors, deepened for stronger contrast on white */
     --accent: #34539c; --accent-dark: #284183;
     --accent-light: rgba(52, 83, 156, 0.12);
-    --green: #2f6347; --green-bg: #dceae1; --green-border: rgba(47, 99, 71, 0.4);
+    --green: #2f6347; --green-dark: #1e4632; --green-bg: #dceae1; --green-border: rgba(47, 99, 71, 0.4);
     --red: #a23c3c; --red-bg: #f3d9d9; --red-border: rgba(162, 60, 60, 0.4);
     --amber: #8a6217; --amber-bg: #efe2c6; --amber-border: rgba(138, 98, 23, 0.4);
     --purple: #534a8c; --purple-bg: #e2deee; --purple-border: rgba(83, 74, 140, 0.4);
@@ -7762,9 +7762,9 @@ def show_pipeline():
         border_colors = {
             "Pending":   "var(--red)",
             "Requested": "var(--amber)",
-            "Cleared":   "var(--accent)",
+            "Cleared":   "var(--green)",
             "Overdue":   "var(--slate-600)",
-            "Closed":    "var(--slate-600)",
+            "Closed":    "var(--green-dark)",
         }
         border_color = border_colors.get(status, "rgba(255,255,255,0.2)")
 
@@ -13287,27 +13287,31 @@ def show_persistent_header():
 
     counts = {s: sum(1 for l in loans if l.get("status") == s) for s in STATUS_OPTIONS}
     total = len(loans)
-    closed = counts.get("Cleared", 0) + counts.get("Closed", 0)
-    in_prog = counts.get("Requested", 0)
-    pct_clr = int((closed / total) * 100) if total else 0
-    pct_ip  = int((in_prog / total) * 100) if total else 0
-    pct_pen = max(0, 100 - pct_clr - pct_ip)
+    _pen   = counts.get("Pending", 0) + counts.get("Overdue", 0)
+    _req   = counts.get("Requested", 0)
+    _clr   = counts.get("Cleared", 0)
+    _fund  = counts.get("Closed", 0)
+    _pct = lambda n: int((n / total) * 100) if total else 0
     chip_html = ''.join([
         f'<a href="?pipefilter={s}&page=pipeline" class="pa-pchip" style="--c:{c};text-decoration:none;cursor:pointer;">'
         f'<span class="pa-pchip-n" style="color:{c};">{counts.get(s, 0) if s != "All" else total}</span>'
         f'<span class="pa-pchip-l">{s}</span></a>'
-        for s, c in [("All","#3b82f6"),("Pending","#ef4444"),("Requested","#f59e0b"),
-                     ("Cleared","#3b82f6"),("Overdue","var(--slate-600)"),("Closed","var(--slate-600)")]
+        for s, c in [("All","var(--accent)"),("Pending","var(--red)"),("Requested","var(--amber)"),
+                     ("Cleared","var(--green)"),("Overdue","var(--slate-600)"),("Closed","var(--green-dark)")]
     ])
+    # Stacked bar: Pending/Overdue (red) · In progress (amber) · Cleared (green) · Funded (dark green)
+    _bar_tip = (f"Pending {_pct(_pen)}% · In progress {_pct(_req)}% · "
+                f"Cleared {_pct(_clr)}% · Funded {_pct(_fund)}%")
     st.markdown(
         f"""
         <div class="pa-pipe-dash">
           <span class="pa-pipe-dash-title">My Pipeline</span>
           <div class="pa-pipe-dash-row">{chip_html}</div>
-          <div class="pa-pipe-dash-bar">
-            <div style="background:#3b82f6;width:{pct_clr}%;"></div>
-            <div style="background:#f59e0b;width:{pct_ip}%;"></div>
-            <div style="background:#ef4444;width:{pct_pen}%;"></div>
+          <div class="pa-pipe-dash-bar" title="{_bar_tip}">
+            <div style="background:var(--red);width:{_pct(_pen)}%;" title="Pending/Overdue: {_pen}"></div>
+            <div style="background:var(--amber);width:{_pct(_req)}%;" title="In progress: {_req}"></div>
+            <div style="background:var(--green);width:{_pct(_clr)}%;" title="Cleared: {_clr}"></div>
+            <div style="background:var(--green-dark);width:{_pct(_fund)}%;" title="Funded: {_fund}"></div>
           </div>
         </div>
         """,
