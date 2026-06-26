@@ -6908,15 +6908,22 @@ def _pipeline_import_template_csv() -> str:
 def show_pipeline():
     """Color-coded CRM loan pipeline dashboard."""
     import os
-    # Handle dash header chip click set status filter from query param
+    # Handle clicks from the header status chips and the column-header sort row.
     _qp = st.query_params
-    _qp_filter = _qp.get("pipefilter", "")
-    if isinstance(_qp_filter, list):
-        _qp_filter = _qp_filter[0] if _qp_filter else ""
-    if _qp_filter:
-        st.session_state["pipeline_filter_val"] = _qp_filter
-        if "pipeline_filter" in st.session_state:
-            del st.session_state["pipeline_filter"]
+    def _qp_first(_name):
+        _v = _qp.get(_name, "")
+        return (_v[0] if _v else "") if isinstance(_v, list) else _v
+    # Status chip → SORT (float that status to the top), keeping all loans visible.
+    _qp_statussort = _qp_first("pipesort") or _qp_first("pipefilter")
+    # Column header → set the active sort field.
+    _qp_sortby = _qp_first("pipesortby")
+    if _qp_statussort:
+        st.session_state["pipeline_status_first"] = "" if _qp_statussort == "All" else _qp_statussort
+        st.query_params.clear()
+        st.rerun()
+    if _qp_sortby:
+        st.session_state["pipeline_sort"] = _qp_sortby
+        st.session_state["pipeline_status_first"] = ""  # explicit column sort clears status float
         st.query_params.clear()
         st.rerun()
     from crm import (
@@ -7735,6 +7742,12 @@ def show_pipeline():
     else:  # Newest (default most recently created first)
         loans.sort(key=lambda l: l.get("id") or 0, reverse=True)
 
+    # Header status chip click: float that status to the top (stable, so the
+    # chosen sort order is preserved within each group).
+    _status_first = st.session_state.get("pipeline_status_first", "")
+    if _status_first:
+        loans.sort(key=lambda l: 0 if l.get("status") == _status_first else 1)
+
     if not loans:
         st.info("No loans in pipeline yet. Click **+Add Loan** to get started.")
         return
@@ -7751,6 +7764,29 @@ def show_pipeline():
         'padding:4px 12px;background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.3);border-radius:4px;">Loans</div>'
         '<div style="flex:1;height:1px;background:rgba(255,255,255,0.08);"></div>'
         '</div>',
+        unsafe_allow_html=True,
+    )
+
+    # â”€â”€ Clickable column-header sort row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    import urllib.parse as _ulp_sort
+    _sort_headers = [
+        ("Loan #", "Loan #"), ("Borrower", "Last Name"), ("Status", "Status"),
+        ("Close", "Closing Date"), ("Lock", "Lock Expiry"), ("Newest", "Newest"),
+    ]
+    _hdr_links = "".join(
+        f'<a href="?pipesortby={_ulp_sort.quote(_opt)}&page=pipeline" '
+        f'style="text-decoration:none;font-size:10px;font-weight:700;text-transform:uppercase;'
+        f'letter-spacing:0.4px;padding:2px 9px;border-radius:5px;'
+        f'color:{"#fff" if sort_by == _opt else "var(--slate-600)"};'
+        f'background:{"var(--accent)" if sort_by == _opt else "transparent"};'
+        f'border:1px solid {"var(--accent)" if sort_by == _opt else "var(--slate-300)"};">'
+        f'{_lbl}{" ↓" if sort_by == _opt else ""}</a>'
+        for _lbl, _opt in _sort_headers
+    )
+    st.markdown(
+        '<div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin:0 0 8px 2px;">'
+        '<span style="font-size:10px;color:var(--slate-500);font-weight:600;margin-right:2px;">SORT BY:</span>'
+        + _hdr_links + '</div>',
         unsafe_allow_html=True,
     )
 
@@ -13303,7 +13339,7 @@ def show_persistent_header():
     # Display label: "Pending" means pending underwriting in the loan pipeline.
     _chip_lbl = {"Pending": "Pending UW"}
     chip_html = ''.join([
-        f'<a href="?pipefilter={s}&page=pipeline" class="pa-pchip" style="--c:{c};text-decoration:none;cursor:pointer;">'
+        f'<a href="?pipesort={s}&page=pipeline" class="pa-pchip" style="--c:{c};text-decoration:none;cursor:pointer;" title="Sort: bring {_chip_lbl.get(s, s)} to the top">'
         f'<span class="pa-pchip-n" style="color:{c};">{counts.get(s, 0) if s != "All" else total}</span>'
         f'<span class="pa-pchip-l">{_chip_lbl.get(s, s)}</span></a>'
         for s, c in [("All","var(--slate-700)"),("Pending","var(--accent)"),("Requested","var(--orange)"),
