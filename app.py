@@ -132,6 +132,9 @@ html[data-theme="light"] [data-testid="stMain"] button[kind="primary"]:hover,
 html[data-theme="light"] [data-testid="stForm"] button[kind="primary"]:hover,
 html[data-theme="light"] [data-testid="stFileUploader"] button:hover { background: #dfe4ea !important; border-color: #aab6c5 !important; color: #2b3648 !important; box-shadow: none !important; }
 html[data-theme="light"] [data-testid="stFileUploader"] button svg { fill: #2b3648 !important; color: #2b3648 !important; }
+/* Light theme: give each pipeline loan card a darker background + defined
+   border so it stands out from the page (status color bar stays on the left). */
+html[data-theme="light"] .pa-loan-grid { background: #e7ecf3 !important; border-top: 1px solid #c5cfdc !important; border-right: 1px solid #c5cfdc !important; border-bottom: 1px solid #c5cfdc !important; border-radius: 0 8px 8px 0 !important; }
 /* Dark theme: soften the solid bright-blue primary + uploader buttons to a
    muted translucent blue (high-specificity so it wins over Streamlit). */
 html[data-theme="dark"] [data-testid="stMain"] button[kind="primary"],
