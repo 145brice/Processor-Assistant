@@ -91,18 +91,18 @@ st.markdown(r"""
 /* Light theme overrides */
 :root[data-theme="light"] {
     --bg-page: #f8fafc; --bg-white: #ffffff; --bg-subtle: #f1f5f9;
-    --slate-900: #0f172a; --slate-700: #334155; --slate-600: #475569;
-    --slate-500: #64748b; --slate-400: #94a3b8; --slate-300: #cbd5e1;
-    --slate-200: #e2e8f0; --slate-100: #f1f5f9;
-    /* Muted, lower-saturation accent + status colors (nudged slightly darker) */
-    --accent: #4366bb; --accent-dark: #34508f;
-    --accent-light: rgba(67, 102, 187, 0.10);
-    --green: #437455; --green-bg: #e1ebe4; --green-border: rgba(67, 116, 85, 0.32);
-    --red: #b34f4f; --red-bg: #f1dede; --red-border: rgba(179, 79, 79, 0.32);
-    --amber: #9c7426; --amber-bg: #f0e6cf; --amber-border: rgba(156, 116, 38, 0.32);
-    --purple: #61569b; --purple-bg: #e5e2ef; --purple-border: rgba(97, 86, 155, 0.32);
-    --pink: #a05e33; --pink-bg: #efe1d6; --pink-border: rgba(160, 94, 51, 0.32);
-    --gold: #9c7426; --gold-bg: rgba(156, 116, 38, 0.10);
+    --slate-900: #0b1220; --slate-700: #28323f; --slate-600: #3b4757;
+    --slate-500: #525e72; --slate-400: #8694a6; --slate-300: #c0cbd9;
+    --slate-200: #dde3ea; --slate-100: #eef1f5;
+    /* Muted accent + status colors, deepened for stronger contrast on white */
+    --accent: #34539c; --accent-dark: #284183;
+    --accent-light: rgba(52, 83, 156, 0.12);
+    --green: #2f6347; --green-bg: #dceae1; --green-border: rgba(47, 99, 71, 0.4);
+    --red: #a23c3c; --red-bg: #f3d9d9; --red-border: rgba(162, 60, 60, 0.4);
+    --amber: #8a6217; --amber-bg: #efe2c6; --amber-border: rgba(138, 98, 23, 0.4);
+    --purple: #534a8c; --purple-bg: #e2deee; --purple-border: rgba(83, 74, 140, 0.4);
+    --pink: #8c4f28; --pink-bg: #efddd0; --pink-border: rgba(140, 79, 40, 0.4);
+    --gold: #8a6217; --gold-bg: rgba(138, 98, 23, 0.12);
     --shadow-card: 0 1px 3px rgba(0,0,0,0.08);
     --shadow-hover: 0 2px 8px rgba(0,0,0,0.12);
     --shadow-lg: 0 10px 30px rgba(0,0,0,0.15);
