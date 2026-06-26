@@ -7968,7 +7968,7 @@ def show_pipeline():
             f'<div style="display:flex;align-items:center;gap:6px;min-height:20px;">'
             f'<span style="width:96px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">#{_loan_num}</span>'
             f'<span style="width:170px;font-size:11px;color:var(--slate-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{_borrower}</span>'
-            f'<span style="width:88px;font-size:11px;color:{_status_clr};font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{emoji}{status}</span>'
+            f'<span style="width:88px;font-size:11px;color:{_status_clr} !important;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{emoji}{status}</span>'
             f'<span style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{_inline_badges}</span>'
             f'<div style="width:60px;flex-shrink:0;background:rgba(255,255,255,0.1);height:4px;border-radius:2px;">'
             f'<div style="background:{_bar_color};width:{_pct}%;height:100%;border-radius:2px;"></div></div>'
