@@ -73,6 +73,7 @@ st.markdown(r"""
     --green: #5aa978; --green-dark: #3f7d59; --green-bg: #1c3a2a; --green-border: rgba(90, 169, 120, 0.35);
     --red: #d97070; --red-bg: #4a2424; --red-border: rgba(217, 112, 112, 0.35);
     --amber: #e0c264; --amber-bg: #4a3a18; --amber-border: rgba(224, 194, 100, 0.35);
+    --yellow: #e3cd5e; --orange: #e08a4a;
     --purple: #b3aae0; --purple-bg: #28244a; --purple-border: rgba(150, 140, 210, 0.35);
     --pink: #d9a47e; --pink-bg: #4a2f1c; --pink-border: rgba(217, 164, 126, 0.35);
     --gold: #e0c264; --gold-bg: rgba(224, 194, 100, 0.10);
@@ -100,6 +101,7 @@ st.markdown(r"""
     --green: #2f6347; --green-dark: #1e4632; --green-bg: #dceae1; --green-border: rgba(47, 99, 71, 0.4);
     --red: #a23c3c; --red-bg: #f3d9d9; --red-border: rgba(162, 60, 60, 0.4);
     --amber: #8a6217; --amber-bg: #efe2c6; --amber-border: rgba(138, 98, 23, 0.4);
+    --yellow: #a8841a; --orange: #c2641c;
     --purple: #534a8c; --purple-bg: #e2deee; --purple-border: rgba(83, 74, 140, 0.4);
     --pink: #8c4f28; --pink-bg: #efddd0; --pink-border: rgba(140, 79, 40, 0.4);
     --gold: #8a6217; --gold-bg: rgba(138, 98, 23, 0.12);
@@ -5691,6 +5693,8 @@ def show_dashboard():
                             _base_uid = f"{_scan_fkey}_{_cond_uid}"
                             _row_status = st.session_state.get(f"{_base_uid}_stat", _cond.get("status", "Needed"))
                             _status_label = _needs_status_label(_row_status)
+                            _need_badge_clr = {"Received": "var(--green)",
+                                               "Submitted": "var(--orange)"}.get(_status_label, "var(--yellow)")
                             _orig_text = str(_cond.get("desc", ""))
                             # If Gemini gave us "**Subject** - body", reuse it so the row
                             # matches the processor email format; otherwise derive wording
@@ -5709,7 +5713,7 @@ def show_dashboard():
                                 '<div>'
                                 f'<b class="pa-need-subject" style="color:var(--slate-900);font-weight:700;font-size:inherit;line-height:inherit;">{_html.escape(_subject)}</b>'
                                 f'<span class="pa-need-body" style="color:#dbeafe;"> - {_html.escape(_body)}</span>'
-                                f'<span class="pa-need-status">{_html.escape(_status_label)}</span>'
+                                f'<span class="pa-need-status" style="color:{_need_badge_clr} !important;border-color:{_need_badge_clr} !important;background:transparent !important;">{_html.escape(_status_label)}</span>'
                                 '</div>'
                                 '</div>'
                             )
@@ -5970,11 +5974,11 @@ def show_dashboard():
                                         f"{_base_uid}_stat", _c.get("status", "Needed")
                                     )
                                     _stat_dot_color = {
-                                        "Needed": "var(--amber)",
-                                        "Requested": "var(--gold)",
-                                        "Important": "var(--purple)",
+                                        "Needed": "var(--yellow)",
+                                        "Requested": "var(--orange)",
+                                        "Important": "var(--red)",
                                         "Ready to Clear": "var(--green)",
-                                        "Cleared": "var(--accent)",
+                                        "Cleared": "var(--green)",
                                     }.get(_cur_status, "var(--slate-500)")
                                     st.markdown(
                                         f'<div title="{_html_compact.escape(_orig_desc)}" '
@@ -7760,10 +7764,10 @@ def show_pipeline():
 
         # Color left-border by status
         border_colors = {
-            "Pending":   "var(--red)",
-            "Requested": "var(--amber)",
+            "Pending":   "var(--accent)",
+            "Requested": "var(--orange)",
             "Cleared":   "var(--green)",
-            "Overdue":   "var(--slate-600)",
+            "Overdue":   "var(--red)",
             "Closed":    "var(--green-dark)",
         }
         border_color = border_colors.get(status, "rgba(255,255,255,0.2)")
@@ -7965,13 +7969,15 @@ def show_pipeline():
             )
 
         # â”€â”€ Single compact row â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # "Pending" means pending underwriting in the loan pipeline.
+        _status_disp = "Pending UW" if status == "Pending" else status
         st.markdown(
             f'<div class="pa-loan-grid" style="border-left:6px solid {_status_clr};background:var(--bg-subtle);padding:2px 6px 3px 10px;margin-bottom:0;">'
             # Line 1: loan# | borrower | status | badges | bar | % | x
             f'<div style="display:flex;align-items:center;gap:6px;min-height:20px;">'
             f'<span style="width:96px;font-size:11px;font-weight:700;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">#{_loan_num}</span>'
             f'<span style="width:170px;font-size:11px;color:var(--slate-700);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{_borrower}</span>'
-            f'<span style="width:88px;font-size:11px;color:{_status_clr} !important;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{emoji}{status}</span>'
+            f'<span style="width:96px;font-size:11px;color:{_status_clr} !important;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">{emoji}{_status_disp}</span>'
             f'<span style="flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;">{_inline_badges}</span>'
             f'<div style="width:60px;flex-shrink:0;background:rgba(255,255,255,0.1);height:4px;border-radius:2px;">'
             f'<div style="background:{_bar_color};width:{_pct}%;height:100%;border-radius:2px;"></div></div>'
@@ -8003,6 +8009,7 @@ def show_pipeline():
             _new_status = st.selectbox(
                 "Status", STATUS_OPTIONS, index=STATUS_OPTIONS.index(status) if status in STATUS_OPTIONS else 0,
                 key=f"st_{lid}", label_visibility="collapsed",
+                format_func=lambda s: "Pending Underwriting" if s == "Pending" else s,
             )
             if _new_status != status and not st.session_state.get(_status_confirm_key):
                 st.session_state[_status_pending_key] = _new_status
@@ -12018,11 +12025,11 @@ def show_loan_detail():
                     with _txt_col:
                         _tail = f' <span style="color:var(--slate-600);"> - {_html_ld.escape(_body_short)}</span>' if _body_short else ''
                         _stat_dot_color = {
-                            "Needed": "#f97316",
-                            "Requested": "#eab308",
-                            "Important": "#a855f7",
-                            "Ready to Clear": "#22c55e",
-                            "Cleared": "#3b82f6",
+                            "Needed": "var(--yellow)",
+                            "Requested": "var(--orange)",
+                            "Important": "var(--red)",
+                            "Ready to Clear": "var(--green)",
+                            "Cleared": "var(--green)",
                         }.get(_cur_status, "var(--slate-500)")
                         st.markdown(
                             f'<div title="{_html_ld.escape(_orig_desc)}" '
@@ -13287,20 +13294,23 @@ def show_persistent_header():
 
     counts = {s: sum(1 for l in loans if l.get("status") == s) for s in STATUS_OPTIONS}
     total = len(loans)
-    _pen   = counts.get("Pending", 0) + counts.get("Overdue", 0)
+    _pend  = counts.get("Pending", 0)
     _req   = counts.get("Requested", 0)
+    _over  = counts.get("Overdue", 0)
     _clr   = counts.get("Cleared", 0)
     _fund  = counts.get("Closed", 0)
     _pct = lambda n: int((n / total) * 100) if total else 0
+    # Display label: "Pending" means pending underwriting in the loan pipeline.
+    _chip_lbl = {"Pending": "Pending UW"}
     chip_html = ''.join([
         f'<a href="?pipefilter={s}&page=pipeline" class="pa-pchip" style="--c:{c};text-decoration:none;cursor:pointer;">'
         f'<span class="pa-pchip-n" style="color:{c};">{counts.get(s, 0) if s != "All" else total}</span>'
-        f'<span class="pa-pchip-l">{s}</span></a>'
-        for s, c in [("All","var(--accent)"),("Pending","var(--red)"),("Requested","var(--amber)"),
-                     ("Cleared","var(--green)"),("Overdue","var(--slate-600)"),("Closed","var(--green-dark)")]
+        f'<span class="pa-pchip-l">{_chip_lbl.get(s, s)}</span></a>'
+        for s, c in [("All","var(--slate-700)"),("Pending","var(--accent)"),("Requested","var(--orange)"),
+                     ("Cleared","var(--green)"),("Overdue","var(--red)"),("Closed","var(--green-dark)")]
     ])
-    # Stacked bar: Pending/Overdue (red) · In progress (amber) · Cleared (green) · Funded (dark green)
-    _bar_tip = (f"Pending {_pct(_pen)}% · In progress {_pct(_req)}% · "
+    # Stacked bar: Pending UW (blue) · Requested (orange) · Overdue (red) · Cleared (green) · Funded (dark green)
+    _bar_tip = (f"Pending UW {_pct(_pend)}% · Requested {_pct(_req)}% · Overdue {_pct(_over)}% · "
                 f"Cleared {_pct(_clr)}% · Funded {_pct(_fund)}%")
     st.markdown(
         f"""
@@ -13308,8 +13318,9 @@ def show_persistent_header():
           <span class="pa-pipe-dash-title">My Pipeline</span>
           <div class="pa-pipe-dash-row">{chip_html}</div>
           <div class="pa-pipe-dash-bar" title="{_bar_tip}">
-            <div style="background:var(--red);width:{_pct(_pen)}%;" title="Pending/Overdue: {_pen}"></div>
-            <div style="background:var(--amber);width:{_pct(_req)}%;" title="In progress: {_req}"></div>
+            <div style="background:var(--accent);width:{_pct(_pend)}%;" title="Pending UW: {_pend}"></div>
+            <div style="background:var(--orange);width:{_pct(_req)}%;" title="Requested: {_req}"></div>
+            <div style="background:var(--red);width:{_pct(_over)}%;" title="Overdue: {_over}"></div>
             <div style="background:var(--green);width:{_pct(_clr)}%;" title="Cleared: {_clr}"></div>
             <div style="background:var(--green-dark);width:{_pct(_fund)}%;" title="Funded: {_fund}"></div>
           </div>
