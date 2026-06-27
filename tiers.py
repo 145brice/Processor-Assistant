@@ -20,7 +20,7 @@ TIERS: dict[str, dict] = {
     "free":      {"name": "Free",      "price": 0.00,  "scan_limit": 20,   "priority": False},
     "starter":   {"name": "Starter",   "price": 9.99,  "scan_limit": 75,   "priority": False},
     "pro":       {"name": "Pro",       "price": 29.99, "scan_limit": 250,  "priority": False},
-    "unlimited": {"name": "Unlimited", "price": 49.00, "scan_limit": None, "priority": True},
+    "unlimited": {"name": "Unlimited", "price": 49.99, "scan_limit": None, "priority": True},
 }
 
 # Low → high, used for "upgrade to the next tier" suggestions.
@@ -44,6 +44,23 @@ def tier_for_price_id(price_id: str) -> str:
         return ""
     for key in TIER_ORDER:
         if stripe_price_id(key) and stripe_price_id(key) == price_id:
+            return key
+    return ""
+
+
+def tier_for_amount_cents(amount_cents: int | str | None) -> str:
+    """Map a Stripe checkout/invoice amount to a tier key.
+
+    This is a fallback for static Payment Links when Stripe events do not
+    include expanded price IDs. Configured Price IDs still win.
+    """
+    try:
+        cents = int(amount_cents or 0)
+    except (TypeError, ValueError):
+        return ""
+    for key in ("starter", "pro", "unlimited"):
+        expected = int(round(float(TIERS[key]["price"]) * 100))
+        if cents == expected:
             return key
     return ""
 

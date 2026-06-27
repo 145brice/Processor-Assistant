@@ -97,6 +97,22 @@ def _price_id(obj: dict) -> str:
     return ""
 
 
+def _amount_cents(obj: dict) -> int:
+    """Best-effort extraction of a Stripe event amount in cents."""
+    for key in ("amount_total", "amount_paid", "amount_due"):
+        value = obj.get(key)
+        if value not in (None, ""):
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                pass
+    total = ((obj.get("total_details") or {}).get("amount_total"))
+    try:
+        return int(total or 0)
+    except (TypeError, ValueError):
+        return 0
+
+
 def _customer_id(obj: dict) -> str:
     return str(obj.get("customer") or "").strip()
 
@@ -147,6 +163,8 @@ def handle_stripe_webhook(payload: bytes, signature_header: str) -> tuple[int, d
     try:
         import tiers as _tiers
         tier = _tiers.tier_for_price_id(price_id)
+        if not tier:
+            tier = _tiers.tier_for_amount_cents(_amount_cents(obj))
     except Exception:
         tier = ""
     try:
