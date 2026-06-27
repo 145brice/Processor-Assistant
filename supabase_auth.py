@@ -405,6 +405,8 @@ def update_subscription_by_email(
     stripe_customer_id: str = "",
     stripe_subscription_id: str = "",
     plan: str = "beta",
+    tier: str = "",
+    stripe_price_id: str = "",
 ) -> dict:
     """Update the app profile for a Stripe customer email."""
     email = (email or "").strip().lower()
@@ -449,6 +451,10 @@ def update_subscription_by_email(
             "stripe_subscription_id": stripe_subscription_id or profile.get("stripe_subscription_id", ""),
             "subscription_updated_at": now,
         })
+        if tier:
+            profile["tier"] = tier
+        if stripe_price_id:
+            profile["stripe_price_id"] = stripe_price_id
         save_result = _save_setting_json(
             row["key"],
             profile,

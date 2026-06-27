@@ -74,6 +74,29 @@ def _subscription_id(obj: dict) -> str:
     return str(obj.get("subscription") or obj.get("id") or "").strip()
 
 
+def _price_id(obj: dict) -> str:
+    """Best-effort extraction of the Stripe price ID from an event object.
+
+    Subscription objects carry items.data[].price.id; checkout sessions and
+    invoices may carry it on lines/line_items. Returns '' if not present
+    (e.g. checkout.session.completed without expanded line items).
+    """
+    items = (obj.get("items") or {})
+    data = items.get("data") if isinstance(items, dict) else None
+    if isinstance(data, list) and data:
+        price = (data[0] or {}).get("price") or {}
+        if isinstance(price, dict) and price.get("id"):
+            return str(price["id"]).strip()
+    for key in ("lines", "line_items"):
+        block = obj.get(key) or {}
+        rows = block.get("data") if isinstance(block, dict) else None
+        if isinstance(rows, list) and rows:
+            price = (rows[0] or {}).get("price") or {}
+            if isinstance(price, dict) and price.get("id"):
+                return str(price["id"]).strip()
+    return ""
+
+
 def _customer_id(obj: dict) -> str:
     return str(obj.get("customer") or "").strip()
 
@@ -118,6 +141,14 @@ def handle_stripe_webhook(payload: bytes, signature_header: str) -> tuple[int, d
         return 202, {"ok": False, "error": "No customer email on Stripe event; cannot map to app user."}
 
     status = _status_for_event(event_type, obj)
+    # Map the Stripe price ID to one of our app tiers (price IDs come from env).
+    price_id = _price_id(obj)
+    tier = ""
+    try:
+        import tiers as _tiers
+        tier = _tiers.tier_for_price_id(price_id)
+    except Exception:
+        tier = ""
     try:
         import supabase_auth
 
@@ -126,7 +157,9 @@ def handle_stripe_webhook(payload: bytes, signature_header: str) -> tuple[int, d
             status=status,
             stripe_customer_id=_customer_id(obj),
             stripe_subscription_id=_subscription_id(obj),
-            plan="beta",
+            plan=(tier or "beta"),
+            tier=tier,
+            stripe_price_id=price_id,
         )
     except Exception as exc:
         return 500, {"ok": False, "error": str(exc)}

@@ -4965,6 +4965,28 @@ def show_dashboard():
                 help="Off by default. The PDF remains local; only redacted condition text is sent.",
             )
 
+        # â”€â”€ Monthly scan-quota indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        try:
+            import tiers as _tiers_ind
+            _ind_uid = st.session_state.get("user_id", "")
+            if _ind_uid and not st.session_state.get("sandbox_mode") and not _is_owner_admin_email():
+                _ind_q = _tiers_ind.check_scan_quota(_ind_uid, _user_trial_profile())
+                if _ind_q["limit"] is None:
+                    _ind_html = (f'<span style="color:var(--green);font-weight:700;">{_ind_q["tier_name"]}</span> '
+                                 f'<span style="color:var(--slate-600);">- unlimited scans</span>')
+                else:
+                    _rem = _ind_q["remaining"]
+                    _ind_clr = "var(--red)" if _rem == 0 else ("var(--amber)" if _rem <= 5 else "var(--slate-700)")
+                    _ind_html = (f'<span style="color:var(--slate-600);">{_ind_q["tier_name"]} plan - </span>'
+                                 f'<span style="color:{_ind_clr};font-weight:700;">{_ind_q["used"]}/{_ind_q["limit"]}</span>'
+                                 f'<span style="color:var(--slate-600);"> scans used this month ({_rem} left)</span>')
+                st.markdown(
+                    f'<div style="font-size:12px;margin:2px 0 6px 2px;">{_ind_html}</div>',
+                    unsafe_allow_html=True,
+                )
+        except Exception:
+            pass
+
         _checked_visible = [_vi for _vi in _visible if st.session_state.get(f"dash_sel_{_vi}", True)]
         _scan_clicked = st.button(f"Scan + sanitized AI ({len(_checked_visible)} selected)" if _use_cloud_enhancement else f"Scan locally ({len(_checked_visible)} selected)",
                                   key="dash_scan", type="primary", disabled=len(_checked_visible) == 0)
@@ -5018,6 +5040,24 @@ def show_dashboard():
                 _provider_name = _dash_cc.get_config().get("provider", "AI").title()
             except Exception:
                 pass
+
+            # â”€â”€ Monthly scan-quota (tier-based) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+            import tiers as _tiers
+            _quota_uid = st.session_state.get("user_id", "")
+            _enforce_quota = (
+                bool(_quota_uid)
+                and not st.session_state.get("sandbox_mode")
+                and not _is_owner_admin_email()
+            )
+            if _enforce_quota:
+                _quota = _tiers.check_scan_quota(_quota_uid, _user_trial_profile())
+                _scan_limit_val = _quota["limit"]
+                _scans_used_local = int(_quota["used"])
+            else:
+                _quota = None
+                _scan_limit_val = None
+                _scans_used_local = 0
+
             for _sq_i, (_sq_bytes, _sq_name, _sq_type) in enumerate(_scan_queue):
                 _sq_will_use_cloud = (_sq_type in _dash_cloud_doc_types and _dash_user_approved_cloud)
                 _sq_status = (
@@ -5029,6 +5069,17 @@ def show_dashboard():
                     int((_sq_i / _sq_total) * 100),
                     text=_sq_status,
                 )
+                # Stop the batch once the monthly scan limit is reached.
+                if (_enforce_quota and _scan_limit_val is not None
+                        and _scans_used_local >= _scan_limit_val):
+                    _up = _quota.get("next_tier_name") or ""
+                    _up_txt = f" Upgrade to **{_up}** for more." if _up else ""
+                    st.warning(
+                        f"You've used all **{_scan_limit_val}** scans on your "
+                        f"**{_quota['tier_name']}** plan this month."
+                        f"{_up_txt} Remaining files in this batch were not scanned."
+                    )
+                    break
                 if _sq_type == "Unknown":
                     st.warning(f"{_sq_name}: Unknown type override the dropdown to scan")
                     continue
@@ -5123,6 +5174,14 @@ def show_dashboard():
                     _batch.append(_new_batch)
                     st.session_state.scan_batches = _batch
                     _remember_scan_batch(_new_batch)
+                    # Count this scan against the user's monthly quota.
+                    if _quota_uid and not st.session_state.get("sandbox_mode"):
+                        try:
+                            import billing as _bl_log
+                            _bl_log.log_scan(_quota_uid, _sq_type)
+                        except Exception:
+                            pass
+                    _scans_used_local += 1
                     if _result.get("image_only"):
                         st.warning(f"{_sq_name}: {_sq_type} - scanned image, logged without extraction")
                     else:
@@ -10970,35 +11029,46 @@ def show_billing_page():
     role = st.session_state.get("user_role", "Processor")
 
     st.title("$ Usage & Billing")
-    st.caption("Tracks document scans processed each month and calculates your monthly cost.")
+    st.caption("Tracks document scans processed each month against your plan's limit.")
 
-    # â”€â”€ Current month summary â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    # â”€â”€ Current month summary (tier-based) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    import tiers as _tiers_bp
     usage = _bl.get_usage(uid)
     month_label = _bl.format_month(usage["year_month"])
+    _q = _tiers_bp.check_scan_quota(uid, _user_trial_profile())
+    _limit = _q["limit"]
+    _scans = int(usage["scans"])
 
     st.markdown(f"### {month_label}")
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Scans This Month", usage["scans"])
-    col2.metric("Included in Plan", usage["included"])
-    col3.metric("Overage Scans", usage["overage"],
-                delta=f"+${usage['overage_cost']:.2f}" if usage["overage"] else None,
-                delta_color="inverse")
-    col4.metric("Monthly Total", f"${usage['total_cost']:.2f}",
-                help=f"${_bl.MONTHLY_BASE:.0f} base + ${usage['overage_cost']:.2f} overage")
+    col1.metric("Plan", _q["tier_name"])
+    col2.metric("Scans This Month", _scans)
+    col3.metric("Monthly Limit", "Unlimited" if _limit is None else _limit)
+    col4.metric("Remaining", "âˆž" if _limit is None else max(0, _limit - _scans))
 
     # â”€â”€ Usage bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    pct = usage["pct_used"]
-    bar_color = "#3b82f6" if pct < 80 else ("#f59e0b" if pct < 100 else "#ef4444")
-    st.markdown(
-        f'<div style="background:rgba(255,255,255,0.1);border-radius:8px;padding:12px 16px;margin:8px 0 16px;">'
-        f'<div style="font-size:13px;color:var(--slate-700);margin-bottom:6px;">'
-        f'Quota: {usage["scans"]} / {usage["included"]} scans used ({pct}%)</div>'
-        f'<div style="background:rgba(255,255,255,0.03);border-radius:4px;height:10px;">'
-        f'<div style="background:{bar_color};width:{min(pct,100)}%;height:10px;border-radius:4px;'
-        f'transition:width 0.4s;"></div></div></div>',
-        unsafe_allow_html=True,
-    )
+    if _limit is None:
+        st.markdown(
+            '<div style="background:var(--bg-subtle);border:1px solid var(--slate-200);border-radius:8px;'
+            'padding:12px 16px;margin:8px 0 16px;font-size:13px;color:var(--green);font-weight:700;">'
+            'Unlimited scans on this plan.</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        pct = min(100, round(_scans / max(_limit, 1) * 100))
+        bar_color = "var(--accent)" if pct < 80 else ("var(--amber)" if pct < 100 else "var(--red)")
+        st.markdown(
+            f'<div style="background:var(--bg-subtle);border:1px solid var(--slate-200);border-radius:8px;padding:12px 16px;margin:8px 0 16px;">'
+            f'<div style="font-size:13px;color:var(--slate-700);margin-bottom:6px;">'
+            f'{_scans} / {_limit} scans used ({pct}%)'
+            + (f' &nbsp;-&nbsp; <b>Limit reached.</b> Upgrade to {_q["next_tier_name"]} for more.' if pct >= 100 and _q["next_tier_name"] else '')
+            + '</div>'
+            f'<div style="background:var(--slate-200);border-radius:4px;height:10px;">'
+            f'<div style="background:{bar_color};width:{pct}%;height:10px;border-radius:4px;'
+            f'transition:width 0.4s;"></div></div></div>',
+            unsafe_allow_html=True,
+        )
 
     # â”€â”€ Breakdown by doc type â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if usage["by_doc_type"]:
