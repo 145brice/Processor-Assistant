@@ -1,7 +1,7 @@
 """Create Processor Assistant Stripe tiers.
 
 Usage:
-    $env:STRIPE_SECRET_KEY="sk_live_..."   # PowerShell; do not commit this
+    $env:STRIPE_SECRET_KEY="<your Stripe secret key>"   # PowerShell; do not commit this
     python scripts/create_stripe_tiers.py
 
 The script creates/reuses monthly recurring Stripe Prices for the app tiers and

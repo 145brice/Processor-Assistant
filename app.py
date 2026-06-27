@@ -2530,16 +2530,22 @@ def _has_paid_access(profile: dict) -> bool:
 
 
 def _render_trial_gate(profile: dict) -> None:
+    import tiers as _tiers
+
     st.title("Trial Ended")
     st.markdown(
         """
-        Your 14-day beta trial has ended. To keep using Processor Assistant, start the beta plan.
+        Your 14-day beta trial has ended. To keep using Processor Assistant, choose a paid plan.
 
-        Beta is **$49/mo** and starts with a **14-day free trial**.
+        You can continue with Starter, Pro, or Unlimited.
         """
     )
     render_no_credit_card_banner()
-    st.link_button("Start Beta Plan", "https://buy.stripe.com/bJe7sLdx87xM6mtaOSdfG00", type="primary")
+    unlimited_link = _tiers.stripe_payment_link("unlimited")
+    if unlimited_link:
+        st.link_button("Start Unlimited Plan", unlimited_link, type="primary")
+    else:
+        st.warning("Paid plan links are not configured yet. Please contact support.")
 
     st.markdown("<div style='margin-top:24px;'></div>", unsafe_allow_html=True)
     with st.expander("Already paid with a different email?"):
@@ -10899,8 +10905,6 @@ def show_pricing_page():
     import html as _html
     import tiers as _tiers
 
-    legacy_beta_payment_link = "https://buy.stripe.com/bJe7sLdx87xM6mtaOSdfG00"
-
     st.title("Pricing")
     st.caption("Simple year-one pricing while Processor Assistant is still early-access.")
 
@@ -10917,7 +10921,7 @@ def show_pricing_page():
             "unlimited",
             "Unlimited scans plus priority support.",
             "Start Unlimited",
-            _tiers.stripe_payment_link("unlimited") or legacy_beta_payment_link,
+            _tiers.stripe_payment_link("unlimited"),
         ),
     ]
 
