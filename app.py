@@ -1594,13 +1594,14 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
     font-family: 'Segoe UI', sans-serif;
 }
 .pa-pchip-l {
-    font-size: 9px; color: var(--slate-600);
-    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600;
+    font-size: 9px; color: var(--c, var(--slate-600));
+    text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;
 }
 .pa-pipe-dash-bar {
-    height: 4px; width: 120px; max-width: 12vw; background: var(--slate-200); border-radius: 2px;
+    height: 11px; width: 140px; max-width: 14vw; background: var(--slate-200);
+    border: 1px solid var(--slate-300); border-radius: 5px;
     overflow: hidden; display: flex;
-    flex: 0 1 120px;
+    flex: 0 1 140px;
 }
 .pa-pipe-dash-bar > div { height: 100%; transition: width 0.3s; }
 /* Push main content down so it starts below the fixed header bar */
