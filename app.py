@@ -3769,82 +3769,63 @@ def render_onboarding_checklist() -> None:
         },
     ]
     done_count = sum(1 for step in steps if step["done"])
+    _first_incomplete = next((i for i, s in enumerate(steps) if not s["done"]), None)
+    _pct = int(done_count / len(steps) * 100) if steps else 0
 
+    # â”€â”€ Header + progress bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     st.markdown(
         f"""
-        <div style="margin:14px 0 10px 0;padding:12px 14px;background:var(--bg-subtle);
-             border:1px solid var(--slate-300);border-radius:8px;">
+        <div style="margin:14px 0 12px 0;padding:14px 16px;background:var(--bg-subtle);
+             border:1px solid var(--slate-300);border-radius:10px;">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">
-            <div>
-              <div style="font-size:16px;font-weight:900;color:var(--slate-900);">Quick Start Checklist</div>
-              <div style="font-size:12px;color:var(--slate-600);margin-top:2px;">
-                Click through these steps to get Processor Assistant ready for daily use.
-              </div>
-            </div>
-            <div style="font-size:13px;font-weight:800;color:#3b82f6;white-space:nowrap;">
-              {done_count}/{len(steps)} complete
-            </div>
+            <div style="font-size:16px;font-weight:900;color:var(--slate-900);">Get started in {len(steps)} steps</div>
+            <div style="font-size:13px;font-weight:800;color:var(--accent);white-space:nowrap;">{done_count} of {len(steps)} done</div>
+          </div>
+          <div style="background:var(--slate-200);border-radius:5px;height:8px;margin-top:10px;overflow:hidden;">
+            <div style="background:var(--green);width:{_pct}%;height:8px;border-radius:5px;transition:width .4s;"></div>
           </div>
         </div>
         """,
         unsafe_allow_html=True,
     )
-    pref_options = {
-        "Scanner": "dashboard",
-        "Pipeline": "pipeline",
-        "Overview": "overview",
-    }
-    current_pref = _preferred_landing_page()
-    pref_labels = list(pref_options.keys())
-    current_label = next(
-        (label for label, value in pref_options.items() if value == current_pref),
-        "Scanner",
-    )
-    pc1, pc2 = st.columns([1.4, 1])
-    with pc1:
-        selected_pref = st.selectbox(
-            "After hiding this checklist, start me on",
-            pref_labels,
-            index=pref_labels.index(current_label),
-            key="onboarding_default_landing_choice",
-        )
-    with pc2:
-        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-        if st.checkbox("Don't show this checklist again", key="onboarding_checklist_dismissed"):
-            st.session_state.default_landing_page = pref_options[selected_pref]
-            st.session_state.page = _preferred_landing_page()
-            _save_session()
-            st.rerun()
 
-    for idx, step in enumerate(steps, start=1):
+    # â”€â”€ Numbered steps (in order) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    for idx, step in enumerate(steps):
+        is_done = step["done"]
+        is_current = (idx == _first_incomplete)
+        if is_done:
+            _cbg, _cfg, _mark = "var(--green)", "#ffffff", "&#10003;"  # checkmark
+        elif is_current:
+            _cbg, _cfg, _mark = "var(--accent)", "#ffffff", str(idx + 1)
+        else:
+            _cbg, _cfg, _mark = "var(--slate-300)", "var(--slate-600)", str(idx + 1)
+        _title_color = "var(--slate-500)" if is_done else "var(--slate-900)"
+        _border = "var(--accent)" if is_current else "var(--slate-200)"
         c1, c2 = st.columns([4.2, 1.2])
-        status = "Done" if step["done"] else "Next"
-        color = "#22c55e" if step["done"] else "#3b82f6"
-        marker = "OK" if step["done"] else str(idx)
         with c1:
             st.markdown(
                 f"""
-                <div style="min-height:54px;padding:9px 12px;margin-bottom:5px;
-                     background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.09);
-                     border-radius:7px;display:flex;align-items:center;gap:11px;">
-                  <div style="width:28px;height:28px;border-radius:999px;background:{color};
-                       color:var(--slate-900);font-size:12px;font-weight:900;display:flex;
-                       align-items:center;justify-content:center;flex-shrink:0;">
-                    {marker}
-                  </div>
+                <div style="min-height:58px;padding:10px 14px;margin-bottom:6px;
+                     background:var(--bg-white);border:1px solid {_border};
+                     border-radius:8px;display:flex;align-items:center;gap:12px;">
+                  <div style="width:30px;height:30px;border-radius:999px;background:{_cbg};
+                       color:{_cfg};font-size:14px;font-weight:900;display:flex;
+                       align-items:center;justify-content:center;flex-shrink:0;">{_mark}</div>
                   <div style="min-width:0;">
-                    <div style="font-size:13px;font-weight:800;color:var(--slate-900);">{step["title"]}</div>
-                    <div style="font-size:11px;color:var(--slate-600);margin-top:2px;">{step["detail"]}</div>
+                    <div style="font-size:10px;font-weight:800;color:var(--slate-500);
+                         letter-spacing:0.6px;text-transform:uppercase;">Step {idx + 1}</div>
+                    <div style="font-size:13.5px;font-weight:800;color:{_title_color};line-height:1.2;">{step["title"]}</div>
+                    <div style="font-size:11px;color:var(--slate-600);margin-top:1px;">{step["detail"]}</div>
                   </div>
-                  <div style="margin-left:auto;font-size:10px;font-weight:900;color:{color};
-                       text-transform:uppercase;letter-spacing:0.6px;">{status}</div>
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
         with c2:
-            if st.button(step["button"], key=step["key"], use_container_width=True,
-                         type="primary" if not step["done"] else "secondary"):
+            st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+            _btn_label = "Done" if is_done else step["button"]
+            if st.button(_btn_label, key=step["key"], use_container_width=True,
+                         type="primary" if is_current else "secondary"):
                 if step["action"] == "ai_key":
                     st.session_state.pop("gemini_onboarding_skipped", None)
                     st.session_state["gemini_onboarding_step"] = 1
@@ -3859,12 +3840,41 @@ def render_onboarding_checklist() -> None:
                 _save_session()
                 st.rerun()
 
+    # â”€â”€ Preferences / dismiss (below the steps) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    st.markdown("<div style='height:4px'></div>", unsafe_allow_html=True)
+    pref_options = {
+        "Scanner": "dashboard",
+        "Pipeline": "pipeline",
+        "Overview": "overview",
+    }
+    current_pref = _preferred_landing_page()
+    pref_labels = list(pref_options.keys())
+    current_label = next(
+        (label for label, value in pref_options.items() if value == current_pref),
+        "Scanner",
+    )
+    pc1, pc2 = st.columns([1.4, 1])
+    with pc1:
+        selected_pref = st.selectbox(
+            "When I hide this, start me on",
+            pref_labels,
+            index=pref_labels.index(current_label),
+            key="onboarding_default_landing_choice",
+        )
+    with pc2:
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        if st.checkbox("Hide this checklist", key="onboarding_checklist_dismissed"):
+            st.session_state.default_landing_page = pref_options[selected_pref]
+            st.session_state.page = _preferred_landing_page()
+            _save_session()
+            st.rerun()
+
 
 def show_overview_page():
     """Post-login landing that reuses the same value-prop highlights."""
     _user = st.session_state.get("user_name", "") or "there"
     st.markdown(
-        f'<div style="font-size:22px;font-weight:900;color:#fff;margin:2px 0 2px 0;">'
+        f'<div style="font-size:22px;font-weight:900;color:var(--slate-900);margin:2px 0 2px 0;">'
         f'Welcome, {_user.split()[0] if _user else "there"} 👋</div>'
         f'<div style="font-size:13px;color:var(--slate-600);margin-bottom:14px;">'
         f'Here\'s what you can do with Processor Assistant.</div>',
