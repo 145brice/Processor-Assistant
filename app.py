@@ -3722,6 +3722,40 @@ def render_no_credit_card_banner() -> None:
     )
 
 
+def render_compliance_statement(compact: bool = False) -> None:
+    """Data privacy & compliance statement shown on pricing, signup, and scanner."""
+    if compact:
+        st.markdown(
+            '<div style="margin:6px 0 8px 0;padding:9px 12px;border-radius:8px;'
+            'background:var(--green-bg);border:1px solid var(--green-border);'
+            'font-size:11.5px;color:var(--slate-700);line-height:1.5;">'
+            '<b style="color:var(--green);">Built for GLBA compliance.</b> '
+            'Documents are processed for the scan and are not stored by Processor Assistant. '
+            'When AI assistance is used, data is processed through Google\'s Gemini API, which '
+            'holds it only briefly for security monitoring &mdash; never to train or improve its models.'
+            '</div>',
+            unsafe_allow_html=True,
+        )
+        return
+    st.markdown(
+        '<div style="margin:10px 0 14px 0;padding:16px 18px;border-radius:12px;'
+        'background:var(--bg-subtle);border:1px solid var(--slate-300);">'
+        '<div style="font-size:15px;font-weight:900;color:var(--slate-900);margin-bottom:6px;">'
+        'Data Privacy &amp; Compliance</div>'
+        '<div style="font-size:13px;color:var(--slate-700);line-height:1.6;">'
+        'Processor Assistant is <b style="color:var(--slate-900);">built for GLBA compliance</b>. '
+        'Documents you scan are processed securely and are '
+        '<b style="color:var(--slate-900);">not stored by Processor Assistant</b> &mdash; your files '
+        'stay in your own system of record. When AI assistance is used, data is processed through '
+        '<b style="color:var(--slate-900);">Google\'s Gemini API</b>, which retains it only '
+        '<b style="color:var(--slate-900);">briefly for security and abuse monitoring &mdash; never '
+        'to train or improve its models</b>. Your borrowers\' information is protected and handled in '
+        'accordance with applicable regulatory standards.'
+        '</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
 def render_onboarding_checklist() -> None:
     if st.session_state.get("onboarding_checklist_dismissed"):
         return
@@ -3991,6 +4025,7 @@ def show_login_page():
     # Product highlights so visitors see what it does before signing in.
     render_feature_highlights(heading=False)
     render_no_credit_card_banner()
+    render_compliance_statement(compact=True)
     st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
 
     if _env_truthy("PA_SHOW_SANDBOX", "0"):
@@ -4560,6 +4595,7 @@ def show_dashboard():
         "Security note: uploaded PDFs are processed for this scan only and are not stored. "
         "The app may save non-sensitive extracted fields, loan metadata, and recent scan history for your signed-in account."
     )
+    render_compliance_statement(compact=True)
     new_files = st.file_uploader(
         "Drop PDFs here - or click to browse" if not _has_upload else "Add more PDFs",
         type=["pdf"], accept_multiple_files=True,
@@ -10994,6 +11030,9 @@ def show_pricing_page():
 
     if not (_tiers.stripe_payment_link("starter") and _tiers.stripe_payment_link("pro") and _tiers.stripe_payment_link("unlimited")):
         st.caption("Paid tier links are controlled by TIER_STARTER_PAYMENT_LINK, TIER_PRO_PAYMENT_LINK, and TIER_UNLIMITED_PAYMENT_LINK environment variables.")
+
+    st.markdown('<div style="height:10px"></div>', unsafe_allow_html=True)
+    render_compliance_statement()
 
     with st.expander("What is included?"):
         st.markdown(
