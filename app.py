@@ -3733,8 +3733,19 @@ def render_onboarding_checklist() -> None:
         loan_count = 0
     has_ai_key = bool(st.session_state.get("sandbox_mode") or st.session_state.get("user_gemini_api_key"))
     has_scans = bool(st.session_state.get("scan_batches") or _recent_scan_history())
+    _user_email = st.session_state.get("user_email", "")
+    signed_in = bool(st.session_state.get("authenticated") or st.session_state.get("sandbox_mode"))
 
     steps = [
+        {
+            "title": "Create your account",
+            "detail": (f"Signed in as {_user_email}." if _user_email
+                       else "You're signed in and ready to go."),
+            "done": signed_in,
+            "button": "Done",
+            "key": "onboard_signin",
+            "action": "none",
+        },
         {
             "title": "Set up AI key",
             "detail": "Enable document reading and condition extraction.",
