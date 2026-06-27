@@ -3615,7 +3615,7 @@ def render_feature_highlights(heading: bool = True):
     if heading:
         st.markdown(
             '<div style="text-align:center;margin:4px 0 14px 0;">'
-            '<div style="font-size:clamp(24px,4.5vw,34px);font-weight:900;color:#fff;'
+            '<div style="font-size:clamp(24px,4.5vw,34px);font-weight:900;color:var(--slate-900);'
             'letter-spacing:-0.5px;line-height:1.12;">'
             'Made for processors,'
             '<div style="color:#3b82f6;font-size:inherit;font-weight:inherit;">built by processors.</div></div>'
@@ -3640,19 +3640,19 @@ def render_feature_highlights(heading: bool = True):
                   <path d="M9 13h6M9 17h4"/>
                 </svg>
               </div>
-              <div style="font-size:15px;font-weight:800;color:#fff;">Smart Document Intelligence</div>
+              <div style="font-size:15px;font-weight:800;color:var(--slate-900);">Smart Document Intelligence</div>
             </div>
             <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#3b82f6;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
-              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:#fff;">Scans</b> any loan document instantly</span>
+              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">Scans</b> any loan document instantly</span>
             </div>
             <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#3b82f6;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
-              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:#fff;">Parses</b> key data, conditions &amp; parties</span>
+              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">Parses</b> key data, conditions &amp; parties</span>
             </div>
             <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#3b82f6;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
-              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:#fff;">Intelligently rewrites</b> underwriting conditions by party &amp; context</span>
+              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">Intelligently rewrites</b> underwriting conditions by party &amp; context</span>
             </div>
           </div>
           <div style="flex:1;min-width:260px;border:1px solid rgba(34,197,94,0.35);
@@ -3667,19 +3667,19 @@ def render_feature_highlights(heading: bool = True):
                   <path d="m22 7-10 6L2 7"/>
                 </svg>
               </div>
-              <div style="font-size:15px;font-weight:800;color:#fff;">One-Click Email Workflows</div>
+              <div style="font-size:15px;font-weight:800;color:var(--slate-900);">One-Click Email Workflows</div>
             </div>
             <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#22c55e;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
-              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:#fff;">One-click order-outs</b> to title, insurance &amp; more</span>
+              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">One-click order-outs</b> to title, insurance &amp; more</span>
             </div>
             <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#22c55e;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
-              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:#fff;">Automatic inbox monitoring</b> so nothing slips</span>
+              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">Automatic inbox monitoring</b> so nothing slips</span>
             </div>
             <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#22c55e;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
-              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:#fff;">Multi-language email</b> reading &amp; writing</span>
+              <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">Multi-language email</b> reading &amp; writing</span>
             </div>
           </div>
         </div>
@@ -3699,17 +3699,17 @@ def render_no_credit_card_banner() -> None:
     st.markdown(
         """
         <div style="margin:10px 0 12px 0;padding:13px 16px;border-radius:10px;
-             background:rgba(34,197,94,0.12);border:1px solid rgba(34,197,94,0.45);
+             background:var(--green-bg);border:1px solid var(--green-border);
              text-align:center;">
-          <div style="font-size:20px;font-weight:900;color:#86efac;letter-spacing:0.8px;
+          <div style="font-size:20px;font-weight:900;color:var(--green);letter-spacing:0.8px;
                text-transform:uppercase;line-height:1.15;">
             14-Day Free Trial
           </div>
-          <div style="font-size:12px;font-weight:700;color:#dcfce7;margin-top:3px;
+          <div style="font-size:12px;font-weight:700;color:var(--slate-700);margin-top:3px;
                text-transform:uppercase;letter-spacing:0.4px;">
             Try Processor Assistant before the beta plan starts
           </div>
-          <div style="font-size:11px;font-weight:600;color:#bbf7d0;margin-top:3px;">
+          <div style="font-size:11px;font-weight:600;color:var(--slate-600);margin-top:3px;">
             No credit card needed
           </div>
         </div>
@@ -10935,37 +10935,37 @@ def show_pricing_page():
         cta = _html.escape(cta)
         price_html = "Free" if price <= 0 else f'${price:g}<span style="font-size:14px;color:var(--slate-600);">/mo</span>'
         badge = "Try free first" if tier_key == "free" else ("Most popular" if tier_key == "pro" else "Year-one pricing")
-        badge_color = "#86efac" if tier_key == "free" else ("#60a5fa" if tier_key == "pro" else "#93c5fd")
+        badge_color = "var(--green)" if tier_key == "free" else "var(--accent)"
+        _is_pop = tier_key == "pro"
+        _card_border = "2px solid var(--accent)" if _is_pop else "1px solid var(--slate-300)"
+        _card_bg = "var(--accent-light)" if _is_pop else "var(--bg-white)"
+        # CTA lives inside the card (margin-top:auto) so all four align at the bottom.
+        _btn_base = ("display:block;text-align:center;margin-top:14px;padding:11px 14px;"
+                     "border-radius:10px;font-size:14px;font-weight:800;text-decoration:none;")
+        if tier_key == "free":
+            cta_html = (f'<a href="?page=dashboard" style="{_btn_base}background:var(--bg-subtle);'
+                        f'border:1px solid var(--slate-300);color:var(--slate-900);">{cta}</a>')
+        elif link:
+            cta_html = (f'<a href="{_html.escape(link)}" target="_blank" rel="noopener noreferrer" '
+                        f'style="{_btn_base}background:var(--accent);color:#fff;">{cta}</a>')
+        else:
+            cta_html = (f'<div style="{_btn_base}background:var(--slate-200);color:var(--slate-500);'
+                        f'cursor:not-allowed;">{cta} - link pending</div>')
         with col:
             st.markdown(
                 f"""
-                <div style="min-height:250px;border:1px solid rgba(59,130,246,0.35);border-radius:14px;
-                            padding:18px;background:rgba(59,130,246,0.08);display:flex;flex-direction:column;">
+                <div style="min-height:300px;border:{_card_border};border-radius:14px;
+                            padding:18px;background:{_card_bg};display:flex;flex-direction:column;height:100%;">
                   <div style="font-size:11px;font-weight:900;color:{badge_color};text-transform:uppercase;letter-spacing:.08em;">{badge}</div>
-                  <div style="font-size:23px;font-weight:900;color:#fff;margin-top:8px;">{name}</div>
-                  <div style="font-size:32px;font-weight:900;color:#fff;margin:10px 0;">{price_html}</div>
-                  <div style="font-size:13px;color:var(--slate-700);font-weight:800;margin-bottom:8px;">{limit}</div>
-                  <div style="font-size:13px;color:var(--slate-700);line-height:1.55;flex:1;">{blurb}</div>
+                  <div style="font-size:23px;font-weight:900;color:var(--slate-900);margin-top:8px;">{name}</div>
+                  <div style="font-size:32px;font-weight:900;color:var(--slate-900);margin:10px 0;">{price_html}</div>
+                  <div style="font-size:13px;color:var(--accent);font-weight:800;margin-bottom:8px;">{limit}</div>
+                  <div style="font-size:13px;color:var(--slate-600);line-height:1.55;flex:1;">{blurb}</div>
+                  {cta_html}
                 </div>
                 """,
                 unsafe_allow_html=True,
             )
-            if tier_key == "free":
-                st.caption("No credit card needed.")
-            elif link:
-                st.markdown(
-                    f"""
-                    <a href="{_html.escape(link)}" target="_blank" rel="noopener noreferrer"
-                       style="display:block;text-align:center;margin-top:10px;padding:11px 14px;
-                       border-radius:10px;background:#2563eb;color:#fff;font-size:14px;
-                       font-weight:800;text-decoration:none;">
-                      {cta}
-                    </a>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            else:
-                st.button(f"{cta} - link pending", disabled=True, use_container_width=True, key=f"pricing_{tier_key}_pending")
 
     if not (_tiers.stripe_payment_link("starter") and _tiers.stripe_payment_link("pro") and _tiers.stripe_payment_link("unlimited")):
         st.caption("Paid tier links are controlled by TIER_STARTER_PAYMENT_LINK, TIER_PRO_PAYMENT_LINK, and TIER_UNLIMITED_PAYMENT_LINK environment variables.")
