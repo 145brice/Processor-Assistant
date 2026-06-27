@@ -1593,8 +1593,11 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
     font-size: 12px; font-weight: 700;
     font-family: 'Segoe UI', sans-serif;
 }
-.pa-pchip-l {
-    font-size: 9px; color: var(--c, var(--slate-600));
+/* Higher specificity + !important so the global markdown-span color rule
+   doesn't force these gray. */
+.pa-pchip .pa-pchip-n { color: var(--c, var(--slate-700)) !important; }
+.pa-pchip .pa-pchip-l {
+    font-size: 9px; color: var(--c, var(--slate-600)) !important;
     text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700;
 }
 .pa-pipe-dash-bar {
