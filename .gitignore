@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 .streamlit/secrets.toml
+stripe_tiers.env
 guidelines_index/
 processor.db
 document_links.db

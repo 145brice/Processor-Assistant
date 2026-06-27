@@ -32,6 +32,11 @@ def stripe_price_id(tier_key: str) -> str:
     return os.getenv(f"TIER_{tier_key.upper()}_PRICE_ID", "").strip()
 
 
+def stripe_payment_link(tier_key: str) -> str:
+    """Stripe Payment Link URL for a tier, read from env after Stripe setup."""
+    return os.getenv(f"TIER_{tier_key.upper()}_PAYMENT_LINK", "").strip()
+
+
 def tier_for_price_id(price_id: str) -> str:
     """Map a Stripe price ID back to a tier key (for the webhook). '' if unknown."""
     price_id = (price_id or "").strip()

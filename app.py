@@ -10896,50 +10896,82 @@ Keep this key private. Processor Assistant stores it encrypted for your signed-i
 
 # --- Billing & Usage Page ---
 def show_pricing_page():
-    beta_payment_link = "https://buy.stripe.com/bJe7sLdx87xM6mtaOSdfG00"
+    import html as _html
+    import tiers as _tiers
+
+    legacy_beta_payment_link = "https://buy.stripe.com/bJe7sLdx87xM6mtaOSdfG00"
 
     st.title("Pricing")
-    st.caption("Simple beta pricing while Processor Assistant is still early-access.")
+    st.caption("Simple year-one pricing while Processor Assistant is still early-access.")
 
     # Remind shoppers what they're paying for before the price card.
     render_feature_highlights(heading=True)
     render_no_credit_card_banner()
     st.markdown('<div style="height:18px"></div>', unsafe_allow_html=True)
 
-    _lo, _mid, _ro = st.columns([1, 2, 1])
-    with _mid:
+    cards = [
+        ("free", "Try the core scanner with a monthly cap.", "Start Free", ""),
+        ("starter", "For light monthly document cleanup.", "Start Starter", _tiers.stripe_payment_link("starter")),
+        ("pro", "For active processors who scan weekly.", "Start Pro", _tiers.stripe_payment_link("pro")),
+        (
+            "unlimited",
+            "Unlimited scans plus priority support.",
+            "Start Unlimited",
+            _tiers.stripe_payment_link("unlimited") or legacy_beta_payment_link,
+        ),
+    ]
+
+    cols = st.columns(4)
+    for col, (tier_key, blurb, cta, link) in zip(cols, cards):
+        tier = _tiers.TIERS[tier_key]
+        price = tier["price"]
+        limit = "Unlimited" if tier["scan_limit"] is None else f'{tier["scan_limit"]} scans/mo'
+        name = _html.escape(str(tier["name"]))
+        blurb = _html.escape(blurb)
+        cta = _html.escape(cta)
+        price_html = "Free" if price <= 0 else f'${price:g}<span style="font-size:14px;color:var(--slate-600);">/mo</span>'
+        badge = "Try free first" if tier_key == "free" else ("Most popular" if tier_key == "pro" else "Year-one pricing")
+        badge_color = "#86efac" if tier_key == "free" else ("#60a5fa" if tier_key == "pro" else "#93c5fd")
+        with col:
+            st.markdown(
+                f"""
+                <div style="min-height:250px;border:1px solid rgba(59,130,246,0.35);border-radius:14px;
+                            padding:18px;background:rgba(59,130,246,0.08);display:flex;flex-direction:column;">
+                  <div style="font-size:11px;font-weight:900;color:{badge_color};text-transform:uppercase;letter-spacing:.08em;">{badge}</div>
+                  <div style="font-size:23px;font-weight:900;color:#fff;margin-top:8px;">{name}</div>
+                  <div style="font-size:32px;font-weight:900;color:#fff;margin:10px 0;">{price_html}</div>
+                  <div style="font-size:13px;color:var(--slate-700);font-weight:800;margin-bottom:8px;">{limit}</div>
+                  <div style="font-size:13px;color:var(--slate-700);line-height:1.55;flex:1;">{blurb}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+            if tier_key == "free":
+                st.caption("No credit card needed.")
+            elif link:
+                st.markdown(
+                    f"""
+                    <a href="{_html.escape(link)}" target="_blank" rel="noopener noreferrer"
+                       style="display:block;text-align:center;margin-top:10px;padding:11px 14px;
+                       border-radius:10px;background:#2563eb;color:#fff;font-size:14px;
+                       font-weight:800;text-decoration:none;">
+                      {cta}
+                    </a>
+                    """,
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.button(f"{cta} - link pending", disabled=True, use_container_width=True, key=f"pricing_{tier_key}_pending")
+
+    if not (_tiers.stripe_payment_link("starter") and _tiers.stripe_payment_link("pro") and _tiers.stripe_payment_link("unlimited")):
+        st.caption("Paid tier links are controlled by TIER_STARTER_PAYMENT_LINK, TIER_PRO_PAYMENT_LINK, and TIER_UNLIMITED_PAYMENT_LINK environment variables.")
+
+    with st.expander("What is included?"):
         st.markdown(
             """
-            <div style="border:1px solid rgba(59,130,246,0.45);border-radius:14px;
-            padding:18px;background:rgba(59,130,246,0.08);">
-              <div style="font-size:12px;font-weight:800;color:#3b82f6;text-transform:uppercase;">Available Now</div>
-              <div style="font-size:24px;font-weight:900;color:#fff;margin-top:6px;">Beta</div>
-              <div style="font-size:34px;font-weight:900;color:#fff;margin:10px 0;">$49<span style="font-size:14px;color:var(--slate-600);">/mo</span></div>
-              <div style="font-size:13px;color:var(--slate-700);">Start with a 14-day free trial.</div>
-              <div style="font-size:18px;font-weight:900;color:#86efac;margin-top:8px;text-transform:uppercase;">
-                Try it free first
-              </div>
-              <div style="font-size:11px;font-weight:600;color:#bbf7d0;margin-top:3px;">
-                No credit card needed
-              </div>
-              <hr style="border-color:rgba(255,255,255,0.08);margin:16px 0;">
-              <div style="font-size:13px;color:var(--slate-700);line-height:1.7;">
-                Scanner, pipeline, recent scan history, saved non-sensitive loan data, and user account settings.
-              </div>
-            </div>
+            Scanner, pipeline tracking, recent scan history, saved non-sensitive loan data,
+            user account settings, and privacy-gated AI features where configured.
             """,
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f"""
-            <a href="{beta_payment_link}" target="_blank" rel="noopener noreferrer"
-               style="display:block;text-align:center;margin-top:12px;padding:12px 16px;
-               border-radius:10px;background:#2563eb;color:#fff;font-size:14px;
-               font-weight:800;text-decoration:none;">
-              Start Beta - 14 Day Free Trial
-            </a>
-            """,
-            unsafe_allow_html=True,
         )
 
 
