@@ -91,7 +91,7 @@ st.markdown(r"""
 }
 /* Light theme overrides */
 :root[data-theme="light"] {
-    --bg-page: #f2f5f9; --bg-white: #ffffff; --bg-subtle: #e9eef4;
+    --bg-page: #e7ecf3; --bg-white: #ffffff; --bg-subtle: #dde5ef;
     --slate-900: #060b14; --slate-700: #18212c; --slate-600: #283341;
     --slate-500: #38434f; --slate-400: #54616f; --slate-300: #a4b2c2;
     --slate-200: #d0d8e1; --slate-100: #e6ebf1;
@@ -2783,8 +2783,31 @@ def _infer_condition_party(desc: str) -> str:
 
 def _normalize_scanned_conditions(raw_conditions) -> list[dict]:
     """Convert extractor output into UI condition rows."""
+    _placeholder_labels = {
+        "AMOUNT": "the amount",
+        "PERSON": "the named party",
+        "EMAIL": "the email",
+        "PHONE": "the phone number",
+        "SSN": "the SSN",
+        "ACCOUNT_NUMBER": "the account number",
+        "DATE_OF_BIRTH": "the date of birth",
+        "EXACT_DATE": "the date",
+        "ADDRESS": "the property address",
+        "KNOWN_VALUE": "the provided detail",
+        "INCOME_AMOUNT": "the income amount",
+        "PROPERTY_IDENTIFIER": "the property identifier",
+    }
+
+    def _neutralize_redaction_placeholders(value: str) -> str:
+        def _label(match: re.Match) -> str:
+            token = match.group(0)[1:-1]
+            base = re.sub(r"_\d+$", "", token)
+            return _placeholder_labels.get(base, _placeholder_labels.get(token, "the redacted detail"))
+        return re.sub(r"\[[A-Z][A-Z0-9_]*\]", _label, str(value or ""))
+
     def _clean_desc(value: str) -> str:
-        text = " ".join(str(value or "").split()).strip(" -*\t")
+        text = _neutralize_redaction_placeholders(value)
+        text = " ".join(str(text or "").split()).strip(" -*\t")
         text = re.sub(r"(?i)\s*\b(?:Needed|Requested|Cleared|Waived)\s*$", "", text).strip()
         # Remove lender condition codes when the same code/title was repeated
         # on both sides of a separator by PDF text extraction.
