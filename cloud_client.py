@@ -1338,6 +1338,8 @@ Skip these (do NOT output rows for them):
             data["candidates"][0]["content"]["parts"][0]["text"].strip(),
             source_text=text,
         )
+        if has_unresolved_placeholders(txt):
+            txt = _neutralize_placeholders(txt)
         valid = _parse_approval_condition_rows(txt)
         conditions = "\n".join(valid)
         if not valid:
