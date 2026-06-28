@@ -1576,10 +1576,10 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
 }
 .pa-pchip {
     display: inline-flex; align-items: baseline; gap: 4px;
-    padding: 1px 8px;
-    background: rgba(255,255,255,0.03);
-    border: 1px solid var(--slate-200);
-    border-radius: 4px;
+    padding: 2px 9px;
+    background: var(--slate-200);
+    border: 1px solid var(--slate-300);
+    border-radius: 5px;
     transition: background 0.12s, border-color 0.12s;
     line-height: 1.4;
     flex: 0 0 auto;
