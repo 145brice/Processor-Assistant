@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Processor Assistant — Demo</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  /* ── Design tokens: pulled from the real Processor Assistant light theme ── */
+  :root{
+    --bg-page:#f4f7fb; --bg-white:#ffffff; --bg-subtle:#e6ecf3;
+    --slate-900:#050a12; --slate-700:#141c26; --slate-600:#232f3c; --slate-500:#333e4a;
+    --slate-400:#4a5765; --slate-300:#93a3b6; --slate-200:#c4cdd9; --slate-100:#dde4ec;
+    --accent:#34539c; --accent-dark:#284183; --accent-light:rgba(52,83,156,0.12);
+    --green:#2f6347; --green-bg:#dceae1; --green-border:rgba(47,99,71,0.4);
+    --yellow:#a8841a; --orange:#c2641c; --red:#a23c3c; --purple:#534a8c;
+    --radius:12px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Inter','Segoe UI',Arial,sans-serif;
+    background:#cdd6e3;
+    color:var(--slate-700);
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+  }
+  /* App shell (the "browser") */
+  .app{
+    width:1180px;height:720px;border-radius:16px;overflow:hidden;
+    display:flex;background:var(--bg-page);
+    box-shadow:0 30px 80px rgba(15,23,42,0.35);
+    border:1px solid var(--slate-300);
+  }
+
+  /* ── Sidebar ── */
+  .sidebar{
+    width:236px;flex-shrink:0;
+    background:linear-gradient(180deg,#f8fafc 0%,#f1f5f9 100%);
+    border-right:1px solid #e2e8f0;
+    padding:18px 14px;display:flex;flex-direction:column;gap:14px;
+  }
+  .brand{font-size:19px;font-weight:900;color:var(--slate-900);letter-spacing:-0.4px;line-height:1.1}
+  .who{font-size:13px;font-weight:700;color:var(--slate-900);}
+  .who small{display:block;font-size:11px;color:var(--accent);font-weight:600;margin-top:1px}
+  .nav{display:flex;flex-direction:column;gap:4px;margin-top:4px}
+  .nav button{
+    text-align:left;font-size:14px;font-weight:600;color:#1f2a37;
+    background:#e6ebf2;border:1px solid #a6b2c1;border-radius:8px;
+    padding:9px 13px;cursor:default;
+  }
+  .nav button.active{
+    background:var(--accent-light);border-color:transparent;color:var(--accent);
+    box-shadow:inset 3px 0 0 var(--accent);font-weight:700;
+  }
+  .sec{font-size:10px;font-weight:800;letter-spacing:1px;color:var(--accent);margin-top:6px}
+
+  /* ── Main ── */
+  .main{flex:1;display:flex;flex-direction:column;min-width:0}
+  .topbar{
+    height:54px;flex-shrink:0;display:flex;align-items:center;gap:14px;
+    padding:0 22px;background:var(--bg-page);border-bottom:1px solid var(--slate-300);
+  }
+  .topbar .title{font-size:12px;font-weight:800;letter-spacing:1px;color:var(--slate-600);text-transform:uppercase}
+  .chips{display:flex;gap:6px}
+  .chip{
+    display:inline-flex;align-items:baseline;gap:4px;padding:2px 9px;border-radius:5px;
+    background:var(--slate-200);border:1px solid var(--slate-300);font-size:11px;white-space:nowrap;
+  }
+  .chip b{font-size:12px}
+  .chip .l{font-size:9px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+  .c-all{color:var(--slate-700)} .c-pen{color:var(--accent)} .c-req{color:var(--orange)}
+  .c-clr{color:var(--green)} .c-over{color:var(--red)}
+  .bar{margin-left:auto;display:flex;height:11px;width:150px;border-radius:5px;overflow:hidden;border:1px solid var(--slate-300)}
+  .bar i{height:100%;transition:width .6s}
+
+  .content{flex:1;overflow:hidden;padding:20px 26px;position:relative}
+
+  /* Hero */
+  .hero{
+    display:flex;align-items:center;gap:16px;padding:16px 20px;border-radius:16px;
+    background:linear-gradient(120deg,var(--accent-light) 0%,rgba(34,197,94,0.07) 100%);
+    border:1px solid var(--slate-300);margin-bottom:16px;
+  }
+  .hero .ico{
+    width:48px;height:48px;border-radius:14px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#3b82f6,#1d4ed8);box-shadow:0 6px 16px rgba(59,130,246,0.35);
+  }
+  .hero h1{font-size:20px;font-weight:900;color:var(--slate-900);letter-spacing:-0.3px}
+  .hero p{font-size:13px;color:var(--slate-600);margin-top:3px}
+  .hero .count{text-align:center;padding:6px 16px;border-radius:12px;background:#fff;border:1px solid var(--slate-300)}
+  .hero .count b{display:block;font-size:24px;font-weight:900;color:var(--accent);line-height:1}
+  .hero .count span{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--slate-600)}
+
+  /* Scan card */
+  .scancard{background:var(--bg-white);border:1px solid var(--slate-300);border-radius:14px;padding:16px 18px}
+  .filerow{display:flex;align-items:center;gap:12px;opacity:0;transform:translateY(6px);transition:.4s}
+  .filerow.show{opacity:1;transform:none}
+  .filetile{width:34px;height:34px;border-radius:8px;background:var(--accent-light);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .fname{font-size:14px;font-weight:700;color:var(--slate-900)}
+  .fmeta{font-size:11px;color:var(--slate-500)}
+  .badge{margin-left:auto;font-size:11px;font-weight:800;padding:3px 10px;border-radius:999px;
+    background:var(--green-bg);color:var(--green);border:1px solid var(--green-border);opacity:0;transition:.4s}
+  .badge.show{opacity:1}
+
+  .prog{margin-top:14px;height:8px;border-radius:5px;background:var(--slate-200);overflow:hidden;opacity:0;transition:.3s}
+  .prog.show{opacity:1}
+  .prog i{display:block;height:100%;width:0;background:linear-gradient(90deg,#3b82f6,#1d4ed8);transition:width .25s}
+  .status{margin-top:8px;font-size:12px;color:var(--slate-600);height:16px;opacity:0;transition:.3s}
+  .status.show{opacity:1}
+
+  /* Conditions */
+  .condwrap{margin-top:14px}
+  .condhead{display:flex;align-items:center;gap:10px;margin-bottom:8px;opacity:0;transition:.4s}
+  .condhead.show{opacity:1}
+  .condhead .h{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--slate-600)}
+  .condhead .ct{font-size:11px;color:var(--slate-500)}
+  .condhead .clr{margin-left:auto;font-size:11px;font-weight:800;color:var(--green)}
+
+  .cond{
+    display:flex;align-items:flex-start;gap:11px;padding:9px 12px;margin-bottom:6px;border-radius:9px;
+    background:var(--bg-subtle);border:1px solid var(--slate-200);
+    opacity:0;transform:translateY(8px);transition:.45s cubic-bezier(.2,.7,.3,1);
+  }
+  .cond.show{opacity:1;transform:none}
+  .cond.cleared{background:var(--green-bg);border-color:var(--green-border)}
+  .cond.flash{animation:flash .8s ease}
+  @keyframes flash{0%{box-shadow:0 0 0 0 rgba(47,99,71,.35)}50%{box-shadow:0 0 0 6px rgba(47,99,71,.12)}100%{box-shadow:none}}
+  .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:5px;background:var(--yellow);transition:background .4s}
+  .cond.cleared .dot{background:var(--green)}
+  .cbody{min-width:0;flex:1}
+  .cnum{color:var(--accent);font-weight:800;font-size:12px}
+  .csub{color:var(--slate-900);font-weight:800;font-size:13px}
+  .cdesc{color:var(--slate-600);font-size:12px;line-height:1.45;margin-top:2px}
+  .cdesc .alt{display:none}
+  .cond.translated .cdesc .orig{display:none}
+  .cond.translated .cdesc .alt{display:inline}
+  .ctags{margin-top:5px;display:flex;gap:5px;align-items:center}
+  .tag{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:1px 7px;border-radius:999px;
+    background:var(--accent-light);color:var(--accent)}
+  .tag.title{background:rgba(83,74,140,.14);color:var(--purple)}
+  .tag.third{background:rgba(194,100,28,.14);color:var(--orange)}
+  .cstat{margin-left:auto;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;color:var(--yellow)}
+  .cond.cleared .cstat{color:var(--green)}
+  .plainbtn{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;padding:1px 7px;border-radius:999px;
+    border:1px solid var(--slate-300);color:var(--slate-500);background:#fff;transition:.3s}
+  .cond.translated .plainbtn{background:var(--accent);color:#fff;border-color:var(--accent)}
+
+  /* Toast */
+  .toast{
+    position:absolute;left:50%;bottom:20px;transform:translateX(-50%) translateY(20px);
+    background:var(--slate-900);color:#fff;font-size:13px;font-weight:600;
+    padding:10px 18px;border-radius:999px;box-shadow:0 10px 30px rgba(0,0,0,.3);
+    opacity:0;transition:.45s;display:flex;align-items:center;gap:8px;
+  }
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast .tick{color:#5aa978;font-weight:900}
+
+  svg{display:block}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="brand">Processor Assistant</div>
+    <div class="who">Brice Leasure<small>Manager</small></div>
+    <div class="nav">
+      <button class="active">Scanner</button>
+      <button>Pipeline</button>
+      <button>Overview</button>
+      <button>Pricing</button>
+    </div>
+    <div class="sec">+ MORE TOOLS</div>
+    <div class="sec">+ SETTINGS</div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <span class="title">My Pipeline</span>
+      <div class="chips">
+        <span class="chip c-all"><b>12</b><span class="l">All</span></span>
+        <span class="chip c-pen"><b>4</b><span class="l">Pending UW</span></span>
+        <span class="chip c-req"><b>2</b><span class="l">Requested</span></span>
+        <span class="chip c-clr"><b id="clrChip">3</b><span class="l">Cleared</span></span>
+        <span class="chip c-over"><b>2</b><span class="l">Overdue</span></span>
+      </div>
+      <div class="bar">
+        <i style="width:33%;background:var(--accent)"></i>
+        <i style="width:17%;background:var(--orange)"></i>
+        <i style="width:17%;background:var(--red)"></i>
+        <i style="width:33%;background:var(--green)"></i>
+      </div>
+    </div>
+
+    <div class="content">
+      <!-- Hero -->
+      <div class="hero">
+        <div class="ico">
+          <svg width="27" height="27" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>
+          </svg>
+        </div>
+        <div style="flex:1">
+          <h1>Hey Brice 👋 Ready to scan?</h1>
+          <p>Drop a loan doc below — it auto-detects the type and matches it to your pipeline.</p>
+        </div>
+        <div class="count"><b>12</b><span>in pipeline</span></div>
+      </div>
+
+      <!-- Scan card -->
+      <div class="scancard">
+        <div class="filerow" id="filerow">
+          <div class="filetile">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 3v4a1 1 0 0 0 1 1h4"/><path d="M17 21H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2z"/><path d="M9 13h6M9 17h4"/>
+            </svg>
+          </div>
+          <div>
+            <div class="fname">Approval 1-24.pdf</div>
+            <div class="fmeta">63.8 KB · PDF</div>
+          </div>
+          <span class="badge" id="badge">Approval Letter · 8 conditions</span>
+        </div>
+        <div class="prog" id="prog"><i id="progFill"></i></div>
+        <div class="status" id="statusTxt"></div>
+
+        <div class="condwrap">
+          <div class="condhead" id="condhead">
+            <span class="h">Scan Order (Originals)</span>
+            <span class="ct">8 items</span>
+            <span class="clr" id="clrCount" style="opacity:0"></span>
+          </div>
+          <div id="condlist"></div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast"><span class="tick">✓</span><span id="toastTxt"></span></div>
+    </div>
+  </main>
+</div>
+
+<script>
+/* ── Realistic mortgage approval conditions ── */
+const CONDS = [
+  {n:1, sub:"Paystubs", party:"borrower", tag:"Borrower",
+   orig:"Borrower to provide most recent 30-day paystubs reflecting year-to-date earnings.",
+   alt:"Please send your pay stubs from the last 30 days."},
+  {n:2, sub:"Bank Statements", party:"borrower", tag:"Borrower",
+   orig:"Two most recent months of bank statements — all pages, including blank pages.",
+   alt:"We need your last 2 months of bank statements (every page, even blank ones)."},
+  {n:3, sub:"Credit Inquiries", party:"borrower", tag:"Borrower", important:true,
+   orig:"Satisfactory written explanation for all inquiries on the credit report in the last 90 days, including any resulting new accounts.",
+   alt:"Quick note explaining the recent credit checks — and list any new accounts they led to."},
+  {n:4, sub:"Verification of Employment", party:"third", tag:"3rd Party",
+   orig:"Written/verbal Verification of Employment (VOE) to be completed prior to closing.",
+   alt:"We'll confirm your employment with your employer before closing."},
+  {n:5, sub:"Homeowner's Insurance", party:"title", tag:"Insurance",
+   orig:"Homeowner's insurance binder evidencing coverage with the lender listed as mortgagee.",
+   alt:"Your insurance binder showing the lender as mortgagee."},
+  {n:6, sub:"Title Commitment", party:"title", tag:"Title",
+   orig:"Updated title commitment with all requirements cleared prior to docs.",
+   alt:"Updated title commitment with requirements cleared."},
+  {n:7, sub:"4506-C", party:"borrower", tag:"Borrower",
+   orig:"Signed and dated IRS Form 4506-C authorizing transcript retrieval.",
+   alt:"Sign and date the IRS 4506-C form so we can pull your transcripts."},
+  {n:8, sub:"Credit Supplement", party:"third", tag:"3rd Party",
+   orig:"Updated credit supplement reflecting paid collection account.",
+   alt:"Updated credit supplement showing the collection was paid."},
+];
+const CLEAR_INDEXES = [5, 7]; // rows that auto-clear (Title Commitment, Credit Supplement)
+const TRANSLATE_INDEX = 2;    // the Credit Inquiries row gets translated
+
+const STATUS_LINES = ["Reading PDF…","Detecting document type…","Extracting conditions…","Routing to parties…"];
+const $ = id => document.getElementById(id);
+let timers = [];
+const after = (ms, fn) => timers.push(setTimeout(fn, ms));
+
+function reset(){
+  timers.forEach(clearTimeout); timers = [];
+  $('filerow').className='filerow';
+  $('badge').className='badge';
+  $('prog').className='prog'; $('progFill').style.width='0';
+  $('statusTxt').className='status'; $('statusTxt').textContent='';
+  $('condhead').className='condhead';
+  $('clrCount').style.opacity='0';
+  $('clrChip').textContent='3';
+  $('condlist').innerHTML='';
+  $('toast').className='toast';
+}
+
+function buildRow(c){
+  const tagClass = c.party==='title'?'title':(c.party==='third'?'third':'');
+  const el=document.createElement('div');
+  el.className='cond';
+  el.innerHTML=`
+    <span class="dot"></span>
+    <div class="cbody">
+      <div><span class="cnum">#${c.n}</span> <span class="csub">${c.sub}</span></div>
+      <div class="cdesc"><span class="orig">${c.orig}</span><span class="alt">${c.alt}</span></div>
+      <div class="ctags">
+        <span class="tag ${tagClass}">${c.tag}</span>
+        ${c.important?'<span class="tag third">ASAP</span>':''}
+        ${c.n===(TRANSLATE_INDEX+1)?'<span class="plainbtn">Client view</span>':''}
+        <span class="cstat">Needed</span>
+      </div>
+    </div>`;
+  return el;
+}
+
+function run(){
+  reset();
+  // 1) File drops in
+  after(700, ()=> $('filerow').classList.add('show'));
+  // 2) Scan progress
+  after(1300, ()=>{ $('prog').classList.add('show'); $('statusTxt').classList.add('show'); });
+  let p=0, si=0;
+  after(1500, ()=>{
+    const iv=setInterval(()=>{
+      p+=Math.random()*16+8; if(p>100)p=100;
+      $('progFill').style.width=p+'%';
+      const idx=Math.min(STATUS_LINES.length-1, Math.floor(p/26));
+      $('statusTxt').textContent=STATUS_LINES[idx];
+      if(p>=100){clearInterval(iv);}
+    },230);
+    timers.push(iv);
+  });
+  // 3) Detected badge + condition header
+  after(3500, ()=>{
+    $('badge').classList.add('show');
+    $('statusTxt').textContent='Done — Approval Letter detected.';
+    $('condhead').classList.add('show');
+  });
+  // 4) Conditions populate one by one
+  const list=$('condlist'); const rows=[];
+  CONDS.forEach((c,i)=>{
+    after(3800 + i*230, ()=>{
+      const el=buildRow(c); list.appendChild(el); rows.push(el);
+      requestAnimationFrame(()=> el.classList.add('show'));
+    });
+  });
+  // 5) Auto-match toast
+  after(5900, ()=>{ $('toastTxt').textContent='Auto-matched to Loan #LN-2026-004 — Robert & Sandra Kim'; $('toast').classList.add('show'); });
+  after(8200, ()=> $('toast').classList.remove('show'));
+  // 6) Auto-clear pass
+  let cleared=0;
+  CLEAR_INDEXES.forEach((idx,k)=>{
+    after(6700 + k*700, ()=>{
+      const el=rows[idx]; if(!el)return;
+      el.classList.add('cleared','flash');
+      el.querySelector('.cstat').textContent='Cleared';
+      cleared++; $('clrCount').textContent=cleared+' cleared this scan'; $('clrCount').style.opacity='1';
+      $('clrChip').textContent=String(3+cleared);
+    });
+  });
+  // 7) Translate feature fires
+  after(8700, ()=>{
+    const el=rows[TRANSLATE_INDEX]; if(!el)return;
+    el.classList.add('flash');
+    setTimeout(()=> el.classList.add('translated'), 250);
+    $('toastTxt').textContent='Rewrote condition in plain client language';
+    $('toast').classList.add('show');
+  });
+  after(11200, ()=> $('toast').classList.remove('show'));
+  // 8) Loop
+  after(12800, run);
+}
+run();
+</script>
+</body>
+</html>
