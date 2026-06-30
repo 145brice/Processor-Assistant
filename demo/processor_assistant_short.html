@@ -178,11 +178,11 @@ const ROLE={
   "3rd Party":{fg:"#B07C29",bg:"#F6ECD3",bd:"#E3C988"},
 };
 const CONDITIONS=[
-  {n:1,title:"Bank Statement",desc:"Full statement, all pages incl. blanks",role:"Borrower"},
-  {n:2,title:"Closing Disclosure",desc:"Requested CD once it's issued",role:"Title"},
-  {n:3,title:"Employment / Income",desc:"YTD doesn't support salary — provide paystubs",role:"Borrower"},
-  {n:4,title:"Hazard Insurance",desc:"Evidence of adequate coverage",role:"Insurance"},
-  {n:5,title:"Funds to Close",desc:"Most recent full bank statement",role:"Borrower"},
+  {n:1,title:"Bank Statement",desc:"Full bank statement requested — all pages, incl. blanks",role:"Borrower"},
+  {n:2,title:"Closing Disclosure",desc:"The requested Closing Disclosure once it's issued",role:"Title"},
+  {n:3,title:"Credit Inquiries",desc:"Signed explanation for recent inquiries on the credit report",role:"Borrower"},
+  {n:4,title:"Employment / Income",desc:"YTD doesn't support current salary — provide explanation",role:"Borrower"},
+  {n:5,title:"Purchase Addendum",desc:"Addendum to purchase contract executed by all parties",role:"3rd Party"},
 ];
 const BUCKETS=[{role:"Borrower",final:8},{role:"Title",final:1},{role:"Insurance",final:2},{role:"3rd Party",final:6}];
 
