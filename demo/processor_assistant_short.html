@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Processor Assistant — Short</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+  :root{
+    --bg:#E9EEF5; --card:#FFFFFF; --cardAlt:#F3F7FB; --border:#CCD8E6; --borderSoft:#DEE7F0;
+    --navy:#1C3A5E; --body:#3C5575; --muted:#6E8499; --faint:#94A6BC;
+    --primary:#2F6FBA; --red:#E84A3C; --progress:#2D5BE3;
+    --amber:#B07C29; --amberBg:#F6ECD3; --amberBd:#E3C988;
+    --green:#3C9A5A; --greenBg:#E2F1E8; --greenText:#2C7D47;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:'Inter','Segoe UI',Arial,sans-serif;
+    background:radial-gradient(120% 70% at 50% -10%, #F2F6FB 0%, var(--bg) 60%);
+    display:flex;flex-direction:column;align-items:center;justify-content:center;padding:26px 16px;
+  }
+  .card{width:388px;max-width:100%;background:var(--bg);border-radius:22px;border:1px solid var(--border);
+    box-shadow:0 36px 80px -28px rgba(28,58,94,.4);overflow:hidden}
+  .grotesk{font-family:'Space Grotesk','Segoe UI',sans-serif}
+
+  .titlebar{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;background:var(--card);border-bottom:1px solid var(--border)}
+  .logo{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#4A86D4,var(--primary));display:flex;align-items:center;justify-content:center}
+  .pipepill{font-size:10.5px;font-weight:700;color:var(--primary);background:var(--cardAlt);border:1px solid var(--border);border-radius:8px;padding:4px 8px;text-align:center;line-height:1.15}
+
+  .pills{display:flex;gap:6px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--border);background:var(--bg)}
+  .pill{font-size:10.5px;font-weight:700;background:var(--card);border:1px solid var(--border);border-radius:7px;padding:3px 8px}
+
+  .body{padding:14px;min-height:452px;background:var(--bg);position:relative}
+  .phase{animation:rise .4s ease}
+  @keyframes rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes pop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+  .blink{animation:blink 1s ease-in-out infinite}
+  @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+  .pulse{animation:pulse 1.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(47,111,186,.35)}50%{box-shadow:0 0 0 6px rgba(47,111,186,0)}}
+
+  .h1{font-size:15px;font-weight:700;color:var(--navy)}
+  .sub{font-size:12px;color:var(--muted);margin-top:3px}
+  .dz{border:2px dashed var(--border);border-radius:14px;padding:16px;background:var(--card);transition:border-color .3s;margin-top:14px}
+  .dz.det{border-color:var(--primary)}
+  .filerow{display:flex;align-items:center;gap:11px;opacity:0;transform:translateY(-10px);transition:all .45s cubic-bezier(.2,.8,.2,1)}
+  .filerow.in{opacity:1;transform:none}
+  .ftile{width:40px;height:40px;border-radius:9px;background:#FBE9E7;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .fname{font-size:13.5px;font-weight:700;color:var(--navy)}
+  .fmeta{font-size:11px;color:var(--muted)}
+  .detbadge{font-size:10.5px;font-weight:700;color:var(--primary);background:#E4EEFA;border:1px solid #BCD3EE;border-radius:7px;padding:3px 8px}
+  .scanrow{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--body);margin:12px 0 10px}
+  .cbx{width:16px;height:16px;border-radius:4px;background:var(--red);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+  .scanbtn{background:var(--primary);color:#fff;text-align:center;padding:11px;border-radius:10px;font-size:13px;font-weight:700}
+  .progwrap{margin-top:12px}
+  .track{height:8px;border-radius:6px;background:#D4DEEB;overflow:hidden}
+  .track.thin{height:7px}
+  .fill{height:100%;width:0;border-radius:6px}
+  .scanmsg{font-size:11px;color:var(--primary);font-weight:600;margin-top:7px;display:flex;align-items:center;gap:6px}
+  .mdot{width:6px;height:6px;border-radius:99px;background:var(--primary)}
+
+  .donebadge{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;color:var(--greenText);background:var(--greenBg);border:1px solid #BBE0C7;border-radius:8px;padding:4px 9px;margin-bottom:12px}
+  .matchcard{background:var(--card);border:1px solid var(--border);border-radius:13px;padding:13px;margin-bottom:14px}
+  .kicker{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .loanname{font-size:14.5px;font-weight:700;color:var(--navy)}
+  .confrow{display:flex;justify-content:space-between;font-size:11px;font-weight:600;color:var(--body);margin:10px 0 5px}
+  .sortlabel{font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+  .buckets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:13px}
+  .bk{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;border-radius:8px;padding:5px 9px}
+  .crow{display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--card);border:1px solid var(--borderSoft);border-radius:11px;
+    opacity:0;transform:translateX(14px);transition:opacity .4s ease, transform .4s cubic-bezier(.2,.8,.2,1)}
+  .crow.show{opacity:1;transform:none}
+  .cn{font-size:11px;font-weight:700;color:var(--faint);width:18px;flex-shrink:0}
+  .ct{font-size:13px;font-weight:700;color:var(--navy);line-height:1.2}
+  .cd{font-size:11px;color:var(--muted);line-height:1.3;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .roletag{font-size:10px;font-weight:700;border-radius:7px;padding:2px 7px;white-space:nowrap}
+  .needed{font-size:9.5px;font-weight:700;color:var(--amber);background:var(--amberBg);border:1px solid var(--amberBd);border-radius:6px;padding:2px 6px;flex-shrink:0}
+  .morerow{text-align:center;font-size:11.5px;font-weight:600;color:var(--muted);padding:4px 0}
+
+  .endwrap{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;min-height:452px;padding:0 16px}
+  .checkbig{width:74px;height:74px;border-radius:99px;background:var(--greenBg);border:2px solid var(--green);display:flex;align-items:center;justify-content:center;animation:pop .6s cubic-bezier(.2,.9,.3,1.4)}
+  .endh{font-weight:700;font-size:24px;color:var(--navy);margin-top:20px;letter-spacing:-.3px}
+  .ends{font-size:13.5px;color:var(--body);margin-top:9px;line-height:1.5;max-width:280px}
+  .glba{display:inline-flex;align-items:center;gap:6px;margin-top:18px;font-size:11.5px;color:var(--muted);font-weight:600}
+  .logochip{display:inline-flex;align-items:center;gap:8px;margin-top:14px;padding:8px 14px;border-radius:99px;background:var(--card);border:1px solid var(--border)}
+  svg{display:block}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="titlebar">
+    <div style="display:flex;align-items:center;gap:9px">
+      <div class="logo"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg></div>
+      <div>
+        <div class="grotesk" style="font-weight:700;font-size:14.5px;color:var(--navy);line-height:1">Processor Assistant</div>
+        <div style="font-size:10.5px;color:var(--muted);margin-top:2px">Brice Leasure · Processing</div>
+      </div>
+    </div>
+    <span class="pipepill">12<br>in pipeline</span>
+  </div>
+
+  <div class="pills">
+    <span class="pill" style="color:var(--primary)">12 All</span>
+    <span class="pill" style="color:var(--primary)">4 Pending UW</span>
+    <span class="pill" style="color:var(--green)">3 Cleared</span>
+    <span class="pill" style="color:var(--red)">2 Overdue</span>
+  </div>
+
+  <div class="body">
+    <!-- PHASE: DROP / SCAN -->
+    <div class="phase" id="pDrop">
+      <div class="h1 grotesk">Ready to scan?</div>
+      <div class="sub">Drop a loan doc — it auto-detects the type and matches it to your pipeline.</div>
+      <div class="dz" id="dz">
+        <div class="filerow" id="fileRow">
+          <div class="ftile"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8M16 17H8M10 9H8"/></svg></div>
+          <div style="flex:1">
+            <div class="fname">Approval 1-24.pdf</div>
+            <div class="fmeta">63.8 KB · PDF</div>
+          </div>
+          <span class="detbadge" id="detBadge" style="display:none">Approval Letter</span>
+        </div>
+      </div>
+      <div id="scanBlock" style="display:none;margin-top:12px">
+        <div class="scanrow"><span class="cbx"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Enhance conditions with <b style="margin-left:3px">sanitized AI</b></div>
+        <div class="scanbtn" id="scanBtn">Scan + sanitized AI</div>
+        <div class="progwrap" id="scanProg" style="display:none">
+          <div class="track"><div class="fill" id="scanFill" style="background:var(--progress)"></div></div>
+          <div class="scanmsg"><span class="mdot blink"></span><span id="scanMsg">Local extraction · pdf text + OCR…</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PHASE: RESULT -->
+    <div class="phase" id="pResult" style="display:none">
+      <div class="donebadge"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--greenText)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg> Done · Approval Letter · 25 conditions</div>
+      <div class="matchcard">
+        <div class="kicker"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 1 1 0 10h-2M8 12h8"/></svg> Auto-matched to loan</div>
+        <div class="loanname grotesk">LN-2025-004 · Robert &amp; Sandra Kim</div>
+        <div class="confrow"><span>Match confidence</span><span style="color:var(--primary);font-weight:700" id="confTxt">0%</span></div>
+        <div class="track thin"><div class="fill" id="confFill" style="background:linear-gradient(90deg,#4A86D4,var(--primary))"></div></div>
+      </div>
+      <div class="sortlabel">Sorted by owner · <span id="sortTotal">0</span>/25</div>
+      <div class="buckets" id="buckets"></div>
+      <div style="display:flex;flex-direction:column;gap:8px" id="condList"></div>
+      <div class="morerow" id="moreRow" style="display:none">+ <span id="moreN">0</span> more sorting<span class="blink">…</span></div>
+    </div>
+
+    <!-- PHASE: END -->
+    <div class="phase" id="pEnd" style="display:none">
+      <div class="endwrap">
+        <div class="checkbig"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+        <div class="endh grotesk">25 conditions, sorted</div>
+        <div class="ends">Matched to the right loan and split by who owns each one — automatically.</div>
+        <div class="buckets" id="bucketsEnd" style="justify-content:center;margin-top:16px"></div>
+        <div class="glba"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"/><path d="m9 12 2 2 4-4"/></svg> Built for GLBA · docs never stored</div>
+        <div class="logochip">
+          <div style="width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#4A86D4,var(--primary));display:flex;align-items:center;justify-content:center"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2M7 12h10"/></svg></div>
+          <span class="grotesk" style="font-weight:700;font-size:13px;color:var(--navy)">Processor Assistant</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<button id="pauseBtn" style="margin-top:16px;background:transparent;border:1px solid var(--border);color:var(--muted);font-family:Inter,sans-serif;font-size:12px;font-weight:600;padding:7px 14px;border-radius:99px;cursor:pointer">⏸ Pause loop</button>
+
+<script>
+const DETECT=2100, SCAN_END=4200, DONE=4800, MATCH=4900, SORT=6400, END=11200, LOOP=14600;
+const clamp=(v,lo,hi)=>Math.max(lo,Math.min(hi,v));
+const $=id=>document.getElementById(id);
+
+const ROLE={
+  Borrower:{fg:"#2F6FBA",bg:"#E4EEFA",bd:"#BCD3EE"},
+  Title:{fg:"#7A5BC0",bg:"#ECE6F8",bd:"#CDBDED"},
+  Insurance:{fg:"#21888A",bg:"#DBF0F0",bd:"#A6DADA"},
+  "3rd Party":{fg:"#B07C29",bg:"#F6ECD3",bd:"#E3C988"},
+};
+const CONDITIONS=[
+  {n:1,title:"Bank Statement",desc:"Full statement, all pages incl. blanks",role:"Borrower"},
+  {n:2,title:"Closing Disclosure",desc:"Requested CD once it's issued",role:"Title"},
+  {n:3,title:"Employment / Income",desc:"YTD doesn't support salary — provide paystubs",role:"Borrower"},
+  {n:4,title:"Hazard Insurance",desc:"Evidence of adequate coverage",role:"Insurance"},
+  {n:5,title:"Funds to Close",desc:"Most recent full bank statement",role:"Borrower"},
+];
+const BUCKETS=[{role:"Borrower",final:8},{role:"Title",final:1},{role:"Insurance",final:2},{role:"3rd Party",final:6}];
+
+// Build buckets + condition rows once
+function bucketHTML(role){const r=ROLE[role];return `<span class="bk" style="color:${r.fg};background:${r.bg};border:1px solid ${r.bd}">${role}<b class="grotesk" data-bk="${role}">0</b></span>`;}
+$("buckets").innerHTML=BUCKETS.map(b=>bucketHTML(b.role)).join("");
+$("bucketsEnd").innerHTML=BUCKETS.map(b=>{const r=ROLE[b.role];return `<span class="bk" style="color:${r.fg};background:${r.bg};border:1px solid ${r.bd}">${b.role} ${b.final}</span>`;}).join("");
+$("condList").innerHTML=CONDITIONS.map(c=>{const r=ROLE[c.role];return `
+  <div class="crow" data-i="${c.n}">
+    <span class="cn grotesk">#${c.n}</span>
+    <div style="flex:1;min-width:0">
+      <div class="ct">${c.title}</div>
+      <div class="cd">${c.desc}</div>
+    </div>
+    <span class="roletag" style="color:${r.fg};background:${r.bg};border:1px solid ${r.bd}">${c.role}</span>
+    <span class="needed">NEEDED</span>
+  </div>`;}).join("");
+const bkEls={}; document.querySelectorAll("[data-bk]").forEach(e=>bkEls[e.getAttribute("data-bk")]=e);
+const crowEls=[...document.querySelectorAll(".crow")];
+
+let start=performance.now(), paused=false, raf=0;
+function show(el,b){el.style.display=b?"":"none";}
+
+function frame(now){
+  let t=now-start; if(t>=LOOP){start=now;t=0;}
+  const inDrop=t<DONE, inResult=t>=DONE&&t<END, inEnd=t>=END;
+  show($("pDrop"),inDrop); show($("pResult"),inResult); show($("pEnd"),inEnd);
+
+  if(inDrop){
+    const pdfIn=t>=450, detected=t>=DETECT, scanning=t>=DETECT&&t<SCAN_END;
+    $("fileRow").classList.toggle("in",pdfIn);
+    $("dz").classList.toggle("det",detected);
+    show($("detBadge"),detected);
+    show($("scanBlock"),detected);
+    $("scanBtn").classList.toggle("pulse",detected&&!scanning);
+    show($("scanProg"),scanning);
+    if(scanning){
+      const pct=clamp((t-DETECT)/(SCAN_END-DETECT)*100,0,100);
+      $("scanFill").style.width=pct+"%";
+      let m="Local extraction · pdf text + OCR";
+      if(t>2900)m="Sanitizing condition text";
+      if(t>3500)m="Enhancing with Gemini 2.5";
+      $("scanMsg").textContent=m+"…";
+    }
+  }
+
+  if(inResult){
+    const conf=Math.round(clamp((t-MATCH)/1200*83,0,83));
+    $("confTxt").textContent=conf+"%"; $("confFill").style.width=conf+"%";
+    const sortProg=clamp((t-SORT)/(END-SORT-400),0,1);
+    const sortedTotal=Math.round(25*sortProg);
+    $("sortTotal").textContent=sortedTotal;
+    BUCKETS.forEach(b=>{bkEls[b.role].textContent=Math.round(b.final*sortProg);});
+    crowEls.forEach((el,i)=>el.classList.toggle("show", t>=SORT+i*560));
+    const allShown=t>=SORT+CONDITIONS.length*560;
+    show($("moreRow"),allShown);
+    if(allShown)$("moreN").textContent=Math.max(0,25-sortedTotal);
+  }
+  raf=requestAnimationFrame(frame);
+}
+raf=requestAnimationFrame(frame);
+
+let pausedAt=0;
+$("pauseBtn").onclick=()=>{
+  paused=!paused;
+  if(paused){pausedAt=performance.now()-start; cancelAnimationFrame(raf); $("pauseBtn").textContent="▶ Resume loop";}
+  else{start=performance.now()-pausedAt; raf=requestAnimationFrame(frame); $("pauseBtn").textContent="⏸ Pause loop";}
+};
+</script>
+</body>
+</html>
