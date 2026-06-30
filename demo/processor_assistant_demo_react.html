@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Processor Assistant — Short/TikTok Demo</title>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>html,body{margin:0;height:100%}</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel" data-presets="react">
+const { useEffect, useRef, useState } = React;
+
+/* ── Inline lucide-style icons (no lucide-react dependency) ── */
+function Svg({ size = 24, color = "currentColor", strokeWidth = 2, children }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color}
+         strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round">{children}</svg>
+  );
+}
+const Check = (p) => <Svg {...p}><path d="M20 6 9 17l-5-5"/></Svg>;
+const FileText = (p) => <Svg {...p}>
+  <path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/>
+  <path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/>
+</Svg>;
+const ScanLine = (p) => <Svg {...p}>
+  <path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+  <path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><path d="M7 12h10"/>
+</Svg>;
+const ShieldCheck = (p) => <Svg {...p}>
+  <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1Z"/>
+  <path d="m9 12 2 2 4-4"/>
+</Svg>;
+const Link2 = (p) => <Svg {...p}>
+  <path d="M9 17H7A5 5 0 0 1 7 7h2"/><path d="M15 7h2a5 5 0 1 1 0 10h-2"/><path d="M8 12h8"/>
+</Svg>;
+
+// ---- Timeline (ms) ----
+const DROP = 1400, DETECT = 2100, SCAN_END = 4200, DONE = 4800,
+      MATCH = 4900, SORT = 6400, END = 11200, LOOP = 14600;
+
+const C = {
+  bg: "#E9EEF5", card: "#FFFFFF", cardAlt: "#F3F7FB", sidebar: "#DFE7F1",
+  border: "#CCD8E6", borderSoft: "#DEE7F0", navy: "#1C3A5E", body: "#3C5575",
+  muted: "#6E8499", faint: "#94A6BC", primary: "#2F6FBA", primaryDark: "#255C9E",
+  red: "#E84A3C", progress: "#2D5BE3", amber: "#B07C29", amberBg: "#F6ECD3",
+  amberBorder: "#E3C988", green: "#3C9A5A", greenBg: "#E2F1E8", greenText: "#2C7D47",
+};
+
+const ROLE = {
+  Borrower: { fg: "#2F6FBA", bg: "#E4EEFA", bd: "#BCD3EE" },
+  Title: { fg: "#7A5BC0", bg: "#ECE6F8", bd: "#CDBDED" },
+  Insurance: { fg: "#21888A", bg: "#DBF0F0", bd: "#A6DADA" },
+  "3rd Party": { fg: "#B07C29", bg: "#F6ECD3", bd: "#E3C988" },
+};
+
+const CONDITIONS = [
+  { n: 1, title: "Bank Statement", desc: "Full statement, all pages incl. blanks", role: "Borrower" },
+  { n: 2, title: "Closing Disclosure", desc: "Requested CD once it's issued", role: "Title" },
+  { n: 3, title: "Employment / Income", desc: "YTD doesn't support salary — provide paystubs", role: "Borrower" },
+  { n: 4, title: "Hazard Insurance", desc: "Evidence of adequate coverage", role: "Insurance" },
+  { n: 5, title: "Funds to Close", desc: "Most recent full bank statement", role: "Borrower" },
+];
+
+const BUCKETS = [
+  { role: "Borrower", final: 8 }, { role: "Title", final: 1 },
+  { role: "Insurance", final: 2 }, { role: "3rd Party", final: 6 },
+];
+
+const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+function StatusPills() {
+  const items = [["12 All", C.primary], ["4 Pending UW", C.primary], ["3 Cleared", C.green], ["2 Overdue", C.red]];
+  return (
+    <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+      {items.map(([t, col]) => (
+        <span key={t} style={{ fontSize: 10.5, fontWeight: 700, color: col, background: C.card, border: `1px solid ${C.border}`, borderRadius: 7, padding: "3px 8px", fontFamily: "Inter, sans-serif" }}>{t}</span>
+      ))}
+    </div>
+  );
+}
+
+function RoleTag({ role, small }) {
+  const r = ROLE[role];
+  return (
+    <span style={{ fontSize: small ? 10 : 11, fontWeight: 700, color: r.fg, background: r.bg, border: `1px solid ${r.bd}`, borderRadius: 7, padding: small ? "2px 7px" : "3px 9px", fontFamily: "Inter, sans-serif", whiteSpace: "nowrap" }}>{role}</span>
+  );
+}
+
+function ConditionRow({ data, appeared }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: C.card, border: `1px solid ${C.borderSoft}`, borderRadius: 11, opacity: appeared ? 1 : 0, transform: appeared ? "translateX(0)" : "translateX(14px)", transition: "opacity .4s ease, transform .4s cubic-bezier(.2,.8,.2,1)" }}>
+      <span style={{ fontSize: 11, fontWeight: 700, color: C.faint, width: 18, flexShrink: 0, fontFamily: "'Space Grotesk', sans-serif" }}>#{data.n}</span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: C.navy, fontFamily: "Inter, sans-serif", lineHeight: 1.2 }}>{data.title}</div>
+        <div style={{ fontSize: 11, color: C.muted, fontFamily: "Inter, sans-serif", lineHeight: 1.3, marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{data.desc}</div>
+      </div>
+      <RoleTag role={data.role} small />
+      <span style={{ fontSize: 9.5, fontWeight: 700, color: C.amber, background: C.amberBg, border: `1px solid ${C.amberBorder}`, borderRadius: 6, padding: "2px 6px", fontFamily: "Inter, sans-serif", flexShrink: 0 }}>NEEDED</span>
+    </div>
+  );
+}
+
+function ProcessorAssistantDemo() {
+  const [t, setT] = useState(0);
+  const [paused, setPaused] = useState(false);
+  const startRef = useRef(performance.now());
+  const rafRef = useRef(0);
+
+  useEffect(() => {
+    const loop = (now) => {
+      if (!paused) { let e = now - startRef.current; if (e >= LOOP) { startRef.current = now; e = 0; } setT(e); }
+      else { startRef.current = now - t; }
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [paused, t]);
+
+  const showDrop = t < DETECT;
+  const pdfIn = t >= 450;
+  const detected = t >= DETECT;
+  const scanning = t >= DETECT && t < SCAN_END;
+  const scanPct = clamp((t - DETECT) / (SCAN_END - DETECT) * 100, 0, 100);
+  const showResult = t >= DONE && t < END;
+  const conf = Math.round(clamp((t - MATCH) / 1200 * 83, 0, 83));
+  const showEnd = t >= END;
+
+  let scanMsg = "Local extraction · pdf text + OCR";
+  if (t > 2900) scanMsg = "Sanitizing condition text";
+  if (t > 3500) scanMsg = "Enhancing with Gemini 2.5";
+
+  const sortProg = clamp((t - SORT) / (END - SORT - 400), 0, 1);
+  const bucketVal = (final) => Math.round(final * sortProg);
+  const sortedTotal = Math.round(25 * sortProg);
+
+  return (
+    <div style={{ minHeight: "100vh", background: `radial-gradient(120% 70% at 50% -10%, #F2F6FB 0%, ${C.bg} 60%)`, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "26px 16px", boxSizing: "border-box" }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap');
+        .pa-blink{animation:paBlink 1s ease-in-out infinite}
+        @keyframes paBlink{0%,100%{opacity:1}50%{opacity:.3}}
+        @keyframes paPop{0%{transform:scale(.4);opacity:0}60%{transform:scale(1.12)}100%{transform:scale(1);opacity:1}}
+        @keyframes paRise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes paPulse{0%,100%{box-shadow:0 0 0 0 rgba(47,111,186,.35)}50%{box-shadow:0 0 0 6px rgba(47,111,186,0)}}
+        @media(prefers-reduced-motion:reduce){.pa-blink{animation:none!important}}
+      `}</style>
+
+      <div style={{ width: 388, maxWidth: "100%", background: C.bg, borderRadius: 22, border: `1px solid ${C.border}`, boxShadow: "0 36px 80px -28px rgba(28,58,94,.4)", overflow: "hidden", fontFamily: "Inter, sans-serif" }}>
+        {/* Title bar */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "13px 16px", background: C.card, borderBottom: `1px solid ${C.border}` }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: `linear-gradient(135deg,#4A86D4,${C.primary})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <ScanLine size={15} color="#fff" strokeWidth={2.5} />
+            </div>
+            <div>
+              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 14.5, color: C.navy, lineHeight: 1 }}>Processor Assistant</div>
+              <div style={{ fontSize: 10.5, color: C.muted, marginTop: 2 }}>Brice Leasure · Processing</div>
+            </div>
+          </div>
+          <span style={{ fontSize: 10.5, fontWeight: 700, color: C.primary, background: C.cardAlt, border: `1px solid ${C.border}`, borderRadius: 8, padding: "4px 8px", textAlign: "center", lineHeight: 1.15 }}>12<br/>in pipeline</span>
+        </div>
+
+        <div style={{ padding: "12px 14px", borderBottom: `1px solid ${C.border}`, background: C.bg }}>
+          <StatusPills />
+        </div>
+
+        {/* Body */}
+        <div style={{ padding: 14, minHeight: 452, background: C.bg }}>
+          {showDrop && (
+            <div style={{ animation: "paRise .4s ease" }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: C.navy, fontFamily: "'Space Grotesk',sans-serif" }}>Ready to scan?</div>
+              <div style={{ fontSize: 12, color: C.muted, marginTop: 3, marginBottom: 14 }}>Drop a loan doc — it auto-detects the type and matches it to your pipeline.</div>
+
+              <div style={{ border: `2px dashed ${detected ? C.primary : C.border}`, borderRadius: 14, padding: 16, background: C.card, transition: "border-color .3s ease" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 11, opacity: pdfIn ? 1 : 0, transform: pdfIn ? "translateY(0)" : "translateY(-10px)", transition: "all .45s cubic-bezier(.2,.8,.2,1)" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 9, background: "#FBE9E7", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <FileText size={20} color={C.red} strokeWidth={2.2} />
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 700, color: C.navy }}>Approval 1-24.pdf</div>
+                    <div style={{ fontSize: 11, color: C.muted }}>63.8 KB · PDF</div>
+                  </div>
+                  {detected && (
+                    <span style={{ fontSize: 10.5, fontWeight: 700, color: C.primary, background: "#E4EEFA", border: "1px solid #BCD3EE", borderRadius: 7, padding: "3px 8px", animation: "paRise .3s ease" }}>Approval Letter</span>
+                  )}
+                </div>
+              </div>
+
+              {detected && (
+                <div style={{ marginTop: 12, animation: "paRise .35s ease" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 11.5, color: C.body, marginBottom: 10 }}>
+                    <span style={{ width: 16, height: 16, borderRadius: 4, background: C.red, display: "inline-flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}><Check size={11} color="#fff" strokeWidth={3.5} /></span>
+                    Enhance conditions with <b style={{ marginLeft: 3 }}>sanitized AI</b>
+                  </div>
+                  <div style={{ background: C.primary, color: "#fff", textAlign: "center", padding: "11px", borderRadius: 10, fontSize: 13, fontWeight: 700, animation: scanning ? "none" : "paPulse 1.4s ease-in-out infinite" }}>
+                    Scan + sanitized AI
+                  </div>
+
+                  {scanning && (
+                    <div style={{ marginTop: 12 }}>
+                      <div style={{ height: 8, borderRadius: 6, background: "#D4DEEB", overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${scanPct}%`, background: C.progress, borderRadius: 6, transition: "width .15s linear" }} />
+                      </div>
+                      <div style={{ fontSize: 11, color: C.primary, fontWeight: 600, marginTop: 7, display: "flex", alignItems: "center", gap: 6 }}>
+                        <span className="pa-blink" style={{ width: 6, height: 6, borderRadius: 99, background: C.primary }} />
+                        {scanMsg}…
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {showResult && (
+            <div style={{ animation: "paRise .4s ease" }}>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11.5, fontWeight: 700, color: C.greenText, background: C.greenBg, border: `1px solid #BBE0C7`, borderRadius: 8, padding: "4px 9px", marginBottom: 12 }}>
+                <Check size={13} strokeWidth={3} /> Done · Approval Letter · 25 conditions
+              </div>
+
+              {/* Match card — the money shot */}
+              <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 13, padding: 13, marginBottom: 14 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: C.muted, marginBottom: 8 }}>
+                  <Link2 size={13} color={C.primary} /> Auto-matched to loan
+                </div>
+                <div style={{ fontSize: 14.5, fontWeight: 700, color: C.navy, fontFamily: "'Space Grotesk',sans-serif" }}>LN-2025-004 · Robert &amp; Sandra Kim</div>
+                <div style={{ marginTop: 10 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, fontWeight: 600, color: C.body, marginBottom: 5 }}>
+                    <span>Match confidence</span><span style={{ color: C.primary, fontWeight: 700 }}>{conf}%</span>
+                  </div>
+                  <div style={{ height: 7, borderRadius: 6, background: "#D4DEEB", overflow: "hidden" }}>
+                    <div style={{ height: "100%", width: `${conf}%`, background: `linear-gradient(90deg,#4A86D4,${C.primary})`, borderRadius: 6, transition: "width .12s linear" }} />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bucket chips */}
+              <div style={{ fontSize: 10.5, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: C.muted, marginBottom: 8 }}>Sorted by owner · {sortedTotal}/25</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 13 }}>
+                {BUCKETS.map((b) => {
+                  const r = ROLE[b.role];
+                  return (
+                    <span key={b.role} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11.5, fontWeight: 700, color: r.fg, background: r.bg, border: `1px solid ${r.bd}`, borderRadius: 8, padding: "5px 9px" }}>
+                      {b.role}<b style={{ fontFamily: "'Space Grotesk',sans-serif" }}>{bucketVal(b.final)}</b>
+                    </span>
+                  );
+                })}
+              </div>
+
+              {/* Streaming condition rows */}
+              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                {CONDITIONS.map((c, i) => (
+                  <ConditionRow key={c.n} data={c} appeared={t >= SORT + i * 560} />
+                ))}
+                {t >= SORT + CONDITIONS.length * 560 && (
+                  <div style={{ textAlign: "center", fontSize: 11.5, fontWeight: 600, color: C.muted, padding: "4px 0", animation: "paRise .3s ease" }}>
+                    + {Math.max(0, 25 - sortedTotal)} more sorting<span className="pa-blink">…</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {showEnd && (
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", minHeight: 452, padding: "0 16px" }}>
+              <div style={{ width: 74, height: 74, borderRadius: 99, background: C.greenBg, border: `2px solid ${C.green}`, display: "flex", alignItems: "center", justifyContent: "center", animation: "paPop .6s cubic-bezier(.2,.9,.3,1.4)" }}>
+                <Check size={38} color={C.green} strokeWidth={3} />
+              </div>
+              <div style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 24, color: C.navy, marginTop: 20, letterSpacing: -0.3 }}>25 conditions, sorted</div>
+              <div style={{ fontSize: 13.5, color: C.body, marginTop: 9, lineHeight: 1.5, maxWidth: 280 }}>Matched to the right loan and split by who owns each one — automatically.</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", marginTop: 16 }}>
+                {BUCKETS.map((b) => { const r = ROLE[b.role]; return (
+                  <span key={b.role} style={{ fontSize: 11, fontWeight: 700, color: r.fg, background: r.bg, border: `1px solid ${r.bd}`, borderRadius: 8, padding: "4px 9px" }}>{b.role} {b.final}</span>
+                ); })}
+              </div>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 6, marginTop: 18, fontSize: 11.5, color: C.muted, fontWeight: 600 }}>
+                <ShieldCheck size={14} color={C.green} /> Built for GLBA · docs never stored
+              </div>
+              <div style={{ display: "inline-flex", alignItems: "center", gap: 8, marginTop: 14, padding: "8px 14px", borderRadius: 99, background: C.card, border: `1px solid ${C.border}` }}>
+                <div style={{ width: 18, height: 18, borderRadius: 5, background: `linear-gradient(135deg,#4A86D4,${C.primary})`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  <ScanLine size={11} color="#fff" strokeWidth={2.5} />
+                </div>
+                <span style={{ fontFamily: "'Space Grotesk',sans-serif", fontWeight: 700, fontSize: 13, color: C.navy }}>Processor Assistant</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <button onClick={() => setPaused((p) => !p)} style={{ marginTop: 16, background: "transparent", border: `1px solid ${C.border}`, color: C.muted, fontFamily: "Inter,sans-serif", fontSize: 12, fontWeight: 600, padding: "7px 14px", borderRadius: 99, cursor: "pointer" }}>
+        {paused ? "▶ Resume loop" : "⏸ Pause loop"}
+      </button>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<ProcessorAssistantDemo />);
+</script>
+</body>
+</html>
