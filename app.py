@@ -91,10 +91,10 @@ st.markdown(r"""
 }
 /* Light theme overrides */
 :root[data-theme="light"] {
-    --bg-page: #e7ecf3; --bg-white: #ffffff; --bg-subtle: #dde5ef;
-    --slate-900: #060b14; --slate-700: #18212c; --slate-600: #283341;
-    --slate-500: #38434f; --slate-400: #54616f; --slate-300: #a4b2c2;
-    --slate-200: #d0d8e1; --slate-100: #e6ebf1;
+    --bg-page: #f4f7fb; --bg-white: #ffffff; --bg-subtle: #e6ecf3;
+    --slate-900: #050a12; --slate-700: #141c26; --slate-600: #232f3c;
+    --slate-500: #333e4a; --slate-400: #4a5765; --slate-300: #93a3b6;
+    --slate-200: #c4cdd9; --slate-100: #dde4ec;
     /* Muted accent + status colors, deepened for stronger contrast on white */
     --accent: #34539c; --accent-dark: #284183;
     --accent-light: rgba(52, 83, 156, 0.12);
@@ -111,9 +111,9 @@ st.markdown(r"""
 }
 /* Light theme sidebar + button overrides */
 [data-theme="light"] [data-testid="stSidebar"] { background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%) !important; border-right: 1px solid #e2e8f0 !important; }
-[data-theme="light"] [data-testid="stSidebar"] button, [data-theme="light"] [data-testid="stSidebar"] button[kind], [data-theme="light"] [data-testid="stSidebar"] [data-testid*="baseButton"] { background: var(--bg-white) !important; border: 1px solid var(--slate-300) !important; color: #334155 !important; }
-[data-theme="light"] [data-testid="stSidebar"] button:hover { background: var(--slate-100) !important; border-color: var(--slate-400) !important; color: #1e293b !important; }
-[data-theme="light"] [data-testid="stSidebar"] button p, [data-theme="light"] [data-testid="stSidebar"] button span, [data-theme="light"] [data-testid="stSidebar"] button div { color: #334155 !important; }
+[data-theme="light"] [data-testid="stSidebar"] button, [data-theme="light"] [data-testid="stSidebar"] button[kind], [data-theme="light"] [data-testid="stSidebar"] [data-testid*="baseButton"] { background: #e6ebf2 !important; border: 1px solid #a6b2c1 !important; color: #1f2a37 !important; }
+[data-theme="light"] [data-testid="stSidebar"] button:hover { background: #d7dee8 !important; border-color: #8b9bae !important; color: #131c27 !important; }
+[data-theme="light"] [data-testid="stSidebar"] button p, [data-theme="light"] [data-testid="stSidebar"] button span, [data-theme="light"] [data-testid="stSidebar"] button div { color: #1f2a37 !important; }
 [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] { background: var(--accent-light) !important; border: 1px solid transparent !important; color: var(--accent) !important; font-weight: 600 !important; box-shadow: inset 3px 0 0 var(--accent) !important; }
 [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] p, [data-theme="light"] [data-testid="stSidebar"] button[kind="primary"] span { color: var(--accent) !important; font-weight: 600 !important; }
 [data-theme="light"] [data-testid="stSidebar"] button:focus, [data-theme="light"] [data-testid="stSidebar"] button:focus-visible, [data-theme="light"] [data-testid="stSidebar"] button:active { background: rgba(0,0,0,0.06) !important; border-color: #cbd5e1 !important; color: #334155 !important; }
@@ -123,17 +123,17 @@ st.markdown(r"""
    so these win over Streamlit's solid primary-color styling. */
 html[data-theme="light"] [data-testid="stMain"] button[kind="primary"],
 html[data-theme="light"] [data-testid="stForm"] button[kind="primary"],
-html[data-theme="light"] [data-testid="stFileUploader"] button { background: #eceff3 !important; border: 1px solid #c3ccd8 !important; color: #2b3648 !important; box-shadow: none !important; }
+html[data-theme="light"] [data-testid="stFileUploader"] button { background: #dde3eb !important; border: 1px solid #a6b2c1 !important; color: #1c2733 !important; box-shadow: none !important; }
 html[data-theme="light"] [data-testid="stMain"] button[kind="primary"] p,
 html[data-theme="light"] [data-testid="stMain"] button[kind="primary"] span,
 html[data-theme="light"] [data-testid="stForm"] button[kind="primary"] p,
 html[data-theme="light"] [data-testid="stForm"] button[kind="primary"] span,
 html[data-theme="light"] [data-testid="stFileUploader"] button p,
-html[data-theme="light"] [data-testid="stFileUploader"] button span { color: #2b3648 !important; }
+html[data-theme="light"] [data-testid="stFileUploader"] button span { color: #1c2733 !important; }
 html[data-theme="light"] [data-testid="stMain"] button[kind="primary"]:hover,
 html[data-theme="light"] [data-testid="stForm"] button[kind="primary"]:hover,
-html[data-theme="light"] [data-testid="stFileUploader"] button:hover { background: #dfe4ea !important; border-color: #aab6c5 !important; color: #2b3648 !important; box-shadow: none !important; }
-html[data-theme="light"] [data-testid="stFileUploader"] button svg { fill: #2b3648 !important; color: #2b3648 !important; }
+html[data-theme="light"] [data-testid="stFileUploader"] button:hover { background: #ccd4df !important; border-color: #93a1b2 !important; color: #1c2733 !important; box-shadow: none !important; }
+html[data-theme="light"] [data-testid="stFileUploader"] button svg { fill: #1c2733 !important; color: #1c2733 !important; }
 /* Light theme: give each pipeline loan card a darker background + defined
    border so it stands out from the page (status color bar stays on the left). */
 html[data-theme="light"] .pa-loan-grid { background: #e7ecf3 !important; border-top: 1px solid #c5cfdc !important; border-right: 1px solid #c5cfdc !important; border-bottom: 1px solid #c5cfdc !important; border-radius: 0 8px 8px 0 !important; }
