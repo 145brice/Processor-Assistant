@@ -493,8 +493,8 @@ body a[kind="primary"][href] * {
 }
 [data-testid="stTextInput"] input, [data-testid="stTextArea"] textarea, [data-testid="stSelectbox"] > div > div, [data-testid="stNumberInput"] input { background: var(--bg-subtle) !important; border: 1px solid var(--slate-300) !important; border-radius: var(--radius-sm) !important; color: var(--slate-900) !important; font-size: 13px !important; }
 [data-testid="stTextInput"] input:focus, [data-testid="stTextArea"] textarea:focus { border-color: var(--accent) !important; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1) !important; }
-[data-testid="stFileUploader"] { background: rgba(255,255,255,0.02) !important; border: 1.5px dashed rgba(59,130,246,0.3) !important; border-radius: 14px !important; padding: 8px !important; transition: all 0.18s ease-in-out !important; }
-[data-testid="stFileUploader"]:hover { border-color: rgba(59,130,246,0.6) !important; background: rgba(59,130,246,0.04) !important; box-shadow: 0 0 24px rgba(59,130,246,0.12) !important; }
+[data-testid="stFileUploader"] { background: linear-gradient(135deg, var(--accent-light) 0%, rgba(34,197,94,0.05) 100%) !important; border: 2px dashed var(--accent) !important; border-radius: 16px !important; padding: 16px !important; transition: all 0.2s ease-in-out !important; }
+[data-testid="stFileUploader"]:hover { border-color: var(--accent-dark) !important; background: linear-gradient(135deg, rgba(59,130,246,0.14) 0%, rgba(34,197,94,0.09) 100%) !important; box-shadow: 0 8px 26px rgba(59,130,246,0.20) !important; transform: translateY(-1px) !important; }
 [data-testid="stFileUploader"] section { background: transparent !important; }
 .pa-feature-chip-row {
     display: flex;
@@ -1185,10 +1185,11 @@ button[kind="secondary"]:hover p { color: var(--slate-900) !important; }
 
 /* File uploader compact, less obnoxious */
 [data-testid="stFileUploader"] {
-    background: var(--bg-subtle) !important;
-    border: 1px dashed var(--slate-300) !important;
-    border-radius: 6px !important;
-    padding: 4px 8px !important;
+    background: linear-gradient(135deg, var(--accent-light) 0%, rgba(34,197,94,0.05) 100%) !important;
+    border: 2px dashed var(--accent) !important;
+    border-radius: 16px !important;
+    padding: 14px 16px !important;
+    transition: all 0.2s ease-in-out !important;
 }
 [data-testid="stFileUploader"] section {
     padding: 4px 8px !important;
@@ -1222,9 +1223,10 @@ button[kind="secondary"]:hover p { color: var(--slate-900) !important; }
     font-size: 12px !important;
 }
 [data-testid="stFileUploader"]:hover {
-    border-color: #3b82f6 !important;
-    background: rgba(59,130,246,0.04) !important;
-    box-shadow: none !important;
+    border-color: var(--accent-dark) !important;
+    background: linear-gradient(135deg, rgba(59,130,246,0.14) 0%, rgba(34,197,94,0.09) 100%) !important;
+    box-shadow: 0 8px 26px rgba(59,130,246,0.20) !important;
+    transform: translateY(-1px) !important;
 }
 [data-testid="stFileUploader"] button {
     background: #2563eb !important;
@@ -4502,25 +4504,35 @@ def show_dashboard():
         except Exception:
             pass
         _user = st.session_state.get("user_name", "") or "there"
+        _hero_name = _user.split()[0] if _user else "there"
         st.markdown(
             f"""
-            <div style="margin:4px 0 8px 0;padding:8px 12px;
-                 background:var(--bg-white);border:1px solid var(--slate-300);border-radius:6px;
-                 display:flex;align-items:center;gap:10px;">
-              <div style="width:24px;height:24px;border-radius:4px;background:var(--accent-light);
-                   display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                     stroke="var(--accent)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
-                  <rect x="3" y="4" width="18" height="16" rx="2"/>
-                  <path d="M7 8h10M7 12h10M7 16h6"/>
+            <div style="margin:6px 0 14px 0;padding:18px 22px;border-radius:16px;
+                 background:linear-gradient(120deg, var(--accent-light) 0%, rgba(34,197,94,0.07) 100%);
+                 border:1px solid var(--slate-300);display:flex;align-items:center;gap:16px;
+                 box-shadow:var(--shadow-card);">
+              <div style="width:50px;height:50px;border-radius:14px;flex-shrink:0;
+                   background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+                   display:flex;align-items:center;justify-content:center;
+                   box-shadow:0 6px 16px rgba(59,130,246,0.35);">
+                <svg width="27" height="27" viewBox="0 0 24 24" fill="none"
+                     stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
+                  <path d="M7 12h10"/>
                 </svg>
               </div>
-              <div style="font-size:13px;font-weight:600;color:var(--slate-700);flex:1;">
-                Welcome back, {_user.split()[0] if _user else 'there'}.
-                <span style="font-weight:400;color:var(--slate-600);margin-left:6px;">Drop a loan doc to auto-detect & match.</span>
+              <div style="flex:1;min-width:0;">
+                <div style="font-size:21px;font-weight:900;color:var(--slate-900);line-height:1.15;
+                     letter-spacing:-0.3px;">Hey {_hero_name} &#128075; Ready to scan?</div>
+                <div style="font-size:13px;color:var(--slate-600);margin-top:4px;">
+                  Drop a loan doc below &mdash; it auto-detects the type and matches it to your pipeline.
+                </div>
               </div>
-              <div style="font-size:11px;color:var(--slate-600);white-space:nowrap;">
-                <b style="color:#3b82f6;">{_loan_ct}</b> in pipeline
+              <div style="text-align:center;flex-shrink:0;padding:6px 16px;border-radius:12px;
+                   background:var(--bg-white);border:1px solid var(--slate-300);">
+                <div style="font-size:24px;font-weight:900;color:var(--accent);line-height:1;">{_loan_ct}</div>
+                <div style="font-size:10px;color:var(--slate-600);font-weight:700;
+                     text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">in pipeline</div>
               </div>
             </div>
             """,
