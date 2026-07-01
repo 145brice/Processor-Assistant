@@ -11007,10 +11007,23 @@ def show_pricing_page():
     # Remind shoppers what they're paying for before the price card.
     render_feature_highlights(heading=True)
     render_no_credit_card_banner()
-    st.markdown('<div style="height:18px"></div>', unsafe_allow_html=True)
+
+    # ── Pipeline-is-free selling point ────────────────────────────────────────
+    st.markdown(
+        '<div style="margin:8px 0 6px 0;padding:14px 18px;border-radius:12px;'
+        'background:var(--green-bg);border:1px solid var(--green-border);text-align:center;">'
+        '<div style="font-size:16px;font-weight:900;color:var(--green);">'
+        'Your pipeline is free. Forever.</div>'
+        '<div style="font-size:13px;color:var(--slate-700);margin-top:4px;">'
+        'Track every loan, condition, status &amp; party with <b>no limits on any plan &mdash; including Free</b>. '
+        'You only pay for document scans.</div>'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
 
     cards = [
-        ("free", "Try the core scanner with a monthly cap.", "Start Free", ""),
+        ("free", "Full pipeline manager + scanning, capped monthly. No card needed.", "Start Free", ""),
         ("starter", "For light monthly document cleanup.", "Start Starter", _tiers.stripe_payment_link("starter")),
         ("pro", "For active processors who scan weekly.", "Start Pro", _tiers.stripe_payment_link("pro")),
         (
@@ -13690,12 +13703,10 @@ def main():
                 "Your account is signed in, but Processor Assistant could not save all cloud profile/session data. "
                 "Refresh to retry. If it persists, contact support."
             )
-        if _profile and not _has_paid_access(_profile):
-            show_sidebar()
-            show_persistent_header()
-            _render_trial_gate(_profile)
-            render_site_footer()
-            return
+        # Freemium: every signed-in user gets full app access (pipeline, scanner
+        # UI, tools). Monetization is by monthly scan quota per tier — the Free
+        # tier gets in with a 20-scan/month cap and unlimited pipeline management.
+        # (The scanner enforces the per-tier scan limit; no hard paywall here.)
         if _qp_page:
             st.session_state.page = str(_qp_page)
         elif (st.session_state.get("page") == "overview"
