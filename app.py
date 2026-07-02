@@ -3988,30 +3988,26 @@ def show_login_page():
     [data-testid="stAppViewContainer"] section.main {
         padding-top: 0 !important;
     }
+    /* Center the two-column landing layout instead of spanning the full monitor */
     [data-testid="stMain"] .block-container,
     [data-testid="stAppViewContainer"] .main .block-container,
     .block-container {
-        padding-top: 14px !important;
-    }
-    /* Tighten vertical rhythm so the sign-in form fits on one screen */
-    [data-testid="stMain"] [data-testid="stVerticalBlock"] { gap: 0.4rem !important; }
-    .pa-feature-grid { margin: 2px 0 4px 0 !important; gap: 10px !important; }
-    .pa-feature-card { padding: 10px 14px !important; }
-    .pa-feature-head { margin-bottom: 5px !important; }
-    .pa-feature-row { margin: 4px 0 !important; }
-    .pa-feature-chip-row { margin: 4px 0 !important; }
-    .pa-trial-banner { padding: 7px 14px !important; margin: 2px 0 4px 0 !important; }
-    .pa-trial-title { font-size: 15px !important; }
-    .pa-glba-compact { margin: 2px 0 4px 0 !important; padding: 7px 12px !important; }
-    .login-divider { margin: 8px 0 6px !important; }
-    .login-page-wrap {
-        width: min(720px, calc(100vw - 32px)) !important;
-        max-width: 720px !important;
+        padding-top: 18px !important;
+        max-width: 1200px !important;
         margin-left: auto !important;
         margin-right: auto !important;
-        padding-left: 16px !important;
-        padding-right: 16px !important;
     }
+    /* Tighten vertical rhythm so the sign-in form fits on one screen */
+    [data-testid="stMain"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
+    .pa-feature-grid { margin: 4px 0 !important; gap: 10px !important; }
+    .pa-feature-card { padding: 12px 14px !important; }
+    .pa-feature-head { margin-bottom: 6px !important; }
+    .pa-feature-row { margin: 5px 0 !important; }
+    .pa-feature-chip-row { margin: 8px 0 4px 0 !important; }
+    .pa-trial-banner { padding: 8px 14px !important; margin: 4px 0 !important; }
+    .pa-trial-title { font-size: 15px !important; }
+    .pa-glba-compact { margin: 4px 0 !important; padding: 8px 12px !important; }
+    .login-divider { margin: 10px 0 6px !important; }
     button[kind="primary"],
     div[data-testid="stButton"] > button,
     .stButton > button {
@@ -4045,9 +4041,12 @@ def show_login_page():
     }
     </style>
     """, unsafe_allow_html=True)
-    st.markdown('<div class="login-page-wrap">', unsafe_allow_html=True)
+    # Two-column landing: marketing pitch on the left, sign-in on the right,
+    # so the login form is visible without scrolling.
+    _mkt_col, _form_col = st.columns([1.15, 1], gap="large")
 
-    st.markdown("""
+    with _mkt_col:
+        st.markdown("""
     <div style="text-align:center;margin-bottom:10px;">
       <div style="display:inline-flex;align-items:center;justify-content:center;
            width:38px;height:38px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);
@@ -4059,10 +4058,10 @@ def show_login_page():
       <div style="font-size:18px;font-weight:800;color:var(--slate-900);letter-spacing:-0.5px;line-height:1.1;">
         Processor Assistant
       </div>
-      <div style="font-size:clamp(20px,3vw,28px);font-weight:900;color:var(--slate-900);
+      <div style="font-size:clamp(22px,2.4vw,30px);font-weight:900;color:var(--slate-900);
            margin-top:6px;line-height:1.12;letter-spacing:-0.6px;">
         Made for processors,
-        <span style="color:#3b82f6;font-size:inherit;font-weight:inherit;">built by processors.</span>
+        <div style="color:#3b82f6;font-size:inherit;font-weight:inherit;">built by processors.</div>
       </div>
       <div style="font-size:10px;color:var(--slate-600);margin-top:5px;letter-spacing:0.3px;">
         ONLINE MORTGAGE PROCESSING
@@ -4070,144 +4069,143 @@ def show_login_page():
     </div>
     """, unsafe_allow_html=True)
 
-    # Product highlights so visitors see what it does before signing in.
-    render_feature_highlights(heading=False)
-    render_no_credit_card_banner()
-    render_compliance_statement(compact=True)
+        # Product highlights so visitors see what it does before signing in.
+        render_feature_highlights(heading=False)
+        render_no_credit_card_banner()
+        render_compliance_statement(compact=True)
 
-    if _env_truthy("PA_SHOW_SANDBOX", "0"):
-        st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
-        if st.button("Try Sandbox - No Account Needed", type="primary", use_container_width=True):
-            _enter_sandbox(page="overview")
-            st.rerun()
-        st.markdown('</div>', unsafe_allow_html=True)
-        st.markdown(
-            '<div style="text-align:center;font-size:10px;color:var(--slate-600);margin-top:4px;margin-bottom:4px;">'
-            'Full access - Docs not saved; non-sensitive data and recent scan history may persist</div>',
-            unsafe_allow_html=True
-        )
-
-    st.markdown(
-        """
-        <div style="background:rgba(15,23,42,0.72);border:1px solid rgba(59,130,246,0.22);
-        border-radius:10px;padding:8px 12px;margin:2px 0 4px 0;color:var(--slate-600);font-size:11.5px;line-height:1.4;">
-          <b style="color:#fff;">Before you continue:</b> Processor Assistant uses AI to help read mortgage documents.
-          AI can make mistakes. You are responsible for reviewing all extracted data, conditions, contacts, generated
-          drafts, and compliance-related output before using it. Uploaded PDFs are processed for the scan; the app may
-          save non-sensitive extracted fields, loan metadata, settings, and recent scan history for your account.
-        </div>
-        """,
-        unsafe_allow_html=True,
-    )
-    accepted_terms = st.checkbox(
-        "I understand this tool uses AI, outputs must be reviewed, and I agree to use it responsibly.",
-        key="login_terms_ack",
-        value=False,
-    )
-    try:
-        import supabase_auth as _sa
-
-        if _sa.is_configured():
-            oauth_info = _sa.begin_google_oauth()
-            if oauth_info.get("ok"):
-                st.session_state["oauth_google_verifier"] = oauth_info["verifier"]
-                st.session_state["oauth_google_flow_id"] = oauth_info.get("flow_id", "")
-                _cache_oauth_verifier(str(oauth_info.get("flow_id", "")), oauth_info["verifier"])
-                if accepted_terms:
-                    st.markdown(
-                        f"""
-                        <a href="{oauth_info['url']}" target="_self" style="
-                        display:flex;
-                        width:100%;
-                        align-items:center;
-                        justify-content:center;
-                        text-decoration:none;
-                        padding:12px 14px;
-                        border-radius:10px;
-                        border:1px solid var(--slate-300);
-                        background:var(--bg-subtle);
-                        color:var(--slate-900);
-                        font-weight:600;
-                        margin-bottom:8px;
-                    ">
-                      Sign in with Google
-                    </a>
-                    """,
-                        unsafe_allow_html=True,
-                    )
-                else:
-                    st.button("Sign in with Google", disabled=True, use_container_width=True)
-                    st.caption("Please accept the AI/review disclaimer to continue.")
-            else:
-                st.caption(oauth_info.get("error", "Google sign-in is unavailable right now."))
-        else:
-            st.caption("Google sign-in will appear automatically once Supabase OAuth is configured.")
-    except Exception as e:
-        st.caption(f"Google sign-in unavailable: {e}")
-
-    st.markdown("""
-    <div class="login-divider">
-      <hr/><span>or sign in with your account</span><hr/>
-    </div>
-    """, unsafe_allow_html=True)
-
-    tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
-
-    with tab_login:
-        with st.form("login_form"):
-            email = st.text_input("Email", placeholder="you@example.com")
-            password = st.text_input("Password", type="password", placeholder="........")
-            submitted = st.form_submit_button("Sign In", use_container_width=True, type="primary")
-            if submitted and not accepted_terms:
-                st.error("Please accept the AI/review disclaimer to continue.")
-            elif submitted and email and password:
-                from db import login
-                result = login(email, password)
-                if result.get("success"):
-                    _complete_login_session(result, sandbox_mode=False, page="overview")
-                    st.rerun()
-                else:
-                    st.error(result.get("error", "Login failed"))
-
-    with tab_signup:
-        with st.form("signup_form"):
-            from db import ROLE_OPTIONS
-            display_name = st.text_input("Full Name", placeholder="e.g. Maria Garcia", key="signup_name")
-            role = st.selectbox("Role", ROLE_OPTIONS, key="signup_role")
-            email = st.text_input("Email", placeholder="you@example.com", key="signup_email")
-            password = st.text_input("Password", type="password", placeholder="Min 6 characters", key="signup_pass")
-            confirm = st.text_input("Confirm Password", type="password", placeholder="Repeat password", key="signup_confirm")
-            tos = st.checkbox(
-                "Documents are processed in memory only and never stored. "
-                "I have authorization to process any documents I upload."
+    with _form_col:
+        if _env_truthy("PA_SHOW_SANDBOX", "0"):
+            st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
+            if st.button("Try Sandbox - No Account Needed", type="primary", use_container_width=True):
+                _enter_sandbox(page="overview")
+                st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
+            st.markdown(
+                '<div style="text-align:center;font-size:10px;color:var(--slate-600);margin-top:4px;margin-bottom:4px;">'
+                'Full access - Docs not saved; non-sensitive data and recent scan history may persist</div>',
+                unsafe_allow_html=True
             )
-            submitted = st.form_submit_button("Create Account", use_container_width=True, type="primary")
-            if submitted:
-                if not accepted_terms:
-                    st.error("Please accept the AI/review disclaimer to continue.")
-                elif not tos:
-                    st.error("Please check the acknowledgment above")
-                elif password != confirm:
-                    st.error("Passwords do not match")
-                elif len(password) < 6:
-                    st.error("Password must be at least 6 characters")
-                elif not display_name.strip():
-                    st.error("Please enter your name")
-                elif email and password:
-                    from db import signup
-                    result = signup(email, password, display_name=display_name, role=role)
-                    if result.get("success"):
-                        st.success(f"Account created for {display_name}! You can now log in.")
+
+        st.markdown(
+            """
+            <div style="background:rgba(15,23,42,0.72);border:1px solid rgba(59,130,246,0.22);
+            border-radius:10px;padding:8px 12px;margin:2px 0 4px 0;color:var(--slate-600);font-size:11.5px;line-height:1.4;">
+              <b style="color:#fff;">Before you continue:</b> Processor Assistant uses AI to help read mortgage documents.
+              AI can make mistakes. You are responsible for reviewing all extracted data, conditions, contacts, generated
+              drafts, and compliance-related output before using it. Uploaded PDFs are processed for the scan; the app may
+              save non-sensitive extracted fields, loan metadata, settings, and recent scan history for your account.
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        accepted_terms = st.checkbox(
+            "I understand this tool uses AI, outputs must be reviewed, and I agree to use it responsibly.",
+            key="login_terms_ack",
+            value=False,
+        )
+        try:
+            import supabase_auth as _sa
+
+            if _sa.is_configured():
+                oauth_info = _sa.begin_google_oauth()
+                if oauth_info.get("ok"):
+                    st.session_state["oauth_google_verifier"] = oauth_info["verifier"]
+                    st.session_state["oauth_google_flow_id"] = oauth_info.get("flow_id", "")
+                    _cache_oauth_verifier(str(oauth_info.get("flow_id", "")), oauth_info["verifier"])
+                    if accepted_terms:
+                        st.markdown(
+                            f"""
+                            <a href="{oauth_info['url']}" target="_self" style="
+                            display:flex;
+                            width:100%;
+                            align-items:center;
+                            justify-content:center;
+                            text-decoration:none;
+                            padding:12px 14px;
+                            border-radius:10px;
+                            border:1px solid var(--slate-300);
+                            background:var(--bg-subtle);
+                            color:var(--slate-900);
+                            font-weight:600;
+                            margin-bottom:8px;
+                        ">
+                          Sign in with Google
+                        </a>
+                        """,
+                            unsafe_allow_html=True,
+                        )
                     else:
-                        st.error(result.get("error", "Signup failed"))
+                        st.button("Sign in with Google", disabled=True, use_container_width=True)
+                        st.caption("Please accept the AI/review disclaimer to continue.")
+                else:
+                    st.caption(oauth_info.get("error", "Google sign-in is unavailable right now."))
+            else:
+                st.caption("Google sign-in will appear automatically once Supabase OAuth is configured.")
+        except Exception as e:
+            st.caption(f"Google sign-in unavailable: {e}")
+
+        st.markdown("""
+        <div class="login-divider">
+          <hr/><span>or sign in with your account</span><hr/>
+        </div>
+        """, unsafe_allow_html=True)
+
+        tab_login, tab_signup = st.tabs(["Login", "Sign Up"])
+
+        with tab_login:
+            with st.form("login_form"):
+                email = st.text_input("Email", placeholder="you@example.com")
+                password = st.text_input("Password", type="password", placeholder="........")
+                submitted = st.form_submit_button("Sign In", use_container_width=True, type="primary")
+                if submitted and not accepted_terms:
+                    st.error("Please accept the AI/review disclaimer to continue.")
+                elif submitted and email and password:
+                    from db import login
+                    result = login(email, password)
+                    if result.get("success"):
+                        _complete_login_session(result, sandbox_mode=False, page="overview")
+                        st.rerun()
+                    else:
+                        st.error(result.get("error", "Login failed"))
+
+        with tab_signup:
+            with st.form("signup_form"):
+                from db import ROLE_OPTIONS
+                display_name = st.text_input("Full Name", placeholder="e.g. Maria Garcia", key="signup_name")
+                role = st.selectbox("Role", ROLE_OPTIONS, key="signup_role")
+                email = st.text_input("Email", placeholder="you@example.com", key="signup_email")
+                password = st.text_input("Password", type="password", placeholder="Min 6 characters", key="signup_pass")
+                confirm = st.text_input("Confirm Password", type="password", placeholder="Repeat password", key="signup_confirm")
+                tos = st.checkbox(
+                    "Documents are processed in memory only and never stored. "
+                    "I have authorization to process any documents I upload."
+                )
+                submitted = st.form_submit_button("Create Account", use_container_width=True, type="primary")
+                if submitted:
+                    if not accepted_terms:
+                        st.error("Please accept the AI/review disclaimer to continue.")
+                    elif not tos:
+                        st.error("Please check the acknowledgment above")
+                    elif password != confirm:
+                        st.error("Passwords do not match")
+                    elif len(password) < 6:
+                        st.error("Password must be at least 6 characters")
+                    elif not display_name.strip():
+                        st.error("Please enter your name")
+                    elif email and password:
+                        from db import signup
+                        result = signup(email, password, display_name=display_name, role=role)
+                        if result.get("success"):
+                            st.success(f"Account created for {display_name}! You can now log in.")
+                        else:
+                            st.error(result.get("error", "Signup failed"))
 
     st.markdown("""
-    <div style="text-align:center;margin-top:20px;font-size:10px;color:var(--slate-700);">
+    <div style="text-align:center;margin-top:14px;font-size:10px;color:var(--slate-700);">
       Online workspace &nbsp;-&nbsp; Secure access &nbsp;-&nbsp; Cloud AI ready
     </div>
     """, unsafe_allow_html=True)
-
-    st.markdown('</div>', unsafe_allow_html=True)
 
 
 def show_sidebar():
