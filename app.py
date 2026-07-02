@@ -3988,14 +3988,39 @@ def show_login_page():
     [data-testid="stAppViewContainer"] section.main {
         padding-top: 0 !important;
     }
-    /* Center the two-column landing layout instead of spanning the full monitor */
+    /* Center the two-column landing layout instead of spanning the full monitor.
+       Selector must out-rank the global stMainBlockContainer full-width rule. */
+    [data-testid="stMain"] > div[data-testid="stMainBlockContainer"].block-container,
+    [data-testid="stMain"] div[data-testid="stMainBlockContainer"],
     [data-testid="stMain"] .block-container,
-    [data-testid="stAppViewContainer"] .main .block-container,
     .block-container {
-        padding-top: 18px !important;
-        max-width: 1200px !important;
+        padding-top: 24px !important;
+        width: min(1180px, calc(100vw - 48px)) !important;
+        max-width: 1180px !important;
         margin-left: auto !important;
         margin-right: auto !important;
+    }
+    /* Style the sign-in column as a distinct card */
+    [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-of-type(2) {
+        background: rgba(148, 163, 184, 0.06);
+        border: 1px solid var(--slate-300);
+        border-radius: 16px;
+        padding: 22px 22px 16px 22px;
+        align-self: flex-start;
+    }
+    /* Give the marketing column breathing room so it aligns with the card */
+    [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-of-type(1) {
+        padding-top: 4px;
+    }
+    /* Quiet the terms checkbox — normal case, small print */
+    [data-testid="stCheckbox"] p,
+    [data-testid="stCheckbox"] label p,
+    [data-testid="stCheckbox"] label span {
+        font-size: 11.5px !important;
+        text-transform: none !important;
+        letter-spacing: 0 !important;
+        font-weight: 600 !important;
+        line-height: 1.4 !important;
     }
     /* Tighten vertical rhythm so the sign-in form fits on one screen */
     [data-testid="stMain"] [data-testid="stVerticalBlock"] { gap: 0.5rem !important; }
@@ -4075,6 +4100,13 @@ def show_login_page():
         render_compliance_statement(compact=True)
 
     with _form_col:
+        st.markdown(
+            '<div style="font-size:19px;font-weight:800;color:var(--slate-900);'
+            'letter-spacing:-0.3px;margin-bottom:2px;">Sign in to your workspace</div>'
+            '<div style="font-size:12px;color:var(--slate-600);margin-bottom:8px;">'
+            'Start your 14-day free trial &mdash; no credit card needed.</div>',
+            unsafe_allow_html=True,
+        )
         if _env_truthy("PA_SHOW_SANDBOX", "0"):
             st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
             if st.button("Try Sandbox - No Account Needed", type="primary", use_container_width=True):
@@ -4089,12 +4121,12 @@ def show_login_page():
 
         st.markdown(
             """
-            <div style="background:rgba(15,23,42,0.72);border:1px solid rgba(59,130,246,0.22);
-            border-radius:10px;padding:8px 12px;margin:2px 0 4px 0;color:var(--slate-600);font-size:11.5px;line-height:1.4;">
-              <b style="color:#fff;">Before you continue:</b> Processor Assistant uses AI to help read mortgage documents.
-              AI can make mistakes. You are responsible for reviewing all extracted data, conditions, contacts, generated
-              drafts, and compliance-related output before using it. Uploaded PDFs are processed for the scan; the app may
-              save non-sensitive extracted fields, loan metadata, settings, and recent scan history for your account.
+            <div style="border-left:3px solid rgba(59,130,246,0.5);
+            padding:2px 0 2px 10px;margin:2px 0 6px 0;color:var(--slate-600);font-size:11px;line-height:1.45;">
+              <b style="color:var(--slate-900);">Before you continue:</b> Processor Assistant uses AI to help read
+              mortgage documents. AI can make mistakes &mdash; review all extracted data, conditions, contacts, drafts,
+              and compliance output before using it. Uploaded PDFs are processed for the scan; non-sensitive fields,
+              loan metadata, settings, and recent scan history may be saved for your account.
             </div>
             """,
             unsafe_allow_html=True,
