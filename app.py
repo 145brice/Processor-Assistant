@@ -4000,21 +4000,55 @@ def show_login_page():
         margin-left: auto !important;
         margin-right: auto !important;
     }
-    /* Style the sign-in column as a distinct card */
+    /* Ambient glow so the page doesn't feel like a void */
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    [data-testid="stApp"] {
+        background-image:
+            radial-gradient(55% 40% at 12% -5%, rgba(59,130,246,0.16) 0%, transparent 65%),
+            radial-gradient(45% 35% at 90% 105%, rgba(34,197,94,0.12) 0%, transparent 65%) !important;
+        background-attachment: fixed !important;
+    }
+    /* Gradient accent on the second headline line */
+    .pa-hero-accent {
+        background: linear-gradient(90deg, #60a5fa 0%, #3b82f6 55%, #34d399 100%);
+        -webkit-background-clip: text !important;
+        background-clip: text !important;
+        -webkit-text-fill-color: transparent !important;
+    }
+    /* Style the sign-in column as a glowing card */
     [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-of-type(2) {
-        background: rgba(148, 163, 184, 0.06);
-        border: 1px solid var(--slate-300);
+        background: linear-gradient(180deg, rgba(59,130,246,0.10) 0%, rgba(148,163,184,0.05) 140px);
+        border: 1px solid rgba(59,130,246,0.35);
         border-radius: 16px;
         padding: 22px 22px 16px 22px;
         align-self: flex-start;
+        box-shadow: 0 24px 70px -24px rgba(59,130,246,0.35);
+    }
+    /* Feature cards: subtle lift on hover */
+    .pa-feature-card {
+        transition: transform .18s ease, box-shadow .18s ease;
+    }
+    .pa-feature-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 12px 30px rgba(0,0,0,0.28);
+    }
+    /* Primary actions get the brand gradient */
+    .stButton > button[kind="primary"],
+    button[kind="primaryFormSubmit"],
+    [data-testid="stForm"] [data-testid="stFormSubmitButton"] button {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8) !important;
+        color: #fff !important;
+        border: none !important;
+        box-shadow: 0 6px 18px rgba(59,130,246,0.35) !important;
     }
     /* Give the marketing column breathing room so it aligns with the card */
     [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-of-type(1) {
         padding-top: 4px;
     }
-    /* Keep the columns side-by-side down to ~700px — Streamlit stacks them
+    /* Keep the columns side-by-side down to ~640px — Streamlit stacks them
        far too early (half-screen windows) otherwise */
-    @media (min-width: 700px) {
+    @media (min-width: 640px) {
         [data-testid="stHorizontalBlock"] {
             flex-wrap: nowrap !important;
             flex-direction: row !important;
@@ -4039,6 +4073,18 @@ def show_login_page():
         .pa-trial-banner { padding: 6px 10px !important; }
         .pa-glba-compact { padding: 6px 10px !important; font-size: 10.5px !important; }
         button, .stButton > button { min-height: 34px !important; }
+    }
+    /* Even tighter when side-by-side gets narrow: drop the chip row, small hero */
+    @media (min-width: 640px) and (max-width: 900px) {
+        .pa-feature-chip-row { display: none !important; }
+        .pa-hero-headline { font-size: 20px !important; }
+    }
+    /* Below 640px the columns must stack — put the sign-in card FIRST so
+       shrinking the window never buries the login form */
+    @media (max-width: 639.98px) {
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-of-type(2) {
+            order: -1;
+        }
     }
     /* Quiet the terms checkbox — normal case, small print */
     [data-testid="stCheckbox"] p,
@@ -4111,10 +4157,10 @@ def show_login_page():
       <div style="font-size:18px;font-weight:800;color:var(--slate-900);letter-spacing:-0.5px;line-height:1.1;">
         Processor Assistant
       </div>
-      <div style="font-size:clamp(22px,2.4vw,30px);font-weight:900;color:var(--slate-900);
+      <div class="pa-hero-headline" style="font-size:clamp(22px,2.4vw,30px);font-weight:900;color:var(--slate-900);
            margin-top:6px;line-height:1.12;letter-spacing:-0.6px;">
         Made for processors,
-        <div style="color:#3b82f6;font-size:inherit;font-weight:inherit;">built by processors.</div>
+        <div class="pa-hero-accent" style="color:#3b82f6;font-size:inherit;font-weight:inherit;">built by processors.</div>
       </div>
       <div style="font-size:10px;color:var(--slate-600);margin-top:5px;letter-spacing:0.3px;">
         ONLINE MORTGAGE PROCESSING
