@@ -3977,10 +3977,22 @@ def show_login_page():
     if _oauth_error:
         st.error(_oauth_error)
 
-    # Push content down and center in a stable responsive wrapper
-    st.markdown("<div style='height:32px'></div>", unsafe_allow_html=True)
+    # Center in a stable responsive wrapper
     st.markdown("""
     <style>
+    /* No fixed header bar on the login page — collapse the top padding the
+       logged-in layout reserves for it */
+    [data-testid="stMain"] section[data-testid="stMain"],
+    [data-testid="stMain"] > div[data-testid="stMainBlockContainer"],
+    [data-testid="stAppViewContainer"] > .main,
+    [data-testid="stAppViewContainer"] section.main {
+        padding-top: 0 !important;
+    }
+    [data-testid="stMain"] .block-container,
+    [data-testid="stAppViewContainer"] .main .block-container,
+    .block-container {
+        padding-top: 24px !important;
+    }
     .login-page-wrap {
         width: min(720px, calc(100vw - 32px)) !important;
         max-width: 720px !important;
