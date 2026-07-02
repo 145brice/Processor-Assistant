@@ -3655,10 +3655,10 @@ def render_feature_highlights(heading: bool = True):
         )
     st.markdown(
         """
-        <div style="display:flex;flex-wrap:wrap;gap:14px;margin:6px 0 8px 0;">
-          <div style="flex:1;min-width:260px;border:1px solid rgba(59,130,246,0.35);
+        <div class="pa-feature-grid" style="display:flex;flex-wrap:wrap;gap:14px;margin:6px 0 8px 0;">
+          <div class="pa-feature-card" style="flex:1;min-width:260px;border:1px solid rgba(59,130,246,0.35);
                border-radius:14px;padding:18px;background:rgba(59,130,246,0.07);">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div class="pa-feature-head" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
               <div style="width:34px;height:34px;border-radius:9px;
                    background:linear-gradient(135deg,#3b82f6,#1d4ed8);display:flex;
                    align-items:center;justify-content:center;flex-shrink:0;">
@@ -3671,22 +3671,22 @@ def render_feature_highlights(heading: bool = True):
               </div>
               <div style="font-size:15px;font-weight:800;color:var(--slate-900);">Smart Document Intelligence</div>
             </div>
-            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+            <div class="pa-feature-row" style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#3b82f6;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
               <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">Scans</b> any loan document instantly</span>
             </div>
-            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+            <div class="pa-feature-row" style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#3b82f6;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
               <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">Parses</b> key data, conditions &amp; parties</span>
             </div>
-            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+            <div class="pa-feature-row" style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#3b82f6;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
               <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">Intelligently rewrites</b> underwriting conditions by party &amp; context</span>
             </div>
           </div>
-          <div style="flex:1;min-width:260px;border:1px solid rgba(34,197,94,0.35);
+          <div class="pa-feature-card" style="flex:1;min-width:260px;border:1px solid rgba(34,197,94,0.35);
                border-radius:14px;padding:18px;background:rgba(34,197,94,0.07);">
-            <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
+            <div class="pa-feature-head" style="display:flex;align-items:center;gap:10px;margin-bottom:10px;">
               <div style="width:34px;height:34px;border-radius:9px;
                    background:linear-gradient(135deg,#22c55e,#15803d);display:flex;
                    align-items:center;justify-content:center;flex-shrink:0;">
@@ -3698,15 +3698,15 @@ def render_feature_highlights(heading: bool = True):
               </div>
               <div style="font-size:15px;font-weight:800;color:var(--slate-900);">One-Click Email Workflows</div>
             </div>
-            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+            <div class="pa-feature-row" style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#22c55e;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
               <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">One-click order-outs</b> to title, insurance &amp; more</span>
             </div>
-            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+            <div class="pa-feature-row" style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#22c55e;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
               <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">Automatic inbox monitoring</b> so nothing slips</span>
             </div>
-            <div style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
+            <div class="pa-feature-row" style="display:flex;align-items:flex-start;gap:10px;margin:8px 0;">
               <span style="color:#22c55e;font-weight:900;font-size:14px;line-height:1.45;flex-shrink:0;">&#8250;</span>
               <span style="font-size:13px;color:var(--slate-700);line-height:1.45;"><b style="color:var(--slate-900);">Multi-language email</b> reading &amp; writing</span>
             </div>
@@ -3727,10 +3727,10 @@ def render_feature_highlights(heading: bool = True):
 def render_no_credit_card_banner() -> None:
     st.markdown(
         """
-        <div style="margin:10px 0 12px 0;padding:13px 16px;border-radius:10px;
+        <div class="pa-trial-banner" style="margin:10px 0 12px 0;padding:13px 16px;border-radius:10px;
              background:var(--green-bg);border:1px solid var(--green-border);
              text-align:center;">
-          <div style="font-size:20px;font-weight:900;color:var(--green);letter-spacing:0.8px;
+          <div class="pa-trial-title" style="font-size:20px;font-weight:900;color:var(--green);letter-spacing:0.8px;
                text-transform:uppercase;line-height:1.15;">
             14-Day Free Trial
           </div>
@@ -3751,7 +3751,7 @@ def render_compliance_statement(compact: bool = False) -> None:
     """Data privacy & compliance statement shown on pricing, signup, and scanner."""
     if compact:
         st.markdown(
-            '<div style="margin:6px 0 8px 0;padding:9px 12px;border-radius:8px;'
+            '<div class="pa-glba-compact" style="margin:6px 0 8px 0;padding:9px 12px;border-radius:8px;'
             'background:var(--green-bg);border:1px solid var(--green-border);'
             'font-size:11.5px;color:var(--slate-700);line-height:1.5;">'
             '<b style="color:var(--green);">Built for GLBA compliance.</b> '
@@ -3991,8 +3991,19 @@ def show_login_page():
     [data-testid="stMain"] .block-container,
     [data-testid="stAppViewContainer"] .main .block-container,
     .block-container {
-        padding-top: 24px !important;
+        padding-top: 14px !important;
     }
+    /* Tighten vertical rhythm so the sign-in form fits on one screen */
+    [data-testid="stMain"] [data-testid="stVerticalBlock"] { gap: 0.4rem !important; }
+    .pa-feature-grid { margin: 2px 0 4px 0 !important; gap: 10px !important; }
+    .pa-feature-card { padding: 10px 14px !important; }
+    .pa-feature-head { margin-bottom: 5px !important; }
+    .pa-feature-row { margin: 4px 0 !important; }
+    .pa-feature-chip-row { margin: 4px 0 !important; }
+    .pa-trial-banner { padding: 7px 14px !important; margin: 2px 0 4px 0 !important; }
+    .pa-trial-title { font-size: 15px !important; }
+    .pa-glba-compact { margin: 2px 0 4px 0 !important; padding: 7px 12px !important; }
+    .login-divider { margin: 8px 0 6px !important; }
     .login-page-wrap {
         width: min(720px, calc(100vw - 32px)) !important;
         max-width: 720px !important;
@@ -4037,23 +4048,23 @@ def show_login_page():
     st.markdown('<div class="login-page-wrap">', unsafe_allow_html=True)
 
     st.markdown("""
-    <div style="text-align:center;margin-bottom:24px;">
+    <div style="text-align:center;margin-bottom:10px;">
       <div style="display:inline-flex;align-items:center;justify-content:center;
-           width:48px;height:48px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);
-           border-radius:12px;margin-bottom:12px;">
-        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+           width:38px;height:38px;background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+           border-radius:10px;margin-bottom:8px;">
+        <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>
         </svg>
       </div>
-      <div style="font-size:22px;font-weight:800;color:var(--slate-900);letter-spacing:-0.5px;line-height:1.1;">
+      <div style="font-size:18px;font-weight:800;color:var(--slate-900);letter-spacing:-0.5px;line-height:1.1;">
         Processor Assistant
       </div>
-      <div style="font-size:clamp(26px,5.5vw,38px);font-weight:900;color:var(--slate-900);
-           margin-top:14px;line-height:1.12;letter-spacing:-0.6px;">
+      <div style="font-size:clamp(20px,3vw,28px);font-weight:900;color:var(--slate-900);
+           margin-top:6px;line-height:1.12;letter-spacing:-0.6px;">
         Made for processors,
-        <div style="color:#3b82f6;font-size:inherit;font-weight:inherit;">built by processors.</div>
+        <span style="color:#3b82f6;font-size:inherit;font-weight:inherit;">built by processors.</span>
       </div>
-      <div style="font-size:11px;color:var(--slate-600);margin-top:10px;letter-spacing:0.3px;">
+      <div style="font-size:10px;color:var(--slate-600);margin-top:5px;letter-spacing:0.3px;">
         ONLINE MORTGAGE PROCESSING
       </div>
     </div>
@@ -4063,7 +4074,6 @@ def show_login_page():
     render_feature_highlights(heading=False)
     render_no_credit_card_banner()
     render_compliance_statement(compact=True)
-    st.markdown('<div style="height:14px"></div>', unsafe_allow_html=True)
 
     if _env_truthy("PA_SHOW_SANDBOX", "0"):
         st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
@@ -4077,11 +4087,10 @@ def show_login_page():
             unsafe_allow_html=True
         )
 
-    st.markdown('<div style="margin:10px 0 8px 0;">', unsafe_allow_html=True)
     st.markdown(
         """
         <div style="background:rgba(15,23,42,0.72);border:1px solid rgba(59,130,246,0.22);
-        border-radius:12px;padding:12px 14px;margin:10px 0;color:var(--slate-600);font-size:12px;line-height:1.45;">
+        border-radius:10px;padding:8px 12px;margin:2px 0 4px 0;color:var(--slate-600);font-size:11.5px;line-height:1.4;">
           <b style="color:#fff;">Before you continue:</b> Processor Assistant uses AI to help read mortgage documents.
           AI can make mistakes. You are responsible for reviewing all extracted data, conditions, contacts, generated
           drafts, and compliance-related output before using it. Uploaded PDFs are processed for the scan; the app may
