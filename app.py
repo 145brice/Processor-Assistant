@@ -4012,6 +4012,34 @@ def show_login_page():
     [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-of-type(1) {
         padding-top: 4px;
     }
+    /* Keep the columns side-by-side down to ~700px — Streamlit stacks them
+       far too early (half-screen windows) otherwise */
+    @media (min-width: 700px) {
+        [data-testid="stHorizontalBlock"] {
+            flex-wrap: nowrap !important;
+            flex-direction: row !important;
+        }
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"] {
+            width: auto !important;
+            min-width: 0 !important;
+        }
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-of-type(1) {
+            flex: 1.15 1 0% !important;
+        }
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-of-type(2) {
+            flex: 1 1 0% !important;
+        }
+    }
+    /* Compact spacing when the window is half-screen sized */
+    @media (max-width: 1280px) {
+        [data-testid="stHorizontalBlock"] > [data-testid="stColumn"]:nth-of-type(2) {
+            padding: 14px 14px 10px 14px;
+        }
+        .pa-feature-card { padding: 10px 12px !important; }
+        .pa-trial-banner { padding: 6px 10px !important; }
+        .pa-glba-compact { padding: 6px 10px !important; font-size: 10.5px !important; }
+        button, .stButton > button { min-height: 34px !important; }
+    }
     /* Quiet the terms checkbox — normal case, small print */
     [data-testid="stCheckbox"] p,
     [data-testid="stCheckbox"] label p,
