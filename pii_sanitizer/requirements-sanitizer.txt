@@ -1,0 +1,26 @@
+# pii_sanitizer dependencies.
+# --- Core (required) ---
+pypdf>=4.0            # PDF text-layer extraction
+cryptography>=42.0    # encrypted vault persistence (already used by the app)
+
+# --- OCR for scanned/image PDFs (optional but strongly recommended) ---
+pymupdf>=1.24         # render pages to images (imported as `fitz`)
+pytesseract>=0.3.10   # Tesseract OCR wrapper (needs Tesseract-OCR installed)
+Pillow>=10.0          # image handling for OCR + barcode scan
+
+# --- NER for unlabeled names/orgs/places (optional, recommended) ---
+# Choose ONE backend. Presidio is preferred; it wraps spaCy with scoring.
+presidio-analyzer>=2.2
+spacy>=3.7
+# After install, download a model, e.g.:
+#   python -m spacy download en_core_web_lg
+# (en_core_web_lg is most accurate for names; en_core_web_sm is smaller/faster.)
+
+# --- Visual code detection (optional) ---
+pyzbar>=0.1.9         # QR / barcode decoding (needs the zbar shared library)
+
+# --- Config files in YAML (optional; JSON works without this) ---
+PyYAML>=6.0
+
+# --- Testing ---
+pytest>=8.0

@@ -1,0 +1,59 @@
+# Default configuration for pii_sanitizer.
+# Copy to config.local.yaml and override, or set PII_<FIELD> env vars on Railway.
+# Every field here maps 1:1 to pii_sanitizer.config.SanitizerConfig.
+
+# ---- Extraction / OCR ----
+ocr_enabled: true
+ocr_dpi_scale: 2.0          # render scale before OCR; 2.0 ~= 144 DPI
+ocr_language: "eng"
+min_embedded_chars: 50      # a page with fewer embedded chars is OCR'd
+tesseract_cmd: null         # explicit tesseract.exe path, or null to autodetect
+
+# ---- Detectors ----
+enable_regex: true
+enable_ner: true            # requires spaCy or Presidio (optional deps)
+enable_barcode: true        # requires pyzbar + Pillow (optional deps)
+ner_model: "en_core_web_lg" # spaCy model; _lg is most accurate for names
+ner_min_score: 0.35
+
+enabled_entities:
+  - SSN
+  - TAX_ID
+  - ROUTING_NUMBER
+  - ACCOUNT_NUMBER
+  - LOAN_NUMBER
+  - PASSPORT
+  - DRIVERS_LICENSE
+  - EMAIL
+  - PHONE
+  - DATE_OF_BIRTH
+  - ADDRESS
+  - ZIP
+  - BORROWER
+  - COBORROWER
+  - SELLER
+  - BUYER
+  - REALTOR
+  - LOAN_OFFICER
+  - PROCESSOR
+  - UNDERWRITER
+  - LENDER
+  - EMPLOYER
+  - COMPANY
+  - PERSON
+  - COUNTY
+  - PROPERTY_IDENTIFIER
+  - QR_CODE
+  - BARCODE
+  - SIGNATURE
+
+# ---- Gate / safety ----
+strict_gate: true           # raise if sanitized text still has residual PII
+redact_money: false         # keep dollar amounts (LLM usually needs them)
+
+# ---- Logging ----
+log_level: "INFO"
+redact_logs: true           # scrub PII-shaped tokens from all log output
+
+# ---- Persistence ----
+encrypted_spill_dir: null   # optional dir for encrypted vault spill; null = RAM only
