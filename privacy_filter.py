@@ -10,6 +10,43 @@ import re
 from typing import Iterable
 
 
+# Security policy appended to approval-analysis system prompts.  This is kept
+# beside the executable privacy gate so prompt behavior cannot drift away from
+# the local redaction boundary that enforces it.
+SECURE_APPROVAL_INTELLIGENCE_PROMPT = """
+You are working inside a mortgage approval processing application. Apply these
+rules only after the application has locally removed borrower-sensitive data.
+Never request, reconstruct, infer, retain, log, score, or learn from borrower
+names, contact details, identifiers, addresses, account data, income figures,
+or any other private borrower content. Work only with the sanitized lender
+name, de-identified document-format signals, and de-identified condition-language
+patterns. Preserve redaction placeholders and never treat them as learnable data.
+
+For lender accuracy, evaluate how reliably the sanitized lender format was
+parsed. Any accuracy observation must be associated only with the lender name
+and aggregate, de-identified format outcomes. It must never contain document
+text, condition text, borrower data, replacement maps, or document identifiers.
+Lender accuracy rankings are private to the uploading processor and must never
+be presented as public rankings or shared across processors.
+
+For condition ownership, classify the responsible owner from de-identified
+language patterns into Borrower, Lender, or Broker / Loan Officer. Language such
+as "provide updated paystubs" generally signals Borrower; lender-performed
+verification such as "verification of employment" generally signals Lender;
+and requirements for the originating company or its licensing/good standing
+generally signal Broker / Loan Officer. Classify silently when confidence is
+high. Mark borderline or ambiguous conditions as Best Guess so the processor
+can confirm them. A correction may contribute only a de-identified language
+pattern and corrected owner; never retain the original condition or private
+content as learning data.
+""".strip()
+
+
+def secure_approval_system_prompt(system: str) -> str:
+    """Attach the de-identified approval policy to a task-specific prompt."""
+    return f"{SECURE_APPROVAL_INTELLIGENCE_PROMPT}\n\n{str(system or '').strip()}".strip()
+
+
 _PLACEHOLDER_RE = re.compile(r"\[[A-Z][A-Z0-9_]*\]")
 
 _PATTERNS: list[tuple[str, re.Pattern[str], str]] = [

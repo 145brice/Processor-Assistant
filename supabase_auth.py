@@ -341,6 +341,27 @@ def _save_setting_json(setting_key: str, value: dict, *, user_key: str = "", use
         return {"ok": False, "error": str(e)}
 
 
+def load_private_approval_intelligence(user_key: str) -> dict:
+    """Load lender/ownership aggregates scoped to one authenticated processor."""
+    if not user_key:
+        return {}
+    return _load_setting_json(f"approval_intelligence:{user_key}")
+
+
+def save_private_approval_intelligence(user_key: str, value: dict, *, user_email: str = "") -> dict:
+    """Save de-identified intelligence under a processor-private settings key."""
+    if not user_key:
+        return {"ok": False, "error": "Missing user key."}
+    from approval_intelligence import normalize_state
+    safe_value = normalize_state(value)
+    return _save_setting_json(
+        f"approval_intelligence:{user_key}",
+        safe_value,
+        user_key=user_key,
+        user_email=user_email,
+    )
+
+
 def ensure_user_profile(user_key: str, *, email: str = "", display_name: str = "", role: str = "") -> dict:
     """Create or refresh the app-level user profile used for trial/subscription state."""
     if not user_key:

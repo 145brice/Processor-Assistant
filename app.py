@@ -2322,6 +2322,46 @@ def _scan_history_user_key() -> str:
     return _current_auth_user_key() or "anonymous"
 
 
+def _load_approval_intelligence_state() -> dict:
+    """Load processor-private, de-identified lender/ownership aggregates."""
+    import approval_intelligence as _approval_intel
+    user_key = _current_auth_user_key()
+    cache_key = f"approval_intelligence_state:{user_key or 'session'}"
+    cached = st.session_state.get(cache_key)
+    if isinstance(cached, dict):
+        return _approval_intel.normalize_state(cached)
+    value = {}
+    if user_key and not st.session_state.get("sandbox_mode", False):
+        try:
+            import supabase_auth as _sa_intel
+            value = _sa_intel.load_private_approval_intelligence(user_key)
+        except Exception:
+            value = {}
+    value = _approval_intel.normalize_state(value)
+    st.session_state[cache_key] = value
+    return value
+
+
+def _save_approval_intelligence_state(value: dict) -> dict:
+    """Cache and persist only the normalized safe intelligence schema."""
+    import approval_intelligence as _approval_intel
+    user_key = _current_auth_user_key()
+    safe_value = _approval_intel.normalize_state(value)
+    cache_key = f"approval_intelligence_state:{user_key or 'session'}"
+    st.session_state[cache_key] = safe_value
+    if user_key and not st.session_state.get("sandbox_mode", False):
+        try:
+            import supabase_auth as _sa_intel
+            return _sa_intel.save_private_approval_intelligence(
+                user_key,
+                safe_value,
+                user_email=str(st.session_state.get("user_email", "")),
+            )
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+    return {"ok": True, "storage": "session"}
+
+
 def _load_scan_history_all() -> list[dict]:
     try:
         import json as _json
@@ -5185,12 +5225,19 @@ def show_dashboard():
             pass
         _use_cloud_enhancement = False
         if _try_cloud:
-            _use_cloud_enhancement = st.checkbox(
-                "Enhance locally extracted conditions with sanitized AI",
-                value=False,
-                key="dash_use_sanitized_ai",
-                help="Off by default. The PDF remains local; only redacted condition text is sent.",
+            _scan_method = st.radio(
+                "Scan method",
+                ("AI", "No AI"),
+                index=0,
+                key="dash_scan_method",
+                horizontal=True,
+                help=(
+                    "AI is selected by default and enhances the locally extracted conditions. "
+                    "The PDF remains local; only sanitized condition text is sent. "
+                    "Choose No AI for local-only extraction."
+                ),
             )
+            _use_cloud_enhancement = _scan_method == "AI"
 
         # â”€â”€ Monthly scan-quota indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         try:
@@ -5215,7 +5262,7 @@ def show_dashboard():
             pass
 
         _checked_visible = [_vi for _vi in _visible if st.session_state.get(f"dash_sel_{_vi}", True)]
-        _scan_clicked = st.button(f"Scan + sanitized AI ({len(_checked_visible)} selected)" if _use_cloud_enhancement else f"Scan locally ({len(_checked_visible)} selected)",
+        _scan_clicked = st.button(f"Scan with AI ({len(_checked_visible)} selected)" if _use_cloud_enhancement else f"Scan with No AI ({len(_checked_visible)} selected)",
                                   key="dash_scan", type="primary", disabled=len(_checked_visible) == 0)
         if _scan_clicked:
             # Build the actual list of (bytes, name, type) to scan
@@ -5364,6 +5411,36 @@ def show_dashboard():
                 ):
                     _result["ai_log"] = f"PDF OCR retry skipped; cloud={bool(_try_cloud)} approved={bool(_sq_approved)}"
                 if _result.get("success"):
+                    # Approval intelligence is calculated only after the normal
+                    # extraction/privacy boundary. Persisted state contains lender
+                    # aggregates and allowlisted pattern features, never these raw
+                    # source strings or condition descriptions.
+                    if _sq_type == "Approval Letter":
+                        try:
+                            import approval_intelligence as _approval_intel
+                            _approval_raw_text = (
+                                _result.get("raw_text", "")
+                                or _result.get("bank_raw_text", "")
+                                or ""
+                            )
+                            _approval_lender = _approval_intel.detect_lender_name(_approval_raw_text)
+                            _approval_state = _load_approval_intelligence_state()
+                            _approval_conditions = _approval_intel.apply_ownership(
+                                _normalize_scanned_conditions(_result.get("conditions")),
+                                _approval_state,
+                            )
+                            _approval_state, _approval_summary = _approval_intel.record_scan(
+                                _approval_state,
+                                _approval_lender,
+                                _approval_conditions,
+                                extraction_succeeded=bool(_approval_conditions),
+                            )
+                            _save_approval_intelligence_state(_approval_state)
+                            _result["conditions"] = _approval_conditions
+                            _result["lender_name"] = _approval_lender
+                            _result["lender_accuracy"] = _approval_summary
+                        except Exception as _intel_e:
+                            _result["lender_accuracy_error"] = type(_intel_e).__name__
                     # Auto-match to a pipeline loan
                     _raw_text = _result.get("raw_text", "") or _result.get("bank_raw_text", "") or ""
                     _borrower_hint = ""
@@ -5413,6 +5490,18 @@ def show_dashboard():
                         st.warning(f"{_sq_name}: {_sq_type} - scanned image, logged without extraction")
                     else:
                         st.success(f"{_sq_name}: {_sq_type} OK")
+                    _accuracy = _result.get("lender_accuracy") or {}
+                    if _accuracy.get("accuracy_percent") is not None:
+                        _accuracy_label = (
+                            "processor-confirmed accuracy"
+                            if _accuracy.get("basis") == "processor-confirmed"
+                            else "estimated parsing accuracy"
+                        )
+                        st.info(
+                            f"Private lender heads-up: **{_accuracy.get('lender', 'Unknown Lender')}** "
+                            f"is currently **{_accuracy['accuracy_percent']}% {_accuracy_label}** "
+                            f"across **{_accuracy.get('scans', 0)}** of your approval scan(s)."
+                        )
                 else:
                     st.error(f"{_sq_name}: {_result.get('error', 'Failed')}")
             _sq_progress.progress(100, text=f"Done - {_sq_total} document(s) scanned")
@@ -5477,6 +5566,21 @@ def show_dashboard():
             _lm_loan_num = _lm.get("loan_num", "")
             _lm_loan_id = _lm.get("loan_id")
             _lm_conf = _lm.get("confidence", 0)
+
+            # Private per-processor lender signal. This result object is visible
+            # only inside the current processor's scan history/session.
+            _accuracy = _r.get("lender_accuracy") or {}
+            if _batch.get("type") == "Approval Letter" and _accuracy.get("accuracy_percent") is not None:
+                _accuracy_basis = (
+                    "processor-confirmed"
+                    if _accuracy.get("basis") == "processor-confirmed"
+                    else "estimated parsing"
+                )
+                st.info(
+                    f"Private lender heads-up: **{_accuracy.get('lender', 'Unknown Lender')}** - "
+                    f"**{_accuracy['accuracy_percent']}% {_accuracy_basis} accuracy** "
+                    f"from **{_accuracy.get('scans', 0)}** of your scan(s)."
+                )
             try:
                 _current_visible_loans = _visible_account_loans(_gl())
                 _current_visible_ids = {l.get("id") for l in _current_visible_loans}
@@ -5739,6 +5843,92 @@ def show_dashboard():
                 if _norm_cond_count:
                     st.markdown('<div class="scan-scroll">', unsafe_allow_html=True)
                     st.markdown('<div class="pa-section">Conditions</div>', unsafe_allow_html=True)
+
+                    # Three-way smart sort. High-confidence rows appear here
+                    # silently; ambiguous rows also appear in the confirmation
+                    # control immediately below.
+                    _ownership_groups = {
+                        "Borrower": [],
+                        "Lender": [],
+                        "Broker / Loan Officer": [],
+                    }
+                    for _ownership_cond in _norm_conds:
+                        _ownership = _ownership_cond.get("ownership_bucket")
+                        if _ownership in _ownership_groups:
+                            _ownership_groups[_ownership].append(_ownership_cond)
+                    if any(_ownership_groups.values()):
+                        _owner_tabs = st.tabs([
+                            f"Borrower ({len(_ownership_groups['Borrower'])})",
+                            f"Lender ({len(_ownership_groups['Lender'])})",
+                            f"Broker / LO ({len(_ownership_groups['Broker / Loan Officer'])})",
+                        ])
+                        for _owner_tab, _owner_name in zip(
+                            _owner_tabs,
+                            ("Borrower", "Lender", "Broker / Loan Officer"),
+                        ):
+                            with _owner_tab:
+                                if not _ownership_groups[_owner_name]:
+                                    st.caption(f"No {_owner_name.lower()} conditions found.")
+                                for _owner_cond in _ownership_groups[_owner_name]:
+                                    _owner_note = " - confirm below" if _owner_cond.get("ownership_needs_confirmation") else ""
+                                    st.markdown(
+                                        f"- **#{_owner_cond.get('num', '?')}** "
+                                        f"{_owner_cond.get('desc', '')}{_owner_note}"
+                                    )
+
+                    # Only ambiguous ownership is interruptive. Confirmed choices
+                    # teach an allowlisted semantic pattern, never this sentence.
+                    _ambiguous_conds = [
+                        (idx, cond) for idx, cond in enumerate(_norm_conds)
+                        if cond.get("ownership_needs_confirmation")
+                    ]
+                    if _ambiguous_conds:
+                        import approval_intelligence as _approval_intel_ui
+                        with st.expander(
+                            f"Confirm condition ownership ({len(_ambiguous_conds)})",
+                            expanded=True,
+                        ):
+                            st.caption(
+                                "Only the de-identified language pattern and your selected owner are learned. "
+                                "The condition sentence and borrower data are not saved as training data."
+                            )
+                            for _amb_idx, _amb_cond in _ambiguous_conds:
+                                _amb_key = f"ownership_confirm_{_bidx}_{_amb_idx}"
+                                st.markdown(f"**#{_amb_cond.get('num', _amb_idx + 1)}** {_amb_cond.get('desc', '')}")
+                                _predicted_owner = _amb_cond.get("ownership_bucket", "Borrower")
+                                _owner_index = (
+                                    _approval_intel_ui.OWNERS.index(_predicted_owner)
+                                    if _predicted_owner in _approval_intel_ui.OWNERS else 0
+                                )
+                                _confirmed_owner = st.selectbox(
+                                    "Who owns this condition?",
+                                    _approval_intel_ui.OWNERS,
+                                    index=_owner_index,
+                                    key=f"{_amb_key}_owner",
+                                )
+                                if st.button("Confirm", key=f"{_amb_key}_save"):
+                                    _intel_state = _load_approval_intelligence_state()
+                                    _intel_state, _new_accuracy = _approval_intel_ui.record_confirmation(
+                                        _intel_state,
+                                        _r.get("lender_name", "Unknown Lender"),
+                                        _amb_cond.get("ownership_pattern_features", []),
+                                        _predicted_owner,
+                                        _confirmed_owner,
+                                    )
+                                    _save_result = _save_approval_intelligence_state(_intel_state)
+                                    _raw_rows = _r.get("conditions")
+                                    if isinstance(_raw_rows, list) and _amb_idx < len(_raw_rows):
+                                        _raw_rows[_amb_idx]["ownership_bucket"] = _confirmed_owner
+                                        _raw_rows[_amb_idx]["ownership_confidence"] = 1.0
+                                        _raw_rows[_amb_idx]["ownership_needs_confirmation"] = False
+                                    _r["lender_accuracy"] = _new_accuracy
+                                    st.session_state.scan_batches[_bidx]["result"] = _r
+                                    _remember_scan_batch(st.session_state.scan_batches[_bidx])
+                                    if not _save_result.get("ok"):
+                                        st.warning("Saved for this session; cloud sync will retry later.")
+                                    else:
+                                        st.toast("Ownership confirmed and de-identified pattern learned.")
+                                    st.rerun()
                     _PARTY_OPTS_SCAN = [
                         "Borrower", "Co-Borrower", "Title", "Realtor", "Seller",
                         "Processor", "Underwriter", "Jr Underwriter", "Loan Officer",
@@ -12843,15 +13033,22 @@ def show_loan_detail():
         _cloud_doc_types = {"Purchase Contract", "Approval Letter"}
         _detail_use_cloud = False
         if _cloud_enabled and _scan_dtype in _cloud_doc_types:
-            _detail_use_cloud = st.checkbox(
-                "Enhance locally extracted text with sanitized AI",
-                value=False,
-                key=f"detail_use_sanitized_ai_{lid}",
+            _detail_scan_method = st.radio(
+                "Scan method",
+                ("AI", "No AI"),
+                index=0,
+                key=f"detail_scan_method_{lid}",
+                horizontal=True,
+                help=(
+                    "AI is selected by default and enhances the locally extracted text. "
+                    "Choose No AI for local-only extraction."
+                ),
             )
+            _detail_use_cloud = _detail_scan_method == "AI"
         _user_approved_cloud = _detail_use_cloud
 
         _scan_btn_label = (
-            f"Scan with AI" if _user_approved_cloud else "Scan"
+            "Scan with AI" if _user_approved_cloud else "Scan with No AI"
         )
         if _scan_file and st.button(_scan_btn_label, key=f"detail_scan_btn_{lid}",
                                      type="primary", use_container_width=True):

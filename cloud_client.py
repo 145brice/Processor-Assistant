@@ -27,6 +27,7 @@ from privacy_filter import (
     redact_gemini_output,
     require_cloud_safe,
     restore_local_placeholders,
+    secure_approval_system_prompt,
 )
 
 _APP_DIR  = os.path.dirname(os.path.abspath(__file__))
@@ -592,7 +593,7 @@ def enhance_conditions(text: str, doc_type: str,
     except ValueError as e:
         return script_conditions, _log("PRIVACY BLOCK", "condition_extraction", str(e))
 
-    system = (
+    system = secure_approval_system_prompt(
         "You are an expert mortgage condition parser. Extract only real lender "
         "conditions from approval documents. If the lender/format is familiar from "
         "the document patterns, label the row High Confidence. If you are making an "
@@ -640,6 +641,9 @@ Rules:
    subject-property CD, initial/final/preliminary CD, or full title package goes to Title.
 10. Do not drop rows beginning with "Borrower to provide/must", "Buyer to provide",
     "Provide", "Please provide", or "All borrowers must".
+11. Assign an ownership bucket from de-identified wording: Borrower, Lender, or
+    Broker / Loan Officer. Use Best Guess whenever ownership is borderline so the
+    processor can confirm it. Do not infer or reproduce redacted private content.
 
 Return ONLY the conditions - no intro text, no headers, no explanations.
 Use this exact pipe-delimited format, one condition per line:
@@ -1192,9 +1196,8 @@ def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes, api_key_override: 
     """
     Extract approval-letter conditions.
 
-    Default path (PA_PDF_VISION on) sends the PDF to Gemini's vision for the most
-    complete extraction. If PA_PDF_VISION is false, or vision is unavailable/errors,
-    it falls back to the privacy-safe path: local OCR -> redact -> sanitized text.
+    The default path is privacy-safe: local extraction -> redact -> sanitized text.
+    Raw PDF vision is available only through the explicit PA_PDF_VISION opt-in.
     Returns: (pipe_delimited_conditions, log_line, text_hint)
 
     api_key_override: if provided, uses this key directly (bypasses cloud_config).
@@ -1220,10 +1223,10 @@ def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes, api_key_override: 
             clean_text, "Approval Letter", local_conditions, known_values=repl.values())
         return conds, lg, text[:12000]
 
-    # PDF vision reads dense approval sheets far better than redacted OCR text,
-    # but it sends the PDF to the cloud model. Controlled by PA_PDF_VISION
-    # (default on); set it to false to force the privacy-safe local-text path.
-    _pdf_vision_on = (os.getenv("PA_PDF_VISION", "true").strip().lower() in ("1", "true", "yes", "on"))
+    # PDF vision sends original document bytes to the cloud and therefore must
+    # never be the implicit path. Only an explicit deployment-level opt-in can
+    # enable it; otherwise all approval analysis starts after local redaction.
+    _pdf_vision_on = (os.getenv("PA_PDF_VISION", "false").strip().lower() in ("1", "true", "yes", "on"))
     if api_key_override:
         provider = "gemini"
     else:
@@ -1231,7 +1234,7 @@ def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes, api_key_override: 
         provider = cfg.get("provider", DEFAULT_PROVIDER)
     if not _pdf_vision_on:
         return _local_text_path()
-    system = (
+    system = secure_approval_system_prompt(
         "You are a precise mortgage processor reading underwriting approval letters. "
         "You extract every single numbered condition exactly as written in the PDF — "
         "no paraphrasing, no merging, no inventing. You preserve the original numbering "

@@ -3,7 +3,12 @@ from unittest.mock import patch
 import json
 
 import cloud_client
-from privacy_filter import find_sensitive_fragments, redact_for_cloud, redact_gemini_output
+from privacy_filter import (
+    find_sensitive_fragments,
+    redact_for_cloud,
+    redact_gemini_output,
+    secure_approval_system_prompt,
+)
 
 
 SENSITIVE_TEXT = """
@@ -22,6 +27,14 @@ Condition: Borrower must provide an updated homeowners insurance declaration.
 
 
 class PrivacyFilterTests(unittest.TestCase):
+    def test_secure_approval_prompt_requires_deidentified_private_learning(self):
+        prompt = secure_approval_system_prompt("Extract conditions.")
+        self.assertIn("only after", prompt)
+        self.assertIn("locally removed borrower-sensitive data", prompt)
+        self.assertIn("private to the uploading processor", prompt)
+        self.assertIn("Borrower, Lender, or Broker / Loan Officer", prompt)
+        self.assertIn("never retain the original condition", prompt)
+
     def test_redaction_removes_sensitive_values(self):
         sanitized, replacements, leaks = redact_for_cloud(SENSITIVE_TEXT)
 
@@ -235,6 +248,26 @@ class PrivacyFilterTests(unittest.TestCase):
 
         self.assertEqual(text, local_text)
         self.assertEqual(result["transaction"]["purchase_price"], "500000")
+        urlopen.assert_not_called()
+
+    def test_approval_pdf_defaults_to_local_redacted_path(self):
+        local_text = (
+            "Borrower Name: Jane Marie Doe\nSSN: 123-45-6789\n"
+            "1. Borrower must provide updated paystubs."
+        )
+        local_rows = "| 1 | Borrower must provide updated paystubs | Borrower | Needed |"
+        with (
+            patch.dict("os.environ", {}, clear=False),
+            patch("ai_engine.extract_text_from_pdf", return_value=local_text),
+            patch("ai_engine.extract_conditions", return_value=local_rows),
+            patch.object(cloud_client, "enhance_conditions", return_value=(local_rows, "[LOCAL]")) as enhance,
+            patch("urllib.request.urlopen") as urlopen,
+        ):
+            with patch.dict("os.environ", {"PA_PDF_VISION": ""}):
+                result, _, _ = cloud_client.extract_approval_conditions_ai_from_pdf(b"%PDF-private")
+
+        self.assertIn("updated paystubs", result)
+        enhance.assert_called_once()
         urlopen.assert_not_called()
 
 
