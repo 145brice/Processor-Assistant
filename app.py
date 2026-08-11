@@ -6364,11 +6364,26 @@ def show_dashboard():
                                     f"Shared - also in {_SECTION_LABEL_SCAN.get(_section_party_for_row, _section_party_for_row)}"
                                 )
 
-                            if st.button(
-                                "Guide", key=f"{_uid}_guide", use_container_width=True,
-                                help="Open Fannie Mae / Freddie Mac / USDA guidelines for this condition",
-                            ):
-                                st.session_state[f"{_uid}_guide_open"] = not st.session_state.get(f"{_uid}_guide_open", False)
+                            _card_actions = st.columns(3)
+                            with _card_actions[0]:
+                                if st.button(
+                                    "Guide", key=f"{_uid}_guide", use_container_width=True,
+                                    help="Open Fannie Mae / Freddie Mac / USDA guidelines for this condition",
+                                ):
+                                    st.session_state[f"{_uid}_guide_open"] = not st.session_state.get(f"{_uid}_guide_open", False)
+                            with _card_actions[1]:
+                                if st.button("Plain", key=f"{_uid}_plain", use_container_width=True):
+                                    _key = f"{_uid}_plain_open"
+                                    st.session_state[_key] = not st.session_state.get(_key, False)
+                            with _card_actions[2]:
+                                if st.button("Draft", key=f"{_uid}_draft", use_container_width=True):
+                                    _key = f"{_uid}_draft_open"
+                                    st.session_state[_key] = not st.session_state.get(_key, False)
+
+                            if st.session_state.get(f"{_uid}_plain_open"):
+                                st.info(_client_desc)
+                            if st.session_state.get(f"{_uid}_draft_open"):
+                                _render_inline_condition_draft(_c, _section_party_for_row, _uid)
 
                         if st.session_state.get(f"{_uid}_guide_open"):
                             import urllib.parse as _ulp
@@ -6396,6 +6411,55 @@ def show_dashboard():
                             if st.button("Close guide", key=f"{_uid}_guide_close", use_container_width=True):
                                 st.session_state.pop(f"{_uid}_guide_open", None)
                                 st.rerun()
+
+                    def _render_inline_condition_draft(_condition, _party, _uid_key):
+                        """Editable one-condition email directly beneath its row."""
+                        import html as _inline_html
+                        import urllib.parse as _inline_url
+                        from ai_engine import draft_email as _inline_draft
+
+                        _party = _party or "Borrower"
+                        _is_client = _party in {"Borrower", "Co-Borrower"}
+                        _desc = str(_condition.get("desc", ""))
+                        _request_text = _to_client_language(_desc, _party) if _is_client else _desc
+                        _language_key = f"{_uid_key}_draft_language"
+                        _language = st.selectbox(
+                            "Email language",
+                            ["English", "Spanish"],
+                            key=_language_key,
+                            label_visibility="collapsed",
+                        )
+                        _body = _inline_draft(
+                            f"- #{_condition.get('num', '')}: {_request_text}",
+                            _party,
+                            _language,
+                        )
+                        _edit_key = f"{_uid_key}_draft_body"
+                        st.text_area(
+                            "Edit email",
+                            value=_body,
+                            height=150,
+                            key=_edit_key,
+                            label_visibility="collapsed",
+                        )
+                        _edited = st.session_state.get(_edit_key, _body)
+                        _recipient = _scan_contact_email_for_section(_party)
+                        _subject = (
+                            f"{_SEND_LABEL_SCAN.get(_party, 'Condition request')} "
+                            f"#{_condition.get('num', '')}"
+                        )
+                        _params = {"su": _subject, "body": _edited}
+                        if _recipient:
+                            _params["to"] = _recipient
+                        _gmail = "https://mail.google.com/mail/?view=cm&fs=1&" + _inline_url.urlencode(_params)
+                        st.markdown(
+                            f'<a href="{_gmail}" target="_blank" rel="noopener noreferrer" '
+                            f'style="display:inline-block;padding:6px 12px;border-radius:6px;'
+                            f'background:rgba(66,133,244,0.14);border:1px solid rgba(66,133,244,0.45);'
+                            f'color:#60a5fa;font-size:11px;font-weight:700;text-decoration:none;">'
+                            f'Compose in Gmail{(" - " + _inline_html.escape(_recipient)) if _recipient else ""}</a>',
+                            unsafe_allow_html=True,
+                        )
 
                     # Compact view toggle (defaults ON): left column becomes
                     # one-liners "**Subject** - short note" with the full original
@@ -6464,7 +6528,7 @@ def show_dashboard():
                                 _subject, _body_short = _compact_subject_body(
                                     _orig_desc, _sum_desc, _primary_section,
                                 )
-                                _cb_col, _txt_col, _party_col, _stat_col = st.columns([0.5, 5.2, 2.2, 2.1])
+                                _cb_col, _txt_col, _party_col, _stat_col, _action_col = st.columns([0.5, 4.5, 2.0, 1.8, 1.7])
                                 with _cb_col:
                                     st.checkbox(
                                         f'#{_c["num"]}', value=False,
@@ -6515,6 +6579,31 @@ def show_dashboard():
                                         key=f"{_base_uid}_stat",
                                         label_visibility="collapsed",
                                     )
+                                with _action_col:
+                                    _row_actions = st.columns(2)
+                                    with _row_actions[0]:
+                                        if st.button(
+                                            "Plain",
+                                            key=f"{_uid}_compact_plain",
+                                            help="Show client-friendly wording",
+                                            use_container_width=True,
+                                        ):
+                                            _key = f"{_uid}_plain_open"
+                                            st.session_state[_key] = not st.session_state.get(_key, False)
+                                    with _row_actions[1]:
+                                        if st.button(
+                                            "Draft",
+                                            key=f"{_uid}_compact_draft",
+                                            help="Draft an email for this condition",
+                                            use_container_width=True,
+                                        ):
+                                            _key = f"{_uid}_draft_open"
+                                            st.session_state[_key] = not st.session_state.get(_key, False)
+                                if st.session_state.get(f"{_uid}_plain_open"):
+                                    _plain_text = st.session_state.get(_plain_map_key, {}).get(_orig_desc, _orig_desc)
+                                    st.info(_plain_text)
+                                if st.session_state.get(f"{_uid}_draft_open"):
+                                    _render_inline_condition_draft(_c, _primary_section, _uid)
                         else:
                             for _cond_idx, _c in enumerate(_norm_conds):
                                 _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
