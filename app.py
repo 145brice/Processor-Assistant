@@ -5870,92 +5870,13 @@ def show_dashboard():
                 # â”€â”€ Conditions (interactive, compact) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                 if _norm_cond_count:
                     st.markdown('<div class="scan-scroll">', unsafe_allow_html=True)
-                    st.markdown('<div class="pa-section">Conditions</div>', unsafe_allow_html=True)
+                    st.markdown(
+                        f'<div class="pa-section">Conditions '
+                        f'<span style="color:var(--slate-500);font-size:11px;font-weight:600;">'
+                        f'({_norm_cond_count})</span></div>',
+                        unsafe_allow_html=True,
+                    )
 
-                    # Three-way smart sort. High-confidence rows appear here
-                    # silently; ambiguous rows also appear in the confirmation
-                    # control immediately below.
-                    _ownership_groups = {
-                        "Borrower": [],
-                        "Lender": [],
-                        "Broker / Loan Officer": [],
-                    }
-                    for _ownership_cond in _norm_conds:
-                        _ownership = _ownership_cond.get("ownership_bucket")
-                        if _ownership in _ownership_groups:
-                            _ownership_groups[_ownership].append(_ownership_cond)
-                    if any(_ownership_groups.values()):
-                        _owner_tabs = st.tabs([
-                            f"Borrower ({len(_ownership_groups['Borrower'])})",
-                            f"Lender ({len(_ownership_groups['Lender'])})",
-                            f"Broker / LO ({len(_ownership_groups['Broker / Loan Officer'])})",
-                        ])
-                        for _owner_tab, _owner_name in zip(
-                            _owner_tabs,
-                            ("Borrower", "Lender", "Broker / Loan Officer"),
-                        ):
-                            with _owner_tab:
-                                if not _ownership_groups[_owner_name]:
-                                    st.caption(f"No {_owner_name.lower()} conditions found.")
-                                for _owner_cond in _ownership_groups[_owner_name]:
-                                    # Ownership is helpful routing metadata, not a
-                                    # required questionnaire during every scan.
-                                    _owner_note = ""
-                                    st.markdown(
-                                        f"- **#{_owner_cond.get('num', '?')}** "
-                                        f"{_owner_cond.get('desc', '')}{_owner_note}"
-                                    )
-
-                    # Only ambiguous ownership is interruptive. Confirmed choices
-                    # teach an allowlisted semantic pattern, never this sentence.
-                    _ambiguous_conds = []
-                    if _ambiguous_conds:
-                        import approval_intelligence as _approval_intel_ui
-                        with st.expander(
-                            f"Confirm condition ownership ({len(_ambiguous_conds)})",
-                            expanded=True,
-                        ):
-                            st.caption(
-                                "Only the de-identified language pattern and your selected owner are learned. "
-                                "The condition sentence and borrower data are not saved as training data."
-                            )
-                            for _amb_idx, _amb_cond in _ambiguous_conds:
-                                _amb_key = f"ownership_confirm_{_bidx}_{_amb_idx}"
-                                st.markdown(f"**#{_amb_cond.get('num', _amb_idx + 1)}** {_amb_cond.get('desc', '')}")
-                                _predicted_owner = _amb_cond.get("ownership_bucket", "Borrower")
-                                _owner_index = (
-                                    _approval_intel_ui.OWNERS.index(_predicted_owner)
-                                    if _predicted_owner in _approval_intel_ui.OWNERS else 0
-                                )
-                                _confirmed_owner = st.selectbox(
-                                    "Who owns this condition?",
-                                    _approval_intel_ui.OWNERS,
-                                    index=_owner_index,
-                                    key=f"{_amb_key}_owner",
-                                )
-                                if st.button("Confirm", key=f"{_amb_key}_save"):
-                                    _intel_state = _load_approval_intelligence_state()
-                                    _intel_state, _new_accuracy = _approval_intel_ui.record_confirmation(
-                                        _intel_state,
-                                        _r.get("lender_name", "Unknown Lender"),
-                                        _amb_cond.get("ownership_pattern_features", []),
-                                        _predicted_owner,
-                                        _confirmed_owner,
-                                    )
-                                    _save_result = _save_approval_intelligence_state(_intel_state)
-                                    _raw_rows = _r.get("conditions")
-                                    if isinstance(_raw_rows, list) and _amb_idx < len(_raw_rows):
-                                        _raw_rows[_amb_idx]["ownership_bucket"] = _confirmed_owner
-                                        _raw_rows[_amb_idx]["ownership_confidence"] = 1.0
-                                        _raw_rows[_amb_idx]["ownership_needs_confirmation"] = False
-                                    _r["lender_accuracy"] = _new_accuracy
-                                    st.session_state.scan_batches[_bidx]["result"] = _r
-                                    _remember_scan_batch(st.session_state.scan_batches[_bidx])
-                                    if not _save_result.get("ok"):
-                                        st.warning("Saved for this session; cloud sync will retry later.")
-                                    else:
-                                        st.toast("Ownership confirmed and de-identified pattern learned.")
-                                    st.rerun()
                     _PARTY_OPTS_SCAN = [
                         "Borrower", "Co-Borrower", "Title", "Realtor", "Seller",
                         "Processor", "Underwriter", "Jr Underwriter", "Loan Officer",
@@ -6152,7 +6073,6 @@ def show_dashboard():
                         _sections = _scan_sections_for_condition(_cond)
                         return "Borrower" in _sections
 
-                    st.markdown('<div class="pa-section" style="margin-top:8px;">Needs List</div>', unsafe_allow_html=True)
                     import html as _html
                     import re as _re_needs
                     _summary_map_for_needs = st.session_state.get(_summary_map_key, {})
@@ -6222,35 +6142,8 @@ def show_dashboard():
                             )
                         return _rows
 
-                    _client_rows = _build_needs_rows(_is_client_need_condition, "Borrower")
-                    _title_rows = _build_needs_rows(_is_title_need_condition, "Title")
-                    _other_rows = _build_needs_rows(_is_other_third_party_condition, _other_party_audience)
-
-                    _needs_client_tab, _needs_title_tab, _needs_other_tab = st.tabs([
-                        f"Client ({len(_client_rows)})",
-                        f"Title ({len(_title_rows)})",
-                        f"Other 3rd Party ({len(_other_rows)})",
-                    ])
-
-                    def _render_needs_tab(_rows, _empty_msg):
-                        if _rows:
-                            st.markdown('<div class="pa-needs-list">' + "".join(_rows) + '</div>', unsafe_allow_html=True)
-                        else:
-                            st.caption(_empty_msg)
-
-                    with _needs_client_tab:
-                        _render_needs_tab(_client_rows, "No client conditions parsed for this document.")
-                    with _needs_title_tab:
-                        _render_needs_tab(_title_rows, "No title conditions parsed for this document.")
-                    with _needs_other_tab:
-                        _render_needs_tab(_other_rows, "No other third-party conditions parsed for this document.")
-
-                    # Slim divider between the Needs List and the parsed
-                    # conditions list below it.
-                    st.markdown(
-                        '<div style="border-top:1px solid var(--slate-200);margin:10px 0 6px 0;"></div>',
-                        unsafe_allow_html=True,
-                    )
+                    # Client-friendly wording now lives behind each row's Plain
+                    # action, so the duplicate Needs List is intentionally gone.
 
                     # â”€â”€ 2x3 grid: top row = Gemini summary (email-style, display-only),
                     # bottom row = originals with full interactive controls (status,
@@ -6476,16 +6369,7 @@ def show_dashboard():
                         st.session_state[_compact_view_key] = _compact_view
                         st.rerun()
 
-                    _scan_conds_tab, _scan_summary_tab = st.tabs(["Conditions", "Summarized"])
-                    with _scan_conds_tab:
-                        st.markdown(
-                            '<div class="pa-section" style="margin-top:10px;">'
-                            'Scan Order (Originals)'
-                            f'<span style="color:var(--slate-500);font-size:11px;font-weight:600;margin-left:6px;">'
-                            f'{len(_norm_conds)} item{"s" if len(_norm_conds) != 1 else ""}</span>'
-                            '</div>',
-                            unsafe_allow_html=True,
-                        )
+                    with st.container():
                         if _compact_view:
                             import re as _re_compact
                             import html as _html_compact
@@ -6614,28 +6498,6 @@ def show_dashboard():
                                 _cond_view["_section_party"] = _primary_section
                                 _cond_view["_primary_section"] = _primary_section
                                 _render_original_card(_cond_view)
-
-                    with _scan_summary_tab:
-                        st.markdown(
-                            '<div class="pa-section" style="margin-top:10px;">'
-                            'Summarized (Sorted by Party)'
-                            '</div>',
-                            unsafe_allow_html=True,
-                        )
-                        for _section_party in _SECTION_ORDER_SCAN:
-                            _section_conds = _conds_by_section.get(_section_party, [])
-                            if not _section_conds:
-                                continue
-                            st.markdown(
-                                f'<div style="font-size:11px;font-weight:700;color:#93c5fd;'
-                                f'text-transform:uppercase;letter-spacing:0.4px;margin:10px 0 6px 0;">'
-                                f'{_SECTION_LABEL_SCAN.get(_section_party, _section_party + " Conditions")} '
-                                f'<span style="color:var(--slate-500);font-weight:600;text-transform:none;">'
-                                f'({len(_section_conds)})</span></div>',
-                                unsafe_allow_html=True,
-                            )
-                            for _c in _section_conds:
-                                _render_summary_card(_c)
 
                     def _scan_condition_checked_for_section(_cond, _section_party):
                         _cond_key = _cond.get("_scan_uid", _cond["num"])
