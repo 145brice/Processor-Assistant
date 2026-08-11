@@ -9363,14 +9363,64 @@ def show_lender_learning_page():
         else:
             st.error("No formats were learned. Review the per-file failures below.")
 
-    for result in st.session_state.get("private_lender_learning_results", []):
+    _session_learning_results = st.session_state.get("private_lender_learning_results", [])
+    _learned_results = [row for row in _session_learning_results if row.get("ok")]
+    _failed_results = [row for row in _session_learning_results if not row.get("ok")]
+
+    for result in _learned_results:
         if result.get("ok"):
             st.success(
                 f"{result.get('file', 'Approval')}: {result.get('lender')} format "
                 f"{result.get('signature')} learned; {result.get('redacted', 0)} sensitive entities redacted locally."
             )
-        else:
-            st.error(f"{result.get('file', 'Approval')}: {result.get('error', 'Not learned')}")
+
+    if _failed_results:
+        import csv as _learning_csv
+        import io as _learning_io
+
+        st.markdown(f"### Didn't Learn ({len(_failed_results)})")
+        st.caption(
+            "This list is kept only in your current browser session. Filenames and failure details "
+            "are not written to Supabase or the lender-format library."
+        )
+        _failure_rows = [
+            {
+                "File": str(row.get("file") or "Approval"),
+                "Reason": str(row.get("error") or "Not learned"),
+            }
+            for row in _failed_results
+        ]
+        st.dataframe(_failure_rows, use_container_width=True, hide_index=True)
+
+        _failure_csv = _learning_io.StringIO()
+        _failure_writer = _learning_csv.DictWriter(_failure_csv, fieldnames=["File", "Reason"])
+        _failure_writer.writeheader()
+        for row in _failure_rows:
+            # Prevent spreadsheet formula execution if a source filename begins
+            # with a formula character.
+            safe_row = {
+                key: ("'" + value if value.startswith(("=", "+", "-", "@")) else value)
+                for key, value in row.items()
+            }
+            _failure_writer.writerow(safe_row)
+        _failure_c1, _failure_c2 = st.columns([1, 1])
+        with _failure_c1:
+            st.download_button(
+                "Download Didn't Learn CSV",
+                data=_failure_csv.getvalue(),
+                file_name="lender_approvals_not_learned.csv",
+                mime="text/csv",
+                key="private_lender_learning_failures_download",
+                use_container_width=True,
+            )
+        with _failure_c2:
+            if st.button(
+                "Clear Didn't Learn List",
+                key="private_lender_learning_failures_clear",
+                use_container_width=True,
+            ):
+                st.session_state["private_lender_learning_results"] = _learned_results
+                st.rerun()
 
     state = _load_learning_state()
     lenders = state.get("lenders", {})
