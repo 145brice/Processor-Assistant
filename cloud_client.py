@@ -569,8 +569,7 @@ def clear_log():
 
 def enhance_conditions(text: str, doc_type: str,
                        script_conditions: str,
-                       known_values=None,
-                       learned_profile_context: str = "") -> tuple[str, str]:
+                       known_values=None) -> tuple[str, str]:
     cfg = get_config()
     if not cfg.get("enabled") or not cfg.get("api_key"):
         return script_conditions, _log("SCRIPT", "condition_extraction", "Cloud disabled")
@@ -601,18 +600,10 @@ def enhance_conditions(text: str, doc_type: str,
         "educated inference from a new or unclear format, label it Best Guess. Never "
         "invent conditions that are not present in the document."
     )
-    safe_learning_context = str(learned_profile_context or "")[:12000]
     prompt = f"""Extract EVERY underwriting condition from this {doc_type}.
 
 The DOCUMENT below is the source of truth. The SCRIPT-EXTRACTED list is only a
 partial hint - it routinely MISSES conditions, so never limit yourself to it.
-Learned format profiles are optional layout hints only. They may be stale or
-from a different lender. Never add, remove, rewrite, or classify a condition
-unless the current DOCUMENT supports it. When a profile conflicts with the
-DOCUMENT, always follow the DOCUMENT.
-
-LEARNED STRUCTURAL PROFILE CONTEXT (de-identified; may be empty):
-{safe_learning_context or "{}"}
 
 DOCUMENT (first 24000 chars):
 {safe_text[:24000]}
@@ -1201,11 +1192,7 @@ For amounts use digits only ("474500"). Never place a phone/email inside a name 
         return {}, _log("SCRIPT", "pc_pdf_extract", f"Cloud error: {str(e)[:120]}"), ""
 
 
-def extract_approval_conditions_ai_from_pdf(
-    pdf_bytes: bytes,
-    api_key_override: str = "",
-    learned_profile_context: str = "",
-) -> tuple[str, str, str]:
+def extract_approval_conditions_ai_from_pdf(pdf_bytes: bytes, api_key_override: str = "") -> tuple[str, str, str]:
     """
     Extract approval-letter conditions.
 
@@ -1233,12 +1220,7 @@ def extract_approval_conditions_ai_from_pdf(
             return "", _log("SCRIPT", "approval_pdf_extract", "No local condition rows found"), text[:12000]
         _, repl, _ = redact_for_cloud(clean_text)
         conds, lg = enhance_conditions(
-            clean_text,
-            "Approval Letter",
-            local_conditions,
-            known_values=repl.values(),
-            learned_profile_context=learned_profile_context,
-        )
+            clean_text, "Approval Letter", local_conditions, known_values=repl.values())
         return conds, lg, text[:12000]
 
     # PDF vision sends original document bytes to the cloud and therefore must
@@ -1259,14 +1241,7 @@ def extract_approval_conditions_ai_from_pdf(
         "within each section and tag every condition with its section code. You output "
         "only pipe-delimited rows. No markdown headers, no commentary, no preamble."
     )
-    prompt = f"""Read this approval letter PDF carefully, including scanned/image pages.
-
-The uploaded approval letter is the sole source of truth. The learned profiles
-below are de-identified layout hints only. If they disagree with this PDF, ignore
-them. Never invent a condition because it appeared in a learned profile.
-
-LEARNED STRUCTURAL PROFILE CONTEXT:
-{str(learned_profile_context or "")[:12000] or "{}"}
+    prompt = """Read this approval letter PDF carefully, including scanned/image pages.
 
 Approval letters are typically organized into sections. Look for these section headers:
   - "Prior to Approval" or PTA
