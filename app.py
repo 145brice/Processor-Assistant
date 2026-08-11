@@ -9340,16 +9340,25 @@ def show_lender_learning_page():
                     "redacted": redacted_total,
                 })
                 learned_count += 1
+            except _ll.LenderLearningError as exc:
+                results.append({
+                    "file": uploaded.name,
+                    "ok": False,
+                    "lender": exc.lender,
+                    "error": str(exc) or type(exc).__name__,
+                })
             except (SanitizerError, ValueError) as exc:
                 results.append({
                     "file": uploaded.name,
                     "ok": False,
+                    "lender": "Unknown Lender",
                     "error": str(exc) or type(exc).__name__,
                 })
             except Exception as exc:
                 results.append({
                     "file": uploaded.name,
                     "ok": False,
+                    "lender": "Unknown Lender",
                     "error": f"Local processing failed ({type(exc).__name__}).",
                 })
             progress.progress(index / max(1, total), text=f"Locally processed {index} of {total}")
@@ -9380,12 +9389,13 @@ def show_lender_learning_page():
 
         st.markdown(f"### Didn't Learn ({len(_failed_results)})")
         st.caption(
-            "This list is kept only in your current browser session. Filenames and failure details "
+            "This list is kept only in your current browser session. Filenames, detected lenders, and failure details "
             "are not written to Supabase or the lender-format library."
         )
         _failure_rows = [
             {
                 "File": str(row.get("file") or "Approval"),
+                "Lender": str(row.get("lender") or "Unknown Lender"),
                 "Reason": str(row.get("error") or "Not learned"),
             }
             for row in _failed_results
@@ -9393,7 +9403,7 @@ def show_lender_learning_page():
         st.dataframe(_failure_rows, use_container_width=True, hide_index=True)
 
         _failure_csv = _learning_io.StringIO()
-        _failure_writer = _learning_csv.DictWriter(_failure_csv, fieldnames=["File", "Reason"])
+        _failure_writer = _learning_csv.DictWriter(_failure_csv, fieldnames=["File", "Lender", "Reason"])
         _failure_writer.writeheader()
         for row in _failure_rows:
             # Prevent spreadsheet formula execution if a source filename begins

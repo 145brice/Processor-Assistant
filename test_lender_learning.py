@@ -1,9 +1,19 @@
 import unittest
 
-from lender_learning import build_profile_from_sanitized, empty_state, normalize_state, record_profile
+from lender_learning import (
+    LenderLearningError,
+    build_profile_from_sanitized,
+    empty_state,
+    normalize_state,
+    record_profile,
+)
 
 
 class LenderLearningTests(unittest.TestCase):
+    def test_learning_error_carries_safe_lender_for_failure_list(self):
+        self.assertEqual(LenderLearningError("failed", "UWM").lender, "UWM")
+        self.assertEqual(LenderLearningError("failed", "").lender, "Unknown Lender")
+
     def test_profile_keeps_structure_not_sentences(self):
         text = """Approval Conditions
 Condition Number | Description | Status

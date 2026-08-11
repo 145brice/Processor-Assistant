@@ -21,6 +21,14 @@ _COLUMNS = (
 _GROUP_CODES = ("pta", "ptd", "ptc", "ptf", "ptp")
 
 
+class LenderLearningError(ValueError):
+    """Learning failure carrying only a safe, locally detected lender name."""
+
+    def __init__(self, message: str, lender: str = "") -> None:
+        super().__init__(message)
+        self.lender = _safe_lender(lender) or "Unknown Lender"
+
+
 def empty_state() -> dict:
     return {"version": 1, "lenders": {}}
 
@@ -143,19 +151,32 @@ def learn_from_pdf(pdf_bytes: bytes) -> dict:
     """Sanitize locally, fail closed, and return no source text or PDF bytes."""
     from approval_intelligence import detect_lender_name
     from pii_sanitizer import SanitizerConfig, sanitize_pdf
+    from pii_sanitizer.errors import SanitizerError
+    from pii_sanitizer.extraction import extract
 
     config = SanitizerConfig(strict_gate=True, redact_money=True)
-    result = sanitize_pdf(pdf_bytes, config=config)
-    if result.residual_leaks:
-        raise ValueError("Residual sensitive-data categories remain after sanitization.")
-    extraction = result.extraction
-    lender = detect_lender_name(extraction.text if extraction else "")
-    profile = build_profile_from_sanitized(
-        lender,
-        result.sanitized_text,
-        page_count=extraction.page_count if extraction else 0,
-        image_based=bool(extraction and extraction.is_image_based),
-    )
+    lender = ""
+    try:
+        # Local-only first pass lets failures be attributed without retaining
+        # or transmitting the PDF or its extracted text.
+        local_extraction = extract(pdf_bytes, config)
+        lender = detect_lender_name(local_extraction.text or "")
+        result = sanitize_pdf(pdf_bytes, config=config)
+        if result.residual_leaks:
+            raise LenderLearningError(
+                "Residual sensitive-data categories remain after sanitization.", lender
+            )
+        extraction = result.extraction
+        profile = build_profile_from_sanitized(
+            lender,
+            result.sanitized_text,
+            page_count=extraction.page_count if extraction else 0,
+            image_based=bool(extraction and extraction.is_image_based),
+        )
+    except LenderLearningError:
+        raise
+    except (SanitizerError, ValueError) as exc:
+        raise LenderLearningError(str(exc) or type(exc).__name__, lender) from exc
     profile["redacted_entities"] = {
         str(key): _small_int(count, 100000)
         for key, count in result.entity_counts.items()
