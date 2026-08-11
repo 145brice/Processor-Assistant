@@ -362,6 +362,26 @@ def save_private_approval_intelligence(user_key: str, value: dict, *, user_email
     )
 
 
+def load_private_lender_format_profiles(user_key: str) -> dict:
+    """Load owner-private, de-identified lender format profiles."""
+    if not user_key:
+        return {}
+    return _load_setting_json(f"lender_format_profiles:{user_key}")
+
+
+def save_private_lender_format_profiles(user_key: str, value: dict, *, user_email: str = "") -> dict:
+    """Persist only the allowlisted lender-learning schema."""
+    if not user_key:
+        return {"ok": False, "error": "Missing user key."}
+    from lender_learning import normalize_state
+    return _save_setting_json(
+        f"lender_format_profiles:{user_key}",
+        normalize_state(value),
+        user_key=user_key,
+        user_email=user_email,
+    )
+
+
 def ensure_user_profile(user_key: str, *, email: str = "", display_name: str = "", role: str = "") -> dict:
     """Create or refresh the app-level user profile used for trial/subscription state."""
     if not user_key:

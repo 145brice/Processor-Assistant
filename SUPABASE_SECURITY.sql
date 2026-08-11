@@ -145,15 +145,18 @@ WITH CHECK (owner_user_key = auth.uid()::text);
 -- Settings keys are namespaced by auth uid:
 --   user_ai:<uid>              encrypted Gemini key
 --   pipeline_json:<uid>        durable per-user pipeline snapshot
+--   lender_format_profiles:<uid> owner-private de-identified format profiles
 CREATE POLICY "settings_owner" ON settings
 FOR ALL TO authenticated
 USING (
     key = ('user_ai:' || auth.uid()::text)
     OR key = ('pipeline_json:' || auth.uid()::text)
+    OR key = ('lender_format_profiles:' || auth.uid()::text)
 )
 WITH CHECK (
     key = ('user_ai:' || auth.uid()::text)
     OR key = ('pipeline_json:' || auth.uid()::text)
+    OR key = ('lender_format_profiles:' || auth.uid()::text)
 );
 
 CREATE POLICY "parsed_results_owner" ON parsed_results

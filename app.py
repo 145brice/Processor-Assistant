@@ -2173,13 +2173,9 @@ def _is_owner_admin_email(email: str = "") -> bool:
     raw_email = str(email or st.session_state.get("user_email") or "").strip().lower()
     if not raw_email or "@" not in raw_email:
         return False
-    local_part = raw_email.split("@", 1)[0].strip().lower()
-    owner_local = str(os.getenv("PA_OWNER_EMAIL_LOCALPART", "145brice")).strip().lower()
-    if owner_local and local_part == owner_local:
-        return True
     owner_emails = {
         e.strip().lower()
-        for e in str(os.getenv("PA_OWNER_ADMIN_EMAILS", "")).split(",")
+        for e in str(os.getenv("PA_OWNER_ADMIN_EMAILS", "145brice@gmail.com")).split(",")
         if e.strip()
     }
     return raw_email in owner_emails
@@ -4474,6 +4470,8 @@ def show_sidebar():
         _nav_btn("Pipeline", "pipeline")
         _nav_btn("Overview", "overview")
         _nav_btn("Pricing",  "pricing")
+        if _is_owner_admin_email():
+            _nav_btn("Private Lender Learning", "lender_learning", "nav_lender_learning")
 
         # Everything below is secondary - hidden behind one collapsed group so the
         # first impression stays focused on Scanner + Pipeline.
@@ -9255,6 +9253,149 @@ def show_reader():
                     )
             except Exception as _e:
                 st.error(f"Could not open file: {_e}")
+
+
+def show_lender_learning_page():
+    """Owner-only scanner that stores de-identified approval format profiles."""
+    if not _is_owner_admin_email():
+        st.error("This private tool is available only to the Processor Assistant owner.")
+        return
+
+    st.title("Private Lender Learning")
+    st.caption("Owner-only approval-format scanner. Other users cannot see this page or its profiles.")
+    st.info(
+        "PDFs are extracted and sanitized locally. Processing fails closed if structured sensitive "
+        "data remains. Original PDFs, filenames, borrower data, loan data, and condition sentences "
+        "are never saved to the learning database. No AI or cloud model is called."
+    )
+
+    _learning_user_key = _current_auth_user_key()
+    _learning_cache_key = f"private_lender_learning:{_learning_user_key or 'owner'}"
+
+    def _load_learning_state() -> dict:
+        import lender_learning as _ll
+        cached = st.session_state.get(_learning_cache_key)
+        if isinstance(cached, dict):
+            return _ll.normalize_state(cached)
+        value = {}
+        if _learning_user_key and not st.session_state.get("sandbox_mode", False):
+            try:
+                import supabase_auth as _sa_ll
+                value = _sa_ll.load_private_lender_format_profiles(_learning_user_key)
+            except Exception:
+                value = {}
+        value = _ll.normalize_state(value)
+        st.session_state[_learning_cache_key] = value
+        return value
+
+    def _save_learning_state(value: dict) -> dict:
+        import lender_learning as _ll
+        safe = _ll.normalize_state(value)
+        st.session_state[_learning_cache_key] = safe
+        if _learning_user_key and not st.session_state.get("sandbox_mode", False):
+            try:
+                import supabase_auth as _sa_ll
+                return _sa_ll.save_private_lender_format_profiles(
+                    _learning_user_key,
+                    safe,
+                    user_email=str(st.session_state.get("user_email", "")),
+                )
+            except Exception as exc:
+                return {"ok": False, "error": str(exc)}
+        return {"ok": True, "storage": "session"}
+
+    _learning_files = st.file_uploader(
+        "Upload lender approval PDFs",
+        type=["pdf"],
+        accept_multiple_files=True,
+        key="private_lender_learning_uploads",
+        help="Files may be from multiple lenders; the lender is detected locally per approval.",
+    )
+    _learn_clicked = st.button(
+        f"Sanitize and Learn {len(_learning_files or [])} Approval(s)",
+        key="private_lender_learning_run",
+        type="primary",
+        disabled=not _learning_files,
+    )
+
+    if _learn_clicked:
+        import lender_learning as _ll
+        from pii_sanitizer.errors import SanitizerError
+
+        state = _load_learning_state()
+        results = []
+        learned_count = 0
+        progress = st.progress(0, text="Starting local sanitization...")
+        total = len(_learning_files or [])
+        for index, uploaded in enumerate(_learning_files or [], start=1):
+            try:
+                profile = _ll.learn_from_pdf(uploaded.getvalue())
+                state = _ll.record_profile(state, profile)
+                redacted_total = sum(int(v or 0) for v in profile.get("redacted_entities", {}).values())
+                results.append({
+                    "file": uploaded.name,
+                    "ok": True,
+                    "lender": profile["lender"],
+                    "signature": profile["signature"],
+                    "redacted": redacted_total,
+                })
+                learned_count += 1
+            except (SanitizerError, ValueError) as exc:
+                results.append({
+                    "file": uploaded.name,
+                    "ok": False,
+                    "error": str(exc) or type(exc).__name__,
+                })
+            except Exception as exc:
+                results.append({
+                    "file": uploaded.name,
+                    "ok": False,
+                    "error": f"Local processing failed ({type(exc).__name__}).",
+                })
+            progress.progress(index / max(1, total), text=f"Locally processed {index} of {total}")
+
+        save_result = _save_learning_state(state) if learned_count else {"ok": True}
+        st.session_state["private_lender_learning_results"] = results
+        if learned_count and save_result.get("ok"):
+            st.success(f"Learned {learned_count} sanitized approval format(s). Original PDFs were not saved.")
+        elif learned_count:
+            st.warning("Profiles are safe and available in this session, but private cloud storage failed.")
+        else:
+            st.error("No formats were learned. Review the per-file failures below.")
+
+    for result in st.session_state.get("private_lender_learning_results", []):
+        if result.get("ok"):
+            st.success(
+                f"{result.get('file', 'Approval')}: {result.get('lender')} format "
+                f"{result.get('signature')} learned; {result.get('redacted', 0)} sensitive entities redacted locally."
+            )
+        else:
+            st.error(f"{result.get('file', 'Approval')}: {result.get('error', 'Not learned')}")
+
+    state = _load_learning_state()
+    lenders = state.get("lenders", {})
+    st.markdown("### Learned format library")
+    if not lenders:
+        st.caption("No lender formats learned yet.")
+    else:
+        for row in sorted(lenders.values(), key=lambda item: str(item.get("name", "")).lower()):
+            st.markdown(
+                f"**{row.get('name', 'Unknown')}** — {row.get('total_samples', 0)} approval(s), "
+                f"{len(row.get('formats', {}))} distinct format(s)"
+            )
+            for signature, fmt in row.get("formats", {}).items():
+                features = fmt.get("features", {})
+                details = [
+                    f"format `{signature}`",
+                    f"{fmt.get('samples', 0)} sample(s)",
+                    f"{features.get('page_count', 0)} page(s)",
+                    f"lines {features.get('line_count_band', 'unknown')}",
+                ]
+                if features.get("numbering_styles"):
+                    details.append("numbering: " + ", ".join(features["numbering_styles"]))
+                if features.get("group_codes"):
+                    details.append("groups: " + ", ".join(code.upper() for code in features["group_codes"]))
+                st.caption(" · ".join(details))
 
 
 def show_team_page():
@@ -14079,6 +14220,8 @@ def main():
             show_pipeline()
         elif page == "team":
             show_team_page()
+        elif page == "lender_learning":
+            show_lender_learning_page()
         elif page == "email_watch":
             show_email_watch_page()
         elif page == "email_watch_controls":
