@@ -52,6 +52,22 @@ _PLACEHOLDER_RE = re.compile(r"\[[A-Z][A-Z0-9_]*\]")
 _PATTERNS: list[tuple[str, re.Pattern[str], str]] = [
     ("ssn", re.compile(r"(?<!\d)\d{3}[-\s]\d{2}[-\s]\d{4}(?!\d)"), "[SSN]"),
     (
+        "ein",
+        re.compile(
+            r"(?i)\b(?:ein|fein|federal\s+(?:tax\s+)?id|taxpayer\s+id)\s*"
+            r"(?:number|no\.?|#)?\s*[:#-]?\s*\d{2}[-\s]?\d{7}\b"
+        ),
+        "[EIN]",
+    ),
+    (
+        "government_id",
+        re.compile(
+            r"(?i)\b(?:driver'?s?\s+licen[cs]e|state\s+id|passport)\s*"
+            r"(?:number|no\.?|#)?\s*[:#-]?\s*[A-Z0-9][A-Z0-9-]{5,19}\b"
+        ),
+        "[GOVERNMENT_ID]",
+    ),
+    (
         "email",
         re.compile(r"\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b", re.I),
         "[EMAIL]",
@@ -186,6 +202,51 @@ def redact_for_cloud(
     sanitized = re.sub(r"\n{3,}", "\n\n", sanitized).strip()
     leaks = find_sensitive_fragments(sanitized)
     return sanitized, replacements, leaks
+
+
+def redact_for_cloud_resilient(
+    text: str,
+    *,
+    known_values: Iterable[str] | None = None,
+) -> tuple[str, dict[str, str], list[str], list[str]]:
+    """Redact aggressively and return verified-safe usable text when possible.
+
+    The third return value lists categories that needed the second, destructive
+    redaction pass. The fourth contains categories that still remain and must
+    block transport. Residual values are never restored after this pass.
+    """
+    sanitized, replacements, leaks = redact_for_cloud(text, known_values=known_values)
+    forced = set(leaks)
+    if leaks:
+        for kind, pattern, _placeholder in _PATTERNS:
+            if kind in leaks:
+                sanitized = pattern.sub(f"[{kind.upper()}_REDACTED]", sanitized)
+        if "income" in leaks:
+            sanitized = _INCOME_VALUE_RE.sub(
+                lambda match: match.group(1) + "[INCOME_INFORMATION_REDACTED]",
+                sanitized,
+            )
+        if "property_identifier" in leaks:
+            sanitized = _LEGAL_VALUE_RE.sub(
+                lambda match: match.group(1) + "[PROPERTY_IDENTIFIER_REDACTED]",
+                sanitized,
+            )
+
+    remaining = find_sensitive_fragments(sanitized)
+    if remaining:
+        # Keep every safe line instead of discarding the entire approval. This
+        # is deliberately lossy: quarantined lines remain available only to the
+        # local parser and are never included in the cloud request.
+        safe_lines = []
+        for line in sanitized.splitlines():
+            line_leaks = find_sensitive_fragments(line)
+            if line_leaks:
+                forced.update(line_leaks)
+            else:
+                safe_lines.append(line)
+        sanitized = "\n".join(safe_lines).strip()
+        remaining = find_sensitive_fragments(sanitized)
+    return sanitized, replacements, sorted(forced), remaining
 
 
 def find_sensitive_fragments(text: str) -> list[str]:

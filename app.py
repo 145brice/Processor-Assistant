@@ -5898,7 +5898,9 @@ def show_dashboard():
                                 if not _ownership_groups[_owner_name]:
                                     st.caption(f"No {_owner_name.lower()} conditions found.")
                                 for _owner_cond in _ownership_groups[_owner_name]:
-                                    _owner_note = " - confirm below" if _owner_cond.get("ownership_needs_confirmation") else ""
+                                    # Ownership is helpful routing metadata, not a
+                                    # required questionnaire during every scan.
+                                    _owner_note = ""
                                     st.markdown(
                                         f"- **#{_owner_cond.get('num', '?')}** "
                                         f"{_owner_cond.get('desc', '')}{_owner_note}"
@@ -5906,10 +5908,7 @@ def show_dashboard():
 
                     # Only ambiguous ownership is interruptive. Confirmed choices
                     # teach an allowlisted semantic pattern, never this sentence.
-                    _ambiguous_conds = [
-                        (idx, cond) for idx, cond in enumerate(_norm_conds)
-                        if cond.get("ownership_needs_confirmation")
-                    ]
+                    _ambiguous_conds = []
                     if _ambiguous_conds:
                         import approval_intelligence as _approval_intel_ui
                         with st.expander(

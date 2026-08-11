@@ -24,6 +24,7 @@ from datetime import datetime
 from privacy_filter import (
     has_unresolved_placeholders,
     redact_for_cloud,
+    redact_for_cloud_resilient,
     redact_gemini_output,
     require_cloud_safe,
     restore_local_placeholders,
@@ -574,11 +575,11 @@ def enhance_conditions(text: str, doc_type: str,
     if not cfg.get("enabled") or not cfg.get("api_key"):
         return script_conditions, _log("SCRIPT", "condition_extraction", "Cloud disabled")
 
-    safe_text, text_replacements, text_leaks = redact_for_cloud(
+    safe_text, text_replacements, text_forced, text_leaks = redact_for_cloud_resilient(
         text,
         known_values=known_values,
     )
-    safe_conditions, condition_replacements, condition_leaks = redact_for_cloud(
+    safe_conditions, condition_replacements, condition_forced, condition_leaks = redact_for_cloud_resilient(
         script_conditions,
         known_values=list(known_values or []) + list(text_replacements.values()),
     )
@@ -686,8 +687,11 @@ Confidence options: High Confidence, Best Guess"""
                 else:
                     renumbered.append(ln)
             result = "\n".join(renumbered)
-            log = _log("CLOUD-SANITIZED", "condition_extraction",
-                       f"{len(valid)} conditions  {provider}  {cfg.get('model')}")
+            extra_redactions = sorted(set(text_forced + condition_forced))
+            detail = f"{len(valid)} conditions  {provider}  {cfg.get('model')}"
+            if extra_redactions:
+                detail += "  extra local redaction: " + ", ".join(extra_redactions)
+            log = _log("CLOUD-SANITIZED", "condition_extraction", detail)
             return result, log
         else:
             fallback = safe_conditions if provider == "gemini" else script_conditions

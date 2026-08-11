@@ -6,6 +6,7 @@ import cloud_client
 from privacy_filter import (
     find_sensitive_fragments,
     redact_for_cloud,
+    redact_for_cloud_resilient,
     redact_gemini_output,
     secure_approval_system_prompt,
 )
@@ -27,6 +28,20 @@ Condition: Borrower must provide an updated homeowners insurance declaration.
 
 
 class PrivacyFilterTests(unittest.TestCase):
+    def test_resilient_redaction_keeps_safe_text_and_quarantines_residual_line(self):
+        with patch("privacy_filter.redact_for_cloud") as initial:
+            initial.return_value = (
+                "Safe approval heading\nBorrower - Jane Marie Doe\nPTF Conditions",
+                {},
+                ["labeled_name"],
+            )
+            sanitized, _, forced, remaining = redact_for_cloud_resilient("source")
+        self.assertFalse(remaining)
+        self.assertIn("labeled_name", forced)
+        self.assertNotIn("Jane Marie Doe", sanitized)
+        self.assertIn("Safe approval heading", sanitized)
+        self.assertIn("PTF Conditions", sanitized)
+
     def test_secure_approval_prompt_requires_deidentified_private_learning(self):
         prompt = secure_approval_system_prompt("Extract conditions.")
         self.assertIn("only after", prompt)
@@ -47,6 +62,13 @@ class PrivacyFilterTests(unittest.TestCase):
         self.assertNotIn("12,500", sanitized)
         self.assertTrue(replacements)
         self.assertIn("homeowners insurance", sanitized)
+
+    def test_redaction_covers_ein_and_government_ids(self):
+        source = "EIN: 12-3456789\nDriver's License Number: D123456789"
+        sanitized, _, leaks = redact_for_cloud(source)
+        self.assertFalse(leaks)
+        self.assertNotIn("12-3456789", sanitized)
+        self.assertNotIn("D123456789", sanitized)
 
     def test_purchase_contract_cloud_call_receives_only_sanitized_text(self):
         captured = {}
