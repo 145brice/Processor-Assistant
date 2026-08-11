@@ -2362,6 +2362,32 @@ def _save_approval_intelligence_state(value: dict) -> dict:
     return {"ok": True, "storage": "session"}
 
 
+def _render_lender_resources(lender_name: str) -> None:
+    """Show canonical public resources for a detected lender."""
+    try:
+        import lender_resources as _lender_resources
+        entry = _lender_resources.resources_for_lender(lender_name)
+    except Exception:
+        entry = {}
+    rows = entry.get("resources", []) if isinstance(entry, dict) else []
+    if not rows:
+        return
+    with st.expander(f"Official lender resources - {entry.get('name', lender_name)}", expanded=False):
+        st.caption(
+            "Public links from the detected lender. Processor Assistant does not add "
+            "borrower, loan, or file information to these URLs."
+        )
+        for row in rows:
+            label = str(row.get("label") or "Official resource")
+            url = str(row.get("url") or "")
+            description = str(row.get("description") or "")
+            if not url.startswith("https://"):
+                continue
+            st.markdown(f"**[{label}]({url})**")
+            if description:
+                st.caption(description)
+
+
 def _load_scan_history_all() -> list[dict]:
     try:
         import json as _json
@@ -5580,6 +5606,10 @@ def show_dashboard():
                     f"Private lender heads-up: **{_accuracy.get('lender', 'Unknown Lender')}** - "
                     f"**{_accuracy['accuracy_percent']}% {_accuracy_basis} accuracy** "
                     f"from **{_accuracy.get('scans', 0)}** of your scan(s)."
+                )
+            if _batch.get("type") == "Approval Letter":
+                _render_lender_resources(
+                    _r.get("lender_name") or _accuracy.get("lender") or ""
                 )
             try:
                 _current_visible_loans = _visible_account_loans(_gl())
@@ -13412,6 +13442,7 @@ def show_loan_detail():
                     "cond_count": len(_af_conds),
                     "text_length": _af_result.get("text_length", 0),
                     "commitment_date": _af_commit_date,
+                    "lender_name": __import__("approval_intelligence").detect_lender_name(_af_text),
                     "scan_results": None,
                 }
                 st.rerun()
@@ -13438,6 +13469,7 @@ def show_loan_detail():
                 f'</div></div>',
                 unsafe_allow_html=True,
             )
+            _render_lender_resources(_af_data.get("lender_name", ""))
 
             if not _af_conds:
                 st.warning("No conditions were extracted from this approval letter. "

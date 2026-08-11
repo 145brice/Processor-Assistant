@@ -1,0 +1,76 @@
+{
+  "uwm": {
+    "name": "United Wholesale Mortgage (UWM)",
+    "aliases": ["United Wholesale Mortgage", "UWM"],
+    "resources": [
+      {
+        "label": "CD at Initial Underwrite",
+        "url": "https://uwm.com/manage-your-pipeline/pipeline-tools/cd-at-initial-underwrite",
+        "description": "Official condition categories and initial-underwrite document requirements."
+      },
+      {
+        "label": "UWM Pre-Underwrite Resources",
+        "url": "https://www.uwm.com/pre-underwrite-class",
+        "description": "Official UWM underwriting tools and training resources."
+      }
+    ]
+  },
+  "eleven_mortgage": {
+    "name": "Eleven Mortgage / 11 Mortgage",
+    "aliases": ["Eleven Mortgage", "11 Mortgage", "11Mortgage", "Ark-La-Tex Financial Services"],
+    "resources": [
+      {
+        "label": "Eleven Mortgage Marketing Portal",
+        "url": "https://elevenmortgage.com/marketingportal/",
+        "description": "Official branded flyers, fillable PDFs, and product references."
+      },
+      {
+        "label": "Eleven Mortgage Products",
+        "url": "https://elevenmortgage.com/products/",
+        "description": "Official loan products and underwriting summaries."
+      }
+    ]
+  },
+  "rocket": {
+    "name": "Rocket Mortgage",
+    "aliases": ["Rocket Mortgage", "Rocket", "Rocket Pro TPO"],
+    "resources": [
+      {
+        "label": "Conditional Approval Guide",
+        "url": "https://www.rocketmortgage.com/learn/conditional-approval",
+        "description": "Official explanation of conditional approvals and common condition categories."
+      },
+      {
+        "label": "Mortgage Commitment Letter Guide",
+        "url": "https://www.rocketmortgage.com/learn/mortgage-commitment-letter",
+        "description": "Official reference for commitment-letter fields, terms, and conditions."
+      }
+    ]
+  },
+  "epm": {
+    "name": "Equity Prime Mortgage (EPM)",
+    "aliases": ["Equity Prime Mortgage", "EPM", "EPM Wholesale", "Empowering People More"],
+    "resources": [
+      {
+        "label": "EPM Broker Package",
+        "url": "https://epmwholesale.com/documents/EPM-Broker-Package.pdf",
+        "description": "Official broker package describing EPM conditional approvals and closing conditions."
+      },
+      {
+        "label": "EPM Purchase Eligibility Guidelines",
+        "url": "https://www.epmwholesale.com/documents/EPM-Eligibility-Guidelines.pdf",
+        "description": "Official eligibility, underwriting, and documentation guidance."
+      },
+      {
+        "label": "EPM Loan Process",
+        "url": "https://www.epmwholesale.com/loan-process/",
+        "description": "Official underwriting and condition-review workflow."
+      },
+      {
+        "label": "EPM Resources",
+        "url": "https://www.epmwholesale.com/resources/",
+        "description": "Official operational resources, clauses, and program references."
+      }
+    ]
+  }
+}

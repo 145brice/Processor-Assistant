@@ -17,6 +17,8 @@ OWNERS = ("Borrower", "Lender", "Broker / Loan Officer")
 
 _LENDERS = (
     "United Wholesale Mortgage", "UWM", "Rocket Mortgage", "PennyMac",
+    "Eleven Mortgage", "11 Mortgage", "Ark-La-Tex Financial Services",
+    "Equity Prime Mortgage", "EPM Wholesale", "Empowering People More",
     "Newrez", "loanDepot", "Freedom Mortgage", "Caliber Home Loans",
     "AmeriHome Mortgage", "Plaza Home Mortgage", "Flagstar Bank",
     "Guild Mortgage", "CrossCountry Mortgage", "Cardinal Financial",
