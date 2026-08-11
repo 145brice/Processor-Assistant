@@ -42,6 +42,17 @@ class PrivacyFilterTests(unittest.TestCase):
         self.assertIn("Safe approval heading", sanitized)
         self.assertIn("PTF Conditions", sanitized)
 
+    def test_resilient_redaction_handles_cascading_labeled_names(self):
+        source = (
+            "Borrower - Jane Marie Doe Please Provide Updated Statements "
+            "Borrower - James Smith Please Sign Tax Returns"
+        )
+        sanitized, _, forced, remaining = redact_for_cloud_resilient(source)
+        self.assertFalse(remaining)
+        self.assertIn("labeled_name", forced)
+        self.assertNotIn("Jane Marie Doe", sanitized)
+        self.assertNotIn("James Smith", sanitized)
+
     def test_secure_approval_prompt_requires_deidentified_private_learning(self):
         prompt = secure_approval_system_prompt("Extract conditions.")
         self.assertIn("only after", prompt)

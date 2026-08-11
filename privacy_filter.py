@@ -217,20 +217,42 @@ def redact_for_cloud_resilient(
     """
     sanitized, replacements, leaks = redact_for_cloud(text, known_values=known_values)
     forced = set(leaks)
-    if leaks:
+    # A replacement can expose a second match behind it in flattened PDF text.
+    # Iterate until stable instead of assuming one destructive pass is enough.
+    for _pass in range(12):
+        current = find_sensitive_fragments(sanitized)
+        if not current:
+            break
+        forced.update(current)
+        before = sanitized
         for kind, pattern, _placeholder in _PATTERNS:
-            if kind in leaks:
+            if kind in current:
                 sanitized = pattern.sub(f"[{kind.upper()}_REDACTED]", sanitized)
-        if "income" in leaks:
+        if "income" in current:
             sanitized = _INCOME_VALUE_RE.sub(
                 lambda match: match.group(1) + "[INCOME_INFORMATION_REDACTED]",
                 sanitized,
             )
-        if "property_identifier" in leaks:
+        if "property_identifier" in current:
             sanitized = _LEGAL_VALUE_RE.sub(
                 lambda match: match.group(1) + "[PROPERTY_IDENTIFIER_REDACTED]",
                 sanitized,
             )
+        if sanitized == before:
+            break
+
+    remaining = find_sensitive_fragments(sanitized)
+    if "labeled_name" in remaining:
+        # Role labels can repeatedly bind to later Title Case condition text
+        # after placeholders are ignored by the leak checker. Neutralize only
+        # the residual role labels; the local result keeps the original words.
+        sanitized = re.sub(
+            r"(?i)\b(?:borrower|co-borrower|applicant|buyer|seller|property\s+owner|"
+            r"listing\s+agent|selling\s+agent|realtor|processor|underwriter)\b",
+            "[PARTY_ROLE_REDACTED]",
+            sanitized,
+        )
+        forced.add("labeled_name")
 
     remaining = find_sensitive_fragments(sanitized)
     if remaining:
@@ -244,8 +266,15 @@ def redact_for_cloud_resilient(
                 forced.update(line_leaks)
             else:
                 safe_lines.append(line)
-        sanitized = "\n".join(safe_lines).strip()
+        sanitized = "\n[SAFE_SECTION_BREAK]\n".join(safe_lines).strip()
         remaining = find_sensitive_fragments(sanitized)
+    if remaining:
+        # Fail closed on the unsafe fragments, not on the entire AI operation.
+        # Returning an empty verified-safe slice allows the other sanitized
+        # input (document or locally extracted condition rows) to proceed.
+        forced.update(remaining)
+        sanitized = ""
+        remaining = []
     return sanitized, replacements, sorted(forced), remaining
 
 
