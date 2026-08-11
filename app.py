@@ -2358,6 +2358,104 @@ def _save_approval_intelligence_state(value: dict) -> dict:
     return {"ok": True, "storage": "session"}
 
 
+def _load_lender_learning_state() -> dict:
+    """Load the owner's private, de-identified lender format library."""
+    import lender_learning as _ll
+    if not _is_owner_admin_email():
+        return _ll.empty_state()
+    user_key = _current_auth_user_key()
+    cache_key = f"private_lender_learning:{user_key or 'owner'}"
+    cached = st.session_state.get(cache_key)
+    if isinstance(cached, dict):
+        return _ll.normalize_state(cached)
+    value = {}
+    if user_key and not st.session_state.get("sandbox_mode", False):
+        try:
+            import supabase_auth as _sa_ll
+            value = _sa_ll.load_private_lender_format_profiles(user_key)
+        except Exception:
+            value = {}
+    value = _ll.normalize_state(value)
+    st.session_state[cache_key] = value
+    return value
+
+
+def _save_lender_learning_state(value: dict) -> dict:
+    """Persist only the normalized allowlisted format schema for the owner."""
+    import lender_learning as _ll
+    safe = _ll.normalize_state(value)
+    if not _is_owner_admin_email():
+        return {"ok": False, "error": "Owner-only learning library."}
+    user_key = _current_auth_user_key()
+    cache_key = f"private_lender_learning:{user_key or 'owner'}"
+    st.session_state[cache_key] = safe
+    if user_key and not st.session_state.get("sandbox_mode", False):
+        try:
+            import supabase_auth as _sa_ll
+            return _sa_ll.save_private_lender_format_profiles(
+                user_key,
+                safe,
+                user_email=str(st.session_state.get("user_email", "")),
+            )
+        except Exception as exc:
+            return {"ok": False, "error": str(exc)}
+    return {"ok": True, "storage": "session"}
+
+
+def _process_document_with_lender_learning(
+    pdf_bytes: bytes,
+    doc_type: str,
+    user_history=None,
+    user_approved_cloud: bool = False,
+) -> dict:
+    """Parse with optional learned guidance, then merge safe observed structure."""
+    from ai_engine import process_document
+
+    learning_state = (
+        _load_lender_learning_state()
+        if doc_type == "Approval Letter" else {}
+    )
+    result = process_document(
+        pdf_bytes,
+        doc_type,
+        user_history=user_history,
+        user_approved_cloud=user_approved_cloud,
+        approval_learning_state=learning_state,
+    )
+    if doc_type != "Approval Letter" or not result.get("success") or not _is_owner_admin_email():
+        return result
+    try:
+        import approval_intelligence as _approval_intel
+        import lender_learning as _ll
+        source_text = str(result.get("raw_text") or "")
+        lender = _approval_intel.detect_lender_name(source_text)
+        if lender == "Unknown Lender":
+            return result
+        try:
+            from pypdf import PdfReader as _LearningPdfReader
+            import io as _learning_io
+            page_count = len(_LearningPdfReader(_learning_io.BytesIO(pdf_bytes)).pages)
+        except Exception:
+            page_count = 0
+        updated, observed = _ll.record_parsed_observation(
+            learning_state,
+            lender,
+            source_text,
+            result.get("conditions"),
+            page_count=page_count,
+            image_based=bool(result.get("local_extraction_mode") == "pdf_text+local_ocr"),
+        )
+        save_result = _save_lender_learning_state(updated)
+        result["learned_profile_update"] = {
+            "lender": lender,
+            "signature": observed["signature"],
+            "saved": bool(save_result.get("ok")),
+        }
+    except Exception as exc:
+        result["learned_profile_update_error"] = type(exc).__name__
+    return result
+
+
 def _render_lender_resources(lender_name: str) -> None:
     """Show canonical public resources for a detected lender."""
     try:
@@ -4831,7 +4929,8 @@ def show_dashboard():
         import re as _re
         import io as _io
         import pypdf as _pypdf
-        from ai_engine import detect_doc_type as _detect, process_document as _proc
+        from ai_engine import detect_doc_type as _detect
+        _proc = _process_document_with_lender_learning
 
         # â”€â”€ Helper: extract grouping fingerprint from PDF bytes â”€â”€â”€â”€â”€â”€
         def _extract_fingerprint(pdf_bytes):
@@ -7606,7 +7705,8 @@ def show_pipeline():
                 if _add_bulk_files and st.button("Scan & Auto-Fill",
                                                   key="add_loan_bulk_scan",
                                                   type="primary", use_container_width=True):
-                    from ai_engine import detect_doc_type as _ald, process_document as _alp
+                    from ai_engine import detect_doc_type as _ald
+                    _alp = _process_document_with_lender_learning
                     from ai_engine import extract_contacts as _alc
                     import re as _al_re
 
@@ -9269,40 +9369,8 @@ def show_lender_learning_page():
         "are never saved to the learning database. No AI or cloud model is called."
     )
 
-    _learning_user_key = _current_auth_user_key()
-    _learning_cache_key = f"private_lender_learning:{_learning_user_key or 'owner'}"
-
-    def _load_learning_state() -> dict:
-        import lender_learning as _ll
-        cached = st.session_state.get(_learning_cache_key)
-        if isinstance(cached, dict):
-            return _ll.normalize_state(cached)
-        value = {}
-        if _learning_user_key and not st.session_state.get("sandbox_mode", False):
-            try:
-                import supabase_auth as _sa_ll
-                value = _sa_ll.load_private_lender_format_profiles(_learning_user_key)
-            except Exception:
-                value = {}
-        value = _ll.normalize_state(value)
-        st.session_state[_learning_cache_key] = value
-        return value
-
-    def _save_learning_state(value: dict) -> dict:
-        import lender_learning as _ll
-        safe = _ll.normalize_state(value)
-        st.session_state[_learning_cache_key] = safe
-        if _learning_user_key and not st.session_state.get("sandbox_mode", False):
-            try:
-                import supabase_auth as _sa_ll
-                return _sa_ll.save_private_lender_format_profiles(
-                    _learning_user_key,
-                    safe,
-                    user_email=str(st.session_state.get("user_email", "")),
-                )
-            except Exception as exc:
-                return {"ok": False, "error": str(exc)}
-        return {"ok": True, "storage": "session"}
+    _load_learning_state = _load_lender_learning_state
+    _save_learning_state = _save_lender_learning_state
 
     _learning_files = st.file_uploader(
         "Upload lender approval PDFs",
@@ -13294,7 +13362,7 @@ def show_loan_detail():
                 else f"Scanning {_scan_dtype}..."
             )
             with st.spinner(_spinner_label):
-                from ai_engine import process_document as _proc_doc
+                _proc_doc = _process_document_with_lender_learning
                 _pdf_bytes = _scan_file.read()
                 _scan_result = _proc_doc(_pdf_bytes, _scan_dtype, user_approved_cloud=_user_approved_cloud)
 
@@ -13571,7 +13639,8 @@ def show_loan_detail():
                 else "Extracting conditions from approval letter..."
             )
             with st.spinner(_af_spinner):
-                from ai_engine import process_document as _af_proc, extract_contacts as _af_contacts
+                from ai_engine import extract_contacts as _af_contacts
+                _af_proc = _process_document_with_lender_learning
                 from pypdf import PdfReader as _AF_PR
                 _af_bytes = _af_file.read()
                 _af_result = _af_proc(_af_bytes, "Approval Letter", user_approved_cloud=_af_user_approved_cloud)

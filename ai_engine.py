@@ -5163,7 +5163,13 @@ def _user_gemini_key() -> str:
     return (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
 
 
-def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_approved_cloud: bool = False) -> dict:
+def process_document(
+    pdf_bytes: bytes,
+    doc_type: str,
+    user_history=None,
+    user_approved_cloud: bool = False,
+    approval_learning_state=None,
+) -> dict:
     """
     Main processing function. Takes PDF bytes, returns structured results.
     PDF is only held in memory for processing.
@@ -5178,6 +5184,28 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
         pdf_bytes,
         force_ocr=doc_type in {"Approval Letter", "Purchase Contract"},
     )
+    learned_context = {}
+    learned_prompt_context = ""
+    if doc_type == "Approval Letter" and text:
+        try:
+            import approval_intelligence as _approval_intel
+            import lender_learning as _lender_learning
+            lender_hint = _approval_intel.detect_lender_name(text)
+            try:
+                page_count = len(PdfReader(io.BytesIO(pdf_bytes)).pages)
+            except Exception:
+                page_count = 0
+            learned_context = _lender_learning.retrieve_profile_context(
+                approval_learning_state or {},
+                lender_hint,
+                text,
+                page_count=page_count,
+                image_based="[LOCAL OCR TEXT]" in text,
+            )
+            learned_prompt_context = _lender_learning.prompt_context(learned_context)
+        except Exception:
+            learned_context = {}
+            learned_prompt_context = ""
 
     # Image-based (scanned) PDFs — for certain doc types we can still succeed
     # with a stub result so the file is logged in the pipeline rather than erroring.
@@ -5204,7 +5232,10 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
             try:
                 import cloud_client as _cc
                 if _cc.is_enabled():
-                    _pdf_conditions, _pdf_ai_log, _pdf_text = _cc.extract_approval_conditions_ai_from_pdf(pdf_bytes)
+                    _pdf_conditions, _pdf_ai_log, _pdf_text = _cc.extract_approval_conditions_ai_from_pdf(
+                        pdf_bytes,
+                        learned_profile_context=learned_prompt_context,
+                    )
                     if _pdf_conditions:
                         return {
                             "success": True,
@@ -5305,6 +5336,8 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
             else "single_local_text_source"
         ),
     }
+    if doc_type == "Approval Letter":
+        result["learned_profile_context"] = learned_context
 
     if doc_type == "Bank Statement":
         result["conditions"] = ""
@@ -5371,7 +5404,10 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
                     # accuracy - reads the whole letter), with automatic fallback to
                     # the redacted full-text path. The old call only handed the model
                     # the few script-found rows, so it could never find more.
-                    _pdf_conditions, ai_log, _pdf_text = _cc.extract_approval_conditions_ai_from_pdf(pdf_bytes)
+                    _pdf_conditions, ai_log, _pdf_text = _cc.extract_approval_conditions_ai_from_pdf(
+                        pdf_bytes,
+                        learned_profile_context=learned_prompt_context,
+                    )
                     if _pdf_conditions:
                         result["conditions"] = _pdf_conditions
                         if _pdf_text:
