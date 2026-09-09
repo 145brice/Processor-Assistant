@@ -21,15 +21,25 @@ def party_summary(parties):
 
 def party_picker(label, options, *, default, key, label_visibility='collapsed', placeholder='Parties'):
     """Keep assignments editable without allowing tags to expand the table row."""
-    current = st.session_state.get(key, default)
+    current = list(st.session_state.get(key, default))
+    st.session_state[key] = current
     with st.popover(
         party_summary(current), use_container_width=True,
-        help='Responsible parties: ' + (', '.join(current) or 'Unassigned'),
     ):
-        st.markdown('**Responsible parties**')
-        st.caption('Assign everyone involved in this condition.')
-        selected = st.multiselect(
-            label, options, default=default, key=key,
-            label_visibility=label_visibility, placeholder=placeholder,
-        )
-    return selected
+        with st.container(key=f'{key}_choices'):
+            st.caption(label)
+            for index, party in enumerate(options):
+                choice_key = f'{key}_choice_{index}'
+                st.session_state[choice_key] = party in current
+                st.checkbox(
+                    party, key=choice_key, on_change=_update_parties,
+                    args=(key, options),
+                )
+    return st.session_state[key]
+
+
+def _update_parties(key, options):
+    st.session_state[key] = [
+        party for index, party in enumerate(options)
+        if st.session_state.get(f'{key}_choice_{index}', False)
+    ]

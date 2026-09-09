@@ -83,3 +83,93 @@ html body .pa-condition-description {
 @media (max-width: 640px) {
     html body .pa-condition-description { white-space: normal !important; height: auto !important; }
 }
+
+/* Streamlit wraps popover triggers in a tooltip div. Target the descendant
+   button, not a direct child; otherwise the old filled buttons win. */
+html[data-theme] body [data-testid="stMain"] [data-testid="stPopover"] button,
+html[data-theme] body [data-testid="stMain"] button[kind="secondary"] {
+    background: transparent !important; background-image: none !important;
+    color: var(--slate-700) !important; box-shadow: none !important;
+    border: 1px solid transparent !important; border-radius: 4px !important;
+    height: 26px !important; min-height: 26px !important;
+    padding: 0 6px !important; transform: none !important;
+}
+html[data-theme] body [data-testid="stMain"] [data-testid="stPopover"] button:hover,
+html[data-theme] body [data-testid="stMain"] button[kind="secondary"]:hover {
+    background: var(--bg-subtle) !important; border-color: var(--slate-200) !important;
+}
+html[data-theme] body [data-testid="stMain"] [data-testid="stPopover"] button p,
+html[data-theme] body [data-testid="stMain"] button[kind="secondary"] p {
+    font-size: 12px !important; font-weight: 500 !important;
+    color: inherit !important; line-height: 18px !important; margin: 0 !important;
+}
+html[data-theme] body [data-testid="stSidebar"] button,
+html[data-theme] body [data-testid="stSidebar"] button[kind] {
+    background: transparent !important; border-color: transparent !important;
+    height: 34px !important; min-height: 34px !important; padding: 4px 10px !important;
+    margin-bottom: 0 !important; border-radius: 4px !important; box-shadow: none !important;
+}
+html[data-theme] body [data-testid="stSidebar"] button[kind="primary"] {
+    background: var(--accent-light) !important; box-shadow: inset 2px 0 var(--accent) !important;
+}
+html[data-theme] body [data-testid="stSidebar"] button:hover { background: var(--bg-subtle) !important; }
+/* Only a leaf row with condition text is a table row. Do not shrink the
+   larger columns that contain the whole workspace. */
+html[data-theme] body [data-testid="stVerticalBlock"]:has(> [data-testid="stHorizontalBlock"] .pa-condition-description),
+html[data-theme] body [data-testid="stVerticalBlock"]:has(> [data-testid="stLayoutWrapper"] > [data-testid="stHorizontalBlock"] .pa-condition-description) {
+    gap: 0 !important;
+}
+html[data-theme] body [data-testid="stVerticalBlock"]:has(> [data-testid="stLayoutWrapper"] > [data-testid="stHorizontalBlock"] .pa-condition-description) > [data-testid="stElementContainer"] [data-testid="stMarkdownContainer"] {
+    margin: 0 !important;
+}
+html[data-theme] body [data-testid="stHorizontalBlock"]:has(.pa-condition-description):not(:has([data-testid="stHorizontalBlock"] .pa-condition-description)) {
+    min-height: 30px !important; height: auto !important; padding: 1px 0 !important;
+    gap: 6px !important; align-items: center !important;
+    border-bottom: 1px solid var(--slate-200) !important;
+}
+html[data-theme] body [data-testid="stHorizontalBlock"]:has(.pa-condition-description):not(:has([data-testid="stHorizontalBlock"] .pa-condition-description)) :is([data-testid="stVerticalBlock"], [data-testid="stElementContainer"]) {
+    gap: 0 !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important;
+}
+html[data-theme] body [data-testid="stHorizontalBlock"]:has(.pa-condition-description):not(:has([data-testid="stHorizontalBlock"] .pa-condition-description)) [data-baseweb="select"] > div {
+    height: 26px !important; min-height: 26px !important; padding: 0 6px !important;
+    background: transparent !important; border-color: transparent !important;
+    border-radius: 4px !important; font-size: 12px !important;
+}
+html[data-theme] body [data-testid="stHorizontalBlock"]:has(.pa-condition-description):not(:has([data-testid="stHorizontalBlock"] .pa-condition-description)) [data-baseweb="select"] > div:hover {
+    border-color: var(--slate-200) !important; background: var(--bg-subtle) !important;
+}
+html[data-theme] body [data-testid="stHorizontalBlock"]:has(.pa-condition-description):not(:has([data-testid="stHorizontalBlock"] .pa-condition-description)) [data-baseweb="select"] div {
+    font-size: 12px !important; line-height: 20px !important;
+}
+html[data-theme] body [class*="_party_choices"] [data-testid="stVerticalBlock"] { gap: 0 !important; }
+html[data-theme] body [class*="_party_choices"] [data-testid="stCheckbox"] label {
+    min-height: 28px !important; padding: 2px 0 !important;
+}
+html[data-theme] body [class*="_party_choices"] [data-testid="stCheckbox"] p {
+    font-size: 13px !important; font-weight: 400 !important;
+}
+html[data-theme] body [data-testid="stHorizontalBlock"]:has(.pa-condition-description):not(:has([data-testid="stHorizontalBlock"] .pa-condition-description)) [data-testid="stCheckbox"] label {
+    min-height: 26px !important; height: 26px !important; padding: 0 !important;
+}
+html[data-theme] body [data-testid="stHorizontalBlock"]:has(.pa-condition-description):not(:has([data-testid="stHorizontalBlock"] .pa-condition-description)) [data-testid="stMarkdownContainer"] {
+    margin: 0 !important;
+}
+/* Streamlit's React Aria selectbox replaced BaseWeb in newer releases. */
+html[data-theme] body [class*="_stat"] [data-testid="stSelectbox"] .react-aria-ComboBox > div {
+    height: 26px !important; min-height: 26px !important;
+    background: transparent !important; border: 1px solid transparent !important;
+    border-radius: 4px !important;
+}
+html[data-theme] body [class*="_stat"] [data-testid="stSelectbox"] input,
+html[data-theme] body [class*="_stat"] [data-testid="stSelectbox"] button {
+    height: 24px !important; min-height: 24px !important;
+    padding: 0 5px !important; font-size: 12px !important;
+    background: transparent !important; box-shadow: none !important;
+    color: var(--slate-700) !important;
+}
+html[data-theme] body [class*="_stat"] [data-testid="stSelectbox"] .react-aria-ComboBox > div:hover {
+    border-color: var(--slate-200) !important; background: var(--bg-subtle) !important;
+}
+html[data-theme] body [data-testid="stHorizontalBlock"]:has(.pa-condition-description):not(:has([data-testid="stHorizontalBlock"] .pa-condition-description)) [class*="_chk"] {
+    height: 26px !important;
+}
