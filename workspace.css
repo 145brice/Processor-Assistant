@@ -70,6 +70,7 @@ html body [data-testid="stPopover"] > button p {
 }
 .pa-condition-row-marker { display: none; }
 html body .pa-condition-description {
+    color: var(--slate-700) !important;
     font-size: 13px !important; line-height: 20px !important; height: 20px !important;
     padding: 0 !important; background: transparent !important;
     border: none !important; border-radius: 0 !important; margin: 0 !important;
