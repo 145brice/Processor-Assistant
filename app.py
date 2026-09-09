@@ -10,6 +10,7 @@ import secrets
 import html as _html
 import streamlit as st
 from dotenv import load_dotenv
+from ui_refinement import apply_workspace_style, party_picker
 
 # Load .env from app dir and parent workspace for local runs
 _APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -890,6 +891,37 @@ div[data-baseweb="popover"] li:hover, ul[data-testid="stSelectboxVirtualDropdown
 [data-testid="stMainBlockContainer"] .scan-scroll [data-testid="stVerticalBlockBorderWrapper"] {
     padding: 3px 8px !important;
     margin-bottom: 3px !important;
+}
+/* Scanner condition editor: keyed cards need explicit selectors because the
+   visual scan-scroll marker is not a real DOM parent of Streamlit widgets. */
+[class*="st-key-scan_"][class*="_condition_card"] {
+    min-height: 0 !important;
+    margin: 0 0 3px 0 !important;
+}
+[class*="st-key-scan_"][class*="_condition_card"] > [data-testid="stVerticalBlockBorderWrapper"] {
+    min-height: 0 !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+}
+[class*="st-key-scan_"][class*="_condition_card"] [data-testid="stVerticalBlock"] {
+    gap: 0 !important;
+}
+[class*="st-key-scan_"][class*="_condition_card"] [data-testid="stHorizontalBlock"] {
+    gap: 4px !important;
+    align-items: center !important;
+}
+[class*="st-key-scan_"][class*="_condition_card"] [data-baseweb="select"] > div,
+[class*="st-key-scan_"][class*="_condition_card"] button {
+    min-height: 26px !important;
+    height: 26px !important;
+    font-size: 11px !important;
+}
+[class*="st-key-scan_"][class*="_condition_card"] [data-testid="stCheckbox"] {
+    padding: 0 !important;
+    margin: 0 !important;
+}
+[class*="st-key-scan_"][class*="_condition_card"] [data-testid="stElementContainer"] {
+    margin: 0 !important;
 }
 .scan-scroll .pa-need-status, .pa-need-status {
     display: inline-block;
@@ -1825,6 +1857,8 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
 """, unsafe_allow_html=True)
 
 
+apply_workspace_style()
+
 # --- Custom sidebar toggle button (injected into parent DOM, survives reruns) ---
 import streamlit.components.v1 as _components
 _components.html("""
@@ -2360,6 +2394,7 @@ def _save_approval_intelligence_state(value: dict) -> dict:
 
 def _render_lender_resources(lender_name: str) -> None:
     """Show canonical public resources for a detected lender."""
+    import html as _html_lender_resources
     try:
         import lender_resources as _lender_resources
         entry = _lender_resources.resources_for_lender(lender_name)
@@ -2368,7 +2403,14 @@ def _render_lender_resources(lender_name: str) -> None:
     rows = entry.get("resources", []) if isinstance(entry, dict) else []
     if not rows:
         return
-    with st.expander(f"Official lender resources - {entry.get('name', lender_name)}", expanded=False):
+    display_name = str(entry.get("name") or lender_name)
+    st.markdown(
+        f'<div style="margin:8px 0 5px 0;font-size:18px;line-height:1.25;'
+        f'font-weight:800;color:var(--slate-900);">'
+        f'Official Lender Resources &mdash; {_html_lender_resources.escape(display_name)}</div>',
+        unsafe_allow_html=True,
+    )
+    with st.expander(f"View official documents and links ({len(rows)})", expanded=False):
         st.caption(
             "Public links from the detected lender. Processor Assistant does not add "
             "borrower, loan, or file information to these URLs."
@@ -2379,9 +2421,19 @@ def _render_lender_resources(lender_name: str) -> None:
             description = str(row.get("description") or "")
             if not url.startswith("https://"):
                 continue
-            st.markdown(f"**[{label}]({url})**")
+            st.markdown(
+                f'<a href="{_html_lender_resources.escape(url, quote=True)}" target="_blank" '
+                f'rel="noopener noreferrer" style="display:block;font-size:16px;line-height:1.35;'
+                f'font-weight:800;color:#2563eb;text-decoration:underline;margin:8px 0 2px 0;">'
+                f'{_html_lender_resources.escape(label)} &#8599;</a>',
+                unsafe_allow_html=True,
+            )
             if description:
-                st.caption(description)
+                st.markdown(
+                    f'<div style="font-size:13px;line-height:1.35;color:var(--slate-600);'
+                    f'margin:0 0 8px 0;">{_html_lender_resources.escape(description)}</div>',
+                    unsafe_allow_html=True,
+                )
 
 
 def _load_scan_history_all() -> list[dict]:
@@ -5897,7 +5949,7 @@ def show_dashboard():
                         "Processor", "Underwriter",
                     ]
                     _SECTION_LABEL_SCAN = {
-                        "Borrower": "Client Conditions",
+                        "Borrower": "Borrower Conditions",
                         "Title": "Title Conditions",
                         "Insurance": "Insurance Conditions",
                         "Appraiser": "Appraisal Conditions",
@@ -6156,11 +6208,6 @@ def show_dashboard():
                         _orig_desc = str(_c.get("desc", ""))
                         _smap = st.session_state.get(_summary_map_key, {})
                         _sum_desc = str(_smap.get(_orig_desc) or "").strip()
-                        _conf = (_c.get("confidence") or "").strip()
-                        _conf_badge = (
-                            f' <span style="color:#93c5fd;font-size:9px;opacity:0.8;">{_conf}</span>'
-                            if _conf else ""
-                        )
                         if _sum_desc:
                             _esc = _html_grid.escape(_sum_desc)
                             _desc_html = _re_grid.sub(
@@ -6183,95 +6230,90 @@ def show_dashboard():
                             f'padding:8px 10px;margin-bottom:6px;background:rgba(255,255,255,0.02);">'
                             f'<div style="font-size:12px;line-height:1.4;">'
                             f'<b style="color:var(--accent);">#{_c["num"]}</b> '
-                            f'<span style="color:var(--slate-700);">{_desc_html}</span>{_conf_badge}</div>'
+                            f'<span style="color:var(--slate-700);">{_desc_html}</span></div>'
                             + (f'<div style="margin-top:4px;">{_route_chips}</div>' if _route_chips else '')
                             + '</div>',
                             unsafe_allow_html=True,
                         )
 
                     def _render_original_card(_c):
+                        from contextlib import nullcontext as _nullcontext_condition_row
                         _section_party_for_row = _c.get("_section_party") or "Borrower"
                         _is_primary_row = _section_party_for_row == (_c.get("_primary_section") or _section_party_for_row)
                         _base_uid = f"{_scan_fkey}_{_c.get('_scan_uid', _c['num'])}"
                         _uid = f"{_base_uid}_{_section_party_for_row}"
-                        with st.container(border=True):
+                        # Do not create a Streamlit container here. Even borderless
+                        # containers reserve a separate vertical layout slot per row.
+                        with _nullcontext_condition_row():
                             _orig_desc = str(_c.get("desc", ""))
                             _pmap = st.session_state.get(_plain_map_key, {})
                             _client_desc = str(_pmap.get(_orig_desc) or _orig_desc)
                             _has_alt = bool(_client_desc and _client_desc != _orig_desc)
-                            _conf = (_c.get("confidence") or "").strip()
-                            _conf_badge = (
-                                f' <span style="color:#93c5fd;font-size:9px;opacity:0.8;">{_conf}</span>'
-                                if _conf else ""
-                            )
                             _row_sections = _scan_sections_for_condition(_c)
-                            _route_chips = "".join(
-                                f'<span style="display:inline-block;margin:0 3px 3px 0;padding:1px 6px;'
-                                f'border-radius:999px;background:rgba(59,130,246,0.14);'
-                                f'border:1px solid rgba(59,130,246,0.32);color:#bfdbfe;'
-                                f'font-size:9px;font-weight:700;">{_html_grid.escape(str(_p))}</span>'
-                                for _p in _row_sections
+                            # Keep the expanded editor to one dense horizontal row. Client-friendly
+                            # wording is available through Plain instead of occupying a hidden line
+                            # beneath the status control.
+                            _check_col, _desc_col, _status_col, _party_col, _actions_col = st.columns(
+                                [0.38, 7.25, 1.45, 1.75, 1.25]
                             )
-                            st.checkbox(
-                                f'#{_c["num"]}',
-                                value=False,
-                                key=f"{_uid}_chk",
-                            )
-                            _desc_html = (
-                                f'<div style="font-size:12px;line-height:1.35;padding:2px 0;color:var(--slate-700);">'
-                                f'{_html_grid.escape(_orig_desc)}{_conf_badge}</div>'
-                            )
-                            if _route_chips:
-                                _desc_html += f'<div style="margin-top:2px;">{_route_chips}</div>'
-                            if _has_alt:
-                                _desc_html += (
-                                    f'<div style="font-size:10.5px;line-height:1.3;margin-top:3px;'
-                                    f'color:var(--slate-600);"><b>Client language:</b> {_html_grid.escape(_client_desc)}</div>'
+                            with _check_col:
+                                st.checkbox(
+                                    "Select", value=False,
+                                    key=f"{_uid}_chk",
+                                    label_visibility="collapsed",
                                 )
-                            st.markdown(_desc_html, unsafe_allow_html=True)
+                            with _desc_col:
+                                st.markdown(
+                                    f'<span class="pa-condition-row-marker"></span>'
+                                    f'<div class="pa-condition-description" title="{_html_grid.escape(_orig_desc)}" '
+                                    f'style="font-size:13px;line-height:16px;height:16px;'
+                                    f'color:var(--slate-700);white-space:nowrap;overflow:hidden;'
+                                    f'text-overflow:ellipsis;cursor:help;">'
+                                    f'<b style="color:var(--accent);">#{_html_grid.escape(str(_c["num"]))}</b> '
+                                    f'{_html_grid.escape(_orig_desc)}</div>',
+                                    unsafe_allow_html=True,
+                                )
 
                             if _is_primary_row:
                                 _sidx = _COND_STATS_SCAN.index(_c["status"]) if _c["status"] in _COND_STATS_SCAN else 0
-                                st.selectbox(
-                                    "Status", _COND_STATS_SCAN, index=_sidx,
-                                    key=f"{_base_uid}_stat", label_visibility="collapsed",
-                                )
                                 _default_parties = _scan_sections_for_condition(_c)
                                 _party_key = f"{_base_uid}_party"
                                 _current_parties = st.session_state.get(_party_key)
                                 if not isinstance(_current_parties, list):
                                     _current_parties = [p for p in _default_parties if p in _PARTY_OPTS_SCAN]
-                                st.multiselect(
-                                    "Responsible parties", _PARTY_OPTS_SCAN,
-                                    default=[p for p in _default_parties if p in _PARTY_OPTS_SCAN],
-                                    key=_party_key, label_visibility="collapsed",
-                                    placeholder="Parties",
-                                )
-                                if len(_current_parties) > 1:
-                                    if st.button("Clear parties", key=f"{_base_uid}_party_clear",
-                                                 use_container_width=True):
-                                        st.session_state[_party_key] = []
-                                        st.rerun()
+                                with _status_col:
+                                    st.selectbox(
+                                        "Status", _COND_STATS_SCAN, index=_sidx,
+                                        key=f"{_base_uid}_stat", label_visibility="collapsed",
+                                    )
+                                with _party_col:
+                                    party_picker(
+                                        "Responsible parties", _PARTY_OPTS_SCAN,
+                                        default=[p for p in _default_parties if p in _PARTY_OPTS_SCAN],
+                                        key=_party_key, label_visibility="collapsed",
+                                        placeholder="Parties",
+                                    )
                             else:
-                                st.caption(
-                                    f"Shared - also in {_SECTION_LABEL_SCAN.get(_section_party_for_row, _section_party_for_row)}"
-                                )
+                                with _status_col:
+                                    st.caption("Shared")
+                                with _party_col:
+                                    st.caption(_SECTION_LABEL_SCAN.get(_section_party_for_row, _section_party_for_row))
 
-                            _card_actions = st.columns(3)
-                            with _card_actions[0]:
-                                if st.button(
-                                    "Guide", key=f"{_uid}_guide", use_container_width=True,
-                                    help="Open Fannie Mae / Freddie Mac / USDA guidelines for this condition",
-                                ):
-                                    st.session_state[f"{_uid}_guide_open"] = not st.session_state.get(f"{_uid}_guide_open", False)
-                            with _card_actions[1]:
-                                if st.button("Plain", key=f"{_uid}_plain", use_container_width=True):
-                                    _key = f"{_uid}_plain_open"
-                                    st.session_state[_key] = not st.session_state.get(_key, False)
-                            with _card_actions[2]:
-                                if st.button("Draft", key=f"{_uid}_draft", use_container_width=True):
-                                    _key = f"{_uid}_draft_open"
-                                    st.session_state[_key] = not st.session_state.get(_key, False)
+                            with _actions_col:
+                                with st.popover("Actions", use_container_width=True):
+                                    with st.expander("Full condition"):
+                                        st.text(_orig_desc)
+                                    if st.button(
+                                        "Guide", key=f"{_uid}_guide", use_container_width=True,
+                                        help="Open Fannie Mae / Freddie Mac / USDA guidelines for this condition",
+                                    ):
+                                        st.session_state[f"{_uid}_guide_open"] = not st.session_state.get(f"{_uid}_guide_open", False)
+                                    if st.button("Plain", key=f"{_uid}_plain", use_container_width=True):
+                                        _key = f"{_uid}_plain_open"
+                                        st.session_state[_key] = not st.session_state.get(_key, False)
+                                    if st.button("Draft", key=f"{_uid}_draft", use_container_width=True):
+                                        _key = f"{_uid}_draft_open"
+                                        st.session_state[_key] = not st.session_state.get(_key, False)
 
                             if st.session_state.get(f"{_uid}_plain_open"):
                                 st.info(_client_desc)
@@ -6369,6 +6411,74 @@ def show_dashboard():
                         st.session_state[_compact_view_key] = _compact_view
                         st.rerun()
 
+                    _scan_group_col, _scan_sort_col = st.columns([1.35, 1.0])
+                    with _scan_group_col:
+                        _scan_separate_by_party = st.toggle(
+                            "Separate by responsible party",
+                            value=True,
+                            key=f"{_scan_fkey}_separate_by_party",
+                            help="Show Borrower Conditions and each third-party group in dedicated sections.",
+                        )
+                    with _scan_sort_col:
+                        _scan_sort_mode = st.selectbox(
+                            "Sort conditions",
+                            ["Original order", "Condition #", "Status", "Responsible party"],
+                            key=f"{_scan_fkey}_sort_mode",
+                            help="Sort the extracted conditions like a spreadsheet column.",
+                        )
+
+                    def _scan_number_sort_value(_item):
+                        _idx, _cond = _item
+                        _raw = str(_cond.get("num", ""))
+                        _match = re.search(r"\d+", _raw)
+                        return (int(_match.group()) if _match else 10**9, _raw.lower(), _idx)
+
+                    def _scan_status_for_item(_item):
+                        _idx, _cond = _item
+                        _uid = f"{_scan_fkey}_{_idx}_{_cond.get('num', _idx)}"
+                        return st.session_state.get(f"{_uid}_stat", _cond.get("status", "Needed"))
+
+                    _scan_status_order = {
+                        "Important": 0, "Needed": 1, "Requested": 2,
+                        "Ready to Clear": 3, "Cleared": 4,
+                    }
+                    _scan_display_items = list(enumerate(_norm_conds))
+                    if _scan_sort_mode == "Condition #":
+                        _scan_display_items.sort(key=_scan_number_sort_value)
+                    elif _scan_sort_mode == "Status":
+                        _scan_display_items.sort(
+                            key=lambda _item: (
+                                _scan_status_order.get(_scan_status_for_item(_item), 99),
+                                _scan_number_sort_value(_item),
+                            )
+                        )
+                    elif _scan_sort_mode == "Responsible party":
+                        _scan_display_items.sort(
+                            key=lambda _item: (
+                                _SECTION_ORDER_SCAN.index(_scan_sections_for_condition(_item[1])[0]),
+                                _scan_number_sort_value(_item),
+                            )
+                        )
+                    if _scan_separate_by_party:
+                        # Grouping takes precedence, while the chosen sort controls row order inside each group.
+                        _scan_display_items.sort(
+                            key=lambda _item: _SECTION_ORDER_SCAN.index(
+                                _scan_sections_for_condition(_item[1])[0]
+                            )
+                        )
+
+                    def _scan_render_group_heading(_section, _count):
+                        st.markdown(
+                            f'<div style="font-size:11px;font-weight:800;color:#2563eb;'
+                            f'text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 5px 0;'
+                            f'padding-top:7px;border-top:1px solid var(--slate-200);">'
+                            f'{_SECTION_LABEL_SCAN.get(_section, _section + " Conditions")} '
+                            f'<span style="color:var(--slate-500);text-transform:none;">({_count})</span></div>',
+                            unsafe_allow_html=True,
+                        )
+
+                    # Spreadsheet rows: normal-size content with no card wrapper. The
+                    # marker identifies only the horizontal row that owns a condition.
                     with st.container():
                         if _compact_view:
                             import re as _re_compact
@@ -6401,10 +6511,18 @@ def show_dashboard():
                                 short = (rest[:60] + "...") if len(rest) > 60 else rest
                                 return _fallback_party, short
 
-                            for _cond_idx, _c in enumerate(_norm_conds):
+                            _last_scan_section = None
+                            for _cond_idx, _c in _scan_display_items:
                                 _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
                                 _sections = _scan_sections_for_condition(_c)
                                 _primary_section = _sections[0]
+                                if _scan_separate_by_party and _primary_section != _last_scan_section:
+                                    _group_count = sum(
+                                        1 for _, _item_cond in _scan_display_items
+                                        if _scan_sections_for_condition(_item_cond)[0] == _primary_section
+                                    )
+                                    _scan_render_group_heading(_primary_section, _group_count)
+                                    _last_scan_section = _primary_section
                                 _base_uid = f"{_scan_fkey}_{_cond_uid}"
                                 _uid = f"{_base_uid}_{_primary_section}"
                                 _orig_desc = str(_c.get("desc", ""))
@@ -6412,7 +6530,7 @@ def show_dashboard():
                                 _subject, _body_short = _compact_subject_body(
                                     _orig_desc, _sum_desc, _primary_section,
                                 )
-                                _cb_col, _txt_col, _party_col, _stat_col, _action_col = st.columns([0.5, 4.5, 2.0, 1.8, 1.7])
+                                _cb_col, _txt_col, _party_col, _stat_col, _action_col = st.columns([0.4, 6.2, 1.9, 1.7, 1.3])
                                 with _cb_col:
                                     st.checkbox(
                                         f'#{_c["num"]}', value=False,
@@ -6432,7 +6550,7 @@ def show_dashboard():
                                         "Cleared": "var(--green)",
                                     }.get(_cur_status, "var(--slate-500)")
                                     st.markdown(
-                                        f'<div title="{_html_compact.escape(_orig_desc)}" '
+                                        f'<div class="pa-condition-description" title="{_html_compact.escape(_orig_desc)}" '
                                         f'style="font-size:12px;line-height:1.25;padding:5px 9px;'
                                         f'background:var(--bg-subtle);border:1px solid var(--slate-200);'
                                         f'border-radius:6px;margin-bottom:3px;'
@@ -6449,7 +6567,7 @@ def show_dashboard():
                                     )
                                 with _party_col:
                                     _default_parties = [p for p in _sections if p in _PARTY_OPTS_SCAN]
-                                    st.multiselect(
+                                    party_picker(
                                         "Responsible parties", _PARTY_OPTS_SCAN,
                                         default=_default_parties,
                                         key=f"{_base_uid}_party",
@@ -6464,8 +6582,9 @@ def show_dashboard():
                                         label_visibility="collapsed",
                                     )
                                 with _action_col:
-                                    _row_actions = st.columns(2)
-                                    with _row_actions[0]:
+                                    with st.popover("Actions", use_container_width=True):
+                                        with st.expander("Full condition"):
+                                            st.text(_orig_desc)
                                         if st.button(
                                             "Plain",
                                             key=f"{_uid}_compact_plain",
@@ -6474,7 +6593,6 @@ def show_dashboard():
                                         ):
                                             _key = f"{_uid}_plain_open"
                                             st.session_state[_key] = not st.session_state.get(_key, False)
-                                    with _row_actions[1]:
                                         if st.button(
                                             "Draft",
                                             key=f"{_uid}_compact_draft",
@@ -6489,10 +6607,18 @@ def show_dashboard():
                                 if st.session_state.get(f"{_uid}_draft_open"):
                                     _render_inline_condition_draft(_c, _primary_section, _uid)
                         else:
-                            for _cond_idx, _c in enumerate(_norm_conds):
+                            _last_scan_section = None
+                            for _cond_idx, _c in _scan_display_items:
                                 _cond_uid = f"{_cond_idx}_{_c.get('num', _cond_idx)}"
                                 _sections = _scan_sections_for_condition(_c)
                                 _primary_section = _sections[0]
+                                if _scan_separate_by_party and _primary_section != _last_scan_section:
+                                    _group_count = sum(
+                                        1 for _, _item_cond in _scan_display_items
+                                        if _scan_sections_for_condition(_item_cond)[0] == _primary_section
+                                    )
+                                    _scan_render_group_heading(_primary_section, _group_count)
+                                    _last_scan_section = _primary_section
                                 _cond_view = dict(_c)
                                 _cond_view["_scan_uid"] = _cond_uid
                                 _cond_view["_section_party"] = _primary_section
@@ -7233,11 +7359,6 @@ def show_dashboard():
                     if _gid_html:
                         st.markdown("**Government ID**")
                         st.markdown(f'<table style="border-collapse:collapse;width:100%;">{_gid_html}</table>', unsafe_allow_html=True)
-
-                if _norm_cond_count > 10:
-                    st.caption(f"...and {_norm_cond_count - 10} more conditions")
-
-
 
 def _pipeline_cond_row(c, contacts=None, loan_num="", borrower=""):
     import urllib.parse as _uparse
@@ -12336,7 +12457,7 @@ def show_loan_detail():
             "Processor", "Underwriter",
         ]
         _LD_SECTION_LABEL = {
-            "Borrower": "Client Conditions",
+            "Borrower": "Borrower Conditions",
             "Title": "Title Conditions",
             "Insurance": "Insurance Conditions",
             "Appraiser": "Appraisal Conditions",
@@ -12549,7 +12670,7 @@ def show_loan_detail():
                     key=f"{_uid}_stat", label_visibility="collapsed",
                 )
                 _default_parties = [p for p in _parties if p in PARTY_OPTIONS_LD]
-                st.multiselect(
+                party_picker(
                     "Parties", PARTY_OPTIONS_LD,
                     default=_default_parties,
                     key=f"{_uid}_party", label_visibility="collapsed",
@@ -12712,9 +12833,84 @@ def show_loan_detail():
 
         _conds_tab, _summary_tab = st.tabs(["Conditions", "Summarized"])
         with _conds_tab:
+            _ld_view_col, _ld_sort_col = st.columns([1.35, 1.0])
+            with _ld_view_col:
+                _ld_separate_by_party = st.toggle(
+                    "Separate by responsible party",
+                    value=True,
+                    key=f"{_ld_fkey}_separate_by_party",
+                    help="Show Borrower Conditions and each third-party group in separate sections.",
+                )
+            with _ld_sort_col:
+                _ld_sort_mode = st.selectbox(
+                    "Sort conditions",
+                    ["Original order", "Condition #", "Status", "Responsible party"],
+                    key=f"{_ld_fkey}_sort_mode",
+                    help="Sort the condition list like a spreadsheet column.",
+                )
+
+            def _ld_current_condition_status(_c):
+                _uid = _ld_uid(_c)
+                return st.session_state.get(f"{_uid}_stat", _c.get("status", "Needed"))
+
+            def _ld_condition_number_sort_value(_c):
+                _raw = str(_c.get("num", ""))
+                _match = _re_ld.search(r"\d+", _raw)
+                return (int(_match.group()) if _match else 10**9, _raw.lower())
+
+            _ld_status_order = {
+                "Important": 0, "Needed": 1, "Requested": 2,
+                "Ready to Clear": 3, "Cleared": 4,
+            }
+            _ld_display_conditions = list(_conditions)
+            if _ld_sort_mode == "Condition #":
+                _ld_display_conditions.sort(key=_ld_condition_number_sort_value)
+            elif _ld_sort_mode == "Status":
+                _ld_display_conditions.sort(
+                    key=lambda _c: (
+                        _ld_status_order.get(_ld_current_condition_status(_c), 99),
+                        _ld_condition_number_sort_value(_c),
+                    )
+                )
+            elif _ld_sort_mode == "Responsible party":
+                _ld_display_conditions.sort(
+                    key=lambda _c: (
+                        _LD_SECTION_ORDER.index(_ld_sections_for_cond(_c)[0]),
+                        _ld_condition_number_sort_value(_c),
+                    )
+                )
+
+            def _ld_render_condition_collection(_items, _renderer, _empty_message="No conditions."):
+                if not _items:
+                    st.caption(_empty_message)
+                    return
+                if not _ld_separate_by_party:
+                    for _item in _items:
+                        _renderer(_item)
+                    return
+                for _section in _LD_SECTION_ORDER:
+                    # A condition is shown once, under its primary responsible party.
+                    _section_items = [
+                        _item for _item in _items
+                        if _ld_sections_for_cond(_item)[0] == _section
+                    ]
+                    if not _section_items:
+                        continue
+                    st.markdown(
+                        f'<div style="font-size:11px;font-weight:800;color:#93c5fd;'
+                        f'text-transform:uppercase;letter-spacing:0.5px;margin:12px 0 4px 0;">'
+                        f'{_html_ld.escape(_LD_SECTION_LABEL.get(_section, _section + " Conditions"))} '
+                        f'<span style="color:var(--slate-500);text-transform:none;">'
+                        f'({_html_ld.escape(str(len(_section_items)))})</span></div>',
+                        unsafe_allow_html=True,
+                    )
+                    for _item in _section_items:
+                        _renderer(_item)
+
             st.markdown(
                 '<div style="font-size:12px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
-                'letter-spacing:0.5px;margin:8px 0 6px 0;">Scan Order (Originals) '
+                'letter-spacing:0.5px;margin:8px 0 6px 0;">'
+                f'{_html_ld.escape("Grouped by Responsible Party" if _ld_separate_by_party else _ld_sort_mode)} '
                 f'<span style="color:var(--slate-500);font-weight:600;font-size:11px;'
                 f'text-transform:none;letter-spacing:0;">{len(_conditions)} item'
                 f'{"s" if len(_conditions) != 1 else ""}</span></div>',
@@ -12749,10 +12945,6 @@ def show_loan_detail():
                     short = (rest[:60] + "...") if len(rest) > 60 else rest
                     return _fallback_party, short
 
-                def _ld_current_condition_status(_c):
-                    _uid = _ld_uid(_c)
-                    return st.session_state.get(f"{_uid}_stat", _c.get("status", "Needed"))
-
                 def _render_ld_compact_condition_row(_c):
                     _cnum = _c["num"]
                     _uid = _ld_uid(_c)
@@ -12782,7 +12974,7 @@ def show_loan_detail():
                             "Cleared": "var(--green)",
                         }.get(_cur_status, "var(--slate-500)")
                         st.markdown(
-                            f'<div title="{_html_ld.escape(_orig_desc)}" '
+                            f'<div class="pa-condition-description" title="{_html_ld.escape(_orig_desc)}" '
                             f'style="font-size:12.5px;line-height:1.35;padding:2px 0 1px 0;'
                             f'border-bottom:1px solid rgba(255,255,255,0.04);'
                             f'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
@@ -12813,11 +13005,11 @@ def show_loan_detail():
                         )
 
                 _active_conditions = [
-                    _c for _c in _conditions
+                    _c for _c in _ld_display_conditions
                     if _ld_current_condition_status(_c) != "Cleared"
                 ]
                 _cleared_conditions = [
-                    _c for _c in _conditions
+                    _c for _c in _ld_display_conditions
                     if _ld_current_condition_status(_c) == "Cleared"
                 ]
                 st.markdown(
@@ -12827,11 +13019,9 @@ def show_loan_detail():
                     f'({_html_ld.escape(str(len(_active_conditions)))})</span></div>',
                     unsafe_allow_html=True,
                 )
-                if _active_conditions:
-                    for _c in _active_conditions:
-                        _render_ld_compact_condition_row(_c)
-                else:
-                    st.caption("No open conditions.")
+                _ld_render_condition_collection(
+                    _active_conditions, _render_ld_compact_condition_row, "No open conditions."
+                )
                 if _cleared_conditions:
                     st.markdown(
                         f'<div style="font-size:11px;font-weight:800;color:#22c55e;'
@@ -12841,15 +13031,16 @@ def show_loan_detail():
                         f'({_html_ld.escape(str(len(_cleared_conditions)))})</span></div>',
                         unsafe_allow_html=True,
                     )
-                    for _c in _cleared_conditions:
-                        _render_ld_compact_condition_row(_c)
+                    _ld_render_condition_collection(
+                        _cleared_conditions, _render_ld_compact_condition_row
+                    )
             else:
                 _active_conditions = [
-                    _c for _c in _conditions
+                    _c for _c in _ld_display_conditions
                     if st.session_state.get(f"{_ld_uid(_c)}_stat", _c.get("status", "Needed")) != "Cleared"
                 ]
                 _cleared_conditions = [
-                    _c for _c in _conditions
+                    _c for _c in _ld_display_conditions
                     if st.session_state.get(f"{_ld_uid(_c)}_stat", _c.get("status", "Needed")) == "Cleared"
                 ]
                 st.markdown(
@@ -12859,8 +13050,9 @@ def show_loan_detail():
                     f'({len(_active_conditions)})</span></div>',
                     unsafe_allow_html=True,
                 )
-                for _c in _active_conditions:
-                    _render_ld_original_card(_c)
+                _ld_render_condition_collection(
+                    _active_conditions, _render_ld_original_card, "No open conditions."
+                )
                 if _cleared_conditions:
                     st.markdown(
                         f'<div style="font-size:11px;font-weight:800;color:#22c55e;'
@@ -12870,8 +13062,9 @@ def show_loan_detail():
                         f'({len(_cleared_conditions)})</span></div>',
                         unsafe_allow_html=True,
                     )
-                    for _c in _cleared_conditions:
-                        _render_ld_original_card(_c)
+                    _ld_render_condition_collection(
+                        _cleared_conditions, _render_ld_original_card
+                    )
 
         with _summary_tab:
             st.markdown(
@@ -14299,4 +14492,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

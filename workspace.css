@@ -1,0 +1,85 @@
+/* Presentation layer shared by Scanner and Pipeline. */
+:root { --pa-main-gutter: 28px; --radius-sm: 8px; --radius-md: 12px; }
+:root[data-theme="light"] {
+    --bg-page: #f5f7fa; --bg-white: #ffffff; --bg-subtle: #f0f3f8;
+    --slate-900: #192638; --slate-700: #344359; --slate-600: #526278;
+    --slate-500: #64748b; --slate-300: #cbd5e1; --slate-200: #e2e8f0;
+    --slate-100: #f1f5f9; --accent: #385c91; --accent-light: #eaf0f8;
+}
+html body, [data-testid="stApp"] input, [data-testid="stApp"] textarea,
+[data-testid="stApp"] button, [data-testid="stMarkdownContainer"] {
+    font-family: Inter, 'Segoe UI', sans-serif !important;
+}
+.stApp::before { background-image: none !important; }
+html body h2, html body [data-testid="stMarkdownContainer"] h2 {
+    font-size: 28px !important; font-weight: 650 !important; letter-spacing: -0.7px;
+    color: var(--slate-900) !important; border: 0 !important;
+    text-shadow: none !important; padding: 8px 0 !important;
+}
+html body [data-testid="stSidebar"] button[kind] {
+    background: transparent !important; border: 1px solid transparent !important;
+    border-radius: 8px !important; min-height: 40px !important;
+    box-shadow: none !important;
+}
+html body [data-testid="stSidebar"] button[kind]:hover {
+    background: var(--bg-subtle) !important;
+}
+html body [data-testid="stSidebar"] button[kind="primary"] {
+    background: var(--accent-light) !important;
+    box-shadow: inset 3px 0 0 var(--accent) !important;
+}
+html body .pa-pipe-dash {
+    background: var(--bg-white) !important; border-bottom: 1px solid var(--slate-200) !important;
+    box-shadow: 0 2px 8px rgba(15,23,42,.04) !important;
+}
+html body .pa-pipe-dash::before { background: var(--bg-white) !important; }
+html body .pa-pchip {
+    background: var(--bg-subtle) !important; border-color: transparent !important;
+    border-radius: 6px; padding: 4px 10px;
+}
+html body .pa-pchip-l { text-transform: none !important; letter-spacing: 0 !important; }
+html body .pa-loan-grid { background: var(--bg-white) !important; border-color: var(--slate-200) !important; }
+html body [data-baseweb="tag"] {
+    background: var(--accent-light) !important; color: var(--accent) !important;
+    border-radius: 6px !important;
+}
+html body [data-baseweb="tag"] span { color: var(--accent) !important; }
+html body button:focus-visible, html body input:focus-visible {
+    outline: 2px solid var(--accent) !important; outline-offset: 2px;
+}
+/* Select the immediate condition row, never an ancestor containing other rows. */
+html body [data-testid="stHorizontalBlock"]:has(> :is([data-testid="stColumn"], [data-testid="column"]) > [data-testid="stVerticalBlock"] > [class*="_stat"]) {
+    height: auto !important; min-height: 30px !important; gap: 6px !important;
+    align-items: center !important; padding: 1px 0 !important;
+    border-bottom: 1px solid var(--slate-200) !important;
+}
+html body [class*="st-key-scan_"][class*="_stat"] [data-baseweb="select"] > div,
+html body [class*="st-key-ld_"][class*="_stat"] [data-baseweb="select"] > div {
+    min-height: 26px !important; height: auto !important;
+    background: var(--bg-white) !important; border-color: var(--slate-200) !important;
+    border-radius: 8px !important; font-size: 13px !important;
+}
+html body [data-testid="stPopover"] > button {
+    min-height: 26px !important; height: auto !important;
+    background: var(--bg-white) !important; color: var(--slate-700) !important;
+    border: 1px solid var(--slate-200) !important; border-radius: 8px !important;
+    box-shadow: none !important; padding: 1px 7px !important;
+}
+html body [data-testid="stPopover"] > button p {
+    font-size: 13px !important; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.pa-condition-row-marker { display: none; }
+html body .pa-condition-description {
+    font-size: 13px !important; line-height: 20px !important; height: 20px !important;
+    padding: 0 !important; background: transparent !important;
+    border: none !important; border-radius: 0 !important; margin: 0 !important;
+    white-space: nowrap !important; text-overflow: ellipsis;
+    display: block; overflow: hidden;
+}
+@media (max-width: 900px) {
+    :root { --pa-main-gutter: 14px; }
+    html body .pa-pipe-dash-meta, html body .pa-pipe-dash-bar { display: none !important; }
+}
+@media (max-width: 640px) {
+    html body .pa-condition-description { white-space: normal !important; height: auto !important; }
+}
