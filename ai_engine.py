@@ -1821,6 +1821,42 @@ def draft_email(conditions: str, recipient_type: str, language: str = "English",
     return template.replace("{conditions}", conditions)
 
 
+def condition_for_email_language(condition: str, language: str = "English") -> str:
+    """Create local, privacy-safe condition wording in the selected language."""
+    text = " ".join(str(condition or "").split()).strip(" -.;")
+    if language != "Spanish" or not text:
+        return text
+    low = text.lower()
+    rules = [
+        (("homeowner", "hazard insurance", " hoi", "insurance policy"), "Proporcione la póliza o página de declaraciones del seguro de vivienda vigente."),
+        (("bank statement",), "Proporcione el estado de cuenta bancario completo más reciente, incluidas todas las páginas."),
+        (("earnest money", " emd"), "Proporcione el comprobante del depósito de garantía y el estado de cuenta que muestre que fue cobrado."),
+        (("funds to close", "cash to close", "reserves"), "Proporcione documentación actualizada de los fondos necesarios para el cierre y las reservas."),
+        (("tax transcript",), "Proporcione la transcripción fiscal solicitada."),
+        (("tax return",), "Proporcione la declaración de impuestos completa y firmada solicitada."),
+        (("paystub", "pay stub"), "Proporcione los comprobantes de pago más recientes."),
+        (("verification of employment", " voe", "employment"), "Proporcione la verificación de empleo solicitada."),
+        (("appraisal", "1004d", "final inspection"), "Proporcione la documentación o actualización de tasación solicitada."),
+        (("title", "settlement", "escrow"), "Proporcione la documentación de título o cierre solicitada."),
+        (("purchase contract", "sales contract"), "Proporcione el contrato de compraventa completo y firmado, incluidas todas las adendas."),
+        (("letter of explanation", " loe"), "Proporcione una carta de explicación firmada sobre el asunto indicado."),
+        (("driver", "government id", "identification"), "Proporcione una copia clara y vigente de la identificación oficial solicitada."),
+        (("payoff", "paid in full"), "Proporcione el estado de liquidación o comprobante de pago total solicitado."),
+        (("credit",), "Proporcione la documentación de crédito solicitada."),
+        (("income",), "Proporcione la documentación de ingresos solicitada."),
+        (("asset",), "Proporcione la documentación de activos solicitada."),
+        (("divorce",), "Proporcione la sentencia de divorcio completa y firmada."),
+        (("bankruptcy",), "Proporcione la documentación completa de la bancarrota y su resolución."),
+        (("gift",), "Proporcione la documentación solicitada de los fondos de regalo."),
+        (("hoa", "homeowners association"), "Proporcione la documentación solicitada de la asociación de propietarios."),
+        (("closing disclosure", " cd"), "Proporcione la divulgación de cierre solicitada."),
+    ]
+    for needles, translated in rules:
+        if any(needle in low for needle in needles):
+            return translated
+    return "Proporcione la documentación solicitada para completar esta condición del préstamo."
+
+
 def auto_draft_emails(conditions: str, user_history=None) -> str:
     """Auto-draft all emails grouped by responsible party."""
     # Parse conditions table to group by party

@@ -4,7 +4,7 @@ import sys
 import types
 
 sys.modules.setdefault("pypdf", types.SimpleNamespace(PdfReader=object))
-from ai_engine import draft_email
+from ai_engine import condition_for_email_language, draft_email
 
 
 class PartyEmailTemplateTests(unittest.TestCase):
@@ -26,6 +26,22 @@ class PartyEmailTemplateTests(unittest.TestCase):
                 draft = draft_email("- #1: Test condition", party, "English")
                 self.assertIn(phrase, draft)
                 self.assertIn("- #1: Test condition", draft)
+
+    def test_spanish_selection_localizes_condition_lines(self):
+        translated = condition_for_email_language(
+            "Provide the most recent complete bank statement", "Spanish"
+        )
+        self.assertIn("estado de cuenta bancario", translated)
+        self.assertNotIn("bank statement", translated.lower())
+
+    def test_unknown_spanish_condition_does_not_leak_english(self):
+        translated = condition_for_email_language(
+            "Unmapped proprietary lender wording", "Spanish"
+        )
+        self.assertEqual(
+            translated,
+            "Proporcione la documentación solicitada para completar esta condición del préstamo.",
+        )
 
 
 if __name__ == "__main__":
