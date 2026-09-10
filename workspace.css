@@ -149,6 +149,36 @@ html[data-theme] body [class*="_party_choices"] [data-testid="stCheckbox"] label
 html[data-theme] body [class*="_party_choices"] [data-testid="stCheckbox"] p {
     font-size: 13px !important; font-weight: 400 !important;
 }
+.pa-condition-section-title {
+    color: var(--accent) !important; font-size: 11px; line-height: 26px;
+    font-weight: 750; letter-spacing: .035em; text-transform: uppercase;
+}
+.pa-condition-section-title span {
+    color: var(--slate-500) !important; font-weight: 550; letter-spacing: 0;
+}
+html[data-theme] body [class*="_section_toolbar"] {
+    border-top: 1px solid var(--slate-200); margin-top: 12px; padding-top: 4px;
+}
+html[data-theme] body [class*="_section_toolbar"] [data-testid="stHorizontalBlock"] {
+    align-items: center !important; gap: 6px !important;
+}
+html[data-theme] body [class*="_section_toolbar"] [data-testid="stVerticalBlock"],
+html[data-theme] body [class*="_section_toolbar"] [data-testid="stElementContainer"] {
+    gap: 0 !important; margin: 0 !important; padding: 0 !important;
+}
+html[data-theme] body [class*="_section_toolbar"] button {
+    height: 24px !important; min-height: 24px !important; padding: 0 7px !important;
+    background: transparent !important; background-image: none !important;
+    border: 1px solid transparent !important; border-radius: 4px !important;
+    box-shadow: none !important; transform: none !important;
+}
+html[data-theme] body [class*="_section_toolbar"] button:hover {
+    background: var(--bg-subtle) !important; border-color: var(--slate-200) !important;
+}
+html[data-theme] body [class*="_section_toolbar"] button p {
+    color: var(--slate-600) !important; font-size: 11px !important;
+    font-weight: 600 !important; line-height: 20px !important; margin: 0 !important;
+}
 html[data-theme] body [data-testid="stHorizontalBlock"]:has(.pa-condition-description):not(:has([data-testid="stHorizontalBlock"] .pa-condition-description)) [data-testid="stCheckbox"] label {
     min-height: 26px !important; height: 26px !important; padding: 0 !important;
 }

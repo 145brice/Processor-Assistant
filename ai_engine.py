@@ -1609,6 +1609,24 @@ _EMAIL_TEMPLATES = {
             "Gracias,\n[Su Nombre]\nProcesador de Prestamos"
         ),
     },
+    "Processor": {
+        "English": (
+            "Subject: Loan File Follow-Up - Outstanding Conditions\n\n"
+            "Hi,\n\n"
+            "The following processing items remain outstanding on this loan file:\n\n"
+            "{conditions}\n\n"
+            "Please update the file or let me know what is still needed to complete these items.\n\n"
+            "Thank you,\n[Your Name]\nLoan Processor"
+        ),
+        "Spanish": (
+            "Asunto: Seguimiento del Expediente - Condiciones Pendientes\n\n"
+            "Hola,\n\n"
+            "Los siguientes documentos de procesamiento siguen pendientes en este expediente:\n\n"
+            "{conditions}\n\n"
+            "Por favor actualice el expediente o indique que falta para completar estos documentos.\n\n"
+            "Gracias,\n[Su Nombre]\nProcesador de Prestamos"
+        ),
+    },
     "Insurance": {
         "English": (
             "Subject: Insurance Documentation Needed - Loan File\n\n"

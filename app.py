@@ -6467,15 +6467,58 @@ def show_dashboard():
                             )
                         )
 
+                    def _scan_section_rows(_section):
+                        return [
+                            (_idx, _cond)
+                            for _idx, _cond in _scan_display_items
+                            if _scan_sections_for_condition(_cond)[0] == _section
+                        ]
+
+                    def _scan_section_checkbox_key(_section, _idx, _cond):
+                        _cond_uid = f"{_idx}_{_cond.get('num', _idx)}"
+                        return f"{_scan_fkey}_{_cond_uid}_{_section}_chk"
+
                     def _scan_render_group_heading(_section, _count):
-                        st.markdown(
-                            f'<div style="font-size:11px;font-weight:800;color:#2563eb;'
-                            f'text-transform:uppercase;letter-spacing:0.5px;margin:14px 0 5px 0;'
-                            f'padding-top:7px;border-top:1px solid var(--slate-200);">'
-                            f'{_SECTION_LABEL_SCAN.get(_section, _section + " Conditions")} '
-                            f'<span style="color:var(--slate-500);text-transform:none;">({_count})</span></div>',
-                            unsafe_allow_html=True,
+                        _section_rows = _scan_section_rows(_section)
+                        _section_keys = [
+                            _scan_section_checkbox_key(_section, _idx, _cond)
+                            for _idx, _cond in _section_rows
+                        ]
+                        _all_checked = bool(_section_keys) and all(
+                            st.session_state.get(_key, False) for _key in _section_keys
                         )
+                        with st.container(key=f"{_scan_fkey}_{_section}_section_toolbar"):
+                            _heading_col, _check_all_col, _draft_section_col = st.columns([7.5, 1.25, 1.55])
+                            with _heading_col:
+                                st.markdown(
+                                    f'<div class="pa-condition-section-title">'
+                                    f'{_SECTION_LABEL_SCAN.get(_section, _section + " Conditions")} '
+                                    f'<span>({_count})</span></div>',
+                                    unsafe_allow_html=True,
+                                )
+                            with _check_all_col:
+                                if st.button(
+                                    "Clear all" if _all_checked else "Check all",
+                                    key=f"{_scan_fkey}_{_section}_check_all",
+                                    help=f'{"Clear" if _all_checked else "Select"} every condition in this section.',
+                                    use_container_width=True,
+                                ):
+                                    for _key in _section_keys:
+                                        st.session_state[_key] = not _all_checked
+                                    st.rerun()
+                            with _draft_section_col:
+                                if st.button(
+                                    "Draft email",
+                                    key=f"{_scan_fkey}_{_section}_draft_section",
+                                    help=f"Draft a {_section.lower()}-appropriate email for this section.",
+                                    use_container_width=True,
+                                ):
+                                    # A section-level draft includes the entire section so
+                                    # the user does not have to select every row first.
+                                    for _key in _section_keys:
+                                        st.session_state[_key] = True
+                                    st.session_state[f"{_scan_fkey}_email_groups_open"] = [_section]
+                                    st.rerun()
 
                     # Spreadsheet rows: normal-size content with no card wrapper. The
                     # marker identifies only the horizontal row that owns a condition.
