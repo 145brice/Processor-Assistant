@@ -5942,6 +5942,7 @@ def show_dashboard():
                         return _infer_condition_party(_desc or "")
 
                     _scan_fkey = f"scan_{_CONDITION_ROUTING_VERSION}_{_bidx}"
+                    _email_language_key = f"{_scan_fkey}_email_language"
 
                     _SECTION_ORDER_SCAN = [
                         "Borrower", "Title", "Insurance", "Appraiser",
@@ -6300,7 +6301,7 @@ def show_dashboard():
                                     st.caption(_SECTION_LABEL_SCAN.get(_section_party_for_row, _section_party_for_row))
 
                             with _actions_col:
-                                with st.popover("Actions", use_container_width=True):
+                                with st.popover("More", use_container_width=True):
                                     with st.expander("Full condition"):
                                         st.text(_orig_desc)
                                     if st.button(
@@ -6308,10 +6309,12 @@ def show_dashboard():
                                         help="Open Fannie Mae / Freddie Mac / USDA guidelines for this condition",
                                     ):
                                         st.session_state[f"{_uid}_guide_open"] = not st.session_state.get(f"{_uid}_guide_open", False)
-                                    if st.button("Plain", key=f"{_uid}_plain", use_container_width=True):
+                                    if st.button("Simplify wording", key=f"{_uid}_plain", use_container_width=True,
+                                                 help="Show this condition in clear, everyday language."):
                                         _key = f"{_uid}_plain_open"
                                         st.session_state[_key] = not st.session_state.get(_key, False)
-                                    if st.button("Draft", key=f"{_uid}_draft", use_container_width=True):
+                                    if st.button("Email this item", key=f"{_uid}_draft", use_container_width=True,
+                                                 help="Create an email for this condition in the selected language."):
                                         _key = f"{_uid}_draft_open"
                                         st.session_state[_key] = not st.session_state.get(_key, False)
 
@@ -6351,25 +6354,21 @@ def show_dashboard():
                         """Editable one-condition email directly beneath its row."""
                         import html as _inline_html
                         import urllib.parse as _inline_url
+                        from ai_engine import condition_for_email_language as _inline_localize
                         from ai_engine import draft_email as _inline_draft
 
                         _party = _party or "Borrower"
                         _is_client = _party in {"Borrower", "Co-Borrower"}
                         _desc = str(_condition.get("desc", ""))
                         _request_text = _to_client_language(_desc, _party) if _is_client else _desc
-                        _language_key = f"{_uid_key}_draft_language"
-                        _language = st.selectbox(
-                            "Email language",
-                            ["English", "Spanish"],
-                            key=_language_key,
-                            label_visibility="collapsed",
-                        )
+                        _language = st.session_state.get(_email_language_key, "English")
+                        _request_text = _inline_localize(_request_text, _language)
                         _body = _inline_draft(
                             f"- #{_condition.get('num', '')}: {_request_text}",
                             _party,
                             _language,
                         )
-                        _edit_key = f"{_uid_key}_draft_body"
+                        _edit_key = f"{_uid_key}_draft_body_{_language.lower()}"
                         st.text_area(
                             "Edit email",
                             value=_body,
@@ -6379,10 +6378,11 @@ def show_dashboard():
                         )
                         _edited = st.session_state.get(_edit_key, _body)
                         _recipient = _scan_contact_email_for_section(_party)
-                        _subject = (
-                            f"{_SEND_LABEL_SCAN.get(_party, 'Condition request')} "
-                            f"#{_condition.get('num', '')}"
+                        _subject_prefix = (
+                            "Solicitud de condición" if _language == "Spanish"
+                            else _SEND_LABEL_SCAN.get(_party, "Condition request")
                         )
+                        _subject = f"{_subject_prefix} #{_condition.get('num', '')}"
                         _params = {"su": _subject, "body": _edited}
                         if _recipient:
                             _params["to"] = _recipient
@@ -6411,7 +6411,7 @@ def show_dashboard():
                         st.session_state[_compact_view_key] = _compact_view
                         st.rerun()
 
-                    _scan_group_col, _scan_sort_col = st.columns([1.35, 1.0])
+                    _scan_group_col, _scan_sort_col, _scan_language_col = st.columns([1.35, 1.0, 0.8])
                     with _scan_group_col:
                         _scan_separate_by_party = st.toggle(
                             "Separate by responsible party",
@@ -6425,6 +6425,12 @@ def show_dashboard():
                             ["Original order", "Condition #", "Status", "Responsible party"],
                             key=f"{_scan_fkey}_sort_mode",
                             help="Sort the extracted conditions like a spreadsheet column.",
+                        )
+                    with _scan_language_col:
+                        st.selectbox(
+                            "Email language", ["English", "Spanish"],
+                            key=_email_language_key,
+                            help="This language is used for every individual and section email.",
                         )
 
                     def _scan_number_sort_value(_item):
@@ -6508,7 +6514,7 @@ def show_dashboard():
                                     st.rerun()
                             with _draft_section_col:
                                 if st.button(
-                                    "Draft email",
+                                    "Email section",
                                     key=f"{_scan_fkey}_{_section}_draft_section",
                                     help=f"Draft a {_section.lower()}-appropriate email for this section.",
                                     use_container_width=True,
@@ -6625,21 +6631,21 @@ def show_dashboard():
                                         label_visibility="collapsed",
                                     )
                                 with _action_col:
-                                    with st.popover("Actions", use_container_width=True):
+                                    with st.popover("More", use_container_width=True):
                                         with st.expander("Full condition"):
                                             st.text(_orig_desc)
                                         if st.button(
-                                            "Plain",
+                                            "Simplify wording",
                                             key=f"{_uid}_compact_plain",
-                                            help="Show client-friendly wording",
+                                            help="Show this condition in clear, everyday language.",
                                             use_container_width=True,
                                         ):
                                             _key = f"{_uid}_plain_open"
                                             st.session_state[_key] = not st.session_state.get(_key, False)
                                         if st.button(
-                                            "Draft",
+                                            "Email this item",
                                             key=f"{_uid}_compact_draft",
-                                            help="Draft an email for this condition",
+                                            help="Create an email for this condition in the selected language.",
                                             use_container_width=True,
                                         ):
                                             _key = f"{_uid}_draft_open"
@@ -6685,22 +6691,27 @@ def show_dashboard():
                             if _scan_condition_checked_for_section(c, _draft_party)
                         ]
                         _group_to = _draft_party or "Borrower"
-                        _group_lang = st.session_state.get(f"{_scan_fkey}_{_draft_party}_email_group_lang", "English")
+                        _group_lang = st.session_state.get(_email_language_key, "English")
                         if not _checked_for_email:
                             return
                         try:
+                            from ai_engine import condition_for_email_language as _localize_email_condition
                             from ai_engine import draft_email as _draft
                             import urllib.parse as _uparse
                             _is_client_party = _group_to in {"Borrower", "Co-Borrower"}
                             _cond_text = "\n".join(
-                                f"- #{c['num']}: {(_to_client_language(c['desc'], _group_to) if _is_client_party else c['desc'])}"
+                                f"- #{c['num']}: {_localize_email_condition((_to_client_language(c['desc'], _group_to) if _is_client_party else c['desc']), _group_lang)}"
                                 for c in _checked_for_email
                             )
                             _ebody = _draft(_cond_text, _group_to, _group_lang)
                         except Exception as _e:
                             _ebody = f"(Draft failed: {_e})"
                             import urllib.parse as _uparse
-                        _subject = f"{_SEND_LABEL_SCAN.get(_group_to, 'Conditions request')} - {_batch['type']}"
+                        _subject_prefix = (
+                            "Solicitud de condiciones del préstamo" if _group_lang == "Spanish"
+                            else _SEND_LABEL_SCAN.get(_group_to, "Conditions request")
+                        )
+                        _subject = f"{_subject_prefix} - {_batch['type']}"
                         _recipient_email = _scan_contact_email_for_section(_group_to)
                         _compose_params = {"su": _subject, "body": _ebody}
                         if _recipient_email:
@@ -6729,10 +6740,12 @@ def show_dashboard():
                             "Edit draft before composing",
                             value=_ebody,
                             height=180,
-                            key=f"{_scan_fkey}_{_draft_party}_email_body_edit",
+                            key=f"{_scan_fkey}_{_draft_party}_email_body_edit_{_group_lang.lower()}",
                             label_visibility="collapsed",
                         )
-                        _edited_body = st.session_state.get(f"{_scan_fkey}_{_draft_party}_email_body_edit", _ebody)
+                        _edited_body = st.session_state.get(
+                            f"{_scan_fkey}_{_draft_party}_email_body_edit_{_group_lang.lower()}", _ebody
+                        )
                         _compose_params["body"] = _edited_body
                         _gmail_compose = "https://mail.google.com/mail/?view=cm&fs=1&" + _uparse.urlencode(_compose_params)
 
@@ -6852,7 +6865,7 @@ def show_dashboard():
                             _parties_with_checked.append(_section_party)
 
                     if _parties_with_checked:
-                        _send_cols = st.columns([3, 1.1, 1.4])
+                        _send_cols = st.columns([3, 1.4])
                         with _send_cols[0]:
                             _summary = ", ".join(
                                 _SECTION_LABEL_SCAN.get(p, p).replace(" Conditions", "")
@@ -6866,12 +6879,6 @@ def show_dashboard():
                                 unsafe_allow_html=True,
                             )
                         with _send_cols[1]:
-                            st.selectbox(
-                                "Language", ["English", "Spanish"],
-                                key=f"{_scan_fkey}_email_group_lang_global",
-                                label_visibility="collapsed",
-                            )
-                        with _send_cols[2]:
                             if st.button("Draft emails", type="primary",
                                          key=f"{_scan_fkey}_email_draft_all_btn",
                                          use_container_width=True):
@@ -6881,10 +6888,6 @@ def show_dashboard():
                         _open_groups = st.session_state.get(f"{_scan_fkey}_email_groups_open", [])
                         for _open_party in _open_groups:
                             if _open_party in _parties_with_checked:
-                                # Mirror the global language pick into the per-party state key
-                                # the existing _render_scan_email_draft reads from
-                                st.session_state[f"{_scan_fkey}_{_open_party}_email_group_lang"] = \
-                                    st.session_state.get(f"{_scan_fkey}_email_group_lang_global", "English")
                                 _render_scan_email_draft(_open_party)
 
                     # â”€â”€ Central communications log for this scan batch â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
