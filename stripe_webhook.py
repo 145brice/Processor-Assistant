@@ -184,4 +184,25 @@ def handle_stripe_webhook(payload: bytes, signature_header: str) -> tuple[int, d
 
     if not result.get("ok"):
         return 202, {"ok": False, "email": email, "status": status, "error": result.get("error", "Profile not updated.")}
-    return 200, {"ok": True, "email": email, "status": status, "updated": result.get("updated", 0)}
+
+    email_results = []
+    if event_type == "checkout.session.completed":
+        try:
+            import email_service
+            tier_name = tier.title() if tier else "Paid"
+            email_results = email_service.send_purchase_emails(
+                email=email,
+                tier_name=tier_name,
+                amount_cents=_amount_cents(obj),
+                event_id=str(event.get("id") or _subscription_id(obj) or "checkout"),
+            )
+        except Exception as exc:
+            email_results = [{"ok": False, "error": str(exc)}]
+
+    return 200, {
+        "ok": True,
+        "email": email,
+        "status": status,
+        "updated": result.get("updated", 0),
+        "email_notifications": email_results,
+    }
