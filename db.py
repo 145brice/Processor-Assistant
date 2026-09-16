@@ -155,6 +155,7 @@ def _upsert_local_user(email: str, password: str, display_name: str = "", role: 
         )
         conn.commit()
         user_id = str(row["id"])
+        created = False
     else:
         cur = conn.execute(
             "INSERT INTO users (email, password_hash, display_name, role) VALUES (?, ?, ?, ?)",
@@ -162,19 +163,38 @@ def _upsert_local_user(email: str, password: str, display_name: str = "", role: 
         )
         conn.commit()
         user_id = str(cur.lastrowid)
+        created = True
     conn.close()
-    return {"user_id": user_id, "email": email, "display_name": display_name, "role": role}
+    return {
+        "user_id": user_id,
+        "email": email,
+        "display_name": display_name,
+        "role": role,
+        "created": created,
+    }
 
 
 def upsert_oauth_user(email: str, display_name: str = "", role: str = "Processor", external_id: str = "") -> dict:
     """Create/update a local shadow user for OAuth logins."""
     marker_password = f"oauth:{external_id or email}"
-    return _upsert_local_user(
+    user = _upsert_local_user(
         email=(email or "").strip().lower(),
         password=marker_password,
         display_name=(display_name or "").strip(),
         role=role or "Processor",
     )
+    if user.get("created"):
+        try:
+            import email_service
+            user["email_notifications"] = email_service.send_signup_emails(
+                email=user["email"],
+                display_name=user["display_name"],
+                role=user["role"],
+                user_id=user["user_id"],
+            )
+        except Exception as exc:
+            user["email_notifications"] = [{"ok": False, "error": str(exc)}]
+    return user
 
 
 def _sync_user_to_supabase_auth(email: str, password: str, display_name: str, role: str) -> dict:
@@ -277,6 +297,18 @@ def signup(email: str, password: str, display_name: str = "", role: str = "Proce
             })
         except Exception:
             pass
+        email_results = []
+        if local.get("created"):
+            try:
+                import email_service
+                email_results = email_service.send_signup_emails(
+                    email=email,
+                    display_name=display_name,
+                    role=role,
+                    user_id=local["user_id"],
+                )
+            except Exception as exc:
+                email_results = [{"ok": False, "error": str(exc)}]
         return {
             "success": True,
             "user_id": local["user_id"],
@@ -284,6 +316,7 @@ def signup(email: str, password: str, display_name: str = "", role: str = "Proce
             "email": email,
             "display_name": display_name,
             "role": role,
+            "email_notifications": email_results,
         }
     except sqlite3.IntegrityError:
         return {"error": "Email already registered"}

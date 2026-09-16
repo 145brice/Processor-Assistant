@@ -59,6 +59,45 @@ class StripeWebhookTierTests(unittest.TestCase):
         self.assertEqual(tiers.tier_for_amount_cents(2999), "pro")
         self.assertEqual(tiers.tier_for_amount_cents(4999), "unlimited")
 
+    def test_checkout_sends_purchase_email_after_access_update(self):
+        email_calls = []
+        fake_supabase = types.SimpleNamespace(
+            update_subscription_by_email=lambda *args, **kwargs: {"ok": True, "updated": 1}
+        )
+        fake_email = types.SimpleNamespace(
+            send_purchase_emails=lambda **kwargs: email_calls.append(kwargs) or [{"ok": True}]
+        )
+        old_supabase = sys.modules.get("supabase_auth")
+        old_email = sys.modules.get("email_service")
+        sys.modules["supabase_auth"] = fake_supabase
+        sys.modules["email_service"] = fake_email
+        try:
+            payload, signature = self._signed_payload({
+                "id": "evt_checkout_test",
+                "type": "checkout.session.completed",
+                "data": {"object": {
+                    "customer_details": {"email": "buyer@example.com"},
+                    "subscription": "sub_test",
+                    "amount_total": 2999,
+                }},
+            })
+            code, result = stripe_webhook.handle_stripe_webhook(payload, signature)
+        finally:
+            if old_supabase is None:
+                sys.modules.pop("supabase_auth", None)
+            else:
+                sys.modules["supabase_auth"] = old_supabase
+            if old_email is None:
+                sys.modules.pop("email_service", None)
+            else:
+                sys.modules["email_service"] = old_email
+
+        self.assertEqual(code, 200)
+        self.assertEqual(email_calls[0]["email"], "buyer@example.com")
+        self.assertEqual(email_calls[0]["tier_name"], "Pro")
+        self.assertEqual(email_calls[0]["event_id"], "evt_checkout_test")
+        self.assertTrue(result["email_notifications"][0]["ok"])
+
 
 if __name__ == "__main__":
     unittest.main()
