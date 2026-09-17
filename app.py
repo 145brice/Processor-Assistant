@@ -3401,6 +3401,11 @@ def _load_user_gemini_key_into_session(force: bool = False) -> str:
 
 def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: str = "overview") -> None:
     """Normalize all successful auth paths into one session update."""
+    # A browser session can change accounts through OAuth without using Logout.
+    for key in list(st.session_state):
+        if key.startswith(("ew_", "iq_")):
+            st.session_state.pop(key, None)
+    st.session_state.reader_open_file = None
     st.session_state.authenticated = True
     st.session_state.user_id = result.get("user_id")
     st.session_state.supabase_user_id = result.get("supabase_user_id")
