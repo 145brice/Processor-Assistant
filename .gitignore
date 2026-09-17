@@ -14,6 +14,7 @@ loan_docs/
 loan_activity/
 generated_docs/
 cloud_config.json
+email_config.json
 cloud_log.txt
 scan_history.json
 streamlit_local.log
