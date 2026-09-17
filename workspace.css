@@ -1,10 +1,12 @@
 /* Presentation layer shared by Scanner and Pipeline. */
 :root { --pa-main-gutter: 28px; --radius-sm: 8px; --radius-md: 12px; }
 :root[data-theme="light"] {
-    --bg-page: #f5f7fa; --bg-white: #ffffff; --bg-subtle: #f0f3f8;
-    --slate-900: #192638; --slate-700: #344359; --slate-600: #526278;
-    --slate-500: #64748b; --slate-300: #cbd5e1; --slate-200: #e2e8f0;
-    --slate-100: #f1f5f9; --accent: #385c91; --accent-light: #eaf0f8;
+    --bg-page: #dfe5ec; --bg-white: #f8fafc; --bg-subtle: #cfd8e3;
+    --slate-900: #142236; --slate-700: #25374e; --slate-600: #3e526b;
+    --slate-500: #50627a; --slate-400: #50627a; --slate-300: #8394a9;
+    --slate-200: #b4c1d0; --slate-100: #d3dce7;
+    --accent: #2c4f78; --accent-dark: #203b5c; --accent-light: #cad7e7;
+    --orange: #914409;
 }
 html body, [data-testid="stApp"] input, [data-testid="stApp"] textarea,
 [data-testid="stApp"] button, [data-testid="stMarkdownContainer"] {
@@ -203,4 +205,108 @@ html[data-theme] body [class*="_stat"] [data-testid="stSelectbox"] .react-aria-C
 }
 html[data-theme] body [data-testid="stHorizontalBlock"]:has(.pa-condition-description):not(:has([data-testid="stHorizontalBlock"] .pa-condition-description)) [class*="_chk"] {
     height: 26px !important;
+}
+
+/* Clear separation between navigation, the working canvas and primary actions. */
+:root {
+    --pa-action-bg: #375777; --pa-action-hover: #466a8e;
+    --pa-upload-bg: #1b2737; --pa-upload-border: #7187a4;
+}
+:root[data-theme="light"] {
+    --pa-action-bg: #2d4b70; --pa-action-hover: #203b5c;
+    --pa-upload-bg: #f1f4f8; --pa-upload-border: #627b99;
+}
+html[data-theme] body [data-testid="stSidebar"] {
+    --slate-900: #f5f7fb; --slate-700: #e1e8f2; --slate-600: #c0ccdc;
+    --slate-500: #b1c0d3; --slate-300: #53667e; --slate-200: #3c4f67;
+    --accent: #b8cee9; --accent-light: #36506e; --bg-subtle: #293c55;
+    background: #18273c !important; border-right: 1px solid #42546c !important;
+}
+html[data-theme] body [data-testid="stSidebar"] :is(p, span, label, h1, h2, h3, strong) {
+    color: var(--slate-700) !important;
+}
+html[data-theme] body [data-testid="stSidebar"] button[kind] {
+    color: #e1e8f2 !important; background: transparent !important;
+    border: 1px solid transparent !important;
+    min-height: 38px !important; height: auto !important;
+}
+html[data-theme] body [data-testid="stSidebar"] button[kind] :is(p, span, div) {
+    color: inherit !important;
+}
+html[data-theme] body [data-testid="stSidebar"] button[kind="primary"] {
+    background: #36506e !important; border-color: #6e89aa !important;
+    color: #ffffff !important; box-shadow: inset 3px 0 #b8cee9 !important;
+}
+html[data-theme] body [data-testid="stSidebar"] button[kind]:hover {
+    background: #293c55 !important; border-color: #6e89aa !important;
+    color: #ffffff !important;
+}
+html[data-theme="light"] body .pa-pipe-dash,
+html[data-theme="light"] body .pa-pipe-dash::before {
+    background: #cbd5e2 !important; border-bottom-color: #8b9db4 !important;
+}
+html[data-theme="light"] body .pa-pchip {
+    background: #f1f4f8 !important; border: 1px solid #9bacc2 !important;
+}
+html[data-theme] body .pa-pchip:hover {
+    background: var(--accent-light) !important; border-color: var(--accent) !important;
+}
+html[data-theme="dark"] body .pa-pipe-dash {
+    --green-dark: #7db38d;
+}
+html[data-theme] body [data-testid="stMain"] [data-testid="stButton"] button[kind="secondary"] {
+    background: var(--bg-white) !important; color: var(--slate-700) !important;
+    border: 1px solid var(--slate-300) !important; border-radius: 6px !important;
+    min-height: 34px !important; height: auto !important; padding: 5px 12px !important;
+}
+html[data-theme] body [data-testid="stMain"] [data-testid="stButton"] button[kind="secondary"]:hover {
+    background: var(--bg-subtle) !important; border-color: var(--accent) !important;
+}
+html[data-theme] body [data-testid="stMain"] button[kind="primary"],
+html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"] button {
+    background: var(--pa-action-bg) !important; border: 1px solid var(--pa-action-bg) !important;
+    color: #ffffff !important; box-shadow: none !important;
+}
+html[data-theme] body [data-testid="stMain"] button[kind="primary"] :is(p, span),
+html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"] button :is(p, span, svg) {
+    color: #ffffff !important;
+}
+html[data-theme] body [data-testid="stMain"] button[kind="primary"]:hover,
+html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"] button:hover {
+    background: var(--pa-action-hover) !important; border-color: var(--pa-action-hover) !important;
+}
+html[data-theme] body [data-testid="stMain"] [class*="_section_toolbar"] [data-testid="stButton"] button {
+    min-height: 24px !important; padding: 0 7px !important;
+}
+html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"],
+html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"]:hover {
+    background: var(--pa-upload-bg) !important; background-image: none !important;
+    border: 2px solid var(--pa-upload-border) !important; border-radius: 10px !important;
+    padding: 20px 24px !important; box-shadow: none !important; transform: none !important;
+}
+html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"] section {
+    min-height: 110px !important; background: transparent !important;
+}
+html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"] label p {
+    text-transform: none !important; letter-spacing: 0 !important;
+    font-size: 17px !important; font-weight: 650 !important; color: var(--slate-900) !important;
+}
+html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"] button {
+    min-height: 38px !important; height: auto !important; padding: 7px 18px !important;
+}
+html body .pa-scanner-heading { margin: 4px 0 12px; }
+html body .pa-scanner-heading h2 { padding: 0 !important; margin: 0 0 5px !important; }
+html body .pa-scanner-heading p { color: var(--slate-600) !important; margin: 0 !important; }
+html body .pa-site-footer a { color: var(--accent) !important; }
+html body .pa-site-footer a:hover { text-decoration: underline !important; }
+@media (max-width: 900px) {
+    html[data-theme] body [data-testid="stMain"] [data-testid="stMainBlockContainer"],
+    html[data-theme] body [data-testid="stMain"] .block-container {
+        padding-top: 150px !important;
+    }
+}
+@media (max-width: 640px) {
+    html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"] {
+        padding: 14px !important;
+    }
 }

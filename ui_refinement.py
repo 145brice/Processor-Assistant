@@ -1,4 +1,4 @@
-"""Shared presentation for the condition workspace."""
+"""Shared presentation for Scanner and Pipeline."""
 from pathlib import Path
 
 import streamlit as st
@@ -7,6 +7,16 @@ import streamlit as st
 def apply_workspace_style():
     st.markdown(
         '<style>' + Path(__file__).with_name('workspace.css').read_text(encoding='utf-8') + '</style>',
+        unsafe_allow_html=True,
+    )
+
+
+def render_scanner_intro():
+    st.markdown(
+        '<div class="pa-scanner-heading">'
+        '<h2>Scan documents</h2>'
+        '<p>Upload loan PDFs to identify document types and match your pipeline.</p>'
+        '</div>',
         unsafe_allow_html=True,
     )
 
