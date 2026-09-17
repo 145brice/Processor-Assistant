@@ -53,6 +53,28 @@ class EmailWatchUITests(unittest.TestCase):
         self.assertEqual(len(app.exception), 0)
         self.assertEqual(len(app.text_input), 0)
 
+    def test_account_switch_clears_unsaved_password_and_previous_email(self):
+        source = Path("app.py").read_text(encoding="utf-8-sig")
+        tree = ast.parse(source)
+        login = next(node for node in tree.body if isinstance(node, ast.FunctionDef)
+                     and node.name == "_complete_login_session")
+        script = self.script.rsplit("\nshow_email_watch_controls_page()", 1)[0]
+        script = script.replace("return 'alice'", "return st.session_state.get('user_id', 'alice')")
+        script += ("\ndef _is_owner_admin_email(email): return False\n"
+                   "def _load_user_gemini_key_into_session(**kwargs): pass\n"
+                   "def _save_session(): pass\n"
+                   + ast.get_source_segment(source, login)
+                   + "\nif st.button('Switch account', key='switch'):\n"
+                   "    _complete_login_session({'user_id': 'bob', 'email': 'bob@example.com'})\n"
+                   "show_email_watch_controls_page()\n")
+        app = AppTest.from_string(script).run(timeout=30)
+        app.text_input(key="ew_email").set_value("alice@example.com")
+        app.text_input(key="ew_pass").set_value("unsaved-private-password")
+        app.button(key="switch").click().run(timeout=30)
+        self.assertEqual(len(app.exception), 0)
+        self.assertEqual(app.text_input(key="ew_email").value, "")
+        self.assertEqual(app.text_input(key="ew_pass").value, "")
+
 
 if __name__ == "__main__":
     unittest.main()
