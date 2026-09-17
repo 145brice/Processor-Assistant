@@ -4484,7 +4484,9 @@ def show_sidebar():
 
         # â”€â”€ Email Watch live stats for badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         import email_watch as _ew
-        _ew_status  = _ew.get_status()
+        _ew_status = {"running": False, "pending_count": 0}
+        if _current_auth_user_key() and not st.session_state.get("sandbox_mode"):
+            _ew_status = _ew.for_user(_current_auth_user_key()).get_status()
         _ew_pending = _ew_status["pending_count"]
         _ew_running = _ew_status["running"]
         _ew_dot     = "ON" if _ew_running else "OFF"
@@ -4699,6 +4701,9 @@ def show_sidebar():
         # Logout always visible
         st.markdown("---")
         if st.button("Logout", use_container_width=True):
+            for key in list(st.session_state):
+                if key.startswith(("ew_", "iq_")):
+                    st.session_state.pop(key, None)
             _clear_session()
             for key in DEFAULTS:
                 st.session_state[key] = DEFAULTS[key]
@@ -11020,13 +11025,24 @@ def show_email_watch_controls_page():
     """Email Watch Controls: status, start/stop, credentials, settings."""
     import email_watch as ew
 
+    if st.session_state.get("sandbox_mode") or not _current_auth_user_key():
+        st.info("Sign in to your account to connect your email inbox.")
+        return
+    ew = ew.for_user(_current_auth_user_key())
+    if st.session_state.pop("ew_clear_password", False):
+        st.session_state.pop("ew_pass", None)
+
     st.markdown("## Email Watch  Controls")
     st.caption(
         "Watch your inbox for new attachments. Runs in the background "
         "you can use Scanner or Pipeline normally while it checks."
     )
 
-    cfg = ew.get_config()
+    try:
+        cfg = ew.get_config()
+    except ValueError as exc:
+        st.error(str(exc))
+        return
     status = ew.get_status()
 
     # â”€â”€ Status card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
@@ -11062,7 +11078,8 @@ def show_email_watch_controls_page():
         else:
             if st.button("Start Watching", use_container_width=True, type="primary"):
                 try:
-                    ew.start()
+                    from crm import get_all_loans
+                    ew.start(loans=_visible_account_loans(get_all_loans()))
                     st.success("Inbox watch started - checking every "
                                f"{cfg.get('interval_minutes', 5)} minutes.")
                     st.rerun()
@@ -11072,7 +11089,8 @@ def show_email_watch_controls_page():
         if st.button("Check Now", use_container_width=True,
                      help="Run one check immediately without waiting for interval"):
             with st.spinner("Checking inbox"):
-                _found, _msg = ew.check_now()
+                from crm import get_all_loans
+                _found, _msg = ew.check_now(loans=_visible_account_loans(get_all_loans()))
             if _msg.startswith("Error"):
                 st.error(_msg)
             elif _found:
@@ -11107,7 +11125,8 @@ def show_email_watch_controls_page():
         )
         password = st.text_input(
             "App password (not your real password)",
-            value=cfg.get("password", ""),
+            value="",
+            help="Leave blank to keep your saved app password for this inbox.",
             type="password",
             placeholder="xxxx xxxx xxxx xxxx",
             key="ew_pass",
@@ -11141,12 +11160,25 @@ def show_email_watch_controls_page():
             )
 
         if st.button("Save Credentials", key="ew_save_creds", type="primary"):
-            if email_addr and password:
+            try:
                 ew.save_config(email_addr, password, provider, custom_host, interval, since_hours)
-                st.success("Credentials saved. Click â–¶ Start Watching to begin.")
-                st.rerun()
+            except ValueError as exc:
+                st.error(str(exc))
             else:
-                st.error("Enter both email address and app password.")
+                st.session_state.ew_clear_password = True
+                st.success("Credentials saved securely. Start Watching to begin.")
+                st.rerun()
+
+        if cfg and st.button("Disconnect inbox and remove saved credentials", key="ew_disconnect"):
+            try:
+                ew.disconnect()
+            except ValueError as exc:
+                st.error(str(exc))
+            else:
+                for key in list(st.session_state):
+                    if key.startswith("ew_"):
+                        st.session_state.pop(key, None)
+                st.rerun()
 
     # â”€â”€ How it works â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     with st.expander("¸ How Email Watch works"):
@@ -11154,19 +11186,20 @@ def show_email_watch_controls_page():
 **What it does:**
 - Checks your inbox every N minutes (runs in the background you can use the rest of the app normally)
 - Looks for **unread emails with PDF attachments**
-- Downloads each PDF to the `incoming/` folder in this app's directory
+- Saves attachments to your private incoming queue
 - Reads the first 3 pages of the PDF to extract borrower names
 - Fuzzy-matches those names against every loan in your Pipeline
 - Shows a notification card here and in the sidebar
 
 **Privacy:**
-- Your credentials are saved locally in `email_config.json` in the app folder
+- Your credentials are encrypted and saved privately to your account
 - The app connects to your IMAP server, downloads attachments, then disconnects
 - Uses your configured IMAP connection to read matching messages and attachments
 
 **Toggle:**
 - On: background thread checks every N minutes, then sleeps
-- Off: thread stops within a few seconds no more peeking
+- Off: stops after any inbox check already in progress finishes
+- After a server restart, watching resumes when you next sign in
 
 **Borrower matching confidence:**
 - 80%+ = high confidence match (name found in PDF text)
@@ -11178,6 +11211,12 @@ def show_email_watch_controls_page():
 def show_email_watch_page():
     """Email Watch Results: pending matches and incoming queue."""
     import email_watch as ew
+    from html import escape
+
+    if st.session_state.get("sandbox_mode") or not _current_auth_user_key():
+        st.info("Sign in to your account to connect your email inbox.")
+        return
+    ew = ew.for_user(_current_auth_user_key())
 
     _ew_status  = ew.get_status()
     _ew_pending = _ew_status["pending_count"]
@@ -11227,8 +11266,8 @@ def show_email_watch_page():
                 mc1, mc2 = st.columns([3, 1])
                 with mc1:
                     st.markdown(
-                        f'<div style="font-size:12px;color:var(--slate-600);">From: {m["sender"]}</div>'
-                        f'<div style="font-size:12px;color:var(--slate-600);">Subject: {m["subject"]}</div>'
+                        f'<div style="font-size:12px;color:var(--slate-600);">From: {escape(m["sender"])}</div>'
+                        f'<div style="font-size:12px;color:var(--slate-600);">Subject: {escape(m["subject"])}</div>'
                         f'<div style="font-size:13px;font-weight:700;color:{conf_color};margin-top:6px;">'
                         f'{conf_label}</div>',
                         unsafe_allow_html=True,
@@ -11334,8 +11373,7 @@ def show_email_watch_page():
         st.markdown("---")
 
     # â”€â”€ Incoming Queue all files in the incoming/ folder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    import email_watch as ew
-    _incoming_dir = os.path.join(os.path.dirname(__file__), "incoming")
+    _incoming_dir = str(ew.incoming_dir)
     _inbox_files  = []
     if os.path.isdir(_incoming_dir):
         _inbox_files = [
@@ -11359,14 +11397,14 @@ def show_email_watch_page():
             )
             from doc_verify import verify as _dv_q
             from crm import get_all_loans as _iq_loans
-            _pipeline = {l.get("id"): l for l in _iq_loans()}
+            _pipeline = {l.get("id"): l for l in _visible_account_loans(_iq_loans())}
 
             for _qi, _qfname in enumerate(_inbox_files):
                 _qfpath = os.path.join(_incoming_dir, _qfname)
                 try:
                     with open(_qfpath, "rb") as _qf:
                         _qbytes = _qf.read()
-                    _qv = _dv_q(_qbytes, _qfname)
+                    _qv = _dv_q(_qbytes, _qfname, loans=list(_pipeline.values()))
                 except Exception:
                     _qv = {"doc_type": "Document", "ok_list": [], "flags": ["Could not read file"],
                            "verdict": "check", "borrower": None, "loan_num": "",
