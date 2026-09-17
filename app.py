@@ -10,7 +10,7 @@ import secrets
 import html as _html
 import streamlit as st
 from dotenv import load_dotenv
-from ui_refinement import apply_workspace_style, party_picker
+from ui_refinement import apply_workspace_style, party_picker, render_scanner_intro
 
 # Load .env from app dir and parent workspace for local runs
 _APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -4748,47 +4748,7 @@ def show_dashboard():
 
     # â”€â”€ Header: hero when empty, compact when active â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if not _has_batches and not _has_upload:
-        _loan_ct = 0
-        try:
-            from crm import get_all_loans as _gl_hero
-            _loan_ct = len(_visible_account_loans(_gl_hero()))
-        except Exception:
-            pass
-        _user = st.session_state.get("user_name", "") or "there"
-        _hero_name = _user.split()[0] if _user else "there"
-        st.markdown(
-            f"""
-            <div style="margin:6px 0 14px 0;padding:18px 22px;border-radius:16px;
-                 background:linear-gradient(120deg, var(--accent-light) 0%, rgba(34,197,94,0.07) 100%);
-                 border:1px solid var(--slate-300);display:flex;align-items:center;gap:16px;
-                 box-shadow:var(--shadow-card);">
-              <div style="width:50px;height:50px;border-radius:14px;flex-shrink:0;
-                   background:linear-gradient(135deg,#3b82f6,#1d4ed8);
-                   display:flex;align-items:center;justify-content:center;
-                   box-shadow:0 6px 16px rgba(59,130,246,0.35);">
-                <svg width="27" height="27" viewBox="0 0 24 24" fill="none"
-                     stroke="#ffffff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M3 7V5a2 2 0 0 1 2-2h2M17 3h2a2 2 0 0 1 2 2v2M21 17v2a2 2 0 0 1-2 2h-2M7 21H5a2 2 0 0 1-2-2v-2"/>
-                  <path d="M7 12h10"/>
-                </svg>
-              </div>
-              <div style="flex:1;min-width:0;">
-                <div style="font-size:21px;font-weight:900;color:var(--slate-900);line-height:1.15;
-                     letter-spacing:-0.3px;">Hey {_hero_name} &#128075; Ready to scan?</div>
-                <div style="font-size:13px;color:var(--slate-600);margin-top:4px;">
-                  Drop a loan doc below &mdash; it auto-detects the type and matches it to your pipeline.
-                </div>
-              </div>
-              <div style="text-align:center;flex-shrink:0;padding:6px 16px;border-radius:12px;
-                   background:var(--bg-white);border:1px solid var(--slate-300);">
-                <div style="font-size:24px;font-weight:900;color:var(--accent);line-height:1;">{_loan_ct}</div>
-                <div style="font-size:10px;color:var(--slate-600);font-weight:700;
-                     text-transform:uppercase;letter-spacing:0.5px;margin-top:3px;">in pipeline</div>
-              </div>
-            </div>
-            """,
-            unsafe_allow_html=True,
-        )
+        render_scanner_intro()
 
         if not _has_ai_key:
             st.markdown(
@@ -4822,14 +4782,6 @@ def show_dashboard():
             '</div>',
             unsafe_allow_html=True,
         )
-
-    _scan_shortcut_left, _scan_shortcut_right = st.columns([4, 1.35])
-    with _scan_shortcut_right:
-        if st.button("Bulk Pipeline Import", key="scanner_bulk_pipeline_import",
-                     use_container_width=True, type="primary"):
-            st.session_state.page = "pipeline"
-            st.session_state.pipeline_import_open = True
-            st.rerun()
 
     if _recent_scans:
         with st.expander(f"Recent Scans ({len(_recent_scans)} saved for 7 days)", expanded=False):
@@ -4877,16 +4829,26 @@ def show_dashboard():
                 st.rerun()
 
     # â”€â”€ File uploader (additive) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-    st.info(
-        "Security note: uploaded PDFs are processed for this scan only and are not stored. "
-        "The app may save non-sensitive extracted fields, loan metadata, and recent scan history for your signed-in account."
-    )
-    render_compliance_statement(compact=True)
     new_files = st.file_uploader(
-        "Drop PDFs here - or click to browse" if not _has_upload else "Add more PDFs",
+        "Upload loan PDFs" if not _has_upload else "Add more PDFs",
         type=["pdf"], accept_multiple_files=True,
         key="dash_uploader",
     )
+
+    _scan_privacy, _scan_import = st.columns([4, 1.35])
+    with _scan_privacy:
+        with st.expander("Privacy and data handling", expanded=False):
+            st.write(
+                "Uploaded PDFs are processed for this scan only and are not stored. "
+                "The app may save non-sensitive extracted fields, loan metadata, and recent scan history for your signed-in account."
+            )
+            render_compliance_statement(compact=True)
+    with _scan_import:
+        if st.button("Import pipeline spreadsheet", key="scanner_bulk_pipeline_import",
+                     use_container_width=True):
+            st.session_state.page = "pipeline"
+            st.session_state.pipeline_import_open = True
+            st.rerun()
 
     if new_files:
         import hashlib as _hashlib
@@ -14372,10 +14334,10 @@ def render_site_footer() -> None:
     st.markdown("---")
     st.markdown(
         """
-        <div style="text-align:center;font-size:12px;color:var(--slate-600);padding:6px 0 16px 0;">
-          <a href="?page=privacy" style="color:#93c5fd;text-decoration:none;">Privacy Policy</a>
+        <div class="pa-site-footer" style="text-align:center;font-size:12px;color:var(--slate-600);padding:6px 0 16px 0;">
+          <a href="?page=privacy" style="color:var(--accent);text-decoration:none;">Privacy Policy</a>
           &nbsp;|&nbsp;
-          <a href="?page=terms" style="color:#93c5fd;text-decoration:none;">Terms of Service</a>
+          <a href="?page=terms" style="color:var(--accent);text-decoration:none;">Terms of Service</a>
         </div>
         """,
         unsafe_allow_html=True,
