@@ -104,7 +104,7 @@ _MONTHS = {
 # Main entry point
 # ─────────────────────────────────────────────────────────────────────────────
 
-def verify(pdf_bytes: bytes, filename: str = "", borrower_hint: str = "") -> dict:
+def verify(pdf_bytes: bytes, filename: str = "", borrower_hint: str = "", *, loans=None) -> dict:
     """
     Run quick verification on a PDF.
     Returns a dict with all checks + a suggestion card the UI can display.
@@ -119,7 +119,7 @@ def verify(pdf_bytes: bytes, filename: str = "", borrower_hint: str = "") -> dic
     days_old     = (date.today() - freshest).days if freshest else None
     date_status  = _date_flag(days_old, doc_type)
     page_status  = _page_flag(page_count, doc_type)
-    match        = _match_borrower(text, filename, borrower_hint)
+    match        = _match_borrower(text, filename, borrower_hint, loans=loans)
 
     flags   = []
     ok_list = []
@@ -367,12 +367,13 @@ def _page_flag(page_count: int, doc_type: str) -> str:
 # Borrower → pipeline matching
 # ─────────────────────────────────────────────────────────────────────────────
 
-def _match_borrower(text: str, filename: str, hint: str) -> dict:
-    try:
-        from crm import get_all_loans
-        loans = get_all_loans()
-    except Exception:
-        loans = []
+def _match_borrower(text: str, filename: str, hint: str, *, loans=None) -> dict:
+    if loans is None:
+        try:
+            from crm import get_all_loans
+            loans = get_all_loans()
+        except Exception:
+            loans = []
 
     if not loans:
         return _no_match()

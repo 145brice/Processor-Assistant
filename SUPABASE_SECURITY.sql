@@ -152,11 +152,13 @@ USING (
     key = ('user_ai:' || auth.uid()::text)
     OR key = ('pipeline_json:' || auth.uid()::text)
     OR key = ('lender_format_profiles:' || auth.uid()::text)
+    OR key = ('email_watch:' || auth.uid()::text)
 )
 WITH CHECK (
     key = ('user_ai:' || auth.uid()::text)
     OR key = ('pipeline_json:' || auth.uid()::text)
     OR key = ('lender_format_profiles:' || auth.uid()::text)
+    OR key = ('email_watch:' || auth.uid()::text)
 );
 
 CREATE POLICY "parsed_results_owner" ON parsed_results
