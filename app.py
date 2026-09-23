@@ -3855,7 +3855,7 @@ def render_no_credit_card_banner() -> None:
           </div>
           <div style="font-size:12px;font-weight:700;color:var(--slate-700);margin-top:3px;
                text-transform:uppercase;letter-spacing:0.4px;">
-            Try Processor Assistant before the beta plan starts
+            Then $49/month after your trial
           </div>
           <div style="font-size:11px;font-weight:600;color:var(--slate-600);margin-top:3px;">
             No credit card needed
@@ -4297,7 +4297,7 @@ def show_login_page():
             '<div style="font-size:19px;font-weight:800;color:var(--slate-900);'
             'letter-spacing:-0.3px;margin-bottom:2px;">Sign in to your workspace</div>'
             '<div style="font-size:12px;color:var(--slate-600);margin-bottom:8px;">'
-            'Start your 14-day free trial &mdash; no credit card needed.</div>',
+            'Start your 14-day free trial &mdash; then $49/month. No credit card needed.</div>',
             unsafe_allow_html=True,
         )
         if _env_truthy("PA_SHOW_SANDBOX", "0"):
