@@ -59,7 +59,7 @@ if _GA_MEASUREMENT_ID:
 }})();
 </script>
 """,
-        height=0,
+        height=1,
     )
 
 # --- Custom CSS ---
@@ -1992,7 +1992,7 @@ st.iframe("""
   obs2.observe(doc.body, { childList: true, subtree: true });
 })();
 </script>
-""", height=0)
+""", height=1)
 
 
 # --- Session State Defaults ---
@@ -2072,7 +2072,7 @@ def _set_browser_session_cookie(session_id: str) -> None:
 }})();
 </script>
 """,
-            height=0,
+            height=1,
         )
     except Exception:
         pass
@@ -2090,7 +2090,7 @@ def _delete_browser_session_cookie() -> None:
 }})();
 </script>
 """,
-            height=0,
+            height=1,
         )
     except Exception:
         pass
@@ -4451,7 +4451,7 @@ def show_sidebar():
         _theme_val = st.session_state["theme"]
         st.iframe(
             f'<script>window.parent.document.documentElement.setAttribute("data-theme","{_theme_val}");</script>',
-            height=0,
+            height=1,
         )
 
         st.markdown(
