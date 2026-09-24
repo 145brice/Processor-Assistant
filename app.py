@@ -35,11 +35,10 @@ st.markdown("""
 # --- Google Analytics (GA4) ---
 # Streamlit strips <script> from st.markdown, and a plain iframe script would
 # only track the component iframe. So inject gtag.js into the TOP window via a
-# components.html bootstrapper, guarded so it loads exactly once per session.
-import streamlit.components.v1 as _ga_components
+# same-origin iframe bootstrapper, guarded so it loads exactly once per session.
 _GA_MEASUREMENT_ID = os.getenv("GA_MEASUREMENT_ID", "G-5B9883RY9R")
 if _GA_MEASUREMENT_ID:
-    _ga_components.html(
+    st.iframe(
         f"""
 <script>
 (function() {{
@@ -1860,8 +1859,7 @@ body.pa-sidebar-hidden .pa-pipe-dash { left: 0; padding-left: 72px; }
 apply_workspace_style()
 
 # --- Custom sidebar toggle button (injected into parent DOM, survives reruns) ---
-import streamlit.components.v1 as _components
-_components.html("""
+st.iframe("""
 <script>
 (function() {
   const doc = window.parent.document;
@@ -2061,7 +2059,7 @@ def _set_browser_session_cookie(session_id: str) -> None:
     if not session_id:
         return
     try:
-        _components.html(
+        st.iframe(
             f"""
 <script>
 (function() {{
@@ -2082,7 +2080,7 @@ def _set_browser_session_cookie(session_id: str) -> None:
 
 def _delete_browser_session_cookie() -> None:
     try:
-        _components.html(
+        st.iframe(
             f"""
 <script>
 (function() {{
@@ -4451,8 +4449,7 @@ def show_sidebar():
             st.rerun()
         # Inject data-theme attribute on <html> so CSS :root[data-theme] overrides apply
         _theme_val = st.session_state["theme"]
-        import streamlit.components.v1 as _theme_c
-        _theme_c.html(
+        st.iframe(
             f'<script>window.parent.document.documentElement.setAttribute("data-theme","{_theme_val}");</script>',
             height=0,
         )
