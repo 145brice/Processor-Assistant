@@ -157,7 +157,12 @@ def _pending_oauth_key(flow_id: str) -> str:
     return f"oauth_pkce:{flow_id}"
 
 
-def save_pending_google_oauth(flow_id: str, verifier: str) -> dict:
+def save_pending_google_oauth(
+    flow_id: str,
+    verifier: str,
+    *,
+    browser_hints: list[str] | None = None,
+) -> dict:
     """Persist an encrypted PKCE verifier under its random callback flow ID."""
     if not flow_id or not verifier:
         return {"ok": False, "error": "Missing OAuth flow state."}
@@ -169,6 +174,7 @@ def save_pending_google_oauth(flow_id: str, verifier: str) -> dict:
         {
             "verifier_enc": encrypted,
             "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat(),
+            "browser_hints": [str(item) for item in (browser_hints or []) if str(item)][:4],
         },
         user_key=flow_id,
     )
@@ -195,7 +201,42 @@ def clear_pending_google_oauth(flow_id: str) -> None:
         _save_setting_json(_pending_oauth_key(flow_id), {}, user_key=flow_id)
 
 
-def begin_google_oauth(*, flow_id: str = "", verifier: str = "") -> dict:
+def load_pending_google_oauth_for_browser(browser_hints: list[str]) -> tuple[str, str]:
+    """Find the newest unexpired flow for a returning browser."""
+    wanted = {str(item) for item in browser_hints if str(item)}
+    if not wanted:
+        return "", ""
+    api_key = _service_key() or _public_key()
+    if not _supabase_url() or not api_key:
+        return "", ""
+    params = urllib.parse.urlencode({
+        "key": "like.oauth_pkce:%",
+        "select": "key,value_json,updated_at",
+        "order": "updated_at.desc",
+        "limit": "50",
+    })
+    url = f"{_supabase_url()}/rest/v1/settings?{params}"
+    result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
+    if not result.get("ok"):
+        return "", ""
+    for row in result.get("data") or []:
+        payload = _setting_payload(row)
+        stored_hints = {str(item) for item in payload.get("browser_hints", []) if str(item)}
+        if not wanted.intersection(stored_hints):
+            continue
+        flow_id = str(row.get("key") or "").removeprefix("oauth_pkce:")
+        verifier = load_pending_google_oauth(flow_id)
+        if verifier:
+            return flow_id, verifier
+    return "", ""
+
+
+def begin_google_oauth(
+    *,
+    flow_id: str = "",
+    verifier: str = "",
+    browser_hints: list[str] | None = None,
+) -> dict:
     """
     Create a Supabase Google OAuth URL using PKCE.
     Returns url + verifier/flow_id that the app should store.
@@ -205,7 +246,11 @@ def begin_google_oauth(*, flow_id: str = "", verifier: str = "") -> dict:
 
     verifier = verifier or _pkce_verifier()
     flow_id = flow_id or secrets.token_urlsafe(18)
-    pending_result = save_pending_google_oauth(flow_id, verifier)
+    pending_result = save_pending_google_oauth(
+        flow_id,
+        verifier,
+        browser_hints=browser_hints,
+    )
     if not pending_result.get("ok"):
         return {
             "ok": False,

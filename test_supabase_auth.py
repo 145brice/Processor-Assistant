@@ -101,6 +101,22 @@ class SupabaseGoogleOAuthTests(unittest.TestCase):
         ), mock.patch.object(supabase_auth, "_decrypt_secret", return_value="plain-verifier"):
             self.assertEqual(supabase_auth.load_pending_google_oauth("flow-id"), "plain-verifier")
 
+    def test_pending_verifier_can_be_restored_from_browser_hint(self):
+        rows = [
+            {
+                "key": "oauth_pkce:matching-flow",
+                "value_json": {"browser_hints": ["browser-hash"], "verifier_enc": "encrypted"},
+            }
+        ]
+        with mock.patch.object(supabase_auth, "_service_key", return_value="service-key"), \
+             mock.patch.object(supabase_auth, "_supabase_url", return_value="https://project.supabase.co"), \
+             mock.patch.object(supabase_auth, "_json_request", return_value={"ok": True, "data": rows}), \
+             mock.patch.object(supabase_auth, "load_pending_google_oauth", return_value="verifier"):
+            flow_id, verifier = supabase_auth.load_pending_google_oauth_for_browser(["browser-hash"])
+
+        self.assertEqual(flow_id, "matching-flow")
+        self.assertEqual(verifier, "verifier")
+
 
 if __name__ == "__main__":
     unittest.main()

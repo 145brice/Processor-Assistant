@@ -3426,24 +3426,40 @@ def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: s
 _OAUTH_VERIFIER_CACHE: dict[str, tuple[str, float]] = {}
 
 
-def _oauth_browser_key() -> str:
-    """Return a non-PII key that remains stable across a mobile OAuth redirect."""
+def _oauth_browser_keys() -> list[str]:
+    """Return hashed browser hints for restoring a mobile OAuth flow."""
     import hashlib
 
     cookie_value = ""
     user_agent = ""
     ip_address = ""
+    locale = ""
+    timezone_name = ""
     try:
         cookies = dict(st.context.cookies)
         cookie_value = str(cookies.get("_streamlit_xsrf") or "")
         user_agent = str(st.context.headers.get("User-Agent") or "")
         ip_address = str(st.context.ip_address or "")
+        locale = str(st.context.locale or "")
+        timezone_name = str(st.context.timezone or "")
     except Exception:
         pass
-    material = f"{cookie_value}|{user_agent}"
-    if not cookie_value:
-        material = f"{material}|{ip_address}"
-    return hashlib.sha256(material.encode("utf-8")).hexdigest()
+    materials = []
+    if cookie_value:
+        materials.append(f"cookie|{cookie_value}|{user_agent}")
+    materials.append(f"client|{user_agent}|{locale}|{timezone_name}")
+    if not user_agent:
+        materials.append(f"network|{ip_address}")
+    return list(dict.fromkeys(
+        hashlib.sha256(item.encode("utf-8")).hexdigest()
+        for item in materials
+        if item.strip("|")
+    ))
+
+
+def _oauth_browser_key() -> str:
+    keys = _oauth_browser_keys()
+    return keys[0] if keys else ""
 
 
 def _cache_oauth_verifier(flow_id: str, verifier: str) -> None:
@@ -3509,9 +3525,15 @@ def _handle_google_oauth_callback() -> bool:
         return False
 
     import supabase_auth as _sa
-    browser_key = _oauth_browser_key()
+    browser_hints = _oauth_browser_keys()
+    browser_key = browser_hints[0] if browser_hints else ""
     _, browser_verifier = _sa.get_cached_browser_oauth(browser_key)
     pending_verifier = _sa.load_pending_google_oauth(str(oauth_flow))
+    if not pending_verifier:
+        matched_flow, matched_verifier = _sa.load_pending_google_oauth_for_browser(browser_hints)
+        if matched_verifier:
+            oauth_flow = matched_flow
+            pending_verifier = matched_verifier
 
     verifier = _sa.select_oauth_verifier(
         flow_verifier=pending_verifier or _pop_cached_oauth_verifier(str(oauth_flow)),
@@ -4378,6 +4400,7 @@ def show_login_page():
                 oauth_info = _sa.begin_google_oauth(
                     flow_id=_cached_flow,
                     verifier=_cached_verifier,
+                    browser_hints=_oauth_browser_keys(),
                 )
                 if oauth_info.get("ok"):
                     _sa.cache_browser_oauth(
