@@ -68,10 +68,12 @@ def tier_for_amount_cents(amount_cents: int | str | None) -> str:
 def tier_for_profile(profile: dict | None) -> str:
     """Determine a user's tier from their app profile.
 
-    Priority: explicit ``tier`` field → mapped Stripe price ID → legacy
-    paid/beta status (treated as unlimited) → free.
+    Priority: free beta entitlement → explicit ``tier`` field → mapped Stripe
+    price ID → legacy paid/beta status (treated as unlimited) → free.
     """
     p = profile or {}
+    if p.get("beta_free") is True:
+        return "unlimited"
     explicit = str(p.get("tier") or "").lower()
     if explicit in TIERS:
         return explicit
@@ -79,8 +81,7 @@ def tier_for_profile(profile: dict | None) -> str:
     if mapped:
         return mapped
     status = str(p.get("subscription_status") or "").lower()
-    plan = str(p.get("plan") or "").lower()
-    if status in {"active", "paid", "beta_active"} or plan == "beta":
+    if status in {"active", "paid", "beta_active"}:
         # Paid but no tier mapped yet (owner/legacy beta) → full access.
         return "unlimited"
     return "free"
@@ -126,7 +127,11 @@ def check_scan_quota(uid: str, profile: dict | None) -> dict:
     nxt = next_tier(tier_key)
     return {
         "tier": tier_key,
-        "tier_name": TIERS.get(tier_key, TIERS["free"])["name"],
+        "tier_name": (
+            "Beta — Free"
+            if (profile or {}).get("beta_free") is True
+            else TIERS.get(tier_key, TIERS["free"])["name"]
+        ),
         "limit": limit,
         "used": used,
         "remaining": remaining,

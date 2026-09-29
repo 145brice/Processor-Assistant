@@ -12,6 +12,7 @@ import hashlib
 import json
 import os
 import secrets
+import threading
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -183,6 +184,140 @@ def _setting_key(user_key: str) -> str:
 
 def _profile_key(user_key: str) -> str:
     return f"user_profile:{user_key}"
+
+
+_free_beta_lock = threading.Lock()
+_free_beta_cohort_full = False
+
+
+def _free_beta_limit() -> int:
+    try:
+        return max(0, int(os.getenv("PA_FREE_BETA_USER_LIMIT", "10")))
+    except (TypeError, ValueError):
+        return 10
+
+
+def _owner_admin_emails() -> set[str]:
+    return {
+        item.strip().lower()
+        for item in os.getenv("PA_OWNER_ADMIN_EMAILS", "145brice@gmail.com").split(",")
+        if item.strip()
+    }
+
+
+def _setting_payload(row: dict) -> dict:
+    raw = row.get("value_json") or {}
+    if isinstance(raw, str):
+        try:
+            raw = json.loads(raw)
+        except Exception:
+            raw = {}
+    return raw if isinstance(raw, dict) else {}
+
+
+def _list_user_profile_rows() -> tuple[list[dict], dict]:
+    api_key = _service_key() or _public_key()
+    if not _supabase_url() or not api_key:
+        return [], {"ok": False, "error": "Supabase settings storage is not configured."}
+    params = urllib.parse.urlencode({
+        "key": "like.user_profile:%",
+        "select": "key,value_json,user_key,user_email,updated_at",
+    })
+    url = f"{_supabase_url()}/rest/v1/settings?{params}"
+    result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
+    return list(result.get("data") or []), result
+
+
+def _beta_profile_sort_key(row: dict) -> tuple[str, str]:
+    profile = _setting_payload(row)
+    created = str(
+        profile.get("trial_started_at")
+        or profile.get("created_at")
+        or row.get("updated_at")
+        or "9999-12-31T23:59:59+00:00"
+    )
+    return created, str(row.get("key") or "")
+
+
+def grant_free_beta_users(limit: int | None = None) -> dict:
+    """Grant the first eligible users a persistent, no-cost beta entitlement."""
+    global _free_beta_cohort_full
+    cohort_limit = _free_beta_limit() if limit is None else max(0, int(limit))
+    if cohort_limit == 0:
+        return {"ok": True, "limit": 0, "granted": 0, "total": 0, "remaining": 0}
+
+    with _free_beta_lock:
+        rows, result = _list_user_profile_rows()
+        if not result.get("ok"):
+            return {
+                "ok": False,
+                "error": _settings_table_error(result.get("data") or result.get("error") or {}),
+                "limit": cohort_limit,
+                "granted": 0,
+            }
+
+        owners = _owner_admin_emails()
+        eligible: list[dict] = []
+        already_granted: list[dict] = []
+        for row in rows:
+            if not str(row.get("key") or "").startswith("user_profile:"):
+                continue
+            profile = _setting_payload(row)
+            email = str(
+                profile.get("email") or profile.get("google_email") or row.get("user_email") or ""
+            ).strip().lower()
+            if email in owners:
+                continue
+            if profile.get("beta_free") is True:
+                already_granted.append(row)
+                continue
+            status = str(profile.get("subscription_status") or "").lower()
+            if status in {"active", "paid"} and (
+                profile.get("stripe_customer_id") or profile.get("stripe_subscription_id")
+            ):
+                continue
+            eligible.append(row)
+
+        already_granted.sort(
+            key=lambda row: (
+                int(_setting_payload(row).get("beta_slot") or 999999),
+                _beta_profile_sort_key(row),
+            )
+        )
+        eligible.sort(key=_beta_profile_sort_key)
+        available = max(0, cohort_limit - len(already_granted))
+        selected = eligible[:available]
+        now_iso = datetime.now(timezone.utc).isoformat()
+        granted = 0
+        for offset, row in enumerate(selected, start=len(already_granted) + 1):
+            profile = _setting_payload(row)
+            profile.update({
+                "beta_free": True,
+                "beta_cohort": "first_10",
+                "beta_slot": offset,
+                "beta_granted_at": now_iso,
+                "subscription_status": "beta_active",
+                "plan": "beta",
+                "tier": "unlimited",
+            })
+            save_result = _save_setting_json(
+                str(row.get("key") or ""),
+                profile,
+                user_key=str(row.get("user_key") or profile.get("user_key") or ""),
+                user_email=str(row.get("user_email") or profile.get("email") or ""),
+            )
+            if save_result.get("ok"):
+                granted += 1
+
+        total = min(cohort_limit, len(already_granted) + granted)
+        _free_beta_cohort_full = total >= cohort_limit
+        return {
+            "ok": granted == len(selected),
+            "limit": cohort_limit,
+            "granted": granted,
+            "total": total,
+            "remaining": max(0, cohort_limit - total),
+        }
 
 
 def _browser_session_key(session_id: str) -> str:
@@ -399,7 +534,7 @@ def ensure_user_profile(user_key: str, *, email: str = "", display_name: str = "
             "trial_end_date": (now + timedelta(days=14)).date().isoformat(),
             "trial_days": 14,
             "subscription_status": "trialing",
-            "plan": "beta",
+            "plan": "free",
             "terms_accepted_at": "",
         }
     else:
@@ -426,6 +561,15 @@ def ensure_user_profile(user_key: str, *, email: str = "", display_name: str = "
     save_result = _save_setting_json(_profile_key(user_key), profile, user_key=user_key, user_email=google_email)
     if not save_result.get("ok"):
         profile["_save_error"] = save_result.get("error") or "Supabase profile save failed."
+        return profile
+
+    # Allocate after the profile exists so password and OAuth signups share the
+    # same persisted ordering.
+    if not profile.get("beta_free") and not _free_beta_cohort_full:
+        grant_free_beta_users()
+        refreshed = _load_setting_json(_profile_key(user_key))
+        if refreshed:
+            profile = refreshed
     return profile
 
 
