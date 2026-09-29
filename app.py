@@ -4561,8 +4561,6 @@ def show_sidebar():
         _nav_btn("Pipeline", "pipeline")
         _nav_btn("Overview", "overview")
         _nav_btn("Pricing",  "pricing")
-        if _is_owner_admin_email():
-            _nav_btn("Private Lender Learning", "lender_learning", "nav_lender_learning")
 
         # Everything below is secondary - hidden behind one collapsed group so the
         # first impression stays focused on Scanner + Pipeline.
@@ -14506,8 +14504,6 @@ def main():
             show_pipeline()
         elif page == "team":
             show_team_page()
-        elif page == "lender_learning":
-            show_lender_learning_page()
         elif page == "email_watch":
             show_email_watch_page()
         elif page == "email_watch_controls":
