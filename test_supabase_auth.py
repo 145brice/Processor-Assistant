@@ -6,6 +6,19 @@ import supabase_auth
 
 
 class SupabaseGoogleOAuthTests(unittest.TestCase):
+    def test_auth_user_listing_uses_service_role_and_paginates(self):
+        first_page = {"ok": True, "data": {"users": [{"id": str(i)} for i in range(1000)]}}
+        second_page = {"ok": True, "data": {"users": [{"id": "last"}]}}
+        with mock.patch.object(supabase_auth, "_service_key", return_value="service-key"), \
+             mock.patch.object(supabase_auth, "_supabase_url", return_value="https://project.supabase.co"), \
+             mock.patch.object(supabase_auth, "_json_request", side_effect=[first_page, second_page]) as request:
+            users, result = supabase_auth._list_auth_users()
+
+        self.assertTrue(result["ok"])
+        self.assertEqual(len(users), 1001)
+        self.assertIn("page=2", request.call_args_list[1].args[1])
+        self.assertEqual(request.call_args_list[0].kwargs["bearer"], "service-key")
+
     def test_browser_pkce_state_survives_session_replacement(self):
         supabase_auth.cache_browser_oauth("browser-key", "flow-id", "verifier")
         self.assertEqual(

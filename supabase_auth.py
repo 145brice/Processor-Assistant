@@ -266,6 +266,30 @@ def _list_user_profile_rows() -> tuple[list[dict], dict]:
     return list(result.get("data") or []), result
 
 
+def _list_auth_users() -> tuple[list[dict], dict]:
+    """List real Supabase Auth users using the server-only service key."""
+    api_key = _service_key()
+    if not _supabase_url() or not api_key:
+        return [], {"ok": False, "error": "Supabase admin access is not configured."}
+
+    users: list[dict] = []
+    per_page = 1000
+    for page in range(1, 11):
+        params = urllib.parse.urlencode({"page": page, "per_page": per_page})
+        url = f"{_supabase_url()}/auth/v1/admin/users?{params}"
+        result = _json_request("GET", url, None, api_key=api_key, bearer=api_key)
+        if not result.get("ok"):
+            return [], result
+        data = result.get("data") or {}
+        batch = data.get("users", []) if isinstance(data, dict) else data
+        if not isinstance(batch, list):
+            batch = []
+        users.extend(row for row in batch if isinstance(row, dict))
+        if len(batch) < per_page:
+            return users, {"ok": True}
+    return users, {"ok": True}
+
+
 def _beta_profile_sort_key(row: dict) -> tuple[str, str]:
     profile = _setting_payload(row)
     created = str(
@@ -892,7 +916,7 @@ def clear_browser_session(session_id: str) -> dict:
 
 
 def get_user_presence_counts(active_window_minutes: int = 15) -> dict:
-    """Return all-time unique users plus 'active now' from profiles/sessions."""
+    """Return Auth user totals plus recent activity from profiles/sessions."""
     try:
         api_key = _service_key() or _public_key()
         if not _supabase_url() or not api_key:
@@ -913,12 +937,14 @@ def get_user_presence_counts(active_window_minutes: int = 15) -> dict:
         session_rows, session_result = _fetch_rows("browser_session")
         if not session_result.get("ok"):
             session_rows = []
+        auth_users, auth_result = _list_auth_users()
 
         now = datetime.now(timezone.utc)
         cutoff_seconds = max(1, int(active_window_minutes)) * 60
         active_identities = set()
         profile_identities = set()
         session_identities = set()
+        auth_identities = set()
 
         def _payload(row: dict) -> dict:
             raw = row.get("value_json") or {}
@@ -979,15 +1005,31 @@ def get_user_presence_counts(active_window_minutes: int = 15) -> dict:
             if _is_recent(raw, ("saved_at", "last_seen_at")):
                 active_identities.add(identity)
 
-        all_identities = profile_identities | session_identities
+        if auth_result.get("ok"):
+            for user in auth_users:
+                email = str(user.get("email") or "").strip().lower()
+                user_id = str(user.get("id") or "").strip()
+                identity = f"email:{email}" if email else (f"user:{user_id}" if user_id else "")
+                if identity:
+                    auth_identities.add(identity)
+
+        fallback_identities = profile_identities | session_identities
+        total_identities = auth_identities if auth_result.get("ok") else fallback_identities
+        active_total = (
+            len(active_identities & auth_identities)
+            if auth_result.get("ok")
+            else len(active_identities)
+        )
 
         return {
             "ok": True,
-            "total_users": len(all_identities),
-            "all_time_unique_users": len(all_identities),
+            "total_users": len(total_identities),
+            "all_time_unique_users": len(total_identities),
+            "auth_users": len(auth_identities),
+            "auth_source_ok": bool(auth_result.get("ok")),
             "profile_users": len(profile_identities),
             "session_users": len(session_identities),
-            "active_now": len(active_identities),
+            "active_now": active_total,
             "window_minutes": int(active_window_minutes),
         }
     except Exception as e:
