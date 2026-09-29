@@ -133,6 +133,9 @@ def begin_google_oauth() -> dict:
         "redirect_to": get_google_redirect_url(flow_id, verifier),
         "code_challenge": _pkce_challenge(verifier),
         "code_challenge_method": "S256",
+        # Ask Google to show its account chooser instead of silently reusing an
+        # account or dropping directly into the email-entry screen.
+        "prompt": "select_account",
     }
     url = f"{_supabase_url()}/auth/v1/authorize?{urllib.parse.urlencode(params)}"
     return {"ok": True, "url": url, "verifier": verifier, "flow_id": flow_id}
