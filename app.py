@@ -3426,6 +3426,26 @@ def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: s
 _OAUTH_VERIFIER_CACHE: dict[str, tuple[str, float]] = {}
 
 
+def _oauth_browser_key() -> str:
+    """Return a non-PII key that remains stable across a mobile OAuth redirect."""
+    import hashlib
+
+    cookie_value = ""
+    user_agent = ""
+    ip_address = ""
+    try:
+        cookies = dict(st.context.cookies)
+        cookie_value = str(cookies.get("_streamlit_xsrf") or "")
+        user_agent = str(st.context.headers.get("User-Agent") or "")
+        ip_address = str(st.context.ip_address or "")
+    except Exception:
+        pass
+    material = f"{cookie_value}|{user_agent}"
+    if not cookie_value:
+        material = f"{material}|{ip_address}"
+    return hashlib.sha256(material.encode("utf-8")).hexdigest()
+
+
 def _cache_oauth_verifier(flow_id: str, verifier: str) -> None:
     if not flow_id or not verifier:
         return
@@ -3475,10 +3495,12 @@ def _handle_google_oauth_callback() -> bool:
         return False
 
     import supabase_auth as _sa
+    browser_key = _oauth_browser_key()
+    _, browser_verifier = _sa.get_cached_browser_oauth(browser_key)
 
     verifier = _sa.select_oauth_verifier(
         flow_verifier=_pop_cached_oauth_verifier(str(oauth_flow)),
-        callback_verifier=str(oauth_verifier_qp or ""),
+        callback_verifier=str(oauth_verifier_qp or "") or browser_verifier,
         session_verifier=str(st.session_state.get("oauth_google_verifier", "") or ""),
     )
 
@@ -3487,6 +3509,7 @@ def _handle_google_oauth_callback() -> bool:
 
         oauth_result = _sa.exchange_google_code(oauth_code, verifier)
         if not oauth_result.get("ok"):
+            _sa.clear_cached_browser_oauth(browser_key)
             st.session_state["oauth_error_message"] = oauth_result.get("error", "Google sign-in failed.")
             st.query_params.clear()
             return False
@@ -3524,6 +3547,7 @@ def _handle_google_oauth_callback() -> bool:
                 st.session_state["profile_save_error"] = f"Cloud profile save failed: {e}"
         st.session_state.pop("oauth_google_verifier", None)
         st.session_state.pop("oauth_google_flow_id", None)
+        _sa.clear_cached_browser_oauth(browser_key)
         st.session_state.pop("oauth_error_message", None)
         st.query_params.clear()
         st.rerun()
@@ -4332,8 +4356,18 @@ def show_login_page():
             import supabase_auth as _sa
 
             if _sa.is_configured():
-                oauth_info = _sa.begin_google_oauth()
+                _oauth_browser = _oauth_browser_key()
+                _cached_flow, _cached_verifier = _sa.get_cached_browser_oauth(_oauth_browser)
+                oauth_info = _sa.begin_google_oauth(
+                    flow_id=_cached_flow,
+                    verifier=_cached_verifier,
+                )
                 if oauth_info.get("ok"):
+                    _sa.cache_browser_oauth(
+                        _oauth_browser,
+                        str(oauth_info.get("flow_id") or ""),
+                        str(oauth_info.get("verifier") or ""),
+                    )
                     st.session_state["oauth_google_verifier"] = oauth_info["verifier"]
                     st.session_state["oauth_google_flow_id"] = oauth_info.get("flow_id", "")
                     _cache_oauth_verifier(str(oauth_info.get("flow_id", "")), oauth_info["verifier"])

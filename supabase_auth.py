@@ -13,6 +13,7 @@ import json
 import os
 import secrets
 import threading
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
@@ -75,15 +76,10 @@ def _app_base_url() -> str:
 
 
 def get_google_redirect_url(flow_id: str = "", verifier: str = "") -> str:
-    base = f"{_app_base_url()}/"
-    params = {}
-    if flow_id:
-        params["pa_oauth_flow"] = flow_id
-    if verifier:
-        params["pa_oauth_v"] = verifier
-    if not params:
-        return base
-    return f"{base}?{urllib.parse.urlencode(params)}"
+    # Keep this URL exact so it matches Supabase's production Site URL. PKCE
+    # state is retained server-side by the Streamlit app instead of placing a
+    # verifier in a redirect URL that Supabase may reject or normalize.
+    return f"{_app_base_url()}/"
 
 
 def _json_request(method: str, url: str, payload: dict | None = None, *, api_key: str, bearer: str | None = None) -> dict:
@@ -128,7 +124,36 @@ def select_oauth_verifier(
     return str(flow_verifier or callback_verifier or session_verifier or "")
 
 
-def begin_google_oauth() -> dict:
+_browser_oauth_cache: dict[str, tuple[str, str, float]] = {}
+
+
+def cache_browser_oauth(browser_key: str, flow_id: str, verifier: str) -> None:
+    if not browser_key or not flow_id or not verifier:
+        return
+    now = time.time()
+    _browser_oauth_cache[browser_key] = (flow_id, verifier, now + 15 * 60)
+    expired = [key for key, (_, _, exp) in _browser_oauth_cache.items() if exp < now]
+    for key in expired:
+        _browser_oauth_cache.pop(key, None)
+
+
+def get_cached_browser_oauth(browser_key: str) -> tuple[str, str]:
+    item = _browser_oauth_cache.get(browser_key)
+    if not item:
+        return "", ""
+    flow_id, verifier, expires_at = item
+    if expires_at < time.time():
+        _browser_oauth_cache.pop(browser_key, None)
+        return "", ""
+    return flow_id, verifier
+
+
+def clear_cached_browser_oauth(browser_key: str) -> None:
+    if browser_key:
+        _browser_oauth_cache.pop(browser_key, None)
+
+
+def begin_google_oauth(*, flow_id: str = "", verifier: str = "") -> dict:
     """
     Create a Supabase Google OAuth URL using PKCE.
     Returns url + verifier/flow_id that the app should store.
@@ -136,8 +161,8 @@ def begin_google_oauth() -> dict:
     if not is_configured():
         return {"ok": False, "error": "Supabase OAuth is not configured yet."}
 
-    verifier = _pkce_verifier()
-    flow_id = secrets.token_urlsafe(18)
+    verifier = verifier or _pkce_verifier()
+    flow_id = flow_id or secrets.token_urlsafe(18)
     params = {
         "provider": "google",
         "redirect_to": get_google_redirect_url(flow_id, verifier),
