@@ -6,6 +6,21 @@ import supabase_auth
 
 
 class SupabaseGoogleOAuthTests(unittest.TestCase):
+    def test_flow_verifier_wins_over_stale_session_verifier(self):
+        verifier = supabase_auth.select_oauth_verifier(
+            flow_verifier="verifier-for-clicked-link",
+            callback_verifier="verifier-from-callback",
+            session_verifier="newer-rerun-verifier",
+        )
+        self.assertEqual(verifier, "verifier-for-clicked-link")
+
+    def test_callback_verifier_wins_when_server_cache_is_missing(self):
+        verifier = supabase_auth.select_oauth_verifier(
+            callback_verifier="verifier-from-callback",
+            session_verifier="newer-rerun-verifier",
+        )
+        self.assertEqual(verifier, "verifier-from-callback")
+
     def test_google_oauth_requests_account_chooser(self):
         env = {
             "SUPABASE_URL": "https://project.supabase.co",

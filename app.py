@@ -3474,14 +3474,15 @@ def _handle_google_oauth_callback() -> bool:
     if not oauth_code:
         return False
 
-    verifier = (
-        st.session_state.get("oauth_google_verifier", "")
-        or _pop_cached_oauth_verifier(str(oauth_flow))
-        or str(oauth_verifier_qp or "")
+    import supabase_auth as _sa
+
+    verifier = _sa.select_oauth_verifier(
+        flow_verifier=_pop_cached_oauth_verifier(str(oauth_flow)),
+        callback_verifier=str(oauth_verifier_qp or ""),
+        session_verifier=str(st.session_state.get("oauth_google_verifier", "") or ""),
     )
 
     try:
-        import supabase_auth as _sa
         from db import upsert_oauth_user
 
         oauth_result = _sa.exchange_google_code(oauth_code, verifier)

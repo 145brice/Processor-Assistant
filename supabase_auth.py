@@ -118,6 +118,16 @@ def _pkce_challenge(verifier: str) -> str:
     return base64.urlsafe_b64encode(digest).decode("utf-8").rstrip("=")
 
 
+def select_oauth_verifier(
+    *,
+    flow_verifier: str = "",
+    callback_verifier: str = "",
+    session_verifier: str = "",
+) -> str:
+    """Choose the verifier bound to the returning flow before session state."""
+    return str(flow_verifier or callback_verifier or session_verifier or "")
+
+
 def begin_google_oauth() -> dict:
     """
     Create a Supabase Google OAuth URL using PKCE.
