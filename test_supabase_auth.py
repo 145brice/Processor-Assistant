@@ -49,15 +49,19 @@ class SupabaseGoogleOAuthTests(unittest.TestCase):
             "SUPABASE_ANON_KEY": "test-anon-key",
             "PA_APP_URL": "https://processor.example.com",
         }
-        with mock.patch.dict("os.environ", env, clear=True):
-            result = supabase_auth.begin_google_oauth()
+        with mock.patch.dict("os.environ", env, clear=True), \
+             mock.patch.object(supabase_auth, "save_pending_google_oauth", return_value={"ok": True}):
+            result = supabase_auth.begin_google_oauth(flow_id="test-flow-id")
 
         self.assertTrue(result["ok"])
         query = urllib.parse.parse_qs(urllib.parse.urlparse(result["url"]).query)
         self.assertEqual(query["provider"], ["google"])
         self.assertEqual(query["prompt"], ["select_account"])
         self.assertEqual(query["code_challenge_method"], ["S256"])
-        self.assertEqual(query["redirect_to"], ["https://processor.example.com/"])
+        self.assertEqual(
+            query["redirect_to"],
+            ["https://processor.example.com/oauth/callback/test-flow-id"],
+        )
 
     def test_google_oauth_can_reuse_server_side_pkce_state(self):
         env = {
@@ -65,7 +69,8 @@ class SupabaseGoogleOAuthTests(unittest.TestCase):
             "SUPABASE_ANON_KEY": "test-anon-key",
             "PA_APP_URL": "https://processor.example.com",
         }
-        with mock.patch.dict("os.environ", env, clear=True):
+        with mock.patch.dict("os.environ", env, clear=True), \
+             mock.patch.object(supabase_auth, "save_pending_google_oauth", return_value={"ok": True}):
             result = supabase_auth.begin_google_oauth(
                 flow_id="existing-flow",
                 verifier="existing-verifier",
@@ -78,6 +83,23 @@ class SupabaseGoogleOAuthTests(unittest.TestCase):
             query["code_challenge"],
             [supabase_auth._pkce_challenge("existing-verifier")],
         )
+
+    def test_pending_verifier_is_encrypted_and_restored_by_flow_id(self):
+        with mock.patch.object(supabase_auth, "_encrypt_secret", return_value="encrypted"), \
+             mock.patch.object(supabase_auth, "_save_setting_json", return_value={"ok": True}) as save:
+            result = supabase_auth.save_pending_google_oauth("flow-id", "plain-verifier")
+        self.assertTrue(result["ok"])
+        self.assertEqual(save.call_args.args[0], "oauth_pkce:flow-id")
+        self.assertEqual(save.call_args.args[1]["verifier_enc"], "encrypted")
+        self.assertNotIn("plain-verifier", str(save.call_args.args[1]))
+
+        future = (supabase_auth.datetime.now(supabase_auth.timezone.utc) + supabase_auth.timedelta(minutes=5)).isoformat()
+        with mock.patch.object(
+            supabase_auth,
+            "_load_setting_json",
+            return_value={"verifier_enc": "encrypted", "expires_at": future},
+        ), mock.patch.object(supabase_auth, "_decrypt_secret", return_value="plain-verifier"):
+            self.assertEqual(supabase_auth.load_pending_google_oauth("flow-id"), "plain-verifier")
 
 
 if __name__ == "__main__":

@@ -17,7 +17,7 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 try:
     from cryptography.fernet import Fernet
@@ -76,10 +76,10 @@ def _app_base_url() -> str:
 
 
 def get_google_redirect_url(flow_id: str = "", verifier: str = "") -> str:
-    # Keep this URL exact so it matches Supabase's production Site URL. PKCE
-    # state is retained server-side by the Streamlit app instead of placing a
-    # verifier in a redirect URL that Supabase may reject or normalize.
-    return f"{_app_base_url()}/"
+    base = _app_base_url()
+    if flow_id:
+        return f"{base}/oauth/callback/{urllib.parse.quote(flow_id, safe='')}"
+    return f"{base}/"
 
 
 def _json_request(method: str, url: str, payload: dict | None = None, *, api_key: str, bearer: str | None = None) -> dict:
@@ -153,6 +153,48 @@ def clear_cached_browser_oauth(browser_key: str) -> None:
         _browser_oauth_cache.pop(browser_key, None)
 
 
+def _pending_oauth_key(flow_id: str) -> str:
+    return f"oauth_pkce:{flow_id}"
+
+
+def save_pending_google_oauth(flow_id: str, verifier: str) -> dict:
+    """Persist an encrypted PKCE verifier under its random callback flow ID."""
+    if not flow_id or not verifier:
+        return {"ok": False, "error": "Missing OAuth flow state."}
+    encrypted = _encrypt_secret(verifier)
+    if not encrypted:
+        return {"ok": False, "error": "OAuth verifier encryption is not configured."}
+    return _save_setting_json(
+        _pending_oauth_key(flow_id),
+        {
+            "verifier_enc": encrypted,
+            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=15)).isoformat(),
+        },
+        user_key=flow_id,
+    )
+
+
+def load_pending_google_oauth(flow_id: str) -> str:
+    if not flow_id:
+        return ""
+    payload = _load_setting_json(_pending_oauth_key(flow_id))
+    expires_at = str(payload.get("expires_at") or "")
+    try:
+        expiry = datetime.fromisoformat(expires_at.replace("Z", "+00:00"))
+        if expiry.tzinfo is None:
+            expiry = expiry.replace(tzinfo=timezone.utc)
+        if expiry < datetime.now(timezone.utc):
+            return ""
+    except Exception:
+        return ""
+    return _decrypt_secret(str(payload.get("verifier_enc") or ""))
+
+
+def clear_pending_google_oauth(flow_id: str) -> None:
+    if flow_id:
+        _save_setting_json(_pending_oauth_key(flow_id), {}, user_key=flow_id)
+
+
 def begin_google_oauth(*, flow_id: str = "", verifier: str = "") -> dict:
     """
     Create a Supabase Google OAuth URL using PKCE.
@@ -163,6 +205,12 @@ def begin_google_oauth(*, flow_id: str = "", verifier: str = "") -> dict:
 
     verifier = verifier or _pkce_verifier()
     flow_id = flow_id or secrets.token_urlsafe(18)
+    pending_result = save_pending_google_oauth(flow_id, verifier)
+    if not pending_result.get("ok"):
+        return {
+            "ok": False,
+            "error": pending_result.get("error") or "Could not prepare secure Google sign-in.",
+        }
     params = {
         "provider": "google",
         "redirect_to": get_google_redirect_url(flow_id, verifier),

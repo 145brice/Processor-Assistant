@@ -3487,6 +3487,20 @@ def _handle_google_oauth_callback() -> bool:
     if isinstance(oauth_error, list):
         oauth_error = oauth_error[0] if oauth_error else ""
 
+    # Supabase returns to a flow-specific path. The path survives mobile
+    # browser session replacement while the verifier remains encrypted on the
+    # server.
+    try:
+        from urllib.parse import urlparse as _oauth_urlparse
+        import re as _oauth_re
+
+        _oauth_path = _oauth_urlparse(str(st.context.url or "")).path
+        _path_match = _oauth_re.search(r"/oauth/callback/([A-Za-z0-9_-]{8,128})/?$", _oauth_path)
+        if _path_match:
+            oauth_flow = _path_match.group(1)
+    except Exception:
+        pass
+
     if oauth_error:
         st.session_state["oauth_error_message"] = str(oauth_error)
         st.query_params.clear()
@@ -3497,9 +3511,10 @@ def _handle_google_oauth_callback() -> bool:
     import supabase_auth as _sa
     browser_key = _oauth_browser_key()
     _, browser_verifier = _sa.get_cached_browser_oauth(browser_key)
+    pending_verifier = _sa.load_pending_google_oauth(str(oauth_flow))
 
     verifier = _sa.select_oauth_verifier(
-        flow_verifier=_pop_cached_oauth_verifier(str(oauth_flow)),
+        flow_verifier=pending_verifier or _pop_cached_oauth_verifier(str(oauth_flow)),
         callback_verifier=str(oauth_verifier_qp or "") or browser_verifier,
         session_verifier=str(st.session_state.get("oauth_google_verifier", "") or ""),
     )
@@ -3510,6 +3525,7 @@ def _handle_google_oauth_callback() -> bool:
         oauth_result = _sa.exchange_google_code(oauth_code, verifier)
         if not oauth_result.get("ok"):
             _sa.clear_cached_browser_oauth(browser_key)
+            _sa.clear_pending_google_oauth(str(oauth_flow))
             st.session_state["oauth_error_message"] = oauth_result.get("error", "Google sign-in failed.")
             st.query_params.clear()
             return False
@@ -3548,6 +3564,7 @@ def _handle_google_oauth_callback() -> bool:
         st.session_state.pop("oauth_google_verifier", None)
         st.session_state.pop("oauth_google_flow_id", None)
         _sa.clear_cached_browser_oauth(browser_key)
+        _sa.clear_pending_google_oauth(str(oauth_flow))
         st.session_state.pop("oauth_error_message", None)
         st.query_params.clear()
         st.rerun()
