@@ -60,7 +60,7 @@ class SupabaseGoogleOAuthTests(unittest.TestCase):
         self.assertEqual(query["code_challenge_method"], ["S256"])
         self.assertEqual(
             query["redirect_to"],
-            ["https://processor.example.com/oauth/callback/test-flow-id"],
+            ["https://processor.example.com/?pa_oauth_flow=test-flow-id"],
         )
 
     def test_google_oauth_can_reuse_server_side_pkce_state(self):

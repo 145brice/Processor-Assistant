@@ -78,7 +78,10 @@ def _app_base_url() -> str:
 def get_google_redirect_url(flow_id: str = "", verifier: str = "") -> str:
     base = _app_base_url()
     if flow_id:
-        return f"{base}/oauth/callback/{urllib.parse.quote(flow_id, safe='')}"
+        # Streamlit serves its frontend assets relative to the current URL.
+        # A deep callback path makes the browser request /oauth/callback/static/*
+        # and leaves the sign-in page blank. Keep the flow ID on the root URL.
+        return f"{base}/?pa_oauth_flow={urllib.parse.quote(flow_id, safe='')}"
     return f"{base}/"
 
 
