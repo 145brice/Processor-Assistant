@@ -21,7 +21,7 @@ import urllib.error
 import time
 from datetime import datetime
 
-from privacy_filter import (
+from pii_sanitizer.integration import (
     has_unresolved_placeholders,
     redact_for_cloud,
     redact_for_cloud_resilient,

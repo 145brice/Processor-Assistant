@@ -22,7 +22,7 @@ from folder_manager import (
 )
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def setup_test_folders():
     """Create test folder structure."""
     # Clean up if exists
@@ -43,8 +43,9 @@ def setup_test_folders():
     
     yield test_client
     
-    # Cleanup after tests
-    # shutil.rmtree(test_client)
+    # Keep tests independent so a Conditions folder created in one test does
+    # not change the numbering expected by the next test.
+    shutil.rmtree(test_client, ignore_errors=True)
 
 
 class TestInit:
