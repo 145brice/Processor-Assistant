@@ -6767,14 +6767,14 @@ def show_dashboard():
                             unsafe_allow_html=True,
                         )
                         st.markdown(
-                            f'<div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:8px;">'
+                            f'<div style="font-size:13px;font-weight:800;color:var(--slate-900);margin-bottom:8px;">'
                             f'Draft for {_SECTION_LABEL_SCAN.get(_group_to, _group_to)}</div>'
                             f'<div style="display:grid;grid-template-columns:90px 1fr;gap:6px 10px;font-size:12px;margin-bottom:12px;">'
                             f'<div style="color:var(--slate-600);">To</div><div style="color:var(--slate-700);">{_recipient_email or "No parsed email found yet"}</div>'
                             f'<div style="color:var(--slate-600);">Subject</div><div style="color:var(--slate-700);">{_subject}</div>'
                             f'</div>'
                             f'<div style="background:#0f172a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;'
-                            f'padding:14px 16px;color:var(--slate-700);font-size:13px;line-height:1.55;">'
+                            f'padding:14px 16px;color:#e2e8f0;font-size:15px;line-height:1.6;">'
                             f'{_preview_body}</div>',
                             unsafe_allow_html=True,
                         )
