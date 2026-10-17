@@ -388,7 +388,7 @@ Configure optional AI backends and app preferences.
 
 **AI Router** — Automatically routes AI requests to the best available backend (Cloud > Ollama > Local fallback engine). Falls back gracefully.
 
-**Billing** — Track monthly scan usage per user against pricing tiers.
+**Usage** — Track monthly scan usage. Processor Assistant is free with unlimited scans while `PA_FREE_BETA_MODE` is enabled (the default); paid pricing is hidden during beta.
 
 ---
 

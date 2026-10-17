@@ -27,6 +27,11 @@ TIERS: dict[str, dict] = {
 TIER_ORDER = ["free", "starter", "pro", "unlimited"]
 
 
+def free_beta_mode() -> bool:
+    """Keep beta access free until the owner explicitly turns it off."""
+    return os.getenv("PA_FREE_BETA_MODE", "1").strip().lower() not in {"0", "false", "no", "off"}
+
+
 def stripe_price_id(tier_key: str) -> str:
     """Stripe price ID for a tier, read from env (placeholder until wired)."""
     return os.getenv(f"TIER_{tier_key.upper()}_PRICE_ID", "").strip()
@@ -72,6 +77,8 @@ def tier_for_profile(profile: dict | None) -> str:
     price ID → legacy paid/beta status (treated as unlimited) → free.
     """
     p = profile or {}
+    if free_beta_mode():
+        return "unlimited"
     if p.get("beta_free") is True:
         return "unlimited"
     explicit = str(p.get("tier") or "").lower()
@@ -129,7 +136,7 @@ def check_scan_quota(uid: str, profile: dict | None) -> dict:
         "tier": tier_key,
         "tier_name": (
             "Beta — Free"
-            if (profile or {}).get("beta_free") is True
+            if free_beta_mode() or (profile or {}).get("beta_free") is True
             else TIERS.get(tier_key, TIERS["free"])["name"]
         ),
         "limit": limit,

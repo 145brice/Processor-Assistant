@@ -2637,6 +2637,9 @@ def _trial_days_left(profile: dict) -> int:
 
 
 def _has_paid_access(profile: dict) -> bool:
+    from tiers import free_beta_mode
+    if free_beta_mode():
+        return True
     if _is_owner_admin_email():
         return True
     status = str((profile or {}).get("subscription_status") or "").lower()
@@ -3906,6 +3909,22 @@ def render_feature_highlights(heading: bool = True):
 
 
 def render_no_credit_card_banner() -> None:
+    from tiers import free_beta_mode
+    if free_beta_mode():
+        st.markdown(
+            """
+            <div class="pa-trial-banner" style="margin:10px 0 12px 0;padding:13px 16px;border-radius:10px;
+                 background:var(--green-bg);border:1px solid var(--green-border);text-align:center;">
+              <div class="pa-trial-title" style="font-size:20px;font-weight:900;color:var(--green);
+                   text-transform:uppercase;line-height:1.15;">Free During Beta</div>
+              <div style="font-size:12px;font-weight:700;color:var(--slate-700);margin-top:3px;">
+                Full access and unlimited document scans. No credit card needed.
+              </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+        return
     st.markdown(
         """
         <div class="pa-trial-banner" style="margin:10px 0 12px 0;padding:13px 16px;border-radius:10px;
@@ -4146,7 +4165,8 @@ def show_overview_page():
             _save_session()
             st.rerun()
     with _c3:
-        if st.button("See pricing", use_container_width=True, key="overview_to_pricing"):
+        from tiers import free_beta_mode
+        if st.button("Free beta" if free_beta_mode() else "See pricing", use_container_width=True, key="overview_to_pricing"):
             st.session_state.page = "pricing"
             _save_session()
             st.rerun()
@@ -4154,6 +4174,7 @@ def show_overview_page():
 
 def show_login_page():
     """Login / Signup page."""
+    from tiers import free_beta_mode
     _oauth_error = st.session_state.pop("oauth_error_message", "")
     if _oauth_error:
         st.error(_oauth_error)
@@ -4355,11 +4376,15 @@ def show_login_page():
         render_compliance_statement(compact=True)
 
     with _form_col:
+        _login_offer = (
+            "Free during beta &mdash; full access and unlimited scans. No credit card needed."
+            if free_beta_mode() else
+            "Start your 14-day free trial &mdash; then $49/month. No credit card needed."
+        )
         st.markdown(
             '<div style="font-size:19px;font-weight:800;color:var(--slate-900);'
             'letter-spacing:-0.3px;margin-bottom:2px;">Sign in to your workspace</div>'
-            '<div style="font-size:12px;color:var(--slate-600);margin-bottom:8px;">'
-            'Start your 14-day free trial &mdash; then $49/month. No credit card needed.</div>',
+            f'<div style="font-size:12px;color:var(--slate-600);margin-bottom:8px;">{_login_offer}</div>',
             unsafe_allow_html=True,
         )
         if _env_truthy("PA_SHOW_SANDBOX", "0"):
@@ -4600,7 +4625,8 @@ def show_sidebar():
         _nav_btn("Scanner",  "dashboard")
         _nav_btn("Pipeline", "pipeline")
         _nav_btn("Overview", "overview")
-        _nav_btn("Pricing",  "pricing")
+        from tiers import free_beta_mode
+        _nav_btn("Free Beta" if free_beta_mode() else "Pricing", "pricing")
 
         # Everything below is secondary - hidden behind one collapsed group so the
         # first impression stays focused on Scanner + Pipeline.
@@ -4643,7 +4669,7 @@ def show_sidebar():
 
             _nav_btn("Team",    "team")
             _nav_btn("Chat",    "chat")
-            _nav_btn("Billing", "billing")
+            _nav_btn("Usage" if free_beta_mode() else "Billing", "billing")
             if not is_sandbox:
                 _nav_btn("History", "history")
 
@@ -11739,6 +11765,18 @@ def show_pricing_page():
     import html as _html
     import tiers as _tiers
 
+    if _tiers.free_beta_mode():
+        st.title("Free Beta")
+        st.caption("Processor Assistant is free during beta. No credit card or paid plan is required.")
+        render_feature_highlights(heading=True)
+        render_no_credit_card_banner()
+        if st.button("Open Scanner", type="primary", use_container_width=True):
+            st.session_state.page = "dashboard"
+            _save_session()
+            st.rerun()
+        render_compliance_statement()
+        return
+
     st.title("Pricing")
     st.caption("Simple year-one pricing while Processor Assistant is still early-access.")
 
@@ -11910,12 +11948,15 @@ def show_chat_page():
 
 def show_billing_page():
     import billing as _bl
+    from tiers import free_beta_mode
 
     uid  = st.session_state.get("user_id", "")
     role = st.session_state.get("user_role", "Processor")
 
-    st.title("$ Usage & Billing")
-    st.caption("Tracks document scans processed each month against your plan's limit.")
+    st.title("Usage" if free_beta_mode() else "$ Usage & Billing")
+    st.caption("Document scans processed this month. Scans are unlimited during beta."
+               if free_beta_mode() else
+               "Tracks document scans processed each month against your plan's limit.")
 
     # â”€â”€ Current month summary (tier-based) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     import tiers as _tiers_bp

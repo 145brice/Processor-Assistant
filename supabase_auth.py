@@ -723,7 +723,10 @@ def ensure_user_profile(user_key: str, *, email: str = "", display_name: str = "
 
     # Allocate after the profile exists so password and OAuth signups share the
     # same persisted ordering.
-    if not profile.get("beta_free") and not _free_beta_cohort_full:
+    # Open beta access is evaluated at runtime; it must not create a permanent
+    # first-ten entitlement for every new account.
+    from tiers import free_beta_mode
+    if not free_beta_mode() and not profile.get("beta_free") and not _free_beta_cohort_full:
         grant_free_beta_users()
         refreshed = _load_setting_json(_profile_key(user_key))
         if refreshed:

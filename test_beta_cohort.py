@@ -80,7 +80,18 @@ class BetaCohortTests(unittest.TestCase):
         self.assertTrue(quota["allowed"])
 
     def test_legacy_beta_plan_without_entitlement_is_free(self):
-        self.assertEqual(tiers.tier_for_profile({"plan": "beta", "subscription_status": "trialing"}), "free")
+        with mock.patch.dict(os.environ, {"PA_FREE_BETA_MODE": "0"}):
+            self.assertEqual(tiers.tier_for_profile({"plan": "beta", "subscription_status": "trialing"}), "free")
+
+    def test_open_beta_gives_every_account_unlimited_free_scans(self):
+        with mock.patch.dict(os.environ, {"PA_FREE_BETA_MODE": "1"}), \
+             mock.patch("billing.get_usage", return_value={"scans": 999}):
+            for profile in ({}, {"subscription_status": "trialing"}, {"tier": "free"}):
+                quota = tiers.check_scan_quota("user-1", profile)
+                self.assertEqual(quota["tier"], "unlimited")
+                self.assertEqual(quota["tier_name"], "Beta — Free")
+                self.assertIsNone(quota["limit"])
+                self.assertTrue(quota["allowed"])
 
 
 if __name__ == "__main__":
