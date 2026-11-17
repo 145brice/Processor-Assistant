@@ -1,18 +1,22 @@
 # Data Inventory & Service Providers
 ### Processor Assistant — supports WISP §4.2 and §6
 
-**Status:** DRAFT · **Last updated:** [TODO] · **Owner:** Brice Leasure
+**Status:** DRAFT · **Last updated:** November 10, 2026 · **Owner:** Brice Leasure
 
 > Not legal advice. Confirm each row against current configuration.
 
 ## 1. Data we handle
+
+We never store your documents. We only save the loan details extracted from them so you don't have to re-scan.
+
+Deletion requests: info@edgelandings.com. Saved loan data and scan history are retained until the user deletes them or closes their account.
 
 | Data | Classification | Where it lives | Retention | Notes |
 |---|---|---|---|---|
 | Uploaded loan PDFs | **NPI (high)** | In memory during scan only | **Not stored by us** | Transmitted to Google Gemini only when cloud AI is used (see §3). |
 | Extracted conditions / loan metadata | NPI (medium) | Local `processor.db` (host) | Until deleted / trashed | Non-document fields used for the pipeline. |
 | Borrower contact info | NPI (medium) | Local `processor.db` | Until deleted | Names, emails, phones parsed from docs. |
-| Recent scan history | NPI (low–medium) | Supabase settings / local | ~7 days (recent scans) | Tied to signed-in account. |
+| Scan history | NPI (low–medium) | Supabase settings, scoped to the signed-in account | Until deletion or account closure | Tied to signed-in account. |
 | User account/profile | Account data | Supabase (`settings`) | Life of account | Email, display name, role, subscription/tier. |
 | Auth identity | Account data | Google OAuth (delegated) | N/A | We store no passwords. |
 | Billing/subscription | Account data | Stripe + Supabase profile | Life of account | We never see/store card numbers. |
@@ -22,8 +26,8 @@
 
 | Provider | Role | NPI handled? | Safeguards / terms | Review |
 |---|---|---|---|---|
-| **Google** (OAuth + Gemini API, paid tier) | Sign-in + AI document reading | **Yes** (during cloud scans) | No training on data; no human review; brief retention (~up to 55 days) for abuse/security monitoring only. DPA: [TODO link]. | Annual |
-| **Supabase** | Auth-linked profile/settings storage | Yes (metadata) | Encryption at rest & in transit; access via scoped keys. DPA: [TODO]. | Annual |
+| **Google** (OAuth + Gemini API, paid tier) | Sign-in + AI document reading | **Yes** (during cloud scans) | Google does not use your data to train its models when you use a paid-tier Gemini API key. See [Gemini API terms](https://ai.google.dev/gemini-api/terms). | Annual |
+| **Supabase** | Database for account profiles, parsed loan details, and scan history | Yes (metadata) | Encryption at rest & in transit; access via scoped keys. DPA: [TODO]. | Annual |
 | **Railway** | Application hosting | Yes (in transit / runtime) | TLS; isolated service. DPA: [TODO]. Confirm volume/encryption for `processor.db`. | Annual |
 | **Stripe** | Payments/subscriptions | Card data (not seen by us) | PCI-DSS Level 1. We store no PAN. DPA: [TODO]. | Annual |
 | **GitHub** | Source control | No NPI (secrets excluded) | MFA; private repo [TODO confirm]. | Annual |
@@ -33,7 +37,7 @@
 ```
 User browser ──HTTPS──> Processor Assistant (Railway)
    │                         │
-   │ Google OAuth            ├── Supabase (profiles/settings)  [HTTPS, encrypted at rest]
+   │ Google OAuth            ├── Supabase (profiles, parsed details, scan history)  [HTTPS, encrypted at rest]
    │                         ├── Stripe (billing)              [HTTPS, PCI-DSS]
    │                         └── local processor.db            [host; confirm encryption/volume]
    │
@@ -41,7 +45,7 @@ User browser ──HTTPS──> Processor Assistant (Railway)
             │
             └── IF cloud AI used (Approval Letter / Purchase Contract, user opt-in):
                  full PDF ──HTTPS──> Google Gemini API
-                 (no training, no human review; brief security-monitoring retention)
+                 (paid-tier data handling: see Gemini API terms)
 ```
 
 ## 4. Known gap

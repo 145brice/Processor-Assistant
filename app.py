@@ -11,6 +11,8 @@ import html as _html
 import streamlit as st
 from dotenv import load_dotenv
 from ui_refinement import apply_workspace_style, party_picker, render_scanner_intro
+from product_config import advanced_tools_enabled, beta_offer, render_gemini_setup_video, visible_page
+from scan_outputs import render_outputs, render_sample_button
 
 # Load .env from app dir and parent workspace for local runs
 _APP_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -1953,6 +1955,10 @@ st.iframe("""
   }
 
   function wireH2(h2) {
+    if (h2.closest(".pa-scanner-heading")) {
+      h2.querySelector(".pa-h2-chev")?.remove();
+      return;
+    }
     if (h2._paWired) return;
     h2._paWired = true;
     h2.style.cursor = 'pointer';
@@ -1997,7 +2003,7 @@ st.iframe("""
 
 # --- Session State Defaults ---
 DEFAULTS = {
-    "page": "overview",
+    "page": "dashboard",
     "authenticated": False,
     "user_id": None,
     "supabase_user_id": None,
@@ -2015,7 +2021,7 @@ DEFAULTS = {
     "pipeline_add_open": False,
     "pipeline_import_open": False,
     "onboarding_checklist_dismissed": False,
-    "default_landing_page": "overview",
+    "default_landing_page": "dashboard",
     "scroll_to": None,
     "dti_income": 0.0,
     "dti_debt": 0.0,
@@ -2197,7 +2203,6 @@ def _env_truthy(name: str, default: str = "1") -> bool:
 
 _AUTO_ENTER_SANDBOX = _env_truthy("PA_AUTO_ENTER_SANDBOX", "0")
 _SCAN_HISTORY_FILE = os.path.join(os.path.dirname(__file__), "scan_history.json")
-_SCAN_HISTORY_DAYS = 7
 
 
 def _is_owner_admin_email(email: str = "") -> bool:
@@ -2214,15 +2219,9 @@ def _is_owner_admin_email(email: str = "") -> bool:
 
 
 def _preferred_landing_page() -> str:
-    page = str(st.session_state.get("default_landing_page") or "overview").strip().lower()
-    if page in {"scanner", "scan"}:
-        return "dashboard"
-    if page in {"dashboard", "pipeline", "overview"}:
-        return page
-    return "overview"
+    return "dashboard"
 
-
-def _enter_sandbox(page: str = "overview") -> None:
+def _enter_sandbox(page: str = "dashboard") -> None:
     """Authenticate directly into local sandbox mode."""
     st.session_state.authenticated = True
     st.session_state.user_id = "sandbox"
@@ -2435,56 +2434,72 @@ def _render_lender_resources(lender_name: str) -> None:
 
 
 def _load_scan_history_all() -> list[dict]:
-    try:
-        import json as _json
-        with open(_SCAN_HISTORY_FILE, "r", encoding="utf-8") as f:
-            data = _json.load(f)
-        return data if isinstance(data, list) else []
-    except Exception:
+    """Load only the current account's history; never expire saved parsed results."""
+    import scan_history_store as history_store
+    key = _scan_history_user_key()
+    cache_key = f"saved_scan_history:{key}"
+    if cache_key in st.session_state:
+        return st.session_state[cache_key]
+    if st.session_state.get("sandbox_mode") or key == "anonymous":
+        st.session_state[cache_key] = []
         return []
-
-
-def _save_scan_history_all(items: list[dict]) -> None:
+    loaded = history_store.load(key)
+    if not loaded.get("ok"):
+        st.session_state["scan_history_error"] = loaded.get("error")
+        return []
+    items = loaded["items"]
+    # Bring this account's existing local results forward without retaining raw text.
     try:
-        import json as _json
-        cutoff = time.time() - (_SCAN_HISTORY_DAYS * 86400)
-        cleaned = [i for i in items if float(i.get("ts", 0) or 0) >= cutoff]
-        cleaned = sorted(cleaned, key=lambda i: float(i.get("ts", 0) or 0), reverse=True)[:150]
-        with open(_SCAN_HISTORY_FILE, "w", encoding="utf-8") as f:
-            _json.dump(cleaned, f, indent=2, ensure_ascii=False, default=str)
-    except Exception:
+        import json
+        with open(_SCAN_HISTORY_FILE, encoding="utf-8") as source:
+            legacy = json.load(source)
+        known = {i.get("id") for i in items}
+        migrated = [history_store.parsed_batch(i) for i in legacy
+                    if i.get("user_key") == key and i.get("id") not in known]
+        if migrated:
+            result = history_store.save(key, items + migrated, st.session_state.get("user_email", ""))
+            if not result.get("ok"):
+                st.session_state["scan_history_error"] = "Could not migrate saved scans. Please retry."
+                return items
+            items += migrated
+            # Remove the migrated account's legacy cache so deletion stays permanent.
+            with open(_SCAN_HISTORY_FILE, "w", encoding="utf-8") as target:
+                json.dump([i for i in legacy if i.get("user_key") != key], target, default=str)
+    except (OSError, ValueError, TypeError):
         pass
+    st.session_state.pop("scan_history_error", None)
+    st.session_state[cache_key] = items
+    return items
+
+
+def _save_scan_history_all(items: list[dict]) -> bool:
+    import scan_history_store as history_store
+    key = _scan_history_user_key()
+    cleaned = [history_store.parsed_batch(i) for i in items if i.get("user_key") == key]
+    if not st.session_state.get("sandbox_mode") and key != "anonymous":
+        saved = history_store.save(key, cleaned, st.session_state.get("user_email", ""))
+        if not saved.get("ok"):
+            st.warning("Could not save scan history to Supabase. Your results remain available in this session. Please retry.")
+            return False
+    st.session_state[f"saved_scan_history:{key}"] = cleaned
+    return True
 
 
 def _remember_scan_batch(batch: dict) -> None:
     if not isinstance(batch, dict):
         return
-    entry = {
-        "id": f"{int(time.time() * 1000)}_{abs(hash(str(batch.get('file', ''))))}",
-        "ts": time.time(),
-        "user_key": _scan_history_user_key(),
-        "batch": batch,
-    }
+    import scan_history_store as history_store
     items = _load_scan_history_all()
-    sig = (entry["user_key"], batch.get("file"), batch.get("type"), str((batch.get("result") or {}).get("text_length", "")))
-    kept = []
-    for item in items:
-        ib = item.get("batch") or {}
-        isig = (item.get("user_key"), ib.get("file"), ib.get("type"), str((ib.get("result") or {}).get("text_length", "")))
-        if isig != sig:
-            kept.append(item)
-    _save_scan_history_all([entry] + kept)
+    if st.session_state.get("scan_history_error"):
+        st.warning("Your scan is available in this session, but saved history could not be loaded. Retry before saving.")
+        return
+    entry = {"id": secrets.token_hex(16), "ts": time.time(),
+             "user_key": _scan_history_user_key(), "batch": history_store.parsed_batch(batch)}
+    _save_scan_history_all([entry] + items)
 
 
 def _recent_scan_history() -> list[dict]:
-    key = _scan_history_user_key()
-    cutoff = time.time() - (_SCAN_HISTORY_DAYS * 86400)
-    items = [
-        i for i in _load_scan_history_all()
-        if i.get("user_key") == key and float(i.get("ts", 0) or 0) >= cutoff and isinstance(i.get("batch"), dict)
-    ]
-    _save_scan_history_all(_load_scan_history_all())
-    return sorted(items, key=lambda i: float(i.get("ts", 0) or 0), reverse=True)
+    return sorted(_load_scan_history_all(), key=lambda i: float(i.get("ts", 0) or 0), reverse=True)
 
 
 def _normalize_contact_value(value) -> dict:
@@ -3400,7 +3415,7 @@ def _load_user_gemini_key_into_session(force: bool = False) -> str:
     return st.session_state.user_gemini_api_key
 
 
-def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: str = "overview") -> None:
+def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: str = "dashboard") -> None:
     """Normalize all successful auth paths into one session update."""
     # A browser session can change accounts through OAuth without using Logout.
     for key in list(st.session_state):
@@ -3417,12 +3432,9 @@ def _complete_login_session(result: dict, *, sandbox_mode: bool = False, page: s
     st.session_state.sandbox_mode = sandbox_mode
     st.session_state.force_login = False
     st.session_state.user_gemini_api_key = ""
+    st.session_state.scan_batches = []
     _load_user_gemini_key_into_session(force=True)
-    if page == "dashboard":
-        page = "overview"
-    if page == "overview" and st.session_state.get("onboarding_checklist_dismissed"):
-        page = _preferred_landing_page()
-    st.session_state.page = page
+    st.session_state.page = "dashboard"
     _save_session()
 
 
@@ -3637,9 +3649,14 @@ def _render_gemini_key_prompt() -> None:
         if step == 1:
             st.markdown("### Welcome to Processor Assistant")
             st.markdown(
-                "Before you start, you'll need a **free Gemini 2.5 Flash API key** from Google. "
+                "Before you start, you'll need a **paid-tier Gemini 2.5 Flash API key** from Google. "
                 "It's what powers document scanning, condition extraction, and contact pulls. "
-                "Google gives generous free usage and the key takes about 60 seconds to set up."
+                "Enable billing on your Google AI account before using the key."
+            )
+            st.info(GEMINI_BILLING_NOTICE)
+            st.caption(GEMINI_TRAINING_NOTICE)
+            st.markdown(
+                "Create the key in your billing-enabled project."
             )
             st.caption("We save your key encrypted to your account — only you can see it.")
             c1, c2, c3 = st.columns([1, 1, 1])
@@ -3655,12 +3672,13 @@ def _render_gemini_key_prompt() -> None:
                     _go(2)
 
         elif step == 2:
-            st.markdown("### Get your free Gemini API key")
+            st.markdown("### Set up your paid-tier Gemini API key")
             st.markdown(
                 "1. Click **Open Google AI Studio** below — opens in a new tab\n"
                 "2. Sign in with the same Google account you just used\n"
-                "3. Click **Create API key** → **Create API key in new project**\n"
-                "4. Copy the key (starts with `AIza…`) and come back here"
+                "3. Enable **billing** for your Google AI project and confirm its plan is **Paid**\n"
+                "4. Click **Create API key** and select that billing-enabled project\n"
+                "5. Copy the key (starts with `AIza…`) and come back here"
             )
             st.link_button("Open Google AI Studio →", "https://aistudio.google.com/app/apikey", use_container_width=True)
             c1, c2 = st.columns([1, 1])
@@ -3673,6 +3691,9 @@ def _render_gemini_key_prompt() -> None:
 
         else:  # step 3
             st.markdown("### Paste your Gemini API key")
+            st.info(GEMINI_BILLING_NOTICE)
+            st.caption(GEMINI_TRAINING_NOTICE)
+            render_gemini_setup_video()
             with st.form("gemini_key_bootstrap_form"):
                 gemini_key = st.text_input(
                     "Gemini API Key",
@@ -3822,6 +3843,18 @@ def _render_condition(_c, _fkey, _party_options, _cond_statuses):
 
 
 def render_feature_highlights(heading: bool = True):
+    if not advanced_tools_enabled():
+        if heading:
+            st.subheader("From loan documents to your next steps")
+        st.markdown(
+            "**Scan loan documents**  \n"
+            "Extract loan details, conditions, and responsible parties.\n\n"
+            "**Prepare your next steps**  \n"
+            "Copy results, export PDF or CSV, and prepare borrower and loan officer emails.\n\n"
+            "**Return to saved scans**  \n"
+            "Find previous loan details in your account without re-scanning."
+        )
+        return
     """Shared product highlights — the two headline capabilities plus support
     points. Reused on the login page, the post-login Overview page, and Pricing
     so the value prop stays identical everywhere."""
@@ -3912,13 +3945,13 @@ def render_no_credit_card_banner() -> None:
     from tiers import free_beta_mode
     if free_beta_mode():
         st.markdown(
-            """
+            f"""
             <div class="pa-trial-banner" style="margin:10px 0 12px 0;padding:13px 16px;border-radius:10px;
                  background:var(--green-bg);border:1px solid var(--green-border);text-align:center;">
               <div class="pa-trial-title" style="font-size:20px;font-weight:900;color:var(--green);
-                   text-transform:uppercase;line-height:1.15;">Free During Beta</div>
+                   line-height:1.4;">{_html.escape(beta_offer())}</div>
               <div style="font-size:12px;font-weight:700;color:var(--slate-700);margin-top:3px;">
-                Full access and unlimited document scans. No credit card needed.
+                No credit card needed.
               </div>
             </div>
             """,
@@ -3947,36 +3980,27 @@ def render_no_credit_card_banner() -> None:
     )
 
 
+DATA_HANDLING_NOTICE = "We never store your documents. We only save the loan details extracted from them so you don't have to re-scan."
+GEMINI_TRAINING_NOTICE = "Google does not use your data to train its models when you use a paid-tier Gemini API key."
+GEMINI_BILLING_NOTICE = (
+    "Enable billing on your Google AI account for the project associated with your API key "
+    "(paid tier) before pasting it here. Gemini 2.5 Flash usage can cost very little per month "
+    "for light use; your actual cost depends on the number and size of documents you scan."
+)
+
+
 def render_compliance_statement(compact: bool = False) -> None:
-    """Data privacy & compliance statement shown on pricing, signup, and scanner."""
-    if compact:
-        st.markdown(
-            '<div class="pa-glba-compact" style="margin:6px 0 8px 0;padding:9px 12px;border-radius:8px;'
-            'background:var(--green-bg);border:1px solid var(--green-border);'
-            'font-size:11.5px;color:var(--slate-700);line-height:1.5;">'
-            '<b style="color:var(--green);">Built for GLBA compliance.</b> '
-            'Documents are processed for the scan and are not stored by Processor Assistant. '
-            'When AI assistance is used, data is processed through Google\'s Gemini API, which '
-            'holds it only briefly for security monitoring &mdash; never to train or improve its models.'
-            '</div>',
-            unsafe_allow_html=True,
-        )
-        return
+    """Consistent data handling notice on landing, pricing, signup, and scanner."""
+    padding = "9px 12px" if compact else "16px 18px"
     st.markdown(
-        '<div style="margin:10px 0 14px 0;padding:16px 18px;border-radius:12px;'
-        'background:var(--bg-subtle);border:1px solid var(--slate-300);">'
-        '<div style="font-size:15px;font-weight:900;color:var(--slate-900);margin-bottom:6px;">'
-        'Data Privacy &amp; Compliance</div>'
-        '<div style="font-size:13px;color:var(--slate-700);line-height:1.6;">'
-        'Processor Assistant is <b style="color:var(--slate-900);">built for GLBA compliance</b>. '
-        'Documents you scan are processed securely and are '
-        '<b style="color:var(--slate-900);">not stored by Processor Assistant</b> &mdash; your files '
-        'stay in your own system of record. When AI assistance is used, data is processed through '
-        '<b style="color:var(--slate-900);">Google\'s Gemini API</b>, which retains it only '
-        '<b style="color:var(--slate-900);">briefly for security and abuse monitoring &mdash; never '
-        'to train or improve its models</b>. Your borrowers\' information is protected and handled in '
-        'accordance with applicable regulatory standards.'
-        '</div></div>',
+        f'<div style="margin:10px 0;padding:{padding};border-radius:12px;'
+        'background:var(--bg-subtle);border:1px solid var(--slate-300);'
+        'color:var(--slate-700);font-size:13px;line-height:1.6;">'
+        '<b>Data Privacy &amp; Compliance</b><br>'
+        f'{DATA_HANDLING_NOTICE} '
+        'Uploaded documents are processed in memory only. Extracted loan details and scan history '
+        'are saved in Supabase and tied to your account. '
+        f'{GEMINI_TRAINING_NOTICE}</div>',
         unsafe_allow_html=True,
     )
 
@@ -4377,7 +4401,7 @@ def show_login_page():
 
     with _form_col:
         _login_offer = (
-            "Free during beta &mdash; full access and unlimited scans. No credit card needed."
+            _html.escape(beta_offer())
             if free_beta_mode() else
             "Start your 14-day free trial &mdash; then $49/month. No credit card needed."
         )
@@ -4390,12 +4414,12 @@ def show_login_page():
         if _env_truthy("PA_SHOW_SANDBOX", "0"):
             st.markdown('<div class="login-sandbox-btn">', unsafe_allow_html=True)
             if st.button("Try Sandbox - No Account Needed", type="primary", use_container_width=True):
-                _enter_sandbox(page="overview")
+                _enter_sandbox(page="dashboard")
                 st.rerun()
             st.markdown('</div>', unsafe_allow_html=True)
             st.markdown(
                 '<div style="text-align:center;font-size:10px;color:var(--slate-600);margin-top:4px;margin-bottom:4px;">'
-                'Full access - Docs not saved; non-sensitive data and recent scan history may persist</div>',
+                f"{DATA_HANDLING_NOTICE}</div>",
                 unsafe_allow_html=True
             )
 
@@ -4405,16 +4429,11 @@ def show_login_page():
             padding:2px 0 2px 10px;margin:2px 0 6px 0;color:var(--slate-600);font-size:11px;line-height:1.45;">
               <b style="color:var(--slate-900);">Before you continue:</b> Processor Assistant uses AI to help read
               mortgage documents. AI can make mistakes &mdash; review all extracted data, conditions, contacts, drafts,
-              and compliance output before using it. Uploaded PDFs are processed for the scan; non-sensitive fields,
-              loan metadata, settings, and recent scan history may be saved for your account.
+              and compliance output before using it. We never store your documents. We only save the loan details extracted from them so you don't have to re-scan.
+              Extracted loan details and scan history are saved in Supabase and tied to your account.
             </div>
             """,
             unsafe_allow_html=True,
-        )
-        accepted_terms = st.checkbox(
-            "I understand this tool uses AI, outputs must be reviewed, and I agree to use it responsibly.",
-            key="login_terms_ack",
-            value=False,
         )
         try:
             import supabase_auth as _sa
@@ -4436,31 +4455,29 @@ def show_login_page():
                     st.session_state["oauth_google_verifier"] = oauth_info["verifier"]
                     st.session_state["oauth_google_flow_id"] = oauth_info.get("flow_id", "")
                     _cache_oauth_verifier(str(oauth_info.get("flow_id", "")), oauth_info["verifier"])
-                    if accepted_terms:
-                        st.markdown(
-                            f"""
-                            <a href="{oauth_info['url']}" target="_self" style="
-                            display:flex;
-                            width:100%;
-                            align-items:center;
-                            justify-content:center;
-                            text-decoration:none;
-                            padding:12px 14px;
-                            border-radius:10px;
-                            border:1px solid var(--slate-300);
-                            background:var(--bg-subtle);
-                            color:var(--slate-900);
-                            font-weight:600;
-                            margin-bottom:8px;
-                        ">
-                          Sign in with Google
-                        </a>
-                        """,
-                            unsafe_allow_html=True,
-                        )
-                    else:
-                        st.button("Sign in with Google", disabled=True, use_container_width=True)
-                        st.caption("Please accept the AI/review disclaimer to continue.")
+                    st.markdown(
+                        f"""
+                        <a href="{oauth_info['url']}" target="_self" style="
+                        display:flex;
+                        width:100%;
+                        align-items:center;
+                        justify-content:center;
+                        text-decoration:none;
+                        padding:12px 14px;
+                        border-radius:10px;
+                        border:1px solid var(--slate-300);
+                        background:var(--bg-subtle);
+                        color:var(--slate-900);
+                        font-weight:600;
+                        margin-bottom:8px;
+                    ">
+                      Sign in with Google
+                    </a>
+                    """,
+                        unsafe_allow_html=True,
+                    )
+                    st.caption("By continuing with Google, you agree to the [Terms](?page=terms) and "
+                               "[Privacy Policy](?page=privacy), authorize document processing, and agree to review AI outputs.")
                 else:
                     st.caption(oauth_info.get("error", "Google sign-in is unavailable right now."))
             else:
@@ -4481,13 +4498,11 @@ def show_login_page():
                 email = st.text_input("Email", placeholder="you@example.com")
                 password = st.text_input("Password", type="password", placeholder="........")
                 submitted = st.form_submit_button("Sign In", use_container_width=True, type="primary")
-                if submitted and not accepted_terms:
-                    st.error("Please accept the AI/review disclaimer to continue.")
-                elif submitted and email and password:
+                if submitted and email and password:
                     from db import login
                     result = login(email, password)
                     if result.get("success"):
-                        _complete_login_session(result, sandbox_mode=False, page="overview")
+                        _complete_login_session(result, sandbox_mode=False, page="dashboard")
                         st.rerun()
                     else:
                         st.error(result.get("error", "Login failed"))
@@ -4496,19 +4511,19 @@ def show_login_page():
             with st.form("signup_form"):
                 from db import ROLE_OPTIONS
                 display_name = st.text_input("Full Name", placeholder="e.g. Maria Garcia", key="signup_name")
-                role = st.selectbox("Role", ROLE_OPTIONS, key="signup_role")
+                role = st.selectbox("Role (optional)", [""] + list(ROLE_OPTIONS), key="signup_role")
                 email = st.text_input("Email", placeholder="you@example.com", key="signup_email")
                 password = st.text_input("Password", type="password", placeholder="Min 6 characters", key="signup_pass")
                 confirm = st.text_input("Confirm Password", type="password", placeholder="Repeat password", key="signup_confirm")
+                st.markdown("[Terms of Service](?page=terms) | [Privacy Policy](?page=privacy)")
                 tos = st.checkbox(
-                    "Documents are processed in memory only and never stored. "
-                    "I have authorization to process any documents I upload."
+                    DATA_HANDLING_NOTICE + " "
+                    "I agree to the Terms and Privacy Policy, authorize document processing, "
+                    "and understand that I must review AI outputs."
                 )
                 submitted = st.form_submit_button("Create Account", use_container_width=True, type="primary")
                 if submitted:
-                    if not accepted_terms:
-                        st.error("Please accept the AI/review disclaimer to continue.")
-                    elif not tos:
+                    if not tos:
                         st.error("Please check the acknowledgment above")
                     elif password != confirm:
                         st.error("Passwords do not match")
@@ -4518,11 +4533,13 @@ def show_login_page():
                         st.error("Please enter your name")
                     elif email and password:
                         from db import signup
-                        result = signup(email, password, display_name=display_name, role=role)
+                        result = signup(email, password, display_name=display_name, role=role or "Processor")
                         if result.get("success"):
                             st.success(f"Account created for {display_name}! You can now log in.")
                         else:
                             st.error(result.get("error", "Signup failed"))
+
+    render_sample_button("landing")
 
     st.markdown("""
     <div style="text-align:center;margin-top:14px;font-size:10px;color:var(--slate-700);">
@@ -4587,7 +4604,7 @@ def show_sidebar():
         # â”€â”€ Email Watch live stats for badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         import email_watch as _ew
         _ew_status = {"running": False, "pending_count": 0}
-        if _current_auth_user_key() and not st.session_state.get("sandbox_mode"):
+        if advanced_tools_enabled() and _current_auth_user_key() and not st.session_state.get("sandbox_mode"):
             _ew_status = _ew.for_user(_current_auth_user_key()).get_status()
         _ew_pending = _ew_status["pending_count"]
         _ew_running = _ew_status["running"]
@@ -4601,7 +4618,7 @@ def show_sidebar():
             cols = st.columns([1, 8]) if indent else None
             ctx = cols[1] if indent else st
             if ctx.button(lbl, key=btn_key or f"nav_{page_key}", use_container_width=True,
-                          type=("primary" if active else "secondary")):
+                          type=("primary" if active or page_key == "dashboard" else "secondary")):
                 st.session_state.page = page_key
                 _save_session()
                 st.rerun()
@@ -4623,14 +4640,16 @@ def show_sidebar():
 
         # â•â•â•â•â•â•â•â•â•â•â• PRIMARY NAV: Scanner + Pipeline (always visible) â•â•â•â•â•â•â•
         _nav_btn("Scanner",  "dashboard")
-        _nav_btn("Pipeline", "pipeline")
-        _nav_btn("Overview", "overview")
+        _nav_btn("Pipeline - saved scans", "pipeline", indent=True)
+        st.caption("Loan history and saved scan results")
+        if advanced_tools_enabled():
+            _nav_btn("Overview", "overview")
         from tiers import free_beta_mode
-        _nav_btn("Free Beta" if free_beta_mode() else "Pricing", "pricing")
+
 
         # Everything below is secondary - hidden behind one collapsed group so the
         # first impression stays focused on Scanner + Pipeline.
-        _more_open = _section_header("More Tools", "_sec_open_more", default_open=False)
+        _more_open = advanced_tools_enabled() and _section_header("More Tools", "_sec_open_more", default_open=False)
 
         # â•â•â•â•â•â•â•â•â•â•â• WORKSPACE: Reader / Email Watch / Team / Billing â•â•â•â•â•â•â•â•
         if _more_open and _section_header("Workspace", "_sec_open_workspace", default_open=False):
@@ -4704,6 +4723,8 @@ def show_sidebar():
 
         # â•â•â•â•â•â•â•â•â•â•â• SETTINGS â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         if _section_header("Settings", "_sec_open_settings", default_open=False):
+            _nav_btn("Beta offer" if free_beta_mode() else "Pricing", "pricing")
+            _nav_btn("Usage / Billing", "billing")
             # Quick Cloud AI status + toggle (no full-page navigation needed)
             try:
                 import cloud_client as _sb_cc
@@ -4760,11 +4781,10 @@ def show_sidebar():
             except Exception:
                 pass
 
-            if st.button("AI Settings (Claude / Gemini / OpenAI)", key="nav_ai_settings", use_container_width=True, type="secondary"):
+            if st.button("AI Settings", key="nav_ai_settings", use_container_width=True, type="secondary"):
                 st.session_state.page = "ai_settings"
                 _save_session()
                 st.rerun()
-
             # Private owner-only user counter (hidden from all other users).
             _admin_emails = {
                 e.strip().lower()
@@ -4816,6 +4836,7 @@ def show_sidebar():
 
 def show_dashboard():
     """Compact document scanning page always auto-detect, additive scanning."""
+    render_sample_button("scanner")
     _BULK_DOC_TYPES = [
         "Approval Letter", "Loan Estimate (LE)",
         "1003 Application", "Purchase Contract", "Credit Report",
@@ -4853,7 +4874,7 @@ def show_dashboard():
                 '<div style="font-size:14px;font-weight:700;color:var(--slate-900);margin-bottom:12px;">'
                 'Get set up in 3 quick steps</div>'
                 '<div style="font-size:12.5px;color:var(--slate-600);line-height:2.0;">'
-                '<div><b style="color:#3b82f6;">1.</b> &nbsp;Add your free Google Gemini key in AI Settings.</div>'
+                '<div><b style="color:#3b82f6;">1.</b> &nbsp;Enable Google AI billing, then add your paid-tier Gemini key in AI Settings.</div>'
                 '<div><b style="color:#3b82f6;">2.</b> &nbsp;Drop a loan document below - it auto-detects the type.</div>'
                 '<div><b style="color:#3b82f6;">3.</b> &nbsp;Review the parsed conditions, client needs &amp; contacts.</div>'
                 '</div></div>',
@@ -4880,7 +4901,7 @@ def show_dashboard():
         )
 
     if _recent_scans:
-        with st.expander(f"Recent Scans ({len(_recent_scans)} saved for 7 days)", expanded=False):
+        with st.expander(f"Saved scans ({len(_recent_scans)} available until deleted)", expanded=False):
             for _hi, _entry in enumerate(_recent_scans[:20]):
                 _hb = _entry.get("batch") or {}
                 _hr = _hb.get("result") or {}
@@ -4914,7 +4935,7 @@ def show_dashboard():
                 'Gemini API Key Required</div>'
                 '<div style="font-size:12px;color:#fcd34d;line-height:1.5;">'
                 'The scanner uses Gemini 2.5 Flash to read your documents. '
-                'Add your free API key to start scanning — takes about 60 seconds.</div>'
+                'Enable Google AI billing, then add your paid-tier API key to start scanning — takes about 60 seconds.</div>'
                 '</div>',
                 unsafe_allow_html=True,
             )
@@ -4935,8 +4956,8 @@ def show_dashboard():
     with _scan_privacy:
         with st.expander("Privacy and data handling", expanded=False):
             st.write(
-                "Uploaded PDFs are processed for this scan only and are not stored. "
-                "The app may save non-sensitive extracted fields, loan metadata, and recent scan history for your signed-in account."
+                DATA_HANDLING_NOTICE + " "
+                "Extracted loan details and scan history are saved in Supabase and tied to your account."
             )
             render_compliance_statement(compact=True)
     with _scan_import:
@@ -5696,6 +5717,7 @@ def show_dashboard():
             _r = _batch["result"]
             _raw_c = _r.get("conditions")
             _norm_conds = _normalize_scanned_conditions(_raw_c)
+            render_outputs({**_batch, "result": {**_r, "conditions": _norm_conds}}, f"scan_output_{_bidx}")
             _norm_cond_count = len(_norm_conds)
             if isinstance(_raw_c, list):
                 _cond_count = len(_raw_c)
@@ -7595,7 +7617,11 @@ def _pipeline_import_template_csv() -> str:
 
 
 def show_pipeline():
-    """Color-coded CRM loan pipeline dashboard."""
+    """Saved loan pipeline and scan history."""
+    st.caption("Saved scans / loan history")
+    if st.button("View saved scan history", key="pipeline_saved_scan_history"):
+        st.session_state.page = "history"
+        st.rerun()
     import os
     # Handle clicks from the header status chips and the column-header sort row.
     _qp = st.query_params
@@ -11059,29 +11085,32 @@ def show_escrow_calculator_page():
 
 
 def show_history():
-    """Show user's scan history."""
-    st.markdown("## My History")
-    if st.session_state.user_id == "sandbox":
-        st.info("Log in to save and view your scan history.")
+    """Saved parsed scans for the authenticated account."""
+    st.markdown("## Saved scans / loan history")
+    st.write(DATA_HANDLING_NOTICE)
+    if st.session_state.get("sandbox_mode"):
+        st.info("Sign in to save and view your scan history.")
         return
-    from db import get_history
-    history = get_history(st.session_state.user_id)
+    if st.button("Refresh saved scans", key="refresh_saved_scans"):
+        st.session_state.pop(f"saved_scan_history:{_scan_history_user_key()}", None)
+    history = _recent_scan_history()
+    if st.session_state.get("scan_history_error"):
+        st.warning(st.session_state["scan_history_error"])
+        return
     if not history:
-        st.info("No scans yet. Upload a document to get started.")
-        return
+        st.info("No saved scans yet. Upload a document in Scanner to get started.")
     for entry in history:
-        with st.expander(f"{entry['doc_type']} - {entry['created_at'][:10]}"):
-            st.markdown("**Summary:**")
-            st.markdown(entry.get("summary", ""))
-            if st.button("View Full Results", key=f"view_{entry['id']}"):
-                st.markdown("---")
-                st.markdown("### Conditions")
-                st.markdown(entry.get("conditions", ""))
-                if entry.get("bank_rules"):
-                    st.markdown("### Bank Statement Rules")
-                    st.markdown(entry["bank_rules"])
-                st.markdown("### Risk Flags")
-                st.markdown(entry.get("risks", ""))
+        batch = entry.get("batch") or {}
+        entry_id = entry["id"]
+        with st.expander(f"{batch.get('file', 'Scan')} - {batch.get('type', 'Document')}"):
+            render_outputs(batch, f"history_{entry_id}")
+            if st.button("Open in Scanner", key=f"restore_history_{entry_id}"):
+                st.session_state.setdefault("scan_batches", []).append(batch)
+                st.session_state.page = "dashboard"
+                st.rerun()
+            if st.button("Delete saved scan", key=f"delete_history_{entry_id}"):
+                if _save_scan_history_all([i for i in history if i.get("id") != entry_id]):
+                    st.rerun()
 
 
 def show_email_watch_controls_page():
@@ -11599,7 +11628,8 @@ def show_ollama_page():
         """
         <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.25);
         border-radius:12px;padding:12px 14px;margin:10px 0 14px 0;color:#dbeafe;font-size:13px;">
-          <b>Required:</b> Create a Google AI Studio API key and paste it below.
+          <b>Required:</b> Enable billing on your Google AI account (paid tier), create an API key
+          in the billing-enabled project, and paste it below.
           Without a Gemini 2.5 Flash key, smart parsing will not work correctly.
         </div>
         """,
@@ -11608,6 +11638,11 @@ def show_ollama_page():
     st.text_input("Provider", value="Google Gemini", disabled=True)
     st.text_input("Model", value=cc_model, disabled=True)
     st.caption("Gemini 2.5 Flash is the only enabled model for now.")
+
+    st.info(GEMINI_BILLING_NOTICE)
+    st.caption(GEMINI_TRAINING_NOTICE)
+
+    render_gemini_setup_video()
 
     # Key + Save inside a form so a half-typed key doesn't auto-save
     with st.form("cloud_settings_form"):
@@ -11665,9 +11700,10 @@ def show_ollama_page():
 **Google Gemini 2.5 Flash**
 1. Go to [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 2. Sign in with your Google account.
-3. Click **Create API key**.
-4. Copy the key and paste it into the API Key box above.
-5. Click **Save Provider / Model / Key**.
+3. Enable **billing** for your Google AI project and confirm its plan is **Paid**.
+4. Click **Create API key** and select that billing-enabled project.
+5. Copy the key and paste it into the API Key box above.
+6. Click **Save Provider / Model / Key**.
 
 Keep this key private. Processor Assistant stores it encrypted for your signed-in account.
         """)
@@ -11767,7 +11803,7 @@ def show_pricing_page():
 
     if _tiers.free_beta_mode():
         st.title("Free Beta")
-        st.caption("Processor Assistant is free during beta. No credit card or paid plan is required.")
+        st.caption(beta_offer())
         render_feature_highlights(heading=True)
         render_no_credit_card_banner()
         if st.button("Open Scanner", type="primary", use_container_width=True):
@@ -11861,7 +11897,7 @@ def show_pricing_page():
     with st.expander("What is included?"):
         st.markdown(
             """
-            Scanner, pipeline tracking, recent scan history, saved non-sensitive loan data,
+            Scanner, pipeline tracking, recent scan history, saved extracted loan details,
             user account settings, and privacy-gated AI features where configured.
             """,
         )
@@ -14460,43 +14496,54 @@ def render_site_footer() -> None:
 
 def show_privacy_policy_page() -> None:
     st.title("Privacy Policy")
-    st.caption("Last updated: May 16, 2026")
+    st.caption("Last updated: November 10, 2026")
     st.markdown(
         """
-### What we collect
-- Your account email.
-- Loan files you upload to process.
-- Borrower information inside those loan files.
+### Documents and saved data
+We never store your documents. We only save the loan details extracted from them so you don't have to re-scan.
 
-### Where data is stored
-- We use Supabase for cloud data storage and authentication.
-- Some temporary/local processing data may also exist on the app host for app operation and troubleshooting.
+Uploaded documents are processed in memory only and are never stored by Processor Assistant.
+We save extracted loan data (parsed fields) and scan history in Supabase, tied to your account,
+so you can return to previous results without re-scanning. Extracted fields may include borrower
+and loan information from the documents you process.
 
-### How long we keep data
-- We keep account and operational data while your account is active.
-- We keep loan-processing data only as long as needed to provide the service, support your workflow, and meet legal or compliance needs.
-- You can request deletion of your data, subject to legal retention requirements.
+### Account information
+We store your name, email, and role to provide and manage your account. Your Gemini API key
+is saved encrypted for your signed-in account when you configure it.
 
-### We do not sell your data
-- We do not sell personal data to third parties.
+### How we use information
+We use your information to parse documents, display extracted loan details, maintain your scan
+history, manage your account, and provide subscription and payment services.
 
-### GDPR and CCPA basics
-- You can request access to your personal data.
-- You can request correction or deletion where legally allowed.
-- You can request information about how your data is used.
-- CCPA users can request disclosure and deletion rights where applicable.
+### Third parties that handle data
+- **Google Gemini API** processes document content for parsing and AI assistance.
+  Google does not use your data to train its models when you use a paid-tier Gemini API key.
+  Enable billing for the Google AI project associated with your key before processing documents.
+  Google's processing is subject to its [Gemini API terms](https://ai.google.dev/gemini-api/terms).
+- **Supabase** provides the database and authentication, including account information,
+  extracted loan details, and scan history linked to your account.
+- **Railway** hosts Processor Assistant and runs its in-memory document processing.
+- **Stripe** handles subscription payments and related billing information.
+
+### Retention and deletion
+Saved loan data and scan history are kept until you delete them or close your account.
+Account information is kept while your account is active. You can request deletion of saved
+loan data, scan history, or your account by emailing info@edgelandings.com.
+
+### Your privacy rights
+We do not sell your personal data. You can email info@edgelandings.com to request
+access to your information, corrections, deletion, or information about how it is used.
+These requests include applicable GDPR and CCPA rights.
 
 ### Privacy questions
-- Email us at: privacy@processorassistant.com
-
-This policy is written in plain language to help you understand how your information is handled.
+Email info@edgelandings.com.
         """
     )
 
 
 def show_terms_page() -> None:
     st.title("Terms of Service")
-    st.caption("Last updated: May 16, 2026")
+    st.caption("Last updated: November 10, 2026")
     st.markdown(
         """
 ### Your responsibilities
@@ -14524,6 +14571,7 @@ By using Processor Assistant, you agree to these terms.
 
 
 def main():
+    st.markdown('<span id="pa-workspace-ready" hidden></span>', unsafe_allow_html=True)
     _handle_google_oauth_callback()
     _qp_page = st.query_params.get("page", "")
     if isinstance(_qp_page, list):
@@ -14546,7 +14594,7 @@ def main():
             render_site_footer()
             return
         if _AUTO_ENTER_SANDBOX:
-            _enter_sandbox(page="overview")
+            _enter_sandbox(page="dashboard")
             st.rerun()
         show_login_page()
         render_site_footer()
@@ -14573,6 +14621,7 @@ def main():
                 and st.session_state.get("onboarding_checklist_dismissed")):
             st.session_state.page = _preferred_landing_page()
             _save_session()
+        st.session_state.page = visible_page(st.session_state.page)
         show_sidebar()
         show_persistent_header()
         _render_gemini_key_prompt()

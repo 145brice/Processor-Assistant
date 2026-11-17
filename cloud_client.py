@@ -568,12 +568,38 @@ def clear_log():
 # Feature: Enhanced condition extraction
 # ─────────────────────────────────────────────────────────────────────────────
 
+def _pipeline_borrower_names() -> list[str]:
+    """Borrower names already in the pipeline, as individual "First Last" values.
+
+    "Robert & Sandra Kim" -> ["Robert & Sandra Kim", "Robert Kim", "Sandra Kim"].
+    Used only as must-redact values; nothing here is sent anywhere.
+    """
+    try:
+        from crm import get_all_loans
+        loans = get_all_loans()
+    except Exception:
+        return []
+    names: list[str] = []
+    for loan in loans or []:
+        full = str(loan.get("borrower") or "").strip()
+        if len(full) < 4:
+            continue
+        names.append(full)
+        parts = [p.strip() for p in re.split(r"\s*(?:&|\band\b|,)\s*", full) if p.strip()]
+        last = parts[-1].split()[-1] if parts and parts[-1].split() else ""
+        for part in parts:
+            words = part.split()
+            names.append(part if len(words) >= 2 else f"{part} {last}".strip())
+    return [n for n in dict.fromkeys(names) if len(n.split()) >= 2]
+
+
 def enhance_conditions(text: str, doc_type: str,
                        script_conditions: str,
                        known_values=None) -> tuple[str, str]:
     cfg = get_config()
     if not cfg.get("enabled") or not cfg.get("api_key"):
         return script_conditions, _log("SCRIPT", "condition_extraction", "Cloud disabled")
+    known_values = list(known_values or []) + _pipeline_borrower_names()
 
     safe_text, text_replacements, text_forced, text_leaks = redact_for_cloud_resilient(
         text,

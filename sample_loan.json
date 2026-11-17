@@ -1,0 +1,18 @@
+{
+  "file": "sample-conditional-approval.pdf",
+  "type": "Conditional approval",
+  "result": {
+    "borrower": "Alex Morgan",
+    "loan_num": "DEMO-1042",
+    "property": "123 Example Lane, Sample City, TX 75001",
+    "loan_amount": "$320,000",
+    "loan_program": "Conventional, 30-year fixed",
+    "status": "Conditionally approved",
+    "conditions": [
+      {"num": 1, "desc": "Provide your two most recent pay stubs showing year-to-date earnings.", "party": "Borrower", "status": "Needed"},
+      {"num": 2, "desc": "Provide all pages of your two most recent bank statements.", "party": "Borrower", "status": "Needed"},
+      {"num": 3, "desc": "Provide a homeowners insurance binder with the lender mortgagee clause.", "party": "Insurance", "status": "Requested"},
+      {"num": 4, "desc": "Provide the title commitment for underwriting review.", "party": "Title", "status": "Requested"}
+    ]
+  }
+}

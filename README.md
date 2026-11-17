@@ -375,7 +375,7 @@ Available when logged in (not Sandbox). Shows all past document scans saved to t
 ---
 
 ### 7. Sandbox Mode
-No account needed. Uploaded documents are not saved. Non-sensitive extracted loan data and recent scan history/cache may persist for continuity. Good for demos or evaluation.
+No account needed for the static sample loan demo. We never store your documents. We only save the loan details extracted from them so you don't have to re-scan. Signed-in scan history is saved in Supabase until deletion or account closure. Sandbox results stay in the current session.
 
 ---
 
@@ -587,3 +587,12 @@ git push
 - Your pipeline, history, activity logs, and team list are stored locally only.
 - Fraud checks use local regex checks unless you explicitly use Cloud AI.
 - Nothing leaves your computer except when you explicitly use Cloud AI or push to GitHub.
+
+### Scanner-first configuration
+
+- `PA_ENABLE_ADVANCED_TOOLS=0` hides secondary tools by default; set to `1` to restore them.
+- `PA_GEMINI_SETUP_VIDEO` accepts the setup video URL or file path shown above the key inputs.
+- Set `PA_BETA_END_DATE`, `PA_FOUNDER_SPOTS`, and `PA_FOUNDER_MONTHLY_PRICE` (including currency) to publish the complete founder offer. No offer values are assumed.
+- Enable billing for the Google AI project associated with the Gemini key before scanning. Google does not use your data to train its models when you use a paid-tier Gemini API key.
+- Production stays warm with Railway sleeping disabled. Health endpoint: `/_stcore/health`.
+- Data deletion requests: info@edgelandings.com.

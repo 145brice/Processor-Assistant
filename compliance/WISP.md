@@ -41,7 +41,7 @@ any material change. Summary of current assessment:
 | Asset / data | Threat | Likelihood | Impact | Current safeguard | Residual risk |
 |---|---|---|---|---|---|
 | Borrower NPI in uploaded PDFs | Interception in transit | Low | High | TLS/HTTPS everywhere | Low |
-| Borrower NPI in uploaded PDFs | Over-exposure to AI vendor | **Medium** | High | Paid Gemini tier (no training, no human review); see §6 and Data Inventory | **Medium — see Open Items** |
+| Borrower NPI in uploaded PDFs | Over-exposure to AI vendor | **Medium** | High | Google does not use your data to train its models when you use a paid-tier Gemini API key. See §6 and Data Inventory | **Medium — see Open Items** |
 | Stored loan metadata / scan history | Unauthorized access | Low | Medium | Google OAuth auth; per-account scoping | Low |
 | Account/profile data (Supabase) | Provider breach | Low | Medium | Reputable provider; encrypted at rest/in transit; least-privilege keys | Low |
 | Billing data (Stripe) | Card data exposure | Low | High | Stripe is PCI-DSS Level 1; we never see/store card numbers | Low |

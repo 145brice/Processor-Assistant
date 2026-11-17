@@ -19,6 +19,7 @@ regex + barcode detection only — it just won't catch unlabeled names.
 from __future__ import annotations
 
 import logging
+import re
 from functools import lru_cache
 from typing import TYPE_CHECKING
 
@@ -106,8 +107,37 @@ def _detect_spacy(text: str, model: str) -> list[Span]:
 _WARNED = False
 
 
+# Mortgage vocabulary the statistical model mislabels as organizations or people
+# ("VOE", "Borrower Conditions"). Redacting these hides the meaning of a condition
+# from the AI without protecting anyone.
+_DOMAIN_TERMS = {
+    "voe", "wvoe", "vod", "vor", "hoi", "hoa", "cd", "le", "loe", "ptd", "ptf", "pta", "ptp", "ac",
+    "ctc", "fha", "va", "usda", "mi", "pmi", "mip", "ufmip", "dti", "ltv", "cltv", "aus", "du", "lp",
+    "1003", "1008", "4506", "4506-c", "w-2", "w2", "1099", "irs", "ssa", "ein", "itin", "flood",
+    "appraisal", "title", "escrow", "underwriting", "underwriter", "processor", "closer", "lender",
+    "borrower", "co-borrower", "seller", "buyer", "conditions", "condition", "prior to docs",
+    "prior to funding", "prior to approval", "at closing", "borrower conditions", "client conditions",
+    "borrower requirements", "loan approval conditions", "final seller disclosure",
+    "closing disclosure", "loan estimate", "verification of employment", "verification of deposit",
+    "homeowners insurance", "hazard insurance", "real estate certification", "amendatory clause",
+}
+
+
+def _is_domain_term(fragment: str) -> bool:
+    norm = re.sub(r"[\s:]+", " ", fragment.strip().strip(".,;").lower())
+    if norm in _DOMAIN_TERMS:
+        return True
+    words = norm.split()
+    return bool(words) and all(w in _DOMAIN_TERMS for w in words)
+
+
 def detect(text: str, config: "SanitizerConfig | None" = None) -> list[Span]:
     """Return NER spans, or ``[]`` if no NER backend is available."""
+    spans = _detect_raw(text, config)
+    return [s for s in spans if not _is_domain_term(s.text)]
+
+
+def _detect_raw(text: str, config: "SanitizerConfig | None" = None) -> list[Span]:
     global _WARNED
     src = str(text or "")
     if not src.strip():
