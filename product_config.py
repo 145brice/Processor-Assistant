@@ -3,7 +3,8 @@ import os
 
 
 def advanced_tools_enabled():
-    return os.getenv("PA_ENABLE_ADVANCED_TOOLS", "0").strip().lower() in {"1", "true", "yes", "on"}
+    # On for everyone; the sidebar keeps them inside a collapsed "More Tools" group.
+    return os.getenv("PA_ENABLE_ADVANCED_TOOLS", "1").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def beta_offer():

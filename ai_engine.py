@@ -2235,13 +2235,13 @@ def extract_1003(text: str) -> dict:
 
     # ── Borrower ────────────────────────────────────────────────────────────
     borrower_name = _find([
-        r"(?:Borrower'?s?\s*Name|Borrower\s*Name|I\.\s*BORROWER)[:\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
-        r"(?:^|\n)\s*Borrower[:\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
-        r"(?:Applicant|APPLICANT)[:\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
+        r"(?:Borrower'?s?\s*Name|Borrower\s*Name|I\.\s*BORROWER)[:\s]+([A-Z][a-zA-Z\-']+(?:[ \t]+[A-Z][a-zA-Z\-']+){1,4})",
+        r"(?:^|\n)\s*Borrower[:\s]+([A-Z][a-zA-Z\-']+(?:[ \t]+[A-Z][a-zA-Z\-']+){1,4})",
+        r"(?:Applicant|APPLICANT)[:\s]+([A-Z][a-zA-Z\-']+(?:[ \t]+[A-Z][a-zA-Z\-']+){1,4})",
     ])
     co_borrower_name = _find([
-        r"(?:Co-?Borrower'?s?\s*Name|CO-?BORROWER\s*NAME)[:\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
-        r"(?:Co-?Applicant)[:\s]+([A-Z][a-zA-Z\-']+(?:\s+[A-Z][a-zA-Z\-']+){1,4})",
+        r"(?:Co-?Borrower'?s?\s*Name|CO-?BORROWER\s*NAME)[:\s]+([A-Z][a-zA-Z\-']+(?:[ \t]+[A-Z][a-zA-Z\-']+){1,4})",
+        r"(?:Co-?Applicant)[:\s]+([A-Z][a-zA-Z\-']+(?:[ \t]+[A-Z][a-zA-Z\-']+){1,4})",
     ])
 
     # SSN — first match = borrower, second = co-borrower
@@ -4886,13 +4886,13 @@ def extract_mortgage_statement(text: str) -> dict:
             servicer = m.group(1).strip()
 
     # Borrower: "Borrower: Name" or "Account Holder: Name" or name labeled line
-    borrower = _find(r'(?:^|\n)(?:borrower|account\s*holder|customer\s*name)[:\s]+([A-Z][A-Za-z\s\-\']{3,40})', text)
+    borrower = _find(r'(?:^|\n)(?:borrower|account\s*holder|customer\s*name)[:\s]+([A-Z][A-Za-z \t\-\']{3,40})', text)
     if not borrower:
         # Name after "Dear" greeting
-        borrower = _find(r'Dear\s+([A-Z][A-Za-z\s\-\']{3,40}),', text)
+        borrower = _find(r'Dear\s+([A-Z][A-Za-z \t\-\']{3,40}),', text)
     if not borrower:
         # "Prepared for: Name" pattern
-        borrower = _find(r'(?:prepared\s*for|statement\s*for)[:\s]+([A-Z][A-Za-z\s\-\']{3,40})', text)
+        borrower = _find(r'(?:prepared\s*for|statement\s*for)[:\s]+([A-Z][A-Za-z \t\-\']{3,40})', text)
 
     loan_num      = _find(r'(?:loan\s*(?:number|no\.?|#)|account\s*(?:number|no\.?|#))[:\s#]*([\d\-]{4,20})', text)
     prop_addr     = _find(r'(?:property\s*(?:address|location)|subject\s*property|property)[:\s]+(\d+[^\n]{5,70})', text)
@@ -5421,10 +5421,10 @@ def process_document(pdf_bytes: bytes, doc_type: str, user_history=None, user_ap
             try:
                 import cloud_client as _cc
                 if _cc.is_enabled():
-                    # Route through the approval extractor: PDF vision first (best
-                    # accuracy - reads the whole letter), with automatic fallback to
-                    # the redacted full-text path. The old call only handed the model
-                    # the few script-found rows, so it could never find more.
+                    # Route through the approval extractor: redacted full-text path by
+                    # default; whole-PDF vision only with the explicit PA_PDF_VISION
+                    # opt-in. The old call only handed the model the few script-found
+                    # rows, so it could never find more.
                     _pdf_conditions, ai_log, _pdf_text = _cc.extract_approval_conditions_ai_from_pdf(pdf_bytes)
                     if _pdf_conditions:
                         result["conditions"] = _pdf_conditions

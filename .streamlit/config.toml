@@ -5,5 +5,9 @@ maxUploadSize = 40
 maxMessageSize = 50
 headless = true
 
+[theme]
+# Brand blue for checkboxes, radios, sliders and focus rings (Streamlit default is red).
+primaryColor = "#4368b8"
+
 [browser]
 gatherUsageStats = false

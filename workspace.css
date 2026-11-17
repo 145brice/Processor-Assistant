@@ -281,7 +281,7 @@ html[data-theme] body [data-testid="stMain"] [class*="_section_toolbar"] [data-t
 html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"],
 html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"]:hover {
     background: var(--pa-upload-bg) !important; background-image: none !important;
-    border: 2px solid var(--pa-upload-border) !important; border-radius: 10px !important;
+    border: 1px solid var(--slate-300) !important; border-radius: 10px !important;
     padding: 20px 24px !important; box-shadow: none !important; transform: none !important;
 }
 html[data-theme] body [data-testid="stMain"] [data-testid="stFileUploader"] section {

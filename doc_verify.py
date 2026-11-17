@@ -385,6 +385,9 @@ def _match_borrower(text: str, filename: str, hint: str, *, loans=None) -> dict:
         _fuzzy = False
 
     blob = f"{text} {filename} {hint}".lower()
+    # Compare whole words: partial_ratio of a short name against the full text
+    # finds a ~70% window in almost any document and floods false "possible" matches.
+    blob_words = set(re.findall(r"[a-z][a-z'\-]+", blob))
     best_loan  = None
     best_score = 0
 
@@ -396,9 +399,12 @@ def _match_borrower(text: str, filename: str, hint: str, *, loans=None) -> dict:
         if bname.lower() in blob:
             score = 95
         elif _fuzzy:
-            words  = [w for w in bname.lower().split() if len(w) > 2]
-            scores = [fuzz.partial_ratio(w, blob) for w in words]
-            score  = max(scores) if scores else 0
+            words  = [w for w in re.findall(r"[a-z][a-z'\-]+", bname.lower()) if len(w) > 2]
+            # Every name part must show up (allowing OCR typos), so average the per-word best.
+            scores = [max((fuzz.ratio(w, b) for b in blob_words), default=0) for w in words]
+            score  = round(sum(scores) / len(scores)) if scores else 0
+            if scores and scores[-1] < 80:
+                score = min(score, 49)  # last name absent: never suggest a match
         else:
             # Check last name at least
             last = bname.split()[-1].lower()
@@ -417,7 +423,7 @@ def _match_borrower(text: str, filename: str, hint: str, *, loans=None) -> dict:
             "suggestion":       "match",
             "suggested_folder": best_loan.get("folder_path", ""),
         }
-    if best_score >= 50 and best_loan:
+    if best_score >= 60 and best_loan:
         return {
             "loan_id":          best_loan.get("id"),
             "loan_num":         best_loan.get("loan_num", ""),

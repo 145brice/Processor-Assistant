@@ -45,14 +45,14 @@ class ScanOutputTests(unittest.TestCase):
 
 
 class ConfigTests(unittest.TestCase):
-    def test_tools_are_off_by_default_and_direct_routes_are_blocked(self):
+    def test_tools_are_on_by_default_and_can_be_switched_off(self):
         with patch.dict(os.environ, {}, clear=True):
-            self.assertFalse(product_config.advanced_tools_enabled())
+            self.assertTrue(product_config.advanced_tools_enabled())
+            self.assertEqual(product_config.visible_page("fraud_detector"), "fraud_detector")
+        with patch.dict(os.environ, {"PA_ENABLE_ADVANCED_TOOLS": "0"}):
             for page in ("fraud_detector", "rate_lock_monitor", "overview", "compliance_checker"):
                 self.assertEqual(product_config.visible_page(page), "dashboard")
             self.assertEqual(product_config.visible_page("pipeline"), "pipeline")
-        with patch.dict(os.environ, {"PA_ENABLE_ADVANCED_TOOLS": "1"}):
-            self.assertEqual(product_config.visible_page("fraud_detector"), "fraud_detector")
 
     def test_beta_offer_uses_only_supplied_values(self):
         with patch.dict(os.environ, {}, clear=True):

@@ -2133,6 +2133,10 @@ def _save_session():
                 _json_auth.dump(_data, _f)
         except Exception:
             pass
+    if _data.get("sandbox_mode"):
+        # Sandbox is a throwaway demo identity; never persist it to the cloud.
+        st.session_state.pop("browser_session_save_error", None)
+        return
     try:
         if _data.get("authenticated"):
             import supabase_auth as _sa
@@ -5335,19 +5339,20 @@ def show_dashboard():
         _visible = [_di for _di, _det in enumerate(_detections) if _di not in _dupes]
 
         # Check all / Uncheck all / Delete selected controls
-        _sel_c1, _sel_c2, _sel_c3 = st.columns([1, 1, 2])
+        # Bulk controls only make sense with more than one file.
+        _sel_c1, _sel_c2, _sel_c3, _ = st.columns([1, 1, 1.4, 3.6])
         with _sel_c1:
-            if st.button("Check All", key="dash_check_all", use_container_width=True):
+            if len(_visible) > 1 and st.button("Check All", key="dash_check_all", use_container_width=True):
                 for _vi in _visible:
                     st.session_state[f"dash_sel_{_vi}"] = True
                 st.rerun()
         with _sel_c2:
-            if st.button("Uncheck All", key="dash_uncheck_all", use_container_width=True):
+            if len(_visible) > 1 and st.button("Uncheck All", key="dash_uncheck_all", use_container_width=True):
                 for _vi in _visible:
                     st.session_state[f"dash_sel_{_vi}"] = False
                 st.rerun()
         with _sel_c3:
-            if st.button("Delete Selected", key="dash_del_selected", use_container_width=True):
+            if len(_visible) > 1 and st.button("Remove unchecked", key="dash_del_selected", use_container_width=True):
                 _to_remove = [_vi for _vi in _visible if not st.session_state.get(f"dash_sel_{_vi}", True)]
                 # Remove from file_bytes_cache and detections by rebuilding sans removed
                 _keep = [i for i in range(len(new_files)) if i not in _to_remove]
@@ -5388,21 +5393,9 @@ def show_dashboard():
             _try_cloud = _dash_cc.is_enabled()
         except Exception:
             pass
-        _use_cloud_enhancement = False
-        if _try_cloud:
-            _scan_method = st.radio(
-                "Scan method",
-                ("AI", "No AI"),
-                index=0,
-                key="dash_scan_method",
-                horizontal=True,
-                help=(
-                    "AI is selected by default and enhances the locally extracted conditions. "
-                    "The PDF remains local; only sanitized condition text is sent. "
-                    "Choose No AI for local-only extraction."
-                ),
-            )
-            _use_cloud_enhancement = _scan_method == "AI"
+        # AI enhancement is always on when configured; the PDF stays local and
+        # only sanitized condition text is sent.
+        _use_cloud_enhancement = _try_cloud
 
         # â”€â”€ Monthly scan-quota indicator â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         try:
@@ -5427,7 +5420,7 @@ def show_dashboard():
             pass
 
         _checked_visible = [_vi for _vi in _visible if st.session_state.get(f"dash_sel_{_vi}", True)]
-        _scan_clicked = st.button(f"Scan with AI ({len(_checked_visible)} selected)" if _use_cloud_enhancement else f"Scan with No AI ({len(_checked_visible)} selected)",
+        _scan_clicked = st.button(f"Scan ({len(_checked_visible)} selected)",
                                   key="dash_scan", type="primary", disabled=len(_checked_visible) == 0)
         if _scan_clicked:
             # Build the actual list of (bytes, name, type) to scan
@@ -5669,12 +5662,11 @@ def show_dashboard():
                         )
                 else:
                     st.error(f"{_sq_name}: {_result.get('error', 'Failed')}")
-            _sq_progress.progress(100, text=f"Done - {_sq_total} document(s) scanned")
+            _sq_progress.empty()  # per-file results below already confirm completion
 
     # â”€â”€ Show completed scan results â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     if st.session_state.scan_batches:
         from crm import get_all_loans as _gl, add_loan as _al, update_loan as _ul, log_activity as _la
-        st.markdown("---")
         _rb1, _rb2, _rb3 = st.columns([2, 1, 1])
         with _rb1:
             st.markdown(f'<div style="font-size:13px;font-weight:700;padding-top:6px;">{len(st.session_state.scan_batches)} document(s) scanned</div>', unsafe_allow_html=True)
@@ -13603,25 +13595,9 @@ def show_loan_detail():
             pass
 
         _cloud_doc_types = {"Purchase Contract", "Approval Letter"}
-        _detail_use_cloud = False
-        if _cloud_enabled and _scan_dtype in _cloud_doc_types:
-            _detail_scan_method = st.radio(
-                "Scan method",
-                ("AI", "No AI"),
-                index=0,
-                key=f"detail_scan_method_{lid}",
-                horizontal=True,
-                help=(
-                    "AI is selected by default and enhances the locally extracted text. "
-                    "Choose No AI for local-only extraction."
-                ),
-            )
-            _detail_use_cloud = _detail_scan_method == "AI"
-        _user_approved_cloud = _detail_use_cloud
+        _user_approved_cloud = _cloud_enabled and _scan_dtype in _cloud_doc_types
 
-        _scan_btn_label = (
-            "Scan with AI" if _user_approved_cloud else "Scan with No AI"
-        )
+        _scan_btn_label = "Scan"
         if _scan_file and st.button(_scan_btn_label, key=f"detail_scan_btn_{lid}",
                                      type="primary", use_container_width=True):
             _ld_provider = "AI"
@@ -14606,7 +14582,7 @@ def main():
             str(st.session_state.get("browser_session_save_error") or "").strip(),
         ]
         _cloud_save_errors = [e for e in _cloud_save_errors if e]
-        if _cloud_save_errors:
+        if _cloud_save_errors and not st.session_state.get("sandbox_mode"):
             st.warning(
                 "Your account is signed in, but Processor Assistant could not save all cloud profile/session data. "
                 "Refresh to retry. If it persists, contact support."
