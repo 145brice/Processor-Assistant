@@ -34,10 +34,15 @@ export default function ScannerPage() {
   const [usage, setUsage] = useState<UsageSummary | null>(null);
 
   useEffect(() => {
-    // Until /api/me exists (T-13) this fails quietly and the key banner stays hidden.
-    getMe()
-      .then((me) => { setNeedsKey(!me.sandbox && !me.ai.has_key); setHasKey(me.ai.has_key); setUsage(me.usage); })
-      .catch(() => setNeedsKey(false));
+    // If /api/me fails, the key banner stays hidden rather than nagging.
+    const load = () =>
+      getMe()
+        .then((me) => { setNeedsKey(!me.sandbox && !me.ai.has_key); setHasKey(me.ai.has_key); setUsage(me.usage); })
+        .catch(() => setNeedsKey(false));
+    void load();
+    // The setup wizard announces a saved key so the banner can go away without a reload.
+    window.addEventListener("pa:ai-key-saved", load);
+    return () => window.removeEventListener("pa:ai-key-saved", load);
   }, []);
 
   const patch = (id: string, change: Partial<QueuedFile>) =>
@@ -152,9 +157,13 @@ export default function ScannerPage() {
                   The scanner uses Gemini 2.5 Flash to read your documents. Enable Google AI billing, then add your paid-tier API key. It takes about 60 seconds.
                 </p>
               </div>
-              <Link href="/settings/ai" className="group inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-foreground px-4 py-2.5 text-sm font-medium text-background transition hover:opacity-90">
+              <button
+                type="button"
+                onClick={() => window.dispatchEvent(new Event("pa:open-gemini-setup"))}
+                className="group inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl bg-foreground px-4 py-2.5 text-sm font-medium text-background transition hover:opacity-90"
+              >
                 Set up key <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
-              </Link>
+              </button>
             </div>
           )}
 
