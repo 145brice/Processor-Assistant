@@ -21,3 +21,6 @@ cloud_log.txt
 scan_history.json
 streamlit_local.log
 streamlit_local.err.log
+
+# Rebuild API virtualenv
+.venv-api/

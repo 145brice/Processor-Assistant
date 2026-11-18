@@ -25,3 +25,6 @@ inbox
 cloud_log.txt
 stderr.txt
 stdout.txt
+
+# Next.js rebuild (separate service; not part of the Streamlit image)
+web/
