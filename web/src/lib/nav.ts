@@ -6,7 +6,7 @@ const tool = (label: string, key: string): NavItem => ({ label, href: `/tools/${
 
 export const PRIMARY_NAV: NavItem[] = [
   { label: "Scanner", href: "/scanner" },
-  { label: "Pipeline - saved scans", href: "/pipeline" },
+  { label: "Pipeline", href: "/pipeline" },
   { label: "Overview", href: "/overview" },
 ];
 
