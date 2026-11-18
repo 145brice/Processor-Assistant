@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { safeNext } from "@/lib/navigation";
 
 export default function Page() {
   const router = useRouter();
@@ -13,9 +14,7 @@ export default function Page() {
       const code = search.get("code");
       const result = code ? await supabase.auth.exchangeCodeForSession(code) : { error: new Error("Missing sign-in code") };
       if (result.error) { setError(true); return; }
-      const next = search.get("next");
-      const safeNext = next && next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/scanner";
-      router.replace(safeNext);
+      router.replace(safeNext(search.get("next"), window.location.origin));
     };
     void finish();
   }, [router]);

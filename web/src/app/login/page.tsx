@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { safeNext } from "@/lib/navigation";
 
 export default function Page() {
   const router = useRouter();
-  const validNext = (value: string | null) => value && value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/\\") ? value : "/scanner";
   const signIn = async () => {
     document.cookie = "pa_sandbox=; Path=/; Max-Age=0; SameSite=Lax";
-    const next = validNext(new URLSearchParams(window.location.search).get("next"));
+    const next = safeNext(new URLSearchParams(window.location.search).get("next"), window.location.origin);
     await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin + "/auth/callback?next=" + encodeURIComponent(next) } });
   };
   const sandbox = async () => {

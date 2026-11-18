@@ -10,12 +10,6 @@ type LoanList = { loans: LoanSummary[]; counts: StatusCounts };
 
 const BASE = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8600";
 
-/** Who is calling. Set by the auth layer (task T-12) after sign-in or sandbox entry. */
-let auth: { token: string | null; sandbox: boolean } = { token: null, sandbox: false };
-export function setAuth(next: { token: string | null; sandbox: boolean }): void {
-  auth = next;
-}
-
 export class ApiError extends Error {
   constructor(public status: number, public code: string, message: string) {
     super(message);
@@ -26,7 +20,7 @@ async function request<T>(method: string, path: string, body?: unknown, raw = fa
   const headers: Record<string, string> = {};
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.access_token) headers.Authorization = `Bearer ${session.access_token}`;
-  else if (auth.sandbox || document.cookie.split("; ").includes("pa_sandbox=1")) headers["X-PA-Sandbox"] = "1";
+  else if (document.cookie.split("; ").includes("pa_sandbox=1")) headers["X-PA-Sandbox"] = "1";
   let payload: BodyInit | undefined;
   if (body instanceof FormData) payload = body;
   else if (body !== undefined) {

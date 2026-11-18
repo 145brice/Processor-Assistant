@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MORE_TOOLS, PRIMARY_NAV, SETTINGS_NAV, type NavItem } from "@/lib/nav";
-import { setAuth } from "@/lib/api";
 import { supabase } from "@/lib/supabase";
 
 function NavLink({ item, onNavigate }: { item: NavItem; onNavigate: () => void }) {
@@ -32,7 +31,6 @@ export default function Sidebar() {
   const logout = async () => {
     await supabase.auth.signOut();
     document.cookie = "pa_sandbox=; Path=/; Max-Age=0; SameSite=Lax";
-    setAuth({ token: null, sandbox: false });
     router.push("/login");
   };
   return <>
