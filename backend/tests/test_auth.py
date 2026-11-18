@@ -1,5 +1,6 @@
 import asyncio
 
+import httpx
 import pytest
 
 from backend.pa_api import auth, context
@@ -12,6 +13,25 @@ class FakeResponse:
 
     def json(self):
         return self._body
+
+
+class FakeAsyncClient:
+    response = None
+    error = None
+
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *args):
+        return False
+
+    async def get(self, *args, **kwargs):
+        if self.error:
+            raise self.error
+        return self.response
 
 
 def _run_dependency(**kwargs):
@@ -36,12 +56,14 @@ def test_valid_token_builds_user_context_and_loads_key(monkeypatch):
     monkeypatch.setenv("SUPABASE_ANON_KEY", "anon-test-key")
     calls = []
 
-    def fake_get(url, headers, timeout):
-        calls.append((url, headers, timeout))
-        return FakeResponse(200, {"id": "user-123", "email": "fake@example.test"})
+    class Client(FakeAsyncClient):
+        async def get(self, url, headers):
+            calls.append((url, headers, self.kwargs["timeout"]))
+            return FakeResponse(200, {"id": "user-123", "email": "fake@example.test"})
 
-    monkeypatch.setattr(auth.httpx, "get", fake_get)
-    monkeypatch.setattr(auth.supabase_auth, "load_user_gemini_key", lambda key, email: "AIza-user")
+    monkeypatch.setattr(auth.httpx, "AsyncClient", Client)
+    key_calls = []
+    monkeypatch.setattr(auth.supabase_auth, "load_user_gemini_key", lambda key, email: key_calls.append((key, email)) or "AIza-user")
 
     values = _run_dependency(authorization="Bearer token-123", x_pa_sandbox=None)
 
@@ -51,13 +73,19 @@ def test_valid_token_builds_user_context_and_loads_key(monkeypatch):
     assert calls[0][0] == "https://supabase.example/auth/v1/user"
     assert calls[0][1]["Authorization"] == "Bearer token-123"
     assert calls[0][2] == 10.0
+    assert key_calls == [("user-123", "fake@example.test")]
 
 
 def test_token_validation_is_cached_for_sixty_seconds(monkeypatch):
     monkeypatch.setenv("SUPABASE_URL", "https://supabase.example")
     monkeypatch.setenv("SUPABASE_ANON_KEY", "anon-test-key")
     calls = []
-    monkeypatch.setattr(auth.httpx, "get", lambda *args, **kwargs: calls.append(1) or FakeResponse(200, {"id": "u1"}))
+    class Client(FakeAsyncClient):
+        async def get(self, *args, **kwargs):
+            calls.append(1)
+            return FakeResponse(200, {"id": "u1"})
+
+    monkeypatch.setattr(auth.httpx, "AsyncClient", Client)
     monkeypatch.setattr(auth.supabase_auth, "load_user_gemini_key", lambda key, email: "")
 
     _run_dependency(authorization="Bearer cached-token", x_pa_sandbox=None)
@@ -69,11 +97,50 @@ def test_token_validation_is_cached_for_sixty_seconds(monkeypatch):
 def test_invalid_token_is_401(monkeypatch):
     monkeypatch.setenv("SUPABASE_URL", "https://supabase.example")
     monkeypatch.setenv("SUPABASE_ANON_KEY", "anon-test-key")
-    monkeypatch.setattr(auth.httpx, "get", lambda *args, **kwargs: FakeResponse(401, {"error": "invalid"}))
+    class Client(FakeAsyncClient):
+        async def get(self, *args, **kwargs):
+            return FakeResponse(401, {"error": "invalid"})
+
+    monkeypatch.setattr(auth.httpx, "AsyncClient", Client)
 
     with pytest.raises(auth.ApiError) as exc:
         _run_dependency(authorization="Bearer bad-token", x_pa_sandbox=None)
     assert exc.value.status == 401
+
+
+def test_unreachable_supabase_is_401(monkeypatch):
+    monkeypatch.setenv("SUPABASE_URL", "https://supabase.example")
+    monkeypatch.setenv("SUPABASE_ANON_KEY", "anon-test-key")
+
+    class Client(FakeAsyncClient):
+        error = httpx.ConnectError("offline")
+
+    monkeypatch.setattr(auth.httpx, "AsyncClient", Client)
+    with pytest.raises(auth.ApiError) as exc:
+        _run_dependency(authorization="Bearer offline-token", x_pa_sandbox=None)
+    assert exc.value.status == 401
+
+
+def test_supabase_reply_without_user_id_is_401(monkeypatch):
+    monkeypatch.setenv("SUPABASE_URL", "https://supabase.example")
+    monkeypatch.setenv("SUPABASE_ANON_KEY", "anon-test-key")
+
+    class Client(FakeAsyncClient):
+        async def get(self, *args, **kwargs):
+            return FakeResponse(200, {"email": "fake@example.test"})
+
+    monkeypatch.setattr(auth.httpx, "AsyncClient", Client)
+    with pytest.raises(auth.ApiError) as exc:
+        _run_dependency(authorization="Bearer no-id-token", x_pa_sandbox=None)
+    assert exc.value.status == 401
+
+
+def test_missing_supabase_configuration_is_500(monkeypatch):
+    monkeypatch.delenv("SUPABASE_URL", raising=False)
+    monkeypatch.delenv("SUPABASE_ANON_KEY", raising=False)
+    with pytest.raises(auth.ApiError) as exc:
+        _run_dependency(authorization="Bearer configured-token", x_pa_sandbox=None)
+    assert exc.value.status == 500
 
 
 def test_sandbox_header_uses_sandbox_context():
