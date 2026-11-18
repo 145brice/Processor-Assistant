@@ -112,7 +112,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
 - **Check:** standard checks; tests with `ping` mocked for each failure reason and for success
   (saved once); a test that no response body contains the key.
 
-### [ ] T-16 AI settings page and setup wizard
+### [x] T-16 AI settings page and setup wizard
 
 - **Read:** `_render_gemini_key_prompt`, `show_ollama_page`, `GEMINI_BILLING_NOTICE`,
   `GEMINI_TRAINING_NOTICE` in `app.py`.
