@@ -94,7 +94,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
 - **Check:** standard checks; manual: Google sign-in round trip on localhost (add
   `http://localhost:3000/auth/callback` to Supabase redirect URLs); sandbox works signed out.
 
-### [ ] T-13 `/api/me` and terms
+### [x] T-13 `/api/me` and terms
 
 - **Change:** implement `GET /api/me` and `POST /api/me/accept-terms` per the contract
   (`features.more_tools` from `product_config.advanced_tools_enabled()`, `features.owner` from
@@ -102,7 +102,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   sign-in, "Sandbox mode" label.
 - **Check:** standard checks; tests for signed-in and sandbox responses.
 
-### [ ] T-15 AI key endpoints with live test
+### [x] T-15 AI key endpoints with live test
 
 - **Goal:** users cannot save a key that does not work, and they learn why.
 - **Change:** `GET/PUT/DELETE /api/ai-key`, `POST /api/ai-key/test` per the contract. `PUT`
