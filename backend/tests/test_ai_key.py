@@ -27,20 +27,20 @@ def test_get_ai_key_never_returns_key(monkeypatch):
 def test_put_tests_before_saving_and_saves_success(monkeypatch):
     calls = []
     with_context(context.RequestContext("fake-user", "fake@example.test", "", False))
-    monkeypatch.setattr(account.cloud_client, "ping", lambda *args: (calls.append(args) or (True, "Connected")))
+    monkeypatch.setattr(account.cloud_client, "check_gemini_key", lambda key: (calls.append(key) or (True, "Connected")))
     monkeypatch.setattr(account.supabase_auth, "save_user_gemini_key", lambda *args: {"ok": True})
     try:
         response = client.put("/api/ai-key", json={"key": "AIza-fake"})
     finally:
         app.dependency_overrides.clear()
     assert response.status_code == 200
-    assert calls == [("gemini", "AIza-fake")]
+    assert calls == ["AIza-fake"]
     assert response.json()["has_key"] is True
 
 
 def test_put_does_not_save_failed_key(monkeypatch):
     with_context(context.RequestContext("fake-user", "fake@example.test", "", False))
-    monkeypatch.setattr(account.cloud_client, "ping", lambda *args: (False, "That key is invalid."))
+    monkeypatch.setattr(account.cloud_client, "check_gemini_key", lambda key: (False, "That key is invalid."))
     saved = []
     monkeypatch.setattr(account.supabase_auth, "save_user_gemini_key", lambda *args: saved.append(args) or {"ok": True})
     try:
@@ -50,6 +50,52 @@ def test_put_does_not_save_failed_key(monkeypatch):
     assert response.status_code == 400
     assert "That key is invalid." in response.text
     assert saved == []
+
+
+def test_empty_key_is_rejected_without_check_or_save(monkeypatch):
+    with_context(context.RequestContext("fake-user", "fake@example.test", "", False))
+    monkeypatch.setattr(account.cloud_client, "check_gemini_key", lambda key: (_ for _ in ()).throw(AssertionError("checked")))
+    saved = []
+    monkeypatch.setattr(account.supabase_auth, "save_user_gemini_key", lambda *args: saved.append(args) or {"ok": True})
+    try:
+        response = client.put("/api/ai-key", json={"key": "  "})
+    finally:
+        app.dependency_overrides.clear()
+    assert response.status_code == 400
+    assert "Paste your Gemini key first." in response.text
+    assert saved == []
+
+
+def test_saved_key_is_checked_once(monkeypatch):
+    with_context(context.RequestContext("fake-user", "fake@example.test", "", False))
+    calls = []
+    monkeypatch.setattr(account.supabase_auth, "load_user_gemini_key", lambda *args: "AIza-saved")
+    monkeypatch.setattr(account.cloud_client, "check_gemini_key", lambda key: (calls.append(key) or (True, "Connected")))
+    try:
+        response = client.post("/api/ai-key/test")
+    finally:
+        app.dependency_overrides.clear()
+    assert response.status_code == 200
+    assert calls == ["AIza-saved"]
+
+
+def test_checker_failure_messages_are_returned(monkeypatch):
+    messages = [
+        "That doesn't look like a Gemini key.",
+        "This key isn't allowed to use Gemini yet.",
+        "This key has no paid usage available.",
+        "Google is getting too many requests right now.",
+        "Couldn't reach Google.",
+    ]
+    for message in messages:
+        with_context(context.RequestContext("fake-user", "fake@example.test", "", False))
+        monkeypatch.setattr(account.cloud_client, "check_gemini_key", lambda key, message=message: (False, message))
+        try:
+            response = client.put("/api/ai-key", json={"key": "AIza-fake"})
+        finally:
+            app.dependency_overrides.clear()
+        assert response.status_code == 400
+        assert message in response.text
 
 
 def test_sandbox_cannot_save_or_delete_key():

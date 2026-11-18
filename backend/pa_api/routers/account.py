@@ -69,7 +69,9 @@ def put_ai_key(body: m.AiKeyIn, ctx: RequestContext = Depends(get_context)) -> m
     if ctx.sandbox:
         raise ApiError(403, "sandbox_write", "Sign in to save changes.")
     key = body.key.strip()
-    ok, message = cloud_client.ping("gemini", key)
+    if not key:
+        raise ApiError(400, "invalid_key", "Paste your Gemini key first.")
+    ok, message = cloud_client.check_gemini_key(key)
     if not ok:
         raise ApiError(400, "key_test_failed", message)
     saved = supabase_auth.save_user_gemini_key(ctx.user_key, key)
@@ -85,7 +87,7 @@ def test_ai_key(ctx: RequestContext = Depends(get_context)) -> m.TestResult:
     key = supabase_auth.load_user_gemini_key(ctx.user_key, ctx.email)
     if not key:
         return m.TestResult(ok=False, message="No Gemini key is configured.")
-    ok, message = cloud_client.ping("gemini", key)
+    ok, message = cloud_client.check_gemini_key(key)
     return m.TestResult(ok=ok, message=message)
 
 

@@ -115,6 +115,7 @@ function ToolGroup({ label, storageKey, icon: Icon, children }: { label: string;
 
 function UserBlock({ me, loading }: { me: Me | null; loading: boolean }) {
   if (loading) return <div className="mb-2.5 h-8 animate-pulse rounded bg-white/[0.08]" />;
+  if (!me) return null;
   if (me?.sandbox) return <div className="mb-2.5"><span className="rounded-full bg-white/[0.1] px-2 py-1 text-[11px] text-sidebar-text">Sandbox mode</span></div>;
   const initials = (me?.name || "U").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase();
   return <div className="mb-2.5 flex items-center gap-2 px-1"><div className="grid size-8 place-items-center rounded-full bg-brand text-xs font-semibold text-white">{initials}</div><div className="min-w-0"><div className="truncate text-xs font-medium text-sidebar-text">{me?.name || "User"}</div><div className="truncate text-[11px] text-sidebar-muted">{me?.role || "Processor"}</div></div></div>;
