@@ -3,8 +3,8 @@ import Link from "next/link";
 export default function Page() {
   return <main className="mx-auto max-w-3xl px-6 py-10">
     <h1 className="text-3xl font-bold">Privacy Policy</h1>
-    <p className="mt-2 text-sm text-slate-500">Last updated: November 10, 2026</p>
-    <article className="prose prose-slate mt-8 max-w-none">
+    <p className="mt-2 text-sm text-[var(--muted)]">Last updated: November 10, 2026</p>
+    <article className="prose prose-slate dark:prose-invert mt-8 max-w-none">
       <h3>Documents and saved data</h3>
       <p>We never store your documents. We only save the loan details extracted from them so you don&apos;t have to re-scan.</p>
       <p>Uploaded documents are processed in memory only and are never stored by Processor Assistant. We save extracted loan data (parsed fields) and scan history in Supabase, tied to your account, so you can return to previous results without re-scanning. Extracted fields may include borrower and loan information from the documents you process.</p>
@@ -26,6 +26,6 @@ export default function Page() {
       <h3>Privacy questions</h3>
       <p>Email info@edgelandings.com.</p>
     </article>
-    <footer className="mt-10 border-t pt-4 text-center text-sm"><Link href="/privacy" className="text-blue-600">Privacy Policy</Link> <span className="mx-2">|</span> <Link href="/terms" className="text-blue-600">Terms of Service</Link></footer>
+    <footer className="mt-10 border-[var(--border)] border-t pt-4 text-center text-sm text-[var(--muted)]"><Link href="/privacy" className="text-blue-600 dark:text-blue-300">Privacy Policy</Link> <span className="mx-2">|</span> <Link href="/terms" className="text-blue-600 dark:text-blue-300">Terms of Service</Link></footer>
   </main>;
 }
