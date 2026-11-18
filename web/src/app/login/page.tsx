@@ -20,7 +20,8 @@ export default function Page() {
   return <main className="grid min-h-screen items-center gap-10 px-6 py-12 md:grid-cols-2 md:px-16">
     <section className="mx-auto max-w-xl">
       <p className="text-sm font-bold uppercase tracking-widest text-[#4368b8]">Processor Assistant</p>
-      <h1 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">Process loan files with confidence.</h1>
+      <h1 className="mt-4 text-4xl font-extrabold tracking-tight md:text-5xl">Made for processors, built by processors.</h1>
+      <p className="mt-2 text-xs font-semibold uppercase tracking-widest text-[var(--muted)]">Online mortgage processing</p>
       <p className="mt-5 text-lg text-[var(--muted)]">Scan documents, track conditions, and keep your mortgage pipeline moving from one secure workspace.</p>
     </section>
     <section className="mx-auto w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--card)] p-8 shadow-sm">
