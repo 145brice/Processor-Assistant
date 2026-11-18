@@ -78,7 +78,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   chip opens `/pipeline?status=...`. Works at 390 px wide (sidebar becomes a drawer).
 - **Check:** standard checks; manual: every sidebar link opens its page; chips show counts.
 
-### [ ] T-11 Privacy and Terms pages
+### [x] T-11 Privacy and Terms pages
 
 - **Read:** `show_privacy_policy_page`, `show_terms_page` in `app.py`.
 - **Change:** `/privacy` and `/terms` with the same text, word for word, plus the footer links.
