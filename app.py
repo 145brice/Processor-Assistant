@@ -3713,11 +3713,11 @@ def _render_gemini_key_prompt() -> None:
                 if back:
                     _go(2)
                 if save_key:
-                    if not gemini_key.strip():
-                        st.error("Please paste a Gemini API key first.")
-                    elif not gemini_key.strip().startswith("AIza"):
-                        st.warning("That doesn't look like a Gemini key (should start with 'AIza'). Save anyway?")
-                        st.session_state.user_gemini_api_key = gemini_key.strip()
+                    import cloud_client as _cc_keycheck
+                    with st.spinner("Checking your key with Google..."):
+                        _key_ok, _key_msg = _cc_keycheck.check_gemini_key(gemini_key)
+                    if not _key_ok:
+                        st.error(_key_msg)
                     else:
                         try:
                             result = _save_user_gemini_key_for_account(gemini_key)
@@ -11650,6 +11650,16 @@ def show_ollama_page():
         )
         cc_save = st.form_submit_button("Save Provider / Model / Key", type="primary")
 
+    if cc_save and cc_key.strip():
+        # Test before saving so a broken key never gets stored; an empty key still clears it.
+        with st.spinner("Checking your key with Google..."):
+            _key_ok, _key_msg = _cc.check_gemini_key(cc_key)
+        if _key_ok:
+            st.success(_key_msg)
+        else:
+            st.error(_key_msg)
+            cc_save = False
+
     if cc_save:
         key_to_store_locally = cc_key
         if _real_user and _user_key:
@@ -11680,12 +11690,12 @@ def show_ollama_page():
         if not cc_cfg.get("api_key"):
             st.warning("Save an API key first.")
         else:
-            with st.spinner("Testing..."):
-                ok, msg = _cc.ping()
+            with st.spinner("Checking your key with Google..."):
+                ok, msg = _cc.check_gemini_key(cc_cfg.get("api_key", ""))
             if ok:
-                st.success(f"OK: {msg}")
+                st.success(msg)
             else:
-                st.error(f"Error: {msg}")
+                st.error(msg)
 
     with st.expander("How to get an API key"):
         st.markdown("""

@@ -387,6 +387,45 @@ def ping(provider: str | None = None, api_key: str | None = None,
         return False, str(e)[:80]
 
 
+def check_gemini_key(api_key: str) -> tuple[bool, str]:
+    """Test a Gemini key with one tiny request and explain any failure in plain English.
+
+    Used before saving a key so users learn immediately whether it works. A passing key
+    can still be on Google's free tier; the billing notice next to the field covers that.
+    """
+    key = str(api_key or "").strip()
+    if not key:
+        return False, "Paste your Gemini key first."
+    if not key.startswith("AIza"):
+        return False, "That doesn't look like a Gemini key. Gemini keys start with \"AIza\". Copy it again from Google AI Studio."
+    try:
+        reply = _generate_gemini("Reply with: OK", "Reply with OK and nothing else.",
+                                 DEFAULT_MODELS["gemini"], key, 20)
+    except urllib.error.HTTPError as e:
+        try:
+            detail = e.read().decode("utf-8", errors="replace").lower()
+        except Exception:
+            detail = ""
+        if e.code == 400 and ("api key" in detail or "api_key" in detail):
+            return False, "Google says this key isn't valid. Copy it again from Google AI Studio and paste the whole key."
+        if e.code in (401, 403):
+            return False, ("This key isn't allowed to use Gemini yet. In Google AI Studio, make sure the key's "
+                           "project has the Gemini API enabled and billing turned on.")
+        if e.code == 429:
+            if any(w in detail for w in ("billing", "prepay", "credit", "free tier", "free_tier", "quota")):
+                return False, ("This key has no paid usage available. Turn on billing for the key's project "
+                               "(and add prepaid credit if Google asks), then try again.")
+            return False, "Google is getting too many requests right now. Wait a minute and try again."
+        return False, f"Google returned an error ({e.code}). Wait a minute and try again."
+    except urllib.error.URLError:
+        return False, "Couldn't reach Google. Check your internet connection and try again."
+    except Exception:
+        return False, "The key test didn't finish. Try again in a minute."
+    if not str(reply or "").strip():
+        return False, "Google answered with an empty reply. Try again in a minute."
+    return True, "Key works. You're all set."
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Core generate
 # ─────────────────────────────────────────────────────────────────────────────
