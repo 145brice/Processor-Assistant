@@ -9,6 +9,8 @@ import {
 } from "lucide-react";
 import { MORE_TOOLS, PRIMARY_NAV, SETTINGS_NAV, type NavItem } from "@/lib/nav";
 import { supabase } from "@/lib/supabase";
+import { acceptTerms, getMe } from "@/lib/api";
+import type { Me } from "@/lib/types";
 
 const ITEM_ICONS: Record<string, LucideIcon> = {
   "/scanner": ScanLine,
@@ -112,9 +114,14 @@ function ToolGroup({ label, storageKey, icon: Icon, children }: { label: string;
 }
 
 export default function Sidebar() {
+  const [me, setMe] = useState<Me | null>(null);
+  const [meLoading, setMeLoading] = useState(true);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [drawerOpen, setDrawerOpen] = useState(false);
   const router = useRouter();
+  useEffect(() => {
+    getMe().then(setMe).catch(() => undefined).finally(() => setMeLoading(false));
+  }, []);
   useEffect(() => {
     try {
       const saved = window.localStorage.getItem("pa_theme");
@@ -172,21 +179,23 @@ export default function Sidebar() {
             {PRIMARY_NAV.map((item) => <NavLink key={item.href} item={item} onNavigate={closeDrawer} />)}
           </div>
 
-          <Section label="More tools" count={TOOL_COUNT} storageKey="pa_group_more_tools">
+          {me?.features.more_tools && <Section label="More tools" count={TOOL_COUNT} storageKey="pa_group_more_tools">
             {MORE_TOOLS.map((group) => (
               <ToolGroup key={group.label} label={group.label} icon={GROUP_ICONS[group.label]} storageKey={"pa_group_tool_" + group.label}>
                 {group.items.map((item) => <NavLink key={item.href + item.label} item={item} nested onNavigate={closeDrawer} />)}
               </ToolGroup>
             ))}
-          </Section>
+          </Section>}
 
           <Section label="Settings" storageKey="pa_group_settings">
             {SETTINGS_NAV.map((item) => <NavLink key={item.href + item.label} item={item} onNavigate={closeDrawer} />)}
           </Section>
         </div>
 
-        {/* T-13: the signed-in user block (avatar, name, role / Sandbox badge) goes above this footer. */}
         <div className="relative border-t border-white/[0.06] p-2.5">
+          <div className="mb-2.5 flex items-center gap-2 px-1">
+            {meLoading ? <div className="h-8 flex-1 animate-pulse rounded bg-white/[0.08]" /> : me?.sandbox ? <span className="rounded-full bg-white/[0.1] px-2 py-1 text-[11px] text-sidebar-text">Sandbox mode</span> : <><div className="grid size-8 place-items-center rounded-full bg-brand text-xs font-semibold text-white">{(me?.name || "U").split(" ").map((part) => part[0]).join("").slice(0, 2).toUpperCase()}</div><div className="min-w-0"><div className="truncate text-xs font-medium text-sidebar-text">{me?.name}</div><div className="truncate text-[11px] text-sidebar-muted">{me?.role}</div></div></>}
+          </div>
           <div className="flex items-center gap-2">
             <div role="radiogroup" aria-label="Theme" className="flex flex-1 rounded-lg bg-white/[0.04] p-0.5 ring-1 ring-inset ring-white/[0.06]">
               {([["light", Sun, "Light"], ["dark", Moon, "Dark"]] as const).map(([value, Icon, label]) => (
@@ -222,6 +231,7 @@ export default function Sidebar() {
           </div>
         </div>
       </nav>
+      {me && !me.sandbox && !me.terms_accepted && <div className="fixed inset-0 z-50 grid place-items-center bg-slate-950/50 p-4"><div role="dialog" aria-modal="true" className="w-full max-w-md rounded-2xl border border-border bg-card p-6 shadow-card"><h2 className="text-lg font-semibold text-foreground">Review the terms</h2><p className="mt-2 text-sm text-muted">Please review and accept the <Link className="text-brand" href="/terms">Terms of Service</Link> and <Link className="text-brand" href="/privacy">Privacy Policy</Link> to continue.</p><button type="button" className="mt-6 w-full rounded-xl bg-brand px-4 py-2.5 font-semibold text-white" onClick={() => void acceptTerms().then(() => setMe({ ...me, terms_accepted: true }))}>I agree</button></div></div>}
     </>
   );
 }
