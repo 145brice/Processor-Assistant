@@ -1,10 +1,12 @@
 // Signed-in layout: sidebar + pipeline header. Sign-in guard is task T-12 (middleware.ts).
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
+import AuthSync from "@/components/AuthSync";
 
 export default function AppLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <div className="flex min-h-screen">
+      <AuthSync />
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <Header />

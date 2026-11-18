@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MORE_TOOLS, PRIMARY_NAV, SETTINGS_NAV, type NavItem } from "@/lib/nav";
+import { setAuth } from "@/lib/api";
+import { supabase } from "@/lib/supabase";
 
 function NavLink({ item, onNavigate }: { item: NavItem; onNavigate: () => void }) {
   const active = usePathname() === item.href;
@@ -23,9 +25,16 @@ function Group({ label, children, small = false, storageKey }: { label: string; 
 export default function Sidebar() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const router = useRouter();
   useEffect(() => { const saved = window.localStorage.getItem("pa_theme"); if (saved === "dark" || saved === "light") setTheme(saved); }, []);
   useEffect(() => { document.documentElement.dataset.theme = theme; window.localStorage.setItem("pa_theme", theme); }, [theme]);
   const closeDrawer = () => setDrawerOpen(false);
+  const logout = async () => {
+    await supabase.auth.signOut();
+    document.cookie = "pa_sandbox=; Path=/; Max-Age=0; SameSite=Lax";
+    setAuth({ token: null, sandbox: false });
+    router.push("/login");
+  };
   return <>
     <button type="button" className="fixed left-3 top-3 z-30 rounded bg-[#1a2840] px-3 py-2 text-white md:hidden" onClick={() => setDrawerOpen(true)} aria-label="Open navigation">☰</button>
     {drawerOpen && <button type="button" className="fixed inset-0 z-30 bg-black/40 md:hidden" onClick={closeDrawer} aria-label="Close navigation" />}
@@ -35,7 +44,7 @@ export default function Sidebar() {
       {PRIMARY_NAV.map((item) => <NavLink key={item.href} item={item} onNavigate={closeDrawer} />)}
       <Group label="More Tools" storageKey="pa_group_more_tools">{MORE_TOOLS.map((group) => <Group key={group.label} label={group.label} small storageKey={"pa_group_tool_" + group.label}>{group.items.map((item) => <NavLink key={item.href + item.label} item={item} onNavigate={closeDrawer} />)}</Group>)}</Group>
       <Group label="Settings" storageKey="pa_group_settings">{SETTINGS_NAV.map((item) => <NavLink key={item.href + item.label} item={item} onNavigate={closeDrawer} />)}</Group>
-      <div className="mt-auto border-t border-white/15 pt-3 text-xs text-slate-300"><Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link></div>
+      <div className="mt-auto border-t border-white/15 pt-3 text-xs text-slate-300"><Link href="/privacy">Privacy</Link> · <Link href="/terms">Terms</Link><button type="button" onClick={() => void logout()} className="mt-3 block text-left hover:text-white">Log out</button></div>
     </nav>
   </>;
 }
