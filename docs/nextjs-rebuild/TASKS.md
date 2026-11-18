@@ -84,7 +84,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
 - **Change:** `/privacy` and `/terms` with the same text, word for word, plus the footer links.
 - **Check:** standard checks; text matches the Streamlit pages.
 
-### [ ] T-12 Login, callback, sandbox, route guard
+### [x] T-12 Login, callback, sandbox, route guard
 
 - **Read:** `show_login_page`; `ARCHITECTURE.md` "Login and identity".
 - **Change:** `/login` (two columns: pitch on the left, "Continue with Google" and "Try with a
