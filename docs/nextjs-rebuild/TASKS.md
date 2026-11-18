@@ -66,7 +66,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
 
 ## Phase 1: shell, sign-in, AI key
 
-### [ ] T-10 App shell
+### [x] T-10 App shell
 
 - **Goal:** the signed-in layout looks and behaves like the current app.
 - **Read:** `APP_INVENTORY.md` "Sidebar" and "Persistent header"; `web/src/components/Sidebar.tsx`
