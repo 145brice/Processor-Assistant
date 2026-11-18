@@ -27,7 +27,7 @@ Status legend: `[ ]` to do, `[x]` merged.
 Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 501 stubs),
 `web/` (layout, sidebar, placeholder pages, typed API client). Standard checks pass.
 
-### [ ] T-03 Request context hooks in the engine
+### [x] T-03 Request context hooks in the engine
 
 - **Goal:** engine modules read the current user and AI key from `pa_api.context` when the
   API is serving a request, and from Streamlit otherwise.
