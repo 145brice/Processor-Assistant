@@ -12,7 +12,8 @@ change is needed, then both sides in the same task.
 - Errors always look like `{"error": {"code": "string", "message": "string"}}` with these
   status codes: `400` bad input, `401` not signed in, `402` monthly scan limit reached, `403`
   not allowed (owner-only or sandbox write), `404` not found, `413` file over 40 MB, `422`
-  validation, `501` not built yet (skeleton stubs).
+  validation, `500` server misconfigured or unexpected error, `501` not built yet (skeleton
+  stubs).
 - Messages are plain English for the user and never contain document content.
 - Dates are ISO strings (`2026-11-17` or `2026-11-17T21:36:03Z`). Money stays a string as
   stored today (`"$325,000"`).
