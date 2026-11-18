@@ -58,23 +58,45 @@ def accept_terms(ctx: RequestContext = Depends(get_context)) -> m.Ok:
 
 @router.get("/ai-key", response_model=m.AiKeyStatus)
 def get_ai_key(ctx: RequestContext = Depends(get_context)) -> m.AiKeyStatus:
-    raise NotBuilt("T-15")
+    if ctx.sandbox:
+        return m.AiKeyStatus(has_key=False, model=cloud_client.DEFAULT_MODELS["gemini"])
+    key = supabase_auth.load_user_gemini_key(ctx.user_key, ctx.email)
+    return m.AiKeyStatus(has_key=bool(key), model=cloud_client.DEFAULT_MODELS["gemini"])
 
 
 @router.put("/ai-key", response_model=m.AiKeyStatus)
 def put_ai_key(body: m.AiKeyIn, ctx: RequestContext = Depends(get_context)) -> m.AiKeyStatus:
-    # T-15: test with cloud_client.ping("gemini", body.key) BEFORE saving; save only on success.
-    raise NotBuilt("T-15")
+    if ctx.sandbox:
+        raise ApiError(403, "sandbox_write", "Sign in to save changes.")
+    key = body.key.strip()
+    ok, message = cloud_client.ping("gemini", key)
+    if not ok:
+        raise ApiError(400, "key_test_failed", message)
+    saved = supabase_auth.save_user_gemini_key(ctx.user_key, key)
+    if not saved.get("ok"):
+        raise ApiError(503, "save_failed", "Could not save your key. Please try again.")
+    return m.AiKeyStatus(has_key=True, model=cloud_client.DEFAULT_MODELS["gemini"])
 
 
 @router.post("/ai-key/test", response_model=m.TestResult)
 def test_ai_key(ctx: RequestContext = Depends(get_context)) -> m.TestResult:
-    raise NotBuilt("T-15")
+    if ctx.sandbox:
+        return m.TestResult(ok=False, message="Sign in to test an AI key.")
+    key = supabase_auth.load_user_gemini_key(ctx.user_key, ctx.email)
+    if not key:
+        return m.TestResult(ok=False, message="No Gemini key is configured.")
+    ok, message = cloud_client.ping("gemini", key)
+    return m.TestResult(ok=ok, message=message)
 
 
 @router.delete("/ai-key", response_model=m.AiKeyStatus)
 def delete_ai_key(ctx: RequestContext = Depends(get_context)) -> m.AiKeyStatus:
-    raise NotBuilt("T-15")
+    if ctx.sandbox:
+        raise ApiError(403, "sandbox_write", "Sign in to save changes.")
+    saved = supabase_auth.save_user_gemini_key(ctx.user_key, "")
+    if not saved.get("ok"):
+        raise ApiError(503, "save_failed", "Could not remove your key. Please try again.")
+    return m.AiKeyStatus(has_key=False, model=cloud_client.DEFAULT_MODELS["gemini"])
 
 
 @router.get("/usage", response_model=m.UsageSummary)
