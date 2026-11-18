@@ -32,7 +32,6 @@ export default function Sidebar() {
     <nav className={(drawerOpen ? "translate-x-0" : "-translate-x-full") + " fixed inset-y-0 left-0 z-40 flex w-72 shrink-0 flex-col bg-[#1a2840] p-3 text-white transition-transform md:static md:translate-x-0 md:w-60"}>
       <div className="mb-3 flex items-center justify-between px-3"><span className="text-lg font-extrabold">Processor Assistant</span><button type="button" className="text-xl md:hidden" onClick={closeDrawer} aria-label="Close navigation">×</button></div>
       <button type="button" className="mb-3 rounded px-3 py-2 text-left text-sm hover:bg-white/10" onClick={() => setTheme(theme === "light" ? "dark" : "light")}>{theme === "light" ? "☾ Dark mode" : "☀ Light mode"}</button>
-      <div className="mb-2 px-3 text-xs text-slate-300">Sandbox mode</div>
       {PRIMARY_NAV.map((item) => <NavLink key={item.href} item={item} onNavigate={closeDrawer} />)}
       <Group label="More Tools" storageKey="pa_group_more_tools">{MORE_TOOLS.map((group) => <Group key={group.label} label={group.label} small storageKey={"pa_group_tool_" + group.label}>{group.items.map((item) => <NavLink key={item.href + item.label} item={item} onNavigate={closeDrawer} />)}</Group>)}</Group>
       <Group label="Settings" storageKey="pa_group_settings">{SETTINGS_NAV.map((item) => <NavLink key={item.href + item.label} item={item} onNavigate={closeDrawer} />)}</Group>
