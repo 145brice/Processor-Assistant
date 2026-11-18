@@ -2,10 +2,14 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { AlertTriangle, ChevronRight, FileSpreadsheet, KeyRound, ScanLine, ShieldCheck } from "lucide-react";
-import { ApiError, detectFiles, getMe } from "@/lib/api";
+import { AlertTriangle, ChevronRight, FileSpreadsheet, KeyRound, Loader2, ScanLine, ShieldCheck } from "lucide-react";
+import { ApiError, detectFiles, getMe, scanFile } from "@/lib/api";
+import type { ScanBatch, UsageSummary } from "@/lib/types";
 import Dropzone from "./_components/Dropzone";
 import FileList, { type QueuedFile } from "./_components/FileList";
+import Results from "./_components/Results";
+
+const AI_TYPES = new Set(["Approval Letter", "Purchase Contract"]);
 
 const MAX_BYTES = 40 * 1024 * 1024;
 
@@ -29,11 +33,49 @@ export default function ScannerPage() {
   const [items, setItems] = useState<QueuedFile[]>([]);
   const [notices, setNotices] = useState<string[]>([]);
   const [needsKey, setNeedsKey] = useState(false);
+  const [hasKey, setHasKey] = useState(false);
+  const [batches, setBatches] = useState<ScanBatch[]>([]);
+  const [progress, setProgress] = useState<string | null>(null);
+  const [scanError, setScanError] = useState<string | null>(null);
+  const [usage, setUsage] = useState<UsageSummary | null>(null);
 
   useEffect(() => {
     // Until /api/me exists (T-13) this fails quietly and the key banner stays hidden.
-    getMe().then((me) => setNeedsKey(!me.sandbox && !me.ai.has_key)).catch(() => setNeedsKey(false));
+    getMe()
+      .then((me) => { setNeedsKey(!me.sandbox && !me.ai.has_key); setHasKey(me.ai.has_key); setUsage(me.usage); })
+      .catch(() => setNeedsKey(false));
   }, []);
+
+  const scanSelected = async () => {
+    const queue = items.filter((it) => it.status === "ready" && it.checked);
+    if (!queue.length || progress) return;
+    setScanError(null);
+    for (const [index, item] of queue.entries()) {
+      if (item.type === "Unknown") {
+        patch(item.id, { status: "error", checked: false, error: "Choose a document type, then scan again." });
+        continue;
+      }
+      setProgress(
+        hasKey && AI_TYPES.has(item.type)
+          ? `Scanning ${index + 1} of ${queue.length}: ${item.file.name}. Sending redacted text to Gemini…`
+          : `Scanning ${index + 1} of ${queue.length}: ${item.file.name}…`,
+      );
+      try {
+        const response = await scanFile(item.file, item.type);
+        const { usage: newUsage, ...batch } = response;
+        if (newUsage) setUsage(newUsage);
+        setBatches((list) => [batch, ...list]);
+        setItems((list) => list.filter((it) => it.id !== item.id));
+      } catch (err) {
+        if (err instanceof ApiError && err.status === 402) {
+          setScanError(`${err.message} The remaining files were not scanned.`);
+          break;
+        }
+        patch(item.id, { status: "error", checked: false, error: err instanceof ApiError ? err.message : "Could not reach the server. Try again." });
+      }
+    }
+    setProgress(null);
+  };
 
   const patch = (id: string, change: Partial<QueuedFile>) =>
     setItems((list) => list.map((it) => (it.id === id ? { ...it, ...change } : it)));
@@ -148,21 +190,40 @@ export default function ScannerPage() {
           <FileList items={items} onChange={patch} onRemove={remove} />
 
           <div className="flex flex-col gap-3 border-t border-border bg-subtle/60 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-muted">
-              {detecting ? "Detecting document types…" : "Check the detected types. Scanning is being connected and will be switched on next."}
-            </p>
+            <div className="min-w-0 text-xs text-muted">
+              {progress ? (
+                <p className="flex items-center gap-2 text-foreground"><Loader2 className="size-4 shrink-0 animate-spin text-brand" /><span className="truncate">{progress}</span></p>
+              ) : detecting ? (
+                <p>Detecting document types…</p>
+              ) : (
+                <p>Check the detected types, then scan. Documents stay on our server and are never stored.</p>
+              )}
+              {usage && usage.limit !== null && !progress && (
+                <p className="mt-1">{usage.tier_name} plan: {usage.used} of {usage.limit} scans used this month ({usage.remaining} left)</p>
+              )}
+            </div>
             <button
               type="button"
-              disabled
-              title="Scanning is being connected"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-medium text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50"
+              onClick={() => void scanSelected()}
+              disabled={!selected.length || detecting || progress !== null}
+              className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-brand px-5 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-brand-strong disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <ScanLine className="size-4" />
+              {progress ? <Loader2 className="size-4 animate-spin" /> : <ScanLine className="size-4" />}
               Scan ({selected.length} selected)
             </button>
           </div>
         </section>
       )}
+
+      {scanError && (
+        <div className="mt-4 flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/[0.07] px-4 py-3 text-sm text-foreground">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0 text-rose-600" />
+          <p className="flex-1">{scanError}</p>
+          <Link href="/pricing" className="shrink-0 font-medium text-brand hover:underline">See plans</Link>
+        </div>
+      )}
+
+      <Results batches={batches} />
 
       <div className="mt-6 grid gap-4 md:grid-cols-[1fr_auto]">
         <details className="group rounded-2xl border border-border bg-card shadow-card">

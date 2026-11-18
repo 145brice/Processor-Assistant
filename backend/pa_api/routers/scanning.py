@@ -4,7 +4,7 @@ from __future__ import annotations
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from starlette.concurrency import run_in_threadpool
 
-from .. import detection
+from .. import detection, scan_service
 from .. import models as m
 from ..auth import get_context
 from ..context import RequestContext
@@ -48,10 +48,15 @@ async def scan(
     doc_type: str = Form(...),
     ctx: RequestContext = Depends(get_context),
 ) -> m.ScanResponse:
-    # T-21: quota -> ai_engine.process_document(bytes, doc_type, user_approved_cloud=...)
-    # -> normalize conditions -> doc_verify._match_borrower -> billing.log_scan -> history.
-    # Never pass the PDF bytes to any AI function (RULES.md section 1).
-    raise NotBuilt("T-21")
+    # Never pass the PDF bytes to any AI function (RULES.md section 1): scan_service hands them
+    # only to ai_engine.process_document, which extracts text locally.
+    if doc_type not in detection.DOC_TYPES or doc_type == "Unknown":
+        raise ApiError(400, "choose_doc_type", "Choose a document type before scanning this file.")
+    data = await read_pdf(file)
+    name = file.filename or "document.pdf"
+    response = await run_in_threadpool(scan_service.run_scan, ctx, name, data, doc_type)
+    del data
+    return response
 
 
 @router.get("/scans", response_model=m.SavedScans)
