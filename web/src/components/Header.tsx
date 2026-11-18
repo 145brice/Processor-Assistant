@@ -1,15 +1,29 @@
-// Skeleton "MY PIPELINE" header. Task T-10 loads real counts from listLoans().counts and links
-// each chip to /pipeline?status=<status>.
-const CHIPS = ["All", "Pending UW", "Requested", "Cleared", "Overdue", "Closed"];
+"use client";
+
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { listLoans } from "@/lib/api";
+import type { StatusCounts } from "@/lib/types";
+
+const CHIPS: { label: string; key: keyof StatusCounts; status?: string }[] = [
+  { label: "All", key: "all" },
+  { label: "Pending UW", key: "pending", status: "Pending" },
+  { label: "Requested", key: "requested", status: "Requested" },
+  { label: "Cleared", key: "cleared", status: "Cleared" },
+  { label: "Overdue", key: "overdue", status: "Overdue" },
+  { label: "Closed", key: "closed", status: "Closed" },
+];
 
 export default function Header() {
+  const [counts, setCounts] = useState<StatusCounts>({ all: 0, pending: 0, requested: 0, cleared: 0, overdue: 0, closed: 0 });
+  useEffect(() => { listLoans().then((result) => setCounts(result.counts)).catch(() => undefined); }, []);
   return (
-    <header className="flex items-center gap-2 border-b border-slate-300 bg-slate-100 px-4 py-3">
-      <span className="mr-2 text-sm font-bold tracking-widest text-slate-700">MY PIPELINE</span>
+    <header className="flex flex-wrap items-center gap-2 border-b border-slate-300 bg-[var(--surface)] px-4 py-3 pl-16 md:pl-4">
+      <span className="mr-2 text-sm font-bold tracking-widest text-[var(--muted)]">MY PIPELINE</span>
       {CHIPS.map((chip) => (
-        <span key={chip} className="rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-700">
-          – {chip}
-        </span>
+        <Link key={chip.label} href={chip.status ? "/pipeline?status=" + chip.status : "/pipeline"} className="rounded border border-slate-300 bg-[var(--card)] px-2 py-1 text-sm text-[var(--muted)] hover:border-[#4368b8]">
+          {counts[chip.key]} {chip.label}
+        </Link>
       ))}
     </header>
   );
