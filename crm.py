@@ -85,6 +85,13 @@ def _set_cached_loans(loans) -> None:
 def _current_user_key() -> str:
     """Best-effort current Streamlit user key without importing app.py."""
     try:
+        from backend.pa_api import context as _pa_ctx
+        ctx = _pa_ctx.current()
+        if ctx is not None:
+            return "" if ctx.sandbox else str(ctx.user_key or "").strip()
+    except Exception:
+        pass
+    try:
         import streamlit as st
         if st.session_state.get("sandbox_mode", False):
             return ""
@@ -220,6 +227,13 @@ PARTY_COLORS = {
 
 
 def _is_sandbox() -> bool:
+    try:
+        from backend.pa_api import context as _pa_ctx
+        ctx = _pa_ctx.current()
+        if ctx is not None:
+            return bool(ctx.sandbox)
+    except Exception:
+        pass
     try:
         import streamlit as st
         return bool(st.session_state.get("sandbox_mode", False))

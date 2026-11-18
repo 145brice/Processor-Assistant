@@ -269,6 +269,20 @@ def _filter_invoice_conditions(conditions: list[dict]) -> list[dict]:
 # ─────────────────────────────────────────────────────────────────────────────
 
 def get_config() -> dict:
+    try:
+        from backend.pa_api import context as _pa_ctx
+        ctx = _pa_ctx.current()
+        if ctx is not None:
+            key = str(ctx.gemini_key or "").strip()
+            return {
+                "enabled": bool(key),
+                "provider": "gemini",
+                "api_key": key,
+                "model": DEFAULT_MODELS["gemini"],
+            }
+    except Exception:
+        pass
+
     cfg = None
     if not os.path.exists(_CFG_FILE):
         cfg = {
