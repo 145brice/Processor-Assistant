@@ -34,7 +34,7 @@ export default function FileList({ items, onChange, onRemove }: {
   return (
     <ul className="divide-y divide-border">
       {items.map((item) => (
-        <li key={item.id} className="flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3.5 sm:flex-nowrap">
+        <li key={item.id} className="animate-fade-up flex flex-wrap items-center gap-x-4 gap-y-2 px-5 py-3 transition-colors hover:bg-subtle/40 sm:flex-nowrap">
           <input
             type="checkbox"
             aria-label={`Include ${item.file.name}`}
@@ -44,7 +44,7 @@ export default function FileList({ items, onChange, onRemove }: {
             className="size-4 shrink-0 rounded accent-brand disabled:opacity-40"
           />
           <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div className={"grid size-9 shrink-0 place-items-center rounded-lg " + (item.status === "error" ? "bg-rose-500/10 text-rose-600" : "bg-subtle text-muted")}>
+            <div className={"grid size-9 shrink-0 place-items-center rounded-lg ring-1 ring-inset " + (item.status === "error" ? "bg-rose-500/10 text-rose-600 ring-rose-500/20" : "bg-rose-50 text-rose-500 ring-rose-500/10 dark:bg-rose-500/10")}>
               {item.status === "error" ? <AlertCircle className="size-4" /> : <FileText className="size-4" />}
             </div>
             <div className="min-w-0">
@@ -56,9 +56,11 @@ export default function FileList({ items, onChange, onRemove }: {
           </div>
 
           {item.status === "detecting" && (
-            <span className="ml-8 inline-flex items-center gap-2 text-sm text-muted sm:ml-0">
-              <Loader2 className="size-4 animate-spin" /> Detecting type…
-            </span>
+            <div className="ml-8 flex items-center gap-3 sm:ml-0" aria-label="Detecting type">
+              <span className="skeleton animate-shimmer h-9 w-56 rounded-lg" />
+              <span className="skeleton animate-shimmer h-5 w-16 rounded-full" />
+              <Loader2 className="sr-only" />
+            </div>
           )}
 
           {item.status === "ready" && (

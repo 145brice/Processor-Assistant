@@ -19,7 +19,7 @@ function ResultCard({ batch, defaultOpen }: { batch: ScanBatch; defaultOpen: boo
   const fieldCount = Object.keys(r.extracted_data).length;
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-card">
+    <article className="animate-fade-up overflow-hidden rounded-2xl border border-border bg-card shadow-card transition hover:shadow-md">
       <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} className="flex w-full items-center gap-4 px-5 py-4 text-left">
         <div className={"grid size-10 shrink-0 place-items-center rounded-xl " + (r.success ? "bg-emerald-500/10 text-emerald-600" : "bg-rose-500/10 text-rose-600")}>
           {r.success ? <CheckCircle2 className="size-5" /> : <XCircle className="size-5" />}
