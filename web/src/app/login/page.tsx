@@ -6,11 +6,14 @@ import { supabase } from "@/lib/supabase";
 
 export default function Page() {
   const router = useRouter();
+  const validNext = (value: string | null) => value && value.startsWith("/") && !value.startsWith("//") && !value.startsWith("/\\") ? value : "/scanner";
   const signIn = async () => {
-    const next = new URLSearchParams(window.location.search).get("next") || "/scanner";
+    document.cookie = "pa_sandbox=; Path=/; Max-Age=0; SameSite=Lax";
+    const next = validNext(new URLSearchParams(window.location.search).get("next"));
     await supabase.auth.signInWithOAuth({ provider: "google", options: { redirectTo: window.location.origin + "/auth/callback?next=" + encodeURIComponent(next) } });
   };
-  const sandbox = () => {
+  const sandbox = async () => {
+    await supabase.auth.signOut();
     document.cookie = "pa_sandbox=1; Path=/; SameSite=Lax";
     router.push("/scanner");
   };
