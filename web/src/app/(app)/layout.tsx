@@ -1,6 +1,7 @@
 // Signed-in layout: sidebar + pipeline header. Sign-in guard is middleware.ts (T-12).
 import Header from "@/components/Header";
 import Sidebar from "@/components/Sidebar";
+import GeminiSetupWizard from "@/components/GeminiSetupWizard";
 
 export default function AppLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
@@ -10,6 +11,7 @@ export default function AppLayout({ children }: Readonly<{ children: React.React
         <Header />
         <main className="flex-1">{children}</main>
       </div>
+      <GeminiSetupWizard />
     </div>
   );
 }
