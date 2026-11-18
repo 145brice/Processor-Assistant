@@ -1,5 +1,238 @@
-import Placeholder from "@/components/Placeholder";
+"use client";
 
+import { useEffect, useState } from "react";
+import { Check, Eye, EyeOff, KeyRound, Loader2, Trash2 } from "lucide-react";
+import {
+  ApiError,
+  getAiKey,
+  getMe,
+  removeAiKey,
+  saveAiKey,
+  testAiKey,
+} from "@/lib/api";
+import type { AiKeyStatus } from "@/lib/types";
+
+const BILLING =
+  "Enable billing on your Google AI account for the project associated with your API key (paid tier) before pasting it here. Gemini 2.5 Flash usage can cost very little per month for light use; your actual cost depends on the number and size of documents you scan.";
+const TRAINING =
+  "Google does not use your data to train its models when you use a paid-tier Gemini API key.";
+
+function KeyStatusCard({ status }: { status: AiKeyStatus | null }) {
+  const state = status?.has_key
+    ? status.last_check && !status.last_check.ok
+      ? "Not working"
+      : "Connected"
+    : "Not set";
+  const color =
+    state === "Connected"
+      ? "text-emerald-600"
+      : state === "Not working"
+        ? "text-rose-600"
+        : "text-muted";
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <div>
+        <h2 className="font-semibold text-foreground">Google Gemini</h2>
+        <p className="mt-1 text-sm text-muted">
+          Model: {status?.model ?? "gemini-2.5-flash"}
+        </p>
+      </div>
+      <span
+        className={
+          "inline-flex items-center gap-2 rounded-full border border-border bg-subtle px-3 py-1 text-sm font-medium " +
+          color
+        }
+      >
+        <span className="size-2 rounded-full bg-current" />
+        {state}
+      </span>
+    </div>
+  );
+}
+function KeyForm({
+  status,
+  setStatus,
+}: {
+  status: AiKeyStatus | null;
+  setStatus: (value: AiKeyStatus) => void;
+}) {
+  const [key, setKey] = useState("");
+  const [show, setShow] = useState(false);
+  const [busy, setBusy] = useState<"test" | "save" | "remove" | null>(null);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const action = async (kind: "test" | "save" | "remove") => {
+    setBusy(kind);
+    setError("");
+    setMessage("");
+    try {
+      if (kind === "test") {
+        const result = await testAiKey();
+        if (result.ok) setMessage(result.message);
+        else setError(result.message);
+      } else if (kind === "save") {
+        setStatus(await saveAiKey(key));
+        setKey("");
+        setMessage("Gemini key saved and verified.");
+      } else {
+        setStatus(await removeAiKey());
+        setMessage("Gemini key removed.");
+      }
+    } catch (e) {
+      setError(
+        e instanceof ApiError
+          ? e.message
+          : "The request could not be completed.",
+      );
+    } finally {
+      setBusy(null);
+    }
+  };
+  return (
+    <div className="mt-6">
+      <label
+        className="block text-sm font-medium text-foreground"
+        htmlFor="gemini-key"
+      >
+        Gemini API key
+      </label>
+      <div className="relative mt-2">
+        <input
+          id="gemini-key"
+          type={show ? "text" : "password"}
+          value={key}
+          onChange={(e) => setKey(e.target.value)}
+          placeholder={
+            status?.has_key ? "Enter a new key to replace it" : "AIza..."
+          }
+          className="w-full rounded-xl border border-border bg-surface px-3 py-2.5 pr-11 text-foreground"
+        />
+        <button
+          type="button"
+          onClick={() => setShow(!show)}
+          aria-label={show ? "Hide API key" : "Show API key"}
+          className="absolute right-2 top-1/2 -translate-y-1/2 p-2 text-muted"
+        >
+          {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+        </button>
+      </div>
+      {error && <p className="mt-3 text-sm text-rose-600">{error}</p>}
+      {message && (
+        <p className="mt-3 flex items-center gap-1.5 text-sm text-emerald-600">
+          <Check className="size-4" />
+          {message}
+        </p>
+      )}
+      <div className="mt-5 flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={busy !== null || !status?.has_key}
+          onClick={() => void action("test")}
+          className="rounded-xl border border-border bg-card px-4 py-2 font-medium text-foreground disabled:opacity-50"
+        >
+          {busy === "test" && (
+            <Loader2 className="mr-2 inline size-4 animate-spin" />
+          )}
+          Test
+        </button>
+        <button
+          type="button"
+          disabled={busy !== null || !key.trim()}
+          onClick={() => void action("save")}
+          className="rounded-xl bg-brand px-4 py-2 font-semibold text-white disabled:opacity-50"
+        >
+          {busy === "save" && (
+            <Loader2 className="mr-2 inline size-4 animate-spin" />
+          )}
+          Save key
+        </button>
+        <button
+          type="button"
+          disabled={busy !== null || !status?.has_key}
+          onClick={() => void action("remove")}
+          className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 font-medium text-foreground disabled:opacity-50"
+        >
+          {busy === "remove" ? (
+            <Loader2 className="size-4 animate-spin" />
+          ) : (
+            <Trash2 className="size-4" />
+          )}
+          Remove
+        </button>
+      </div>
+    </div>
+  );
+}
+function PageContent({
+  status,
+  setStatus,
+  video,
+}: {
+  status: AiKeyStatus | null;
+  setStatus: (value: AiKeyStatus) => void;
+  video: string | null;
+}) {
+  return (
+    <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+      <KeyStatusCard status={status} />
+      <p className="mt-5 rounded-xl border border-border bg-subtle p-4 text-sm text-muted">
+        {BILLING} {TRAINING}
+      </p>
+      {video && (
+        <a
+          href={video}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-4 inline-block text-sm text-brand hover:underline"
+        >
+          Watch the Gemini setup video
+        </a>
+      )}
+      <KeyForm status={status} setStatus={setStatus} />
+    </section>
+  );
+}
 export default function Page() {
-  return <Placeholder title="AI Settings" task="T-16" notes="Key status, paste and test key, setup wizard." />;
+  const [status, setStatus] = useState<AiKeyStatus | null>(null);
+  const [video, setVideo] = useState<string | null>(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    getAiKey()
+      .then(setStatus)
+      .catch((e) =>
+        setError(
+          e instanceof ApiError ? e.message : "Could not load AI settings.",
+        ),
+      );
+    getMe()
+      .then((me) => setVideo(me.features.setup_video_url))
+      .catch(() => undefined);
+  }, []);
+  return (
+    <div className="mx-auto max-w-3xl px-4 py-8 md:px-8">
+      <div className="mb-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">
+          Settings
+        </p>
+        <div className="mt-2 flex items-center gap-3">
+          <div className="grid size-10 place-items-center rounded-xl bg-brand-soft text-brand">
+            <KeyRound className="size-5" />
+          </div>
+          <h1 className="text-[28px] font-semibold tracking-tight text-foreground">
+            AI Settings
+          </h1>
+        </div>
+        <p className="mt-2 text-sm text-muted">
+          Configure Google Gemini for smart document extraction.
+        </p>
+      </div>
+      {error ? (
+        <p className="rounded-xl border border-rose-500/25 bg-rose-500/[0.07] p-4 text-sm text-rose-600">
+          {error}
+        </p>
+      ) : (
+        <PageContent status={status} setStatus={setStatus} video={video} />
+      )}
+    </div>
+  );
 }

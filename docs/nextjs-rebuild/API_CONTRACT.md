@@ -166,8 +166,8 @@ interface Tier { key: string; name: string; price: number; scan_limit: number | 
 | `GET /api/me` | none | `Me` | `supabase_auth.ensure_user_profile`, `load_user_gemini_key`, `tiers.check_scan_quota` | T-13 |
 | `POST /api/me/accept-terms` | none | `{ok: true}` | `supabase_auth.accept_terms` | T-13 |
 | `GET /api/ai-key` | none | `AiKeyStatus` | `supabase_auth.load_user_gemini_key` (never return the key) | T-15 |
-| `PUT /api/ai-key` | `{key: string}` | `AiKeyStatus` | test with `cloud_client.ping("gemini", key)` first; save with `supabase_auth.save_user_gemini_key` **only if the test passes**; on failure `400` with a plain reason (bad key, billing not enabled, quota) | T-15 |
-| `POST /api/ai-key/test` | none | `{ok: boolean, message: string}` | `cloud_client.ping` with the saved key | T-15 |
+| `PUT /api/ai-key` | `{key: string}` | `AiKeyStatus` | test with `cloud_client.check_gemini_key(key)` first; save with `supabase_auth.save_user_gemini_key` **only if the test passes**; on failure `400` with a plain reason (bad key, billing not enabled, quota) | T-15 |
+| `POST /api/ai-key/test` | none | `{ok: boolean, message: string}` | `cloud_client.check_gemini_key` with the saved key | T-15 |
 | `DELETE /api/ai-key` | none | `AiKeyStatus` | save empty key | T-15 |
 | `POST /api/scan/detect` | multipart `files[]` (PDF, each ≤ 40 MB) | `{files: DetectedFile[]}` | `ai_engine.detect_doc_type` | T-20 |
 | `POST /api/scan` | multipart `file`, `doc_type` | `ScanBatch & {usage: UsageSummary \| null}` | quota check, `ai_engine.process_document(bytes, doc_type, user_approved_cloud=ctx has key and doc_type in {"Approval Letter","Purchase Contract"})`, normalize conditions, `doc_verify._match_borrower`, `billing.log_scan`, save to history | T-21 |

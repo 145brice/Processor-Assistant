@@ -84,7 +84,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
 - **Change:** `/privacy` and `/terms` with the same text, word for word, plus the footer links.
 - **Check:** standard checks; text matches the Streamlit pages.
 
-### [ ] T-12 Login, callback, sandbox, route guard
+### [x] T-12 Login, callback, sandbox, route guard
 
 - **Read:** `show_login_page`; `ARCHITECTURE.md` "Login and identity".
 - **Change:** `/login` (two columns: pitch on the left, "Continue with Google" and "Try with a
@@ -94,7 +94,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
 - **Check:** standard checks; manual: Google sign-in round trip on localhost (add
   `http://localhost:3000/auth/callback` to Supabase redirect URLs); sandbox works signed out.
 
-### [ ] T-13 `/api/me` and terms
+### [x] T-13 `/api/me` and terms
 
 - **Change:** implement `GET /api/me` and `POST /api/me/accept-terms` per the contract
   (`features.more_tools` from `product_config.advanced_tools_enabled()`, `features.owner` from
@@ -102,7 +102,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   sign-in, "Sandbox mode" label.
 - **Check:** standard checks; tests for signed-in and sandbox responses.
 
-### [ ] T-15 AI key endpoints with live test
+### [x] T-15 AI key endpoints with live test
 
 - **Goal:** users cannot save a key that does not work, and they learn why.
 - **Change:** `GET/PUT/DELETE /api/ai-key`, `POST /api/ai-key/test` per the contract. `PUT`
@@ -112,7 +112,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
 - **Check:** standard checks; tests with `ping` mocked for each failure reason and for success
   (saved once); a test that no response body contains the key.
 
-### [ ] T-16 AI settings page and setup wizard
+### [x] T-16 AI settings page and setup wizard
 
 - **Read:** `_render_gemini_key_prompt`, `show_ollama_page`, `GEMINI_BILLING_NOTICE`,
   `GEMINI_TRAINING_NOTICE` in `app.py`.
