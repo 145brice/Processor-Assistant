@@ -46,7 +46,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   3. `crm._current_user_key()` returns the context user key, `""` in sandbox;
   4. with no context, `crm._current_user_key()` behaves as before (returns `""` outside Streamlit).
 
-### [ ] T-04 Sign-in check for API requests
+### [x] T-04 Sign-in check for API requests
 
 - **Goal:** `pa_api.auth.get_context` (a FastAPI dependency) turns the request into a
   `RequestContext`.
