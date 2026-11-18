@@ -36,7 +36,8 @@ Then run the privacy scan from the top of `TASKS.md` against the `rebuild` branc
 
 ## Git
 
-- Base branch: `rebuild`. Create `rebuild/T-xx-short-name` for each task.
+- Base branch: `rebuild`. Create `rebuild-T-xx-short-name` for each task (Git does not allow
+  `rebuild/T-xx-short-name` while the `rebuild` branch exists).
 - **Never commit to or push `main`.** Pushing `main` deploys the live production app.
 - Never commit `.env`, `pipeline.json`, `cloud_log.txt`, `scan_history.json`, `loan_docs/`,
   `loan_activity/`, `processor.db` or anything else that may hold real borrower data.
