@@ -71,11 +71,15 @@ def list_scans(ctx: RequestContext = Depends(get_context)) -> m.SavedScans:
         raise ApiError(503, "history_unavailable", loaded.get("error", "Could not load saved scans."))
     items = []
     for entry in loaded.get("items", []):
+        if entry.get("user_key") != ctx.user_key:
+            continue
         try:
             saved_at = datetime.fromtimestamp(float(entry["ts"]), tz=timezone.utc).isoformat().replace("+00:00", "Z")
-            items.append(m.SavedScan(id=str(entry["id"]), saved_at=saved_at, batch=entry["batch"]))
+            batch = scan_service.saved_batch_to_contract(entry["batch"])
+            items.append(m.SavedScan(id=str(entry["id"]), saved_at=saved_at, batch=batch))
         except (KeyError, TypeError, ValueError):
             continue
+    items.sort(key=lambda item: item.saved_at, reverse=True)
     return m.SavedScans(items=items)
 
 
