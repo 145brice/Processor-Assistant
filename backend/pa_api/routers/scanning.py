@@ -13,7 +13,7 @@ from .. import detection, scan_service
 from .. import models as m
 from ..auth import get_context
 from ..context import RequestContext
-from ..errors import ApiError, NotBuilt
+from ..errors import ApiError
 
 router = APIRouter(prefix="/api", tags=["scanning"])
 
