@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AlertTriangle, CheckCircle2, ChevronRight, Sparkles, XCircle } from "lucide-react";
 import type { ScanBatch } from "@/lib/types";
+import LoanActions from "./LoanActions";
 import { ContactsGrid, EmailDraftsPanel, FieldsTable, OutputActions, borrowerOf } from "./ResultDetails";
 
 const PARTY_STYLE: Record<string, string> = {
@@ -94,6 +95,7 @@ function ResultCard({ batch, defaultOpen }: { batch: ScanBatch; defaultOpen: boo
 
           {r.success && (
             <>
+              <LoanActions batch={batch} />
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <p className="text-xs text-muted">{r.ai_note}</p>
                 <OutputActions batch={batch} />
