@@ -54,9 +54,9 @@ def test_pipeline_list_returns_loans_and_counts():
 
 
 def test_unbuilt_endpoint_names_its_task():
-    response = client.post("/api/tools/closing_package", headers=SANDBOX, json={})
+    response = client.post("/api/tools/team", headers=SANDBOX, json={})
     assert response.status_code == 501
-    assert "T-32" in response.json()["error"]["message"]
+    assert "T-33" in response.json()["error"]["message"]
 
 
 def test_context_is_active_only_inside_a_request():

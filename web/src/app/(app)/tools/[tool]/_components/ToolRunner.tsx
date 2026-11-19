@@ -50,9 +50,24 @@ function Field({
     control = (
       <select id={id} value={value} onChange={(event) => onChange(event.target.value)} className={inputClass}>
         {(field.options ?? []).map((option) => (
-          <option key={option}>{option}</option>
+          <option key={option} value={option}>
+            {option.replace(/_/g, " ")}
+          </option>
         ))}
       </select>
+    );
+  } else if (field.type === "checkbox") {
+    return (
+      <label htmlFor={id} className="flex cursor-pointer items-center gap-3 text-sm font-medium text-foreground">
+        <input
+          id={id}
+          type="checkbox"
+          checked={value === "true"}
+          onChange={(event) => onChange(event.target.checked ? "true" : "")}
+          className="size-4 rounded accent-brand"
+        />
+        {field.label}
+      </label>
     );
   } else {
     control = (
@@ -83,7 +98,13 @@ export default function ToolRunner({ toolKey }: { toolKey: string }) {
   // Dropdowns start on their first option, which is what the API assumes when a value is empty.
   const [values, setValues] = useState<Record<string, string>>(() =>
     Object.fromEntries(
-      def.fields.filter((f) => f.type === "select" && f.options?.length).map((f) => [f.name, f.options![0]]),
+      def.fields.flatMap((f): [string, string][] =>
+        f.default !== undefined
+          ? [[f.name, f.default]]
+          : f.type === "select" && f.options?.length
+            ? [[f.name, f.options[0]]]
+            : [],
+      ),
     ),
   );
   const [loans, setLoans] = useState<LoanSummary[]>([]);
@@ -100,6 +121,12 @@ export default function ToolRunner({ toolKey }: { toolKey: string }) {
   }, [needsLoans]);
 
   const missingRequired = !def.actions && def.fields.some((field) => field.required && !values[field.name]?.trim());
+
+  // Tools that need no input (the dashboard) show their result as soon as the page opens.
+  useEffect(() => {
+    if (def.autoRun) void run();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [def.autoRun]);
 
   const run = async (action?: string) => {
     setRunning(action ?? "run");

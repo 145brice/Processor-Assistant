@@ -2,21 +2,31 @@
 // (web/src/app/(app)/tools/[tool]) renders the form from `fields` and shows the API's output
 // blocks. The matching backend handler is in backend/pa_api/tools/.
 import {
+  Archive,
   Bug,
   Calculator,
   CalendarClock,
   Camera,
   CreditCard,
+  FileOutput,
+  FileSearch,
   FileWarning,
+  Gauge,
+  Landmark,
   Languages,
   ListChecks,
+  LockKeyhole,
+  Scale,
+  ShieldAlert,
   ShieldCheck,
   TextCursorInput,
+  Users,
   Wallet,
+  Workflow,
   type LucideIcon,
 } from "lucide-react";
 
-export type FieldType = "text" | "textarea" | "loan" | "number" | "select" | "date";
+export type FieldType = "text" | "textarea" | "loan" | "number" | "select" | "date" | "checkbox";
 
 export interface ToolField {
   name: string;
@@ -27,6 +37,8 @@ export interface ToolField {
   required?: boolean;
   rows?: number;
   options?: string[];
+  /** Starting value (checkboxes use "true"). */
+  default?: string;
 }
 
 export interface ToolAction {
@@ -44,6 +56,8 @@ export interface ToolDef {
   /** Several buttons, each sent as `action`. Without it, one run button is shown. */
   actions?: ToolAction[];
   runLabel?: string;
+  /** Run once when the page opens (for tools that need no input). */
+  autoRun?: boolean;
 }
 
 // ---------- what the API returns (see "Tool output blocks" in API_CONTRACT.md) ----------
@@ -235,5 +249,147 @@ export const TOOLS: Record<string, ToolDef> = {
       { name: "loan_amount", label: "Loan amount ($)", type: "number" },
     ],
     runLabel: "Run compliance check",
+  },
+
+  // ---------- T-32 Pipeline Advanced and Automation ----------
+  closing_package: {
+    key: "closing_package",
+    title: "Closing Package",
+    description: "See which closing documents a loan has and which are missing, with the package manifest.",
+    icon: Archive,
+    fields: [loan],
+    runLabel: "Check closing package",
+  },
+  pipeline_dashboard: {
+    key: "pipeline_dashboard",
+    title: "Pipeline Dashboard",
+    description: "Closing deadlines, expiring rate locks and quiet loans across your pipeline.",
+    icon: Gauge,
+    fields: [],
+    runLabel: "Refresh dashboard",
+    autoRun: true,
+  },
+  guideline_checker: {
+    key: "guideline_checker",
+    title: "Guideline Checker",
+    description: "Check a loan's numbers against Fannie Mae or Freddie Mac guidelines.",
+    icon: Scale,
+    fields: [
+      { name: "investor", label: "Investor", type: "select", options: ["fannie", "freddie"] },
+      { name: "dti", label: "DTI ratio (%)", type: "number" },
+      { name: "ltv", label: "LTV ratio (%)", type: "number" },
+      { name: "credit_score", label: "Credit score", type: "number" },
+      { name: "loan_amount", label: "Loan amount ($)", type: "number" },
+    ],
+    runLabel: "Check guidelines",
+  },
+  fraud_detector: {
+    key: "fraud_detector",
+    title: "Fraud Detector",
+    description:
+      "Check figures you have found for common red flags: large unexplained deposits, uneven income, " +
+      "unusually high assets, and document names that suggest alteration.",
+    icon: ShieldAlert,
+    fields: [
+      { name: "deposit_amount", label: "Deposit amount ($)", type: "number", help: "Deposits over $5,000 are checked." },
+      { name: "deposit_description", label: "Deposit description", type: "text", placeholder: "e.g. cash deposit" },
+      {
+        name: "incomes",
+        label: "Income amounts",
+        type: "text",
+        placeholder: "6000, 9500",
+        help: "Monthly income from different documents, separated by commas.",
+      },
+      {
+        name: "balances",
+        label: "Account balances",
+        type: "text",
+        placeholder: "25000, 12000",
+        help: "Compared with monthly income below. Needs at least two.",
+      },
+      { name: "monthly_income", label: "Stated monthly income ($)", type: "number" },
+      { name: "loan_id", label: "Loan (optional)", type: "loan", help: "Also checks the loan's document names." },
+    ],
+    runLabel: "Check for red flags",
+  },
+  multi_borrower: {
+    key: "multi_borrower",
+    title: "Multi-Borrower",
+    description: "Sort a loan's documents between the borrower, a co-borrower and joint documents.",
+    icon: Users,
+    fields: [
+      loan,
+      {
+        name: "co_borrower",
+        label: "Co-borrower name",
+        type: "text",
+        placeholder: "Leave empty if there is none",
+        help: "Documents are matched by the names in their file names.",
+      },
+    ],
+    runLabel: "Sort documents",
+  },
+  los_export: {
+    key: "los_export",
+    title: "LOS Export",
+    description: "Get a loan's data as CSV or JSON text for a loan origination system.",
+    icon: FileOutput,
+    fields: [loan, { name: "format", label: "Format", type: "select", options: ["csv", "json"] }],
+    runLabel: "Create export",
+  },
+  rate_lock_monitor: {
+    key: "rate_lock_monitor",
+    title: "Rate Lock Monitor",
+    description: "Track a lock's expiry and float-down chance, and see the locks across your pipeline.",
+    icon: LockKeyhole,
+    fields: [
+      { name: "lock_date", label: "Lock date", type: "date", required: true },
+      { name: "lock_expiry_date", label: "Lock expiry date", type: "date", required: true },
+      { name: "locked_rate", label: "Locked rate (%)", type: "number", required: true },
+      { name: "lock_days", label: "Lock period (days)", type: "number", required: true, default: "30" },
+      { name: "current_market_rate", label: "Current market rate (%)", type: "number", required: true },
+    ],
+    runLabel: "Check lock",
+  },
+  underwriting_tracker: {
+    key: "underwriting_tracker",
+    title: "Underwriting Tracker",
+    description: "Track a loan's conditions: what is cleared, pending or overdue, and which documents may clear them.",
+    icon: Workflow,
+    fields: [loan],
+    runLabel: "Track conditions",
+  },
+  document_classifier: {
+    key: "document_classifier",
+    title: "Document Classifier",
+    description: "Find out what kind of document a file is from its name. The file is not uploaded.",
+    icon: FileSearch,
+    fields: [
+      {
+        name: "filename",
+        label: "File name",
+        type: "text",
+        required: true,
+        placeholder: "Jan_paystub_Smith.pdf",
+      },
+    ],
+    runLabel: "Classify",
+  },
+  escrow_calculator: {
+    key: "escrow_calculator",
+    title: "Escrow Calculator",
+    description: "Estimate closing costs, escrow reserves and the cash needed to close.",
+    icon: Landmark,
+    fields: [
+      { name: "loan_amount", label: "Loan amount ($)", type: "number", required: true },
+      { name: "property_value", label: "Property value ($)", type: "number", required: true },
+      { name: "loan_type", label: "Loan type", type: "select", options: ["conventional", "fha", "va"] },
+      { name: "location", label: "Location", type: "select", options: ["standard", "high_cost", "low_cost"] },
+      { name: "escrow_months", label: "Escrow months (1 to 6)", type: "number", default: "2" },
+      { name: "annual_tax", label: "Annual property tax ($)", type: "number", help: "Leave empty to use an estimate." },
+      { name: "annual_insurance", label: "Annual hazard insurance ($)", type: "number", help: "Leave empty to use an estimate." },
+      { name: "include_warranty", label: "Include a home warranty", type: "checkbox" },
+    ],
+    runLabel: "Calculate",
   },
 };

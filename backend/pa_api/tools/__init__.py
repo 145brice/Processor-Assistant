@@ -80,6 +80,18 @@ def loan_for(ctx: RequestContext, data: dict[str, Any]) -> dict:
     return _find(loan_id, ctx)
 
 
+def visible_loans(ctx: RequestContext) -> list[dict]:
+    """Every loan the caller may see (sandbox sees the demo loans)."""
+    import crm
+    from ..routers.loans import _visible
+    return [loan for loan in (crm.get_all_loans() or []) if _visible(loan, ctx)]
+
+
+def flag(data: dict[str, Any], name: str) -> bool:
+    """A checkbox value sent as text."""
+    return str(data.get(name) or "").strip().lower() in ("true", "1", "yes", "on")
+
+
 def text_input(data: dict[str, Any], name: str, label: str, *, required: bool = True, limit: int = 20000) -> str:
     value = str(data.get(name) or "").strip()
     if required and not value:
@@ -91,4 +103,4 @@ def text_input(data: dict[str, Any], name: str, label: str, *, required: bool = 
 
 def load_tools() -> None:
     """Import the tool modules so they register themselves."""
-    from . import advanced, quick  # noqa: F401
+    from . import advanced, pipeline, quick  # noqa: F401

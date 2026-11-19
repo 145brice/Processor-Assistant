@@ -230,3 +230,17 @@ store anything. Tools that call AI redact first and use only the signed-in user'
 | `snapshot`, `missing_docs`, `doc_expiry` | `{loan_id}` | Required and tracked documents from the loan's document list |
 | `report_issue` | `{text, loan_id?}` | Masks SSN, account numbers and dates of birth; returns the report and a `mailto:` link, stores nothing |
 | `spanish_reply` | `{action: "detect" \| "reply" \| "templates", email_text?, reply_en?, conditions?}` | `detect` and `reply` translate with the user's Gemini key after redaction (400 `ai_key_needed` without one; 503 `redaction_unavailable` if name detection is off); `templates` is local |
+| `income_verifier`, `auto_data_entry` | `{loan_id}` | Use the data the scanner saved on the loan's documents (the current app's versions read a value that is never set, so they never worked) |
+| `credit_summary` | `{credit_text}` | Local; the pasted report is not kept |
+| `dti_calculator` | `{action: "dti" \| "closing", income, debt, housing, loan_type, loan_amount, property_value, transaction}` | Numbers may include `$` and commas |
+| `condition_clearer` | `{loan_id, condition}` | Matches the condition against the loan's documents |
+| `compliance_checker`, `guideline_checker` | `{loan_type \| investor, dti, ltv, credit_score, loan_amount}` | Ranges are checked (400) |
+| `closing_package` | `{loan_id}` | Checklist and manifest from the loan's documents; no files are created |
+| `pipeline_dashboard` | `{}` | The caller's own loans; maps stored fields to the names the module reads |
+| `fraud_detector` | `{deposit_amount?, deposit_description?, incomes?, balances?, monthly_income?, loan_id?}` | Checks only what is entered, plus the loan's document names |
+| `multi_borrower` | `{loan_id, co_borrower?}` | Sorts the loan's documents by name |
+| `los_export` | `{loan_id, format: "csv" \| "json"}` | Returns the file text; amounts the loan lacks are left out, never zero |
+| `rate_lock_monitor` | `{lock_date, lock_expiry_date, locked_rate, lock_days, current_market_rate}` | Also lists the caller's lock expiries |
+| `underwriting_tracker` | `{loan_id}` | A condition the loan marks Cleared counts as cleared |
+| `document_classifier` | `{filename}` | Uses the name only; nothing is uploaded |
+| `escrow_calculator` | `{loan_amount, property_value, loan_type, location, escrow_months?, annual_tax?, annual_insurance?, include_warranty?}` | Blank tax or insurance uses the module's estimate |
