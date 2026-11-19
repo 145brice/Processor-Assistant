@@ -20,14 +20,15 @@ Two new Railway services, `pa-api` and `pa-web`, deploy from the `rebuild` branc
 |---|---|
 | `backend/Dockerfile` | `pa-api` image: Python 3.13, Tesseract, spaCy name model, `PII_NER_MODEL=en_core_web_md`, uvicorn |
 | `backend/Dockerfile.dockerignore` | Keeps `.env`, real data files and `web/` out of the API image (production build unaffected) |
-| `backend/railway.json` | Tells Railway to use that Dockerfile and `/api/health` |
-| `web/railway.json`, `web/.nvmrc` | `pa-web`: Nixpacks build, `npm start`, Node 20 |
+| `railway.json` (repo root, **on the `rebuild` branch**) | Tells `pa-api` to use `backend/Dockerfile` and `/api/health`. It replaces the Streamlit version of this file, which stays on `main` for the old service |
+| `web/railway.json`, `web/.nvmrc` | `pa-web`: Railpack build, `npm start`, Node 22 |
 | `scripts/check_deployment.py` | 12 checks to run against the deployed pair |
 
 ## T-40: create the services (owner approves first)
 
 1. In the Railway project, create service **pa-api** from this repo, branch `rebuild`, root directory
-   `/`, config file `/backend/railway.json`.
+   `/` (it reads the root `railway.json`; a config file in the root folder overrides the service's own settings,
+   which is how the first attempt accidentally built the old Streamlit image).
 2. Set its variables (names only here; copy the values from the production service, never from chat):
    `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_KEY`,
    `PA_SETTINGS_ENCRYPTION_KEY`, `RESEND_API_KEY`, `RESEND_FROM`, `ADMIN_NOTIFICATION_EMAIL`,
@@ -37,11 +38,12 @@ Two new Railway services, `pa-api` and `pa-web`, deploy from the `rebuild` branc
    **Never set on pa-api:** `GEMINI_API_KEY`, `GOOGLE_API_KEY`, `ANTHROPIC_API_KEY`,
    `CLAUDE_API_KEY`, `OPENAI_API_KEY`, `PA_PDF_VISION` (RULES.md section 2).
 3. Generate a public address for `pa-api`. Create **pa-web** from the same repo and branch, root
-   directory `/web`, config file `/web/railway.json`, with
+   directory `/web` (it reads `web/railway.json`), with
    `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` (public key only) and
    `NEXT_PUBLIC_API_URL=<the pa-api address>`. These are baked in at build time, so set them first.
 4. Put the `pa-web` address into `PA_WEB_ORIGIN` on `pa-api` and redeploy it.
-5. Run `python scripts/check_deployment.py <pa-api address> <pa-web address>`. All 12 must pass.
+5. Run `python scripts/check_deployment.py <pa-api address> <pa-web address>`. All 12 must pass. (The first check, `/api/health`,
+   must return JSON `{"ok": true}`: Streamlit answers every path with a page, so a status code alone proves nothing.)
 6. In a browser, open `pa-web`, choose "Try with a sample loan" and click through the scanner,
    pipeline, a loan, and a few More Tools.
 
