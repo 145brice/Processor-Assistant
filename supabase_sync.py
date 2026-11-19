@@ -188,6 +188,14 @@ def mirror_activity(loan_id: int, action: str, detail: str = "", user: str = "")
 
 
 def _current_user_key() -> str:
+    # API request: the caller is the signed-in user of that request, not a Streamlit session.
+    try:
+        from backend.pa_api import context as _pa_ctx
+        ctx = _pa_ctx.current()
+        if ctx is not None:
+            return "" if ctx.sandbox else str(ctx.user_key or "").strip()
+    except Exception:
+        pass
     try:
         import streamlit as st
         if st.session_state.get("sandbox_mode", False):
@@ -203,6 +211,14 @@ def _current_user_key() -> str:
 
 
 def _current_user_email() -> str:
+    # API request: the caller's email, so rows are not saved with a blank one.
+    try:
+        from backend.pa_api import context as _pa_ctx
+        ctx = _pa_ctx.current()
+        if ctx is not None:
+            return "" if ctx.sandbox else str(ctx.email or "").strip()
+    except Exception:
+        pass
     try:
         import streamlit as st
         return str(st.session_state.get("user_email") or "").strip()

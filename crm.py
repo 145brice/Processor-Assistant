@@ -6,6 +6,7 @@ Local fallback CRM helpers using a JSON file.
 
 import json
 import os
+import threading
 from datetime import date, datetime
 
 _PIPELINE_FILE  = os.path.join(os.path.dirname(__file__), "pipeline.json")
@@ -22,9 +23,35 @@ _CLOUD_LOAD_ATTEMPTED = False
 _CLOUD_LOAD_OK = False
 _CLOUD_LOADED_USER_KEY = None
 
+# API server (backend/pa_api): one process serves every user on parallel threads. Outside a
+# Streamlit script run, streamlit's session_state is a single dictionary shared by all of them, so
+# one user's load flags and loan cache would be visible to (and race with) another user's request.
+# While an API request is active, this state is kept per user instead. Streamlit and scripts are
+# unaffected (no API context there).
+_API_STATE: dict = {}
+_API_STATE_LOCK = threading.Lock()
+
+
+def _api_bucket():
+    """This API user's private state dict, or None when not serving an API request."""
+    try:
+        from backend.pa_api import context as _pa_ctx
+        ctx = _pa_ctx.current()
+    except Exception:
+        return None
+    if ctx is None:
+        return None
+    key = "" if ctx.sandbox else str(ctx.user_key or "")
+    with _API_STATE_LOCK:
+        return _API_STATE.setdefault(key, {})
+
 
 def _get_load_state() -> tuple:
     """Return (attempted, ok, loaded_user_key) for the current session."""
+    bucket = _api_bucket()
+    if bucket is not None:
+        return (bool(bucket.get("attempted", False)), bool(bucket.get("ok", False)),
+                bucket.get("loaded_user_key"))
     try:
         import streamlit as st
         return (
@@ -42,6 +69,15 @@ _UNSET = object()
 def _set_load_state(*, attempted=_UNSET, ok=_UNSET, loaded_user_key=_UNSET) -> None:
     """Update load cache flags for the current session (only provided fields)."""
     global _CLOUD_LOAD_ATTEMPTED, _CLOUD_LOAD_OK, _CLOUD_LOADED_USER_KEY
+    bucket = _api_bucket()
+    if bucket is not None:
+        if attempted is not _UNSET:
+            bucket["attempted"] = bool(attempted)
+        if ok is not _UNSET:
+            bucket["ok"] = bool(ok)
+        if loaded_user_key is not _UNSET:
+            bucket["loaded_user_key"] = loaded_user_key
+        return
     try:
         import streamlit as st
         if attempted is not _UNSET:
@@ -65,6 +101,9 @@ _LOANS_CACHE = None
 
 def _get_cached_loans():
     """Return this session's cached loan list, or None if not cached."""
+    bucket = _api_bucket()
+    if bucket is not None:
+        return bucket.get("cache")
     try:
         import streamlit as st
         return st.session_state.get("_crm_loans_cache", None)
@@ -75,6 +114,10 @@ def _get_cached_loans():
 def _set_cached_loans(loans) -> None:
     """Store the loan list in this session's cache."""
     global _LOANS_CACHE
+    bucket = _api_bucket()
+    if bucket is not None:
+        bucket["cache"] = loans
+        return
     try:
         import streamlit as st
         st.session_state["_crm_loans_cache"] = loans

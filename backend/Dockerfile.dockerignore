@@ -1,0 +1,22 @@
+# Used only by backend/Dockerfile (BuildKit reads <Dockerfile>.dockerignore), so the production
+# build is untouched. Keeps secrets, real borrower data and the web app out of the API image.
+.git
+.venv*
+__pycache__
+**/__pycache__
+*.pyc
+web
+.env
+.env.*
+!.env.example
+pipeline.json
+pipeline_trash.json
+cloud_log.txt
+scan_history.json
+loan_docs
+loan_activity
+generated_docs
+removed
+exports
+processor.db
+*.log
