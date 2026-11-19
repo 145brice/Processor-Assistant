@@ -125,7 +125,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
 
 ## Phase 2: core screens
 
-### [ ] T-20 Upload and detection
+### [x] T-20 Upload and detection
 
 - **Change:** `POST /api/scan/detect` (PDF only, 40 MB each, in memory). Web `/scanner`: intro,
   setup banner when no key, multi-file upload, detection list (checkbox, name, type dropdown
@@ -133,7 +133,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   2+ files, "Scan (N selected)".
 - **Check:** standard checks; test with a generated fake PDF; files over 40 MB → 413.
 
-### [ ] T-21 Scanning
+### [x] T-21 Scanning
 
 - **Read:** the scan loop in `show_dashboard` (search `_scan_queue`), `_normalize_scanned_conditions`,
   `ai_engine.process_document`, `doc_verify._match_borrower`, `tiers.check_scan_quota`,
