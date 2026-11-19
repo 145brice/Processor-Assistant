@@ -232,4 +232,11 @@ def merge_scan(loan_id: int, body: m.BatchIn, ctx: RequestContext = Depends(get_
 
 @router.get("/{loan_id}/activity", response_model=m.ActivityList)
 def loan_activity(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.ActivityList:
-    raise NotBuilt("T-26")
+    _find(loan_id, ctx)
+    import crm
+    items = []
+    for item in crm.get_activity(loan_id) or []:
+        normalized = dict(item)
+        normalized["at"] = normalized.get("at") or normalized.get("ts", "")
+        items.append(m.Activity.model_validate(normalized))
+    return m.ActivityList(items=items)
