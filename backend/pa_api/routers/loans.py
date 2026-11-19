@@ -16,6 +16,7 @@ from ..errors import ApiError, NotBuilt
 router = APIRouter(prefix="/api/loans", tags=["loans"])
 
 Sort = Literal["newest", "borrower", "close", "lock", "loan_num", "status"]
+VALID_STATUSES = {"Pending", "Requested", "Cleared", "Overdue", "Closed"}
 
 
 def _loan_keys(loan: dict) -> set[str]:
@@ -44,9 +45,10 @@ def _summary(loan: dict) -> m.LoanSummary:
     conditions = loan.get("conditions") or []
     cleared = sum(1 for condition in conditions if condition.get("status") == "Cleared")
     progress = round(cleared * 100 / len(conditions)) if conditions else 0
+    normalized_status = loan.get("status") if loan.get("status") in VALID_STATUSES else "Pending"
     return m.LoanSummary(
         id=int(loan.get("id", 0)), loan_num=str(loan.get("loan_num", "")), borrower=str(loan.get("borrower", "")),
-        status=loan.get("status", "Pending"), closing_date=str(loan.get("closing_date", "")),
+        status=normalized_status, closing_date=str(loan.get("closing_date", "")),
         lock_expiry=str(loan.get("lock_expiry", "")), lock_expired=bool(loan.get("lock_expired", False)),
         missing_docs=str(loan.get("missing_docs", "")), assigned_to=str(loan.get("assigned_to", "")),
         progress_percent=progress, contacts_line=str(loan.get("contacts_line", "")), updated=str(loan.get("updated", "")),
@@ -55,6 +57,8 @@ def _summary(loan: dict) -> m.LoanSummary:
 
 def _full(loan: dict) -> m.Loan:
     data = dict(loan)
+    if data.get("status") not in VALID_STATUSES:
+        data["status"] = "Pending"
     data["progress_percent"] = _summary(loan).progress_percent
     return m.Loan.model_validate(data)
 

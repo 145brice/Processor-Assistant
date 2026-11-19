@@ -1,30 +1,190 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Archive, ChevronDown, FilePlus2, Search, Upload } from "lucide-react";
-import { ApiError, createLoan, deleteLoan, importLoans, listLoans, removedLoans, restoreLoan, setLoanStatus } from "@/lib/api";
+import { FilePlus2 } from "lucide-react";
+import {
+  ApiError,
+  createLoan,
+  deleteLoan,
+  importLoans,
+  listLoans,
+  setLoanStatus,
+} from "@/lib/api";
 import type { LoanStatus, LoanSummary, StatusCounts } from "@/lib/types";
-
-const STATUSES: LoanStatus[] = ["Pending", "Requested", "Cleared", "Overdue", "Closed"];
-const statusStyle: Record<LoanStatus, string> = { Pending: "bg-amber-500/10 text-amber-700", Requested: "bg-sky-500/10 text-sky-700", Cleared: "bg-emerald-500/10 text-emerald-700", Overdue: "bg-rose-500/10 text-rose-700", Closed: "bg-slate-500/10 text-slate-600" };
-
-function LoanCard({ loan, onStatus, onDelete }: { loan: LoanSummary; onStatus: (id: number, status: LoanStatus) => void; onDelete: (id: number) => void }) {
-  return <article className="animate-fade-up rounded-2xl border border-border bg-card p-5 shadow-card"><div className="flex items-start justify-between gap-4"><div><Link href={`/loans/${loan.id}`} className="font-semibold text-foreground hover:text-brand">{loan.borrower || "Unnamed borrower"}</Link><p className="mt-1 text-sm text-muted">Loan {loan.loan_num || "—"}</p></div><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${statusStyle[loan.status]}`}><span className="size-1.5 rounded-full bg-current" />{loan.status}</span></div><div className="mt-5 grid grid-cols-2 gap-3 text-sm"><div><p className="text-xs text-muted">Closing</p><p className="mt-1 text-foreground">{loan.closing_date || "Not set"}</p></div><div><p className="text-xs text-muted">Progress</p><p className="mt-1 text-foreground">{loan.progress_percent}% cleared</p></div></div><div className="mt-5 flex items-center gap-2 border-t border-border pt-4"><select value={loan.status} onChange={(e) => onStatus(loan.id, e.target.value as LoanStatus)} className="rounded-lg border border-border bg-card px-2 py-1.5 text-xs text-foreground"><option value={loan.status}>{loan.status}</option>{STATUSES.filter((status) => status !== loan.status).map((status) => <option key={status}>{status}</option>)}</select><button type="button" onClick={() => onDelete(loan.id)} className="ml-auto text-xs text-muted hover:text-rose-600">Remove</button></div></article>;
-}
-
-function EmptyState({ removed = false }: { removed?: boolean }) { return <div className="rounded-2xl border border-dashed border-border bg-card p-12 text-center shadow-card"><Archive className="mx-auto size-8 text-muted" /><h2 className="mt-4 font-semibold text-foreground">{removed ? "No removed loans" : "Your pipeline is empty"}</h2><p className="mt-1 text-sm text-muted">{removed ? "Removed loans will appear here until they expire." : "Add a loan to start tracking documents and deadlines."}</p></div>; }
+import AddLoanForm from "./_components/AddLoanForm";
+import EmptyState from "./_components/EmptyState";
+import FilterBar from "./_components/FilterBar";
+import ImportButton from "./_components/ImportButton";
+import LoanCard, { STATUSES, STATUS_STYLE } from "./_components/LoanCard";
+import PipelineHeader from "./_components/PipelineHeader";
+import RemovedLoans from "./_components/RemovedLoans";
 
 export default function Page() {
-  const [loans, setLoans] = useState<LoanSummary[]>([]); const [counts, setCounts] = useState<StatusCounts | null>(null); const [removed, setRemoved] = useState<LoanSummary[]>([]); const [status, setStatus] = useState<LoanStatus | "">(""); const [query, setQuery] = useState(""); const [mine, setMine] = useState(false); const [loading, setLoading] = useState(true); const [error, setError] = useState(""); const [addOpen, setAddOpen] = useState(false); const [borrower, setBorrower] = useState(""); const [loanNum, setLoanNum] = useState("");
-  const load = useCallback(async () => { setLoading(true); setError(""); try { const result = await listLoans({ status: status || undefined, q: query || undefined, mine }); setLoans(result.loans); setCounts(result.counts); } catch (e) { setError(e instanceof ApiError ? e.message : "Could not load the pipeline."); } finally { setLoading(false); } }, [mine, query, status]);
-  useEffect(() => { const value = new URLSearchParams(window.location.search).get("status"); if (STATUSES.includes(value as LoanStatus)) setStatus(value as LoanStatus); }, []);
-  useEffect(() => { void load(); }, [load]);
-  const changeStatus = async (id: number, next: LoanStatus) => { try { await setLoanStatus(id, next); await load(); } catch (e) { setError(e instanceof ApiError ? e.message : "Could not update the loan."); } };
-  const remove = async (id: number) => { try { await deleteLoan(id); await load(); } catch (e) { setError(e instanceof ApiError ? e.message : "Could not remove the loan."); } };
-  const add = async () => { try { await createLoan({ loan_num: loanNum, borrower, status: "Pending" }); setBorrower(""); setLoanNum(""); setAddOpen(false); await load(); } catch (e) { setError(e instanceof ApiError ? e.message : "Could not add the loan."); } };
-  const importFile = async (file: File) => { try { await importLoans(file); await load(); } catch (e) { setError(e instanceof ApiError ? e.message : "Could not import the pipeline."); } };
-  return <div className="mx-auto max-w-7xl px-4 py-8 md:px-8"><header className="mb-8"><p className="text-xs font-semibold uppercase tracking-[0.12em] text-muted">Workspace</p><h1 className="mt-2 text-[28px] font-semibold tracking-tight text-foreground">My pipeline</h1><p className="mt-2 text-sm text-muted">Track every loan, deadline, and outstanding condition in one place.</p></header><div className="mb-6 flex flex-wrap gap-2"><button type="button" onClick={() => setAddOpen(!addOpen)} className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white"><FilePlus2 className="size-4" /> Add loan</button><label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground"><Upload className="size-4" /> Import<input type="file" accept=".csv,.json" className="sr-only" onChange={(e) => e.target.files?.[0] && void importFile(e.target.files[0])} /></label></div>{addOpen && <section className="mb-6 rounded-2xl border border-border bg-card p-5 shadow-card"><div className="grid gap-3 sm:grid-cols-2"><input value={loanNum} onChange={(e) => setLoanNum(e.target.value)} placeholder="Loan number" className="rounded-xl border border-border bg-surface px-3 py-2 text-foreground" /><input value={borrower} onChange={(e) => setBorrower(e.target.value)} placeholder="Borrower name" className="rounded-xl border border-border bg-surface px-3 py-2 text-foreground" /></div><button type="button" disabled={!loanNum.trim() || !borrower.trim()} onClick={() => void add()} className="mt-3 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">Save loan</button></section>}{error && <p className="mb-5 rounded-xl border border-rose-500/25 bg-rose-500/[0.07] p-4 text-sm text-rose-600">{error}</p>}<div className="mb-5 flex flex-wrap items-center gap-3"><div className="relative min-w-56 flex-1"><Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" /><input value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && void load()} placeholder="Search loan or borrower" className="w-full rounded-xl border border-border bg-card py-2.5 pl-9 pr-3 text-sm text-foreground shadow-card" /></div><select value={status} onChange={(e) => setStatus(e.target.value as LoanStatus | "")} className="rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground"><option value="">All statuses</option>{STATUSES.map((value) => <option key={value}>{value}</option>)}</select><label className="inline-flex items-center gap-2 text-sm text-muted"><input type="checkbox" checked={mine} onChange={(e) => setMine(e.target.checked)} /> My loans</label></div>{counts && <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">{STATUSES.map((value) => <button key={value} type="button" onClick={() => setStatus(value)} className="rounded-xl border border-border bg-card p-3 text-left shadow-card"><span className={`inline-flex items-center gap-1.5 text-xs ${statusStyle[value]}`}><span className="size-1.5 rounded-full bg-current" />{value}</span><strong className="mt-1 block text-lg text-foreground">{counts[value.toLowerCase() as keyof StatusCounts]}</strong></button>)}</div>}{loading ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{[1, 2, 3].map((value) => <div key={value} className="skeleton h-48 animate-pulse rounded-2xl" />)}</div> : loans.length ? <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">{loans.map((loan) => <LoanCard key={loan.id} loan={loan} onStatus={(id, next) => void changeStatus(id, next)} onDelete={(id) => void remove(id)} />)}</div> : <EmptyState />}<RemovedLoans loans={removed} setLoans={setRemoved} /></div>;
-}
+  const [loans, setLoans] = useState<LoanSummary[]>([]);
+  const [counts, setCounts] = useState<StatusCounts | null>(null);
+  const [status, setStatus] = useState<LoanStatus | "">("");
+  const [query, setQuery] = useState("");
+  const [mine, setMine] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
 
-function RemovedLoans({ loans, setLoans }: { loans: LoanSummary[]; setLoans: (value: LoanSummary[]) => void }) { const [open, setOpen] = useState(false); useEffect(() => { if (open) removedLoans().then((result) => setLoans(result.loans)).catch(() => undefined); }, [open, setLoans]); return <section className="mt-10"><button type="button" onClick={() => setOpen(!open)} className="flex items-center gap-2 text-sm font-semibold text-muted"><ChevronDown className={`size-4 transition ${open ? "rotate-180" : ""}`} /> Removed loans</button>{open && <div className="mt-4">{loans.length ? loans.map((loan) => <div key={loan.id} className="flex items-center justify-between rounded-xl border border-border bg-card p-4 text-sm"><span className="text-foreground">{loan.borrower} · {loan.loan_num}</span><button type="button" onClick={() => void restoreLoan(loan.id).then(() => setLoans(loans.filter((item) => item.id !== loan.id)))} className="text-brand">Restore</button></div>) : <EmptyState removed />}</div>}</section>; }
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const result = await listLoans({
+        status: status || undefined,
+        q: query || undefined,
+        mine,
+      });
+      setLoans(result.loans);
+      setCounts(result.counts);
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError
+          ? caught.message
+          : "Could not load the pipeline.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, [mine, query, status]);
+
+  useEffect(() => {
+    const value = new URLSearchParams(window.location.search).get("status");
+    if (STATUSES.includes(value as LoanStatus)) setStatus(value as LoanStatus);
+  }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  const addLoan = async (loanNum: string, borrower: string) => {
+    try {
+      await createLoan({ loan_num: loanNum, borrower, status: "Pending" });
+      setAddOpen(false);
+      await load();
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError ? caught.message : "Could not add the loan.",
+      );
+    }
+  };
+  const importFile = async (file: File) => {
+    try {
+      await importLoans(file);
+      await load();
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError
+          ? caught.message
+          : "Could not import the pipeline.",
+      );
+    }
+  };
+  const changeStatus = async (id: number, next: LoanStatus) => {
+    try {
+      await setLoanStatus(id, next);
+      await load();
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError
+          ? caught.message
+          : "Could not update the loan.",
+      );
+    }
+  };
+  const remove = async (id: number) => {
+    try {
+      await deleteLoan(id);
+      await load();
+    } catch (caught) {
+      setError(
+        caught instanceof ApiError
+          ? caught.message
+          : "Could not remove the loan.",
+      );
+    }
+  };
+
+  return (
+    <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
+      <PipelineHeader />
+      <div className="mb-6 flex flex-wrap gap-2">
+        <button
+          type="button"
+          onClick={() => setAddOpen(!addOpen)}
+          className="inline-flex items-center gap-2 rounded-xl bg-brand px-4 py-2 text-sm font-semibold text-white"
+        >
+          <FilePlus2 className="size-4" /> Add loan
+        </button>
+        <ImportButton onImport={(file) => void importFile(file)} />
+      </div>
+      {addOpen && (
+        <AddLoanForm
+          onAdd={(loanNum, borrower) => void addLoan(loanNum, borrower)}
+        />
+      )}
+      {error && (
+        <p className="mb-5 rounded-xl border border-rose-500/25 bg-rose-500/[0.07] p-4 text-sm text-rose-600">
+          {error}
+        </p>
+      )}
+      <FilterBar
+        status={status}
+        query={query}
+        mine={mine}
+        setStatus={setStatus}
+        setQuery={setQuery}
+        setMine={setMine}
+        search={() => void load()}
+      />
+      {counts && (
+        <div className="mb-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+          {STATUSES.map((value) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setStatus(value)}
+              className="rounded-xl border border-border bg-card p-3 text-left shadow-card"
+            >
+              <span
+                className={`inline-flex items-center gap-1.5 text-xs ${STATUS_STYLE[value]}`}
+              >
+                <span className="size-1.5 rounded-full bg-current" />
+                {value}
+              </span>
+              <strong className="mt-1 block text-lg text-foreground">
+                {counts[value.toLowerCase() as keyof StatusCounts]}
+              </strong>
+            </button>
+          ))}
+        </div>
+      )}
+      {loading ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {[1, 2, 3].map((value) => (
+            <div
+              key={value}
+              className="skeleton h-48 animate-pulse rounded-2xl"
+            />
+          ))}
+        </div>
+      ) : loans.length ? (
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {loans.map((loan) => (
+            <LoanCard
+              key={loan.id}
+              loan={loan}
+              onStatus={(id, next) => void changeStatus(id, next)}
+              onDelete={(id) => void remove(id)}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState />
+      )}
+      <RemovedLoans />
+    </div>
+  );
+}

@@ -47,10 +47,16 @@ def test_signed_out_request_is_401_in_contract_shape():
     assert set(response.json()["error"]) == {"code", "message"}
 
 
-def test_unbuilt_endpoint_names_its_task():
+def test_pipeline_list_returns_loans_and_counts():
     response = client.get("/api/loans", headers=SANDBOX)
     assert response.status_code == 200
     assert set(response.json()) == {"loans", "counts"}
+
+
+def test_unbuilt_endpoint_names_its_task():
+    response = client.get("/api/loans/1", headers=SANDBOX)
+    assert response.status_code == 501
+    assert "T-25" in response.json()["error"]["message"]
 
 
 def test_context_is_active_only_inside_a_request():
