@@ -80,7 +80,12 @@ function Field({
 export default function ToolRunner({ toolKey }: { toolKey: string }) {
   const def = TOOLS[toolKey];
   const Icon = def.icon;
-  const [values, setValues] = useState<Record<string, string>>({});
+  // Dropdowns start on their first option, which is what the API assumes when a value is empty.
+  const [values, setValues] = useState<Record<string, string>>(() =>
+    Object.fromEntries(
+      def.fields.filter((f) => f.type === "select" && f.options?.length).map((f) => [f.name, f.options![0]]),
+    ),
+  );
   const [loans, setLoans] = useState<LoanSummary[]>([]);
   const [running, setRunning] = useState<string | null>(null);
   const [error, setError] = useState("");

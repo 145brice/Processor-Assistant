@@ -91,4 +91,4 @@ def text_input(data: dict[str, Any], name: str, label: str, *, required: bool = 
 
 def load_tools() -> None:
     """Import the tool modules so they register themselves."""
-    from . import quick  # noqa: F401
+    from . import advanced, quick  # noqa: F401

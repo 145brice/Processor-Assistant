@@ -3,10 +3,16 @@
 // blocks. The matching backend handler is in backend/pa_api/tools/.
 import {
   Bug,
+  Calculator,
   CalendarClock,
   Camera,
+  CreditCard,
   FileWarning,
   Languages,
+  ListChecks,
+  ShieldCheck,
+  TextCursorInput,
+  Wallet,
   type LucideIcon,
 } from "lucide-react";
 
@@ -142,5 +148,92 @@ export const TOOLS: Record<string, ToolDef> = {
       { id: "reply", label: "Translate my reply to Spanish" },
       { id: "templates", label: "Generate email templates" },
     ],
+  },
+
+  // ---------- T-31 Advanced Tools ----------
+  income_verifier: {
+    key: "income_verifier",
+    title: "Income Verifier",
+    description: "Compare the income and employment found on a loan's scanned documents with the loan itself.",
+    icon: Wallet,
+    fields: [loan],
+    runLabel: "Verify income",
+  },
+  auto_data_entry: {
+    key: "auto_data_entry",
+    title: "Auto Data Entry",
+    description: "Fill the loan application fields from the data found on a loan's scanned documents.",
+    icon: TextCursorInput,
+    fields: [loan],
+    runLabel: "Fill fields",
+  },
+  credit_summary: {
+    key: "credit_summary",
+    title: "Credit Summary",
+    description: "Paste a credit report to see the score, risk level, red flags and recommendations.",
+    icon: CreditCard,
+    fields: [
+      {
+        name: "credit_text",
+        label: "Credit report text",
+        type: "textarea",
+        rows: 10,
+        required: true,
+        placeholder: "Paste the credit report text here.",
+        help: "It is read here and not saved. Only the summary is shown.",
+      },
+    ],
+    runLabel: "Analyze credit report",
+  },
+  dti_calculator: {
+    key: "dti_calculator",
+    title: "DTI and Closing Costs",
+    description: "Check debt-to-income against loan limits, or estimate closing costs and cash needed.",
+    icon: Calculator,
+    fields: [
+      { name: "income", label: "Monthly gross income ($)", type: "number" },
+      { name: "debt", label: "Monthly debt payments ($)", type: "number" },
+      { name: "housing", label: "Proposed housing payment ($)", type: "number" },
+      { name: "loan_type", label: "Loan type", type: "select", options: ["conventional", "fha", "va"] },
+      { name: "loan_amount", label: "Loan amount ($)", type: "number", help: "Used for closing costs." },
+      { name: "property_value", label: "Property value ($)", type: "number", help: "Used for closing costs." },
+      { name: "transaction", label: "Transaction type", type: "select", options: ["purchase", "refinance"] },
+    ],
+    actions: [
+      { id: "dti", label: "Calculate DTI", primary: true },
+      { id: "closing", label: "Calculate closing costs" },
+    ],
+  },
+  condition_clearer: {
+    key: "condition_clearer",
+    title: "Condition Clearer",
+    description: "Check whether the documents scanned into a loan clear an underwriting condition.",
+    icon: ListChecks,
+    fields: [
+      loan,
+      {
+        name: "condition",
+        label: "Underwriting condition",
+        type: "textarea",
+        rows: 3,
+        required: true,
+        placeholder: "Example: Provide paystub for the last 30 days",
+      },
+    ],
+    runLabel: "Check condition",
+  },
+  compliance_checker: {
+    key: "compliance_checker",
+    title: "Compliance Checker",
+    description: "Run a loan's key numbers through the compliance checklist.",
+    icon: ShieldCheck,
+    fields: [
+      { name: "loan_type", label: "Loan type", type: "select", options: ["conventional", "fha", "va", "usda"] },
+      { name: "dti", label: "DTI ratio (%)", type: "number" },
+      { name: "ltv", label: "LTV ratio (%)", type: "number" },
+      { name: "credit_score", label: "Credit score", type: "number" },
+      { name: "loan_amount", label: "Loan amount ($)", type: "number" },
+    ],
+    runLabel: "Run compliance check",
   },
 };
