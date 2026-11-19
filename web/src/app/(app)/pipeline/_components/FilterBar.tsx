@@ -1,22 +1,35 @@
 import { Search } from "lucide-react";
-import type { LoanStatus } from "@/lib/types";
+import type { LoanSort, LoanStatus } from "@/lib/types";
 import { STATUSES } from "./LoanCard";
+
+const SORTS: { value: LoanSort; label: string }[] = [
+  { value: "newest", label: "Newest" },
+  { value: "borrower", label: "Borrower A-Z" },
+  { value: "close", label: "Closing date" },
+  { value: "lock", label: "Lock expiry" },
+  { value: "loan_num", label: "Loan number" },
+  { value: "status", label: "Status" },
+];
 
 export default function FilterBar({
   status,
   query,
   mine,
+  sort,
   setStatus,
   setQuery,
   setMine,
+  setSort,
   search,
 }: {
   status: LoanStatus | "";
   query: string;
   mine: boolean;
+  sort: LoanSort;
   setStatus: (value: LoanStatus | "") => void;
   setQuery: (value: string) => void;
   setMine: (value: boolean) => void;
+  setSort: (value: LoanSort) => void;
   search: () => void;
 }) {
   return (
@@ -39,6 +52,18 @@ export default function FilterBar({
         <option value="">All statuses</option>
         {STATUSES.map((value) => (
           <option key={value}>{value}</option>
+        ))}
+      </select>
+      <select
+        aria-label="Sort loans"
+        value={sort}
+        onChange={(event) => setSort(event.target.value as LoanSort)}
+        className="rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-foreground"
+      >
+        {SORTS.map((option) => (
+          <option key={option.value} value={option.value}>
+            Sort: {option.label}
+          </option>
         ))}
       </select>
       <label className="inline-flex items-center gap-2 text-sm text-muted">

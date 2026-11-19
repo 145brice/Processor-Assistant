@@ -39,6 +39,24 @@ const statusStyle: Record<LoanStatus, string> = {
   Closed: "bg-slate-500/10 text-slate-600",
 };
 
+// Same order the current app lists parties in (its party picker).
+const PARTY_ORDER = [
+  "Borrower",
+  "Co-Borrower",
+  "Title",
+  "Realtor",
+  "Seller",
+  "Processor",
+  "Underwriter",
+  "Jr Underwriter",
+  "Loan Officer",
+  "Closer",
+  "Insurance",
+  "Appraiser",
+  "Employer",
+  "Manager",
+];
+
 function StatusPill({ status }: { status: LoanStatus }) {
   return (
     <span
@@ -58,6 +76,7 @@ function Conditions({
 }) {
   const [items, setItems] = useState<Condition[]>(loan.conditions);
   const [busy, setBusy] = useState(false);
+  const [view, setView] = useState<"all" | "party">("all");
   const save = async () => {
     setBusy(true);
     try {
@@ -66,10 +85,41 @@ function Conditions({
       setBusy(false);
     }
   };
+  const byParty = PARTY_ORDER.concat(
+    Array.from(new Set(items.map((item) => item.party))).filter(
+      (party) => !PARTY_ORDER.includes(party),
+    ),
+  )
+    .map((party) => ({
+      party,
+      rows: items.filter((item) => item.party === party),
+    }))
+    .filter((group) => group.rows.length);
   return (
     <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
-      <div className="flex items-center justify-between">
-        <h2 className="font-semibold text-foreground">Conditions</h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-1 rounded-lg bg-subtle p-0.5 text-sm">
+          {(
+            [
+              ["all", "Conditions"],
+              ["party", "Summarized"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              onClick={() => setView(value)}
+              className={
+                "rounded-md px-3 py-1.5 font-medium transition " +
+                (view === value
+                  ? "bg-card text-foreground shadow-card"
+                  : "text-muted hover:text-foreground")
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
         <button
           type="button"
           onClick={() => void save()}
@@ -84,7 +134,44 @@ function Conditions({
           Save
         </button>
       </div>
-      <div className="mt-4 space-y-2">
+      {view === "party" && (
+        <div className="mt-4 space-y-5">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+            Summarized (sorted by party)
+          </p>
+          {byParty.map((group) => (
+            <div key={group.party}>
+              <p className="text-sm font-semibold text-foreground">
+                {group.party}{" "}
+                <span className="font-normal text-muted">
+                  ({group.rows.length})
+                </span>
+              </p>
+              <ul className="mt-2 divide-y divide-border rounded-xl border border-border">
+                {group.rows.map((row, index) => (
+                  <li
+                    key={`${row.num}-${index}`}
+                    className="flex items-start gap-3 px-4 py-2.5 text-sm"
+                  >
+                    <span className="min-w-0 flex-1 text-foreground">
+                      {row.desc}
+                    </span>
+                    <span className="shrink-0 text-xs text-muted">
+                      {row.status}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          {!byParty.length && (
+            <p className="py-6 text-center text-sm text-muted">
+              No conditions have been added yet.
+            </p>
+          )}
+        </div>
+      )}
+      <div className={"mt-4 space-y-2 " + (view === "party" ? "hidden" : "")}>
         {items.length ? (
           items.map((condition, index) => (
             <div
@@ -134,6 +221,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const [loan, setLoan] = useState<Loan | null>(null);
   const [activity, setActivity] = useState<Activity[]>([]);
   const [notes, setNotes] = useState("");
+  const [assigned, setAssigned] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   useEffect(() => {
@@ -141,6 +229,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       .then((value) => {
         setLoan(value);
         setNotes(value.notes);
+        setAssigned(value.assigned_to);
       })
       .catch((e) =>
         setError(
@@ -158,6 +247,17 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       setLoan(await setLoanStatus(loan.id, value));
     } catch (e) {
       setError(e instanceof ApiError ? e.message : "Could not change status.");
+    } finally {
+      setBusy(false);
+    }
+  };
+  const saveAssigned = async () => {
+    if (!loan) return;
+    setBusy(true);
+    try {
+      setLoan(await updateLoan(loan.id, { assigned_to: assigned.trim() }));
+    } catch (e) {
+      setError(e instanceof ApiError ? e.message : "Could not save assignment.");
     } finally {
       setBusy(false);
     }
@@ -268,6 +368,25 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
             </button>
           ))}
         </div>
+        <label className="mt-5 block text-sm font-medium text-foreground">
+          Assigned to
+          <div className="mt-2 flex gap-2">
+            <input
+              value={assigned}
+              onChange={(event) => setAssigned(event.target.value)}
+              placeholder="Unassigned"
+              className="w-full max-w-xs rounded-xl border border-border bg-surface px-3 py-2 text-sm font-normal text-foreground focus:border-brand focus:outline-none"
+            />
+            <button
+              type="button"
+              disabled={busy || assigned.trim() === loan.assigned_to}
+              onClick={() => void saveAssigned()}
+              className="rounded-xl border border-border bg-card px-4 py-2 text-sm font-medium text-foreground shadow-card disabled:opacity-50"
+            >
+              Save
+            </button>
+          </div>
+        </label>
       </section>
       <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-card">
         <h2 className="font-semibold text-foreground">Activity</h2>
@@ -290,7 +409,12 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
         )}
       </section>
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
-        <Conditions loan={loan} onSaved={setLoan} />
+        {/* The key makes the list reload when conditions are added, e.g. by scanning into the loan. */}
+        <Conditions
+          key={`${loan.id}-${loan.conditions.length}`}
+          loan={loan}
+          onSaved={setLoan}
+        />
         <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
           <h2 className="font-semibold text-foreground">Notes</h2>
           <textarea

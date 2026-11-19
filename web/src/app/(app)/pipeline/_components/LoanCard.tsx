@@ -53,12 +53,48 @@ export default function LoanCard({
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted">Progress</p>
-          <p className="mt-1 text-foreground">
-            {loan.progress_percent}% cleared
+          <p className="text-xs text-muted">Lock expires</p>
+          <p
+            className={
+              "mt-1 " +
+              (loan.lock_expired ? "text-rose-600" : "text-foreground")
+            }
+          >
+            {loan.lock_expiry || "Not set"}
+            {loan.lock_expired && " (expired)"}
           </p>
         </div>
       </div>
+      <div className="mt-4">
+        <div className="flex items-center justify-between text-xs text-muted">
+          <span>Conditions cleared</span>
+          <span className="tabular-nums text-foreground">
+            {loan.progress_percent}%
+          </span>
+        </div>
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-subtle">
+          <div
+            className="h-full rounded-full bg-emerald-500 transition-all"
+            style={{ width: `${loan.progress_percent}%` }}
+          />
+        </div>
+      </div>
+      {loan.missing_docs && (
+        <p className="mt-3 rounded-lg bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+          Missing: {loan.missing_docs}
+        </p>
+      )}
+      {loan.contacts_line && (
+        <p className="mt-3 truncate text-xs text-muted" title={loan.contacts_line}>
+          {loan.contacts_line}
+        </p>
+      )}
+      {loan.assigned_to && (
+        <p className="mt-2 text-xs text-muted">
+          Assigned to{" "}
+          <span className="text-foreground">{loan.assigned_to}</span>
+        </p>
+      )}
       <div className="mt-5 flex items-center gap-2 border-t border-border pt-4">
         <select
           value={loan.status}

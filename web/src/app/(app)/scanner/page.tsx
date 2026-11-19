@@ -40,6 +40,16 @@ export default function ScannerPage() {
         .then((me) => { setNeedsKey(!me.sandbox && !me.ai.has_key); setHasKey(me.ai.has_key); setUsage(me.usage); })
         .catch(() => setNeedsKey(false));
     void load();
+    // A scan restored from History shows up in the results.
+    try {
+      const saved = window.sessionStorage.getItem("pa_restore_scan");
+      if (saved) {
+        window.sessionStorage.removeItem("pa_restore_scan");
+        setBatches((list) => [JSON.parse(saved) as ScanBatch, ...list]);
+      }
+    } catch {
+      /* unreadable or blocked: nothing to restore */
+    }
     // The setup wizard announces a saved key so the banner can go away without a reload.
     window.addEventListener("pa:ai-key-saved", load);
     return () => window.removeEventListener("pa:ai-key-saved", load);
@@ -240,7 +250,7 @@ export default function ScannerPage() {
             </div>
           )}
 
-          <Results batches={batches} />
+          <Results batches={batches} onClear={() => setBatches([])} />
         </div>
 
         <SideRail usage={usage} />
