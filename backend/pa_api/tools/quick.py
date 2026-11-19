@@ -193,7 +193,8 @@ def spanish_reply_tool(ctx: RequestContext, data: dict[str, Any]) -> dict:
         if not found.is_spanish:
             return result(notice("info", "English email detected. Use “Generate templates” to draft "
                                          "Spanish and English replies."))
-        blocks = [notice("info", f"Spanish email detected ({found.confidence:.0%} confidence).")]
+        # The engine's confidence is a word ratio times 10 and is not capped (it can read 700%).
+        blocks = [notice("info", f"Spanish email detected ({min(found.confidence, 1.0):.0%} confidence).")]
         try:
             blocks.append(text("English translation", translate(ctx, email, "English")))
         except ApiError as error:
