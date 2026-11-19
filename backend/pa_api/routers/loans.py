@@ -109,9 +109,10 @@ def _draft(loan: dict, kind: str) -> m.TextDraft:
     number = _safe_text(loan.get("loan_num"))
     address = _safe_text(loan.get("property_address"))
     if kind == "email":
-        subject = f"Loan {number} - outstanding conditions"
-        body = f"Hello,\n\nPlease provide the outstanding items for loan {number} for {borrower}.\n"
-        body += "\n".join(f"- {_safe_text(item.get('desc') or item.get('text'))}" for item in loan.get("conditions", []) if item.get("status") != "Cleared")
+        import ai_engine
+        lines = [f"- Condition #{item.get('num')}: {_safe_text(item.get('desc') or item.get('text'))}" for item in loan.get("conditions", []) if item.get("status") != "Cleared"]
+        body = _safe_text(ai_engine.draft_email("\n".join(lines), "Borrower", "English"))
+        subject = f"Re: {number} {borrower}"
     elif kind == "hoi":
         subject = f"HOI / Evidence of Insurance Request Loan {number}"
         body = f"Please provide Evidence of Insurance for loan {number}.\nBorrower: {borrower}\nProperty: {address}\n"
@@ -195,7 +196,11 @@ def _word_request(loan_id: int, ctx: RequestContext, template: str, kind: str) -
     subject = _draft(loan, kind).subject
     contact = (loan.get("contacts", {}) or {}).get("insurance" if kind == "hoi" else "title", {}) or {}
     recipient = contact.get("email", "")
-    gmail = _gmail_url(recipient, subject, _draft(loan, kind).body)
+    if kind == "hoi":
+        body = (f"Hi {contact.get('contact') or contact.get('name') or 'there'},\n\nPlease provide Evidence of Insurance for the following loan. The full request form is attached.\n\nBorrower(s): {context_data['borrower_name']}\nProperty: {context_data['property_address']}\nEstimated Funding: {context_data['funding_date']}\nLoan Number: {context_data['loan_num']}\nLoan Amount: {context_data['loan_amount']}\n\nMortgagee Clause:\n{context_data['mortgagee_clause']}\n\nPlease provide an invoice with balance due (or paid-in-full invoice) and cover the full loan amount OR provide the RCE.\n\nThank you,\n{context_data['loan_processor']}")
+    else:
+        body = (f"Hi {contact.get('contact') or contact.get('name') or 'there'},\n\nPlease provide tax pro-rations and title docs as soon as available. The full request form is attached. Summary below:\n\nBorrower(s): {context_data['borrower_name']}\nProperty: {context_data['property_address']}\nEstimated Funding: {context_data['funding_date']}\nLoan Number: {context_data['loan_num']}\nLoan Amount: {context_data['loan_amount']}\n\nMortgagee Information:\n{context_data['mortgagee_clause']}\n\nItems needed: Prelim Title + 24 mo chain, Title Fees in CD format, Payoff (refi only), CPL/ICPL, Wire Instructions, EMD receipt (purchase), Plat Map, Survey (TX/FL), Title E&O, CC&Rs (if applicable), Tax Cert, License # for settlement agent and company.\n\nThank you,\n{context_data['loan_processor']}")
+    gmail = _gmail_url(recipient, _safe_text(subject), _safe_text(body))
     with tempfile.TemporaryDirectory() as directory:
         target = Path(directory) / f"{label}_{safe}.docx"
         fill_template(template, context_data, str(target))

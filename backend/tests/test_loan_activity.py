@@ -7,6 +7,8 @@ from docx import Document
 from backend.pa_api import context
 from backend.pa_api.errors import ApiError
 from backend.pa_api.routers import loans
+from backend.pa_api.main import app
+from fastapi.testclient import TestClient
 from backend.tests.test_loans_visibility import temporary_pipeline
 
 
@@ -55,3 +57,9 @@ def test_email_draft_omits_cleared_conditions_and_redacts_ssn(temporary_pipeline
     assert "Cleared fake" not in draft.body
     assert "123-45-6789" not in draft.body
     assert "1234567890" not in draft.body
+
+
+def test_document_headers_are_exposed_to_browser():
+    response = TestClient(app).post("/api/loans/1/hoi-request", headers={"X-PA-Sandbox": "1", "Origin": "http://localhost:3000"})
+    assert "X-PA-Gmail-URL" in response.headers["access-control-expose-headers"]
+    assert "Content-Disposition" in response.headers["access-control-expose-headers"]
