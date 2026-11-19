@@ -17,6 +17,7 @@ router = APIRouter(prefix="/api/loans", tags=["loans"])
 
 Sort = Literal["newest", "borrower", "close", "lock", "loan_num", "status"]
 VALID_STATUSES = {"Pending", "Requested", "Cleared", "Overdue", "Closed"}
+VALID_CONDITION_STATUSES = {"Needed", "Requested", "Important", "Ready to Clear", "Cleared"}
 
 
 def _loan_keys(loan: dict) -> set[str]:
@@ -66,10 +67,15 @@ def _full(loan: dict) -> m.Loan:
     normalized_conditions = []
     for index, condition in enumerate(data.get("conditions") or [], start=1):
         item = dict(condition)
-        item["num"] = item.get("num", index)
+        try:
+            item["num"] = int(item.get("num", index))
+        except (TypeError, ValueError):
+            item["num"] = index
         item["desc"] = item.get("desc") or item.get("text", "")
         party = item.get("party", "")
         item["party"] = ", ".join(party) if isinstance(party, list) else str(party)
+        if item.get("status") not in VALID_CONDITION_STATUSES:
+            item["status"] = "Needed"
         normalized_conditions.append(item)
     data["conditions"] = normalized_conditions
     return m.Loan.model_validate(data)
@@ -179,9 +185,32 @@ def set_status(loan_id: int, body: m.StatusIn, ctx: RequestContext = Depends(get
 @router.put("/{loan_id}/conditions", response_model=m.Loan)
 def set_conditions(loan_id: int, body: m.ConditionsIn, ctx: RequestContext = Depends(get_context)) -> m.Loan:
     _write_context(ctx)
-    _find(loan_id, ctx)
+    loan = _find(loan_id, ctx)
     import crm
-    crm.update_loan(loan_id, conditions=[condition.model_dump() for condition in body.conditions])
+    stored = loan.get("conditions") or []
+    incoming_by_num = {condition.num: condition for condition in body.conditions}
+    merged = []
+    for existing in stored:
+        try:
+            num = int(existing.get("num"))
+        except (TypeError, ValueError):
+            merged.append(existing)
+            continue
+        condition = incoming_by_num.get(num)
+        if condition is None:
+            merged.append(existing)
+            continue
+        updated = dict(existing)
+        updated.update({
+            "desc": condition.desc,
+            "party": condition.party,
+            "status": condition.status,
+            "section": condition.section,
+        })
+        merged.append(updated)
+    known = {int(item.get("num")) for item in stored if str(item.get("num", "")).isdigit()}
+    merged.extend(condition.model_dump() for condition in body.conditions if condition.num not in known)
+    crm.update_loan(loan_id, conditions=merged)
     return _full(_find(loan_id, ctx))
 
 
