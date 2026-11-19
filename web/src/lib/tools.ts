@@ -17,12 +17,8 @@ import {
   ListChecks,
   LockKeyhole,
   Scale,
-  ShieldAlert,
   ShieldCheck,
-  TextCursorInput,
   Users,
-  Wallet,
-  Workflow,
   type LucideIcon,
 } from "lucide-react";
 
@@ -165,22 +161,6 @@ export const TOOLS: Record<string, ToolDef> = {
   },
 
   // ---------- T-31 Advanced Tools ----------
-  income_verifier: {
-    key: "income_verifier",
-    title: "Income Verifier",
-    description: "Compare the income and employment found on a loan's scanned documents with the loan itself.",
-    icon: Wallet,
-    fields: [loan],
-    runLabel: "Verify income",
-  },
-  auto_data_entry: {
-    key: "auto_data_entry",
-    title: "Auto Data Entry",
-    description: "Fill the loan application fields from the data found on a loan's scanned documents.",
-    icon: TextCursorInput,
-    fields: [loan],
-    runLabel: "Fill fields",
-  },
   credit_summary: {
     key: "credit_summary",
     title: "Credit Summary",
@@ -283,35 +263,6 @@ export const TOOLS: Record<string, ToolDef> = {
     ],
     runLabel: "Check guidelines",
   },
-  fraud_detector: {
-    key: "fraud_detector",
-    title: "Fraud Detector",
-    description:
-      "Check figures you have found for common red flags: large unexplained deposits, uneven income, " +
-      "unusually high assets, and document names that suggest alteration.",
-    icon: ShieldAlert,
-    fields: [
-      { name: "deposit_amount", label: "Deposit amount ($)", type: "number", help: "Deposits over $5,000 are checked." },
-      { name: "deposit_description", label: "Deposit description", type: "text", placeholder: "e.g. cash deposit" },
-      {
-        name: "incomes",
-        label: "Income amounts",
-        type: "text",
-        placeholder: "6000, 9500",
-        help: "Monthly income from different documents, separated by commas.",
-      },
-      {
-        name: "balances",
-        label: "Account balances",
-        type: "text",
-        placeholder: "25000, 12000",
-        help: "Compared with monthly income below. Needs at least two.",
-      },
-      { name: "monthly_income", label: "Stated monthly income ($)", type: "number" },
-      { name: "loan_id", label: "Loan (optional)", type: "loan", help: "Also checks the loan's document names." },
-    ],
-    runLabel: "Check for red flags",
-  },
   multi_borrower: {
     key: "multi_borrower",
     title: "Multi-Borrower",
@@ -350,14 +301,6 @@ export const TOOLS: Record<string, ToolDef> = {
       { name: "current_market_rate", label: "Current market rate (%)", type: "number", required: true },
     ],
     runLabel: "Check lock",
-  },
-  underwriting_tracker: {
-    key: "underwriting_tracker",
-    title: "Underwriting Tracker",
-    description: "Track a loan's conditions: what is cleared, pending or overdue, and which documents may clear them.",
-    icon: Workflow,
-    fields: [loan],
-    runLabel: "Track conditions",
   },
   document_classifier: {
     key: "document_classifier",
