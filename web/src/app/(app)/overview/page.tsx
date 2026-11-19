@@ -1,5 +1,5 @@
-import Placeholder from "@/components/Placeholder";
+import OverviewPage from "./_components/OverviewPage";
 
 export default function Page() {
-  return <Placeholder title="Overview" task="T-27" notes="Value highlights and onboarding checklist." />;
+  return <OverviewPage />;
 }

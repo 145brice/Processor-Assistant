@@ -1,8 +1,11 @@
 """Upload, detection, scanning, saved scans and scan outputs."""
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, File, Form, UploadFile
 from starlette.concurrency import run_in_threadpool
+
+import scan_history_store
 
 from .. import detection, scan_service
 from .. import models as m
@@ -61,12 +64,40 @@ async def scan(
 
 @router.get("/scans", response_model=m.SavedScans)
 def list_scans(ctx: RequestContext = Depends(get_context)) -> m.SavedScans:
-    raise NotBuilt("T-27")
+    if ctx.sandbox:
+        return m.SavedScans(items=[])
+    loaded = scan_history_store.load(ctx.user_key)
+    if not loaded.get("ok"):
+        raise ApiError(503, "history_unavailable", loaded.get("error", "Could not load saved scans."))
+    items = []
+    for entry in loaded.get("items", []):
+        if entry.get("user_key") != ctx.user_key:
+            continue
+        try:
+            saved_at = datetime.fromtimestamp(float(entry["ts"]), tz=timezone.utc).isoformat().replace("+00:00", "Z")
+            batch = scan_service.saved_batch_to_contract(entry["batch"])
+            items.append(m.SavedScan(id=str(entry["id"]), saved_at=saved_at, batch=batch))
+        except (KeyError, TypeError, ValueError):
+            continue
+    items.sort(key=lambda item: item.saved_at, reverse=True)
+    return m.SavedScans(items=items)
 
 
 @router.delete("/scans/{scan_id}", response_model=m.Ok)
 def delete_scan(scan_id: str, ctx: RequestContext = Depends(get_context)) -> m.Ok:
-    raise NotBuilt("T-27")
+    if ctx.sandbox:
+        raise ApiError(403, "sandbox_write", "Sign in to save changes.")
+    loaded = scan_history_store.load(ctx.user_key)
+    if not loaded.get("ok"):
+        raise ApiError(503, "history_unavailable", loaded.get("error", "Could not load saved scans."))
+    items = loaded.get("items", [])
+    kept = [item for item in items if str(item.get("id")) != scan_id]
+    if len(kept) == len(items):
+        raise ApiError(404, "not_found", "Saved scan not found.")
+    saved = scan_history_store.save(ctx.user_key, kept, ctx.email)
+    if not saved.get("ok"):
+        raise ApiError(503, "save_failed", "Could not delete the saved scan. Please try again.")
+    return m.Ok(ok=True)
 
 
 @router.post("/outputs/email-drafts", response_model=m.EmailDrafts)
