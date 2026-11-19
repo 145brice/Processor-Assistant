@@ -4,9 +4,13 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
+import tempfile
+from pathlib import Path
+from urllib.parse import quote
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Response, UploadFile
 
 from .. import models as m
 from ..auth import get_context
@@ -89,6 +93,35 @@ def _find(loan_id: int, ctx: RequestContext) -> dict:
     raise ApiError(404, "not_found", "Loan not found")
 
 
+def _safe_text(value: object) -> str:
+    import re
+    text = str(value or "")
+    text = re.sub(r"\b\d{3}-\d{2}-\d{4}\b|\b\d{9}\b", "[redacted]", text)
+    return re.sub(r"\b(?:account|acct)[\s:#-]*\d{4,}\b", "account [redacted]", text, flags=re.I)
+
+
+def _gmail_url(to: str, subject: str, body: str) -> str:
+    return f"https://mail.google.com/mail/?view=cm&fs=1&to={quote(to or '')}&su={quote(subject)}&body={quote(body)}"
+
+
+def _draft(loan: dict, kind: str) -> m.TextDraft:
+    borrower = _safe_text(loan.get("borrower"))
+    number = _safe_text(loan.get("loan_num"))
+    address = _safe_text(loan.get("property_address"))
+    if kind == "email":
+        import ai_engine
+        lines = [f"- Condition #{item.get('num')}: {_safe_text(item.get('desc') or item.get('text'))}" for item in loan.get("conditions", []) if item.get("status") != "Cleared"]
+        body = _safe_text(ai_engine.draft_email("\n".join(lines), "Borrower", "English"))
+        subject = f"Re: {number} {borrower}"
+    elif kind == "hoi":
+        subject = f"HOI / Evidence of Insurance Request Loan {number}"
+        body = f"Please provide Evidence of Insurance for loan {number}.\nBorrower: {borrower}\nProperty: {address}\n"
+    else:
+        subject = f"Title Work Request Loan {number}"
+        body = f"Please provide title work for loan {number}.\nBorrower: {borrower}\nProperty: {address}\n"
+    return m.TextDraft(subject=subject, body=_safe_text(body))
+
+
 @router.get("", response_model=m.LoanList)
 def list_loans(
     status: Optional[m.LoanStatus] = None,
@@ -147,6 +180,45 @@ async def import_loans(file: UploadFile = File(...), ctx: RequestContext = Depen
 @router.post("/from-scan", response_model=m.Loan)
 def loan_from_scan(body: m.BatchIn, ctx: RequestContext = Depends(get_context)) -> m.Loan:
     raise NotBuilt("T-23")
+
+
+@router.post("/{loan_id}/draft-email", response_model=m.TextDraft)
+def draft_email(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.TextDraft:
+    return _draft(_find(loan_id, ctx), "email")
+
+
+def _word_request(loan_id: int, ctx: RequestContext, template: str, kind: str) -> Response:
+    loan = _find(loan_id, ctx)
+    from template_filler import build_context, fill_template
+    context_data = build_context(loan)
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "_", str(context_data["borrower_name"]))[:40]
+    label = "HOI Request" if kind == "hoi" else "Title Request"
+    subject = _draft(loan, kind).subject
+    contact = (loan.get("contacts", {}) or {}).get("insurance" if kind == "hoi" else "title", {}) or {}
+    recipient = contact.get("email", "")
+    if kind == "hoi":
+        body = (f"Hi {contact.get('contact') or contact.get('name') or 'there'},\n\nPlease provide Evidence of Insurance for the following loan. The full request form is attached.\n\nBorrower(s): {context_data['borrower_name']}\nProperty: {context_data['property_address']}\nEstimated Funding: {context_data['funding_date']}\nLoan Number: {context_data['loan_num']}\nLoan Amount: {context_data['loan_amount']}\n\nMortgagee Clause:\n{context_data['mortgagee_clause']}\n\nPlease provide an invoice with balance due (or paid-in-full invoice) and cover the full loan amount OR provide the RCE.\n\nThank you,\n{context_data['loan_processor']}")
+    else:
+        body = (f"Hi {contact.get('contact') or contact.get('name') or 'there'},\n\nPlease provide tax pro-rations and title docs as soon as available. The full request form is attached. Summary below:\n\nBorrower(s): {context_data['borrower_name']}\nProperty: {context_data['property_address']}\nEstimated Funding: {context_data['funding_date']}\nLoan Number: {context_data['loan_num']}\nLoan Amount: {context_data['loan_amount']}\n\nMortgagee Information:\n{context_data['mortgagee_clause']}\n\nItems needed: Prelim Title + 24 mo chain, Title Fees in CD format, Payoff (refi only), CPL/ICPL, Wire Instructions, EMD receipt (purchase), Plat Map, Survey (TX/FL), Title E&O, CC&Rs (if applicable), Tax Cert, License # for settlement agent and company.\n\nThank you,\n{context_data['loan_processor']}")
+    gmail = _gmail_url(recipient, _safe_text(subject), _safe_text(body))
+    with tempfile.TemporaryDirectory() as directory:
+        target = Path(directory) / f"{label}_{safe}.docx"
+        fill_template(template, context_data, str(target))
+        content = target.read_bytes()
+    if not ctx.sandbox:
+        import crm
+        crm.log_activity(loan_id, "generated", f"{label} generated", user=ctx.email)
+    return Response(content=content, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document", headers={"Content-Disposition": f'attachment; filename="{target.name}"', "X-PA-Gmail-URL": gmail})
+
+
+@router.post("/{loan_id}/hoi-request")
+def hoi_request(loan_id: int, ctx: RequestContext = Depends(get_context)) -> Response:
+    return _word_request(loan_id, ctx, "HOI Request.docx", "hoi")
+
+
+@router.post("/{loan_id}/title-request")
+def title_request(loan_id: int, ctx: RequestContext = Depends(get_context)) -> Response:
+    return _word_request(loan_id, ctx, "Title Request copy.docx", "title")
 
 
 @router.get("/{loan_id}", response_model=m.Loan)
@@ -232,4 +304,11 @@ def merge_scan(loan_id: int, body: m.BatchIn, ctx: RequestContext = Depends(get_
 
 @router.get("/{loan_id}/activity", response_model=m.ActivityList)
 def loan_activity(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.ActivityList:
-    raise NotBuilt("T-26")
+    _find(loan_id, ctx)
+    import crm
+    items = []
+    for item in crm.get_activity(loan_id) or []:
+        normalized = dict(item)
+        normalized["at"] = normalized.get("at") or normalized.get("ts", "")
+        items.append(m.Activity.model_validate(normalized))
+    return m.ActivityList(items=items)

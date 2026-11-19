@@ -180,7 +180,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   Summarized tab, Notes (Save).
 - **Check:** standard checks; manual round trip of a status and a note.
 
-### [ ] T-26 Loan detail: activity, contacts, documents, requests
+### [x] T-26 Loan detail: activity, contacts, documents, requests
 
 - **Read:** the rest of `show_loan_detail`.
 - **Change:** activity endpoint and list; contacts panel; documents list; Draft Email, Generate

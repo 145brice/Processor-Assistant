@@ -19,6 +19,7 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["Authorization", "Content-Type", "X-PA-Sandbox"],
+    expose_headers=["X-PA-Gmail-URL", "Content-Disposition"],
 )
 
 for _router in (account.router, scanning.router, loans.router, tools.router):
