@@ -202,6 +202,19 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   History, AI Settings, Usage, Pricing, Overview in both apps with the sample loan and the fake
   approval; write the results table into this card.
 
+**Parity results (2026-11-19, checked against the code and the running app in sample mode).**
+
+| Area | Matches the old app | Gap | Plan |
+|---|---|---|---|
+| Login | Google, sample loan, terms and privacy links | Login rate limit (`PA_LOGIN_MAX_FAILS`) is Supabase's now | Accept |
+| Scanner | Upload, detect, type override, bulk actions, scan, quota, AI note, loan match actions, contacts, fields, conditions, copy/PDF/CSV, two email drafts | Clear all / upload more; restore a saved scan into the scanner; per-condition actions (email this item, simplify, Spanish); merge pages of one bank statement | First two: **fix now**. Others: T-30 (Spanish reply), later card |
+| Pipeline | Add loan, import, status filter from `?status=`, search, My loans, status change, delete, removed + restore, progress | Sort control; lock-expired and missing-docs badges; close/lock dates and contacts line on cards; Assigned To; Empty Removed and retention text | Sort and card details: **fix now**. Assigned To and Empty Removed: need the team/trash contract, T-33 |
+| Shared-loan inbox, notifications, Send Update Now | none | Team features | T-33 |
+| Loan detail | Status, conditions edit and save, notes, contacts, documents, activity, Draft Email, HOI/Title Word files, scan into loan | Summarized tab; Assigned To; archived conditions; Draft with AI; Flag Question; Scan Folder Against Conditions (desktop folder) | Summarized + Assigned To: **fix now**. Rest: later cards, folder scan dropped |
+| History | List, delete | Restore into the scanner | **fix now** |
+| AI Settings | Key, test, remove, billing and training notices, video | Cloud AI on/off switch (new app: on whenever a key exists) | Decision for owner |
+| Usage / Pricing / Overview | Usage this month, tiers, beta offer, links, onboarding checklist | Usage history list | Later card (needs an endpoint) |
+
 ---
 
 ## Phase 3: More Tools
