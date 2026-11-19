@@ -216,6 +216,56 @@ def _save_history(ctx: RequestContext, batch: dict) -> None:
         log.warning("scan history not saved: save failed")
 
 
+# ---------- saved scans ----------
+def saved_batch_to_contract(raw: Any) -> m.ScanBatch:
+    """Turn a saved history batch into the contract's ScanBatch.
+
+    History is shared with the Streamlit app during the migration, so entries come in two
+    shapes: ones this API saved (already contract-shaped) and ones the Streamlit scanner saved
+    (raw engine output: conditions as a markdown string or loose dicts, contacts with extra
+    fields, loan_match with nulls). Both go through the same normalisation as a live scan.
+    Raises ValueError for entries too broken to show.
+    """
+    if not isinstance(raw, dict):
+        raise ValueError("not a batch")
+    result = raw.get("result") if isinstance(raw.get("result"), dict) else {}
+    doc_type = str(raw.get("type") or result.get("doc_type") or "Unknown")
+    if doc_type not in get_args(m.DocType):
+        doc_type = "Unknown"
+    success = bool(result.get("success", True))
+    rows = normalize_scanned_conditions(result.get("conditions")) if success else []
+    contacts = _contacts(result.get("contacts"))
+    match = raw.get("loan_match") if isinstance(raw.get("loan_match"), dict) else {}
+    try:
+        loan_id = int(match["loan_id"]) if match.get("loan_id") is not None else None
+    except (TypeError, ValueError):
+        loan_id = None
+    suggestion = match.get("suggestion") if match.get("suggestion") in ("match", "possible", "unknown") else "unknown"
+    return m.ScanBatch(
+        file=str(raw.get("file") or "document.pdf"),
+        type=doc_type,
+        result=m.ScanResult(
+            success=success,
+            doc_type=doc_type,
+            conditions=to_contract_conditions(rows),
+            extracted_data=_extracted(result) if success else {},
+            contacts=contacts,
+            risks=str(result.get("risks") or result.get("bank_rules") or "") if success else "",
+            image_only=bool(result.get("image_only")),
+            ai_used=bool(result.get("ai_used")),
+            ai_note=str(result.get("ai_note") or ""),
+            error="" if success else str(result.get("error") or "This document could not be read."),
+        ),
+        loan_match=m.LoanMatch(
+            loan_id=loan_id,
+            loan_num=str(match.get("loan_num") or ""),
+            borrower=str(match.get("borrower") or ""),
+            confidence=int(match.get("confidence") or 0) if str(match.get("confidence") or "0").isdigit() else 0,
+            suggestion=suggestion if loan_id is not None else "unknown",
+        ),
+    )
+
+
 # ---------- the scan ----------
 def run_scan(ctx: RequestContext, filename: str, pdf_bytes: bytes, doc_type: str) -> m.ScanResponse:
     quota, profile = check_quota(ctx)
