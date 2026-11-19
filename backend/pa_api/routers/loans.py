@@ -17,6 +17,7 @@ router = APIRouter(prefix="/api/loans", tags=["loans"])
 
 Sort = Literal["newest", "borrower", "close", "lock", "loan_num", "status"]
 VALID_STATUSES = {"Pending", "Requested", "Cleared", "Overdue", "Closed"}
+VALID_CONDITION_STATUSES = {"Needed", "Requested", "Important", "Ready to Clear", "Cleared"}
 
 
 def _loan_keys(loan: dict) -> set[str]:
@@ -60,6 +61,23 @@ def _full(loan: dict) -> m.Loan:
     if data.get("status") not in VALID_STATUSES:
         data["status"] = "Pending"
     data["progress_percent"] = _summary(loan).progress_percent
+    for field in ("loan_amount", "purchase_price"):
+        if data.get(field) is not None:
+            data[field] = str(data[field])
+    normalized_conditions = []
+    for index, condition in enumerate(data.get("conditions") or [], start=1):
+        item = dict(condition)
+        try:
+            item["num"] = int(item.get("num", index))
+        except (TypeError, ValueError):
+            item["num"] = index
+        item["desc"] = item.get("desc") or item.get("text", "")
+        party = item.get("party", "")
+        item["party"] = ", ".join(party) if isinstance(party, list) else str(party)
+        if item.get("status") not in VALID_CONDITION_STATUSES:
+            item["status"] = "Needed"
+        normalized_conditions.append(item)
+    data["conditions"] = normalized_conditions
     return m.Loan.model_validate(data)
 
 
@@ -133,12 +151,17 @@ def loan_from_scan(body: m.BatchIn, ctx: RequestContext = Depends(get_context)) 
 
 @router.get("/{loan_id}", response_model=m.Loan)
 def get_loan(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.Loan:
-    raise NotBuilt("T-25")
+    return _full(_find(loan_id, ctx))
 
 
 @router.patch("/{loan_id}", response_model=m.Loan)
 def update_loan(loan_id: int, body: m.LoanUpdate, ctx: RequestContext = Depends(get_context)) -> m.Loan:
-    raise NotBuilt("T-25")
+    _write_context(ctx)
+    loan = _find(loan_id, ctx)
+    import crm
+    changes = body.model_dump(exclude_none=True)
+    crm.update_loan(loan_id, **changes)
+    return _full(_find(loan_id, ctx))
 
 
 @router.delete("/{loan_id}", response_model=m.Ok)
@@ -161,7 +184,34 @@ def set_status(loan_id: int, body: m.StatusIn, ctx: RequestContext = Depends(get
 
 @router.put("/{loan_id}/conditions", response_model=m.Loan)
 def set_conditions(loan_id: int, body: m.ConditionsIn, ctx: RequestContext = Depends(get_context)) -> m.Loan:
-    raise NotBuilt("T-25")
+    _write_context(ctx)
+    loan = _find(loan_id, ctx)
+    import crm
+    stored = loan.get("conditions") or []
+    incoming_by_num = {condition.num: condition for condition in body.conditions}
+    merged = []
+    for existing in stored:
+        try:
+            num = int(existing.get("num"))
+        except (TypeError, ValueError):
+            merged.append(existing)
+            continue
+        condition = incoming_by_num.get(num)
+        if condition is None:
+            merged.append(existing)
+            continue
+        updated = dict(existing)
+        updated.update({
+            "desc": condition.desc,
+            "party": condition.party,
+            "status": condition.status,
+            "section": condition.section,
+        })
+        merged.append(updated)
+    known = {int(item.get("num")) for item in stored if str(item.get("num", "")).isdigit()}
+    merged.extend(condition.model_dump() for condition in body.conditions if condition.num not in known)
+    crm.update_loan(loan_id, conditions=merged)
+    return _full(_find(loan_id, ctx))
 
 
 @router.post("/{loan_id}/restore", response_model=m.Loan)
