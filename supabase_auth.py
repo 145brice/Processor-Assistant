@@ -483,6 +483,14 @@ def _browser_session_key(session_id: str) -> str:
 
 
 def _current_user_email() -> str:
+    # API request: the caller's email (the API has no Streamlit session).
+    try:
+        from backend.pa_api import context as _pa_ctx
+        ctx = _pa_ctx.current()
+        if ctx is not None:
+            return "" if ctx.sandbox else str(ctx.email or "").strip()
+    except Exception:
+        pass
     try:
         import streamlit as st
         return str(st.session_state.get("user_email") or "").strip()
