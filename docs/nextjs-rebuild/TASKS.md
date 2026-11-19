@@ -224,10 +224,10 @@ For each tool: read its `show_*_page` function, identify the module calls, expos
 first, then build `/tools/<route_key>`. Same privacy rules: any AI use goes through
 `cloud_client` with redaction.
 
-- [ ] **T-30** Quick Tools: snapshot, report_issue, missing_docs, doc_expiry, spanish_reply
-- [ ] **T-31** Advanced Tools: income_verifier, auto_data_entry, credit_summary, dti_calculator,
+- [x] **T-30** Quick Tools: snapshot, report_issue, missing_docs, doc_expiry, spanish_reply
+- [x] **T-31** Advanced Tools: income_verifier, auto_data_entry, credit_summary, dti_calculator,
   condition_clearer, compliance_checker
-- [ ] **T-32** Pipeline Advanced + Automation: closing_package, pipeline_dashboard,
+- [x] **T-32** Pipeline Advanced + Automation: closing_package, pipeline_dashboard,
   guideline_checker, fraud_detector, multi_borrower, los_export, rate_lock_monitor,
   underwriting_tracker, document_classifier, escrow_calculator
 - [ ] **T-33** Team page
