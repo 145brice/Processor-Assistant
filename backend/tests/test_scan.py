@@ -118,3 +118,40 @@ def test_quota_error_is_api_error_shape(signed_in, offline, monkeypatch):
                         lambda uid, p: {"tier": "free", "tier_name": "Free", "limit": 1, "used": 1, "remaining": 0})
     with pytest.raises(ApiError):
         scan_service.check_quota(USER)
+
+
+def test_streamlit_saved_batch_converts_to_contract():
+    """History saved by the Streamlit app (raw engine shape) must still show in the new app."""
+    legacy = {
+        "file": "Fake_Approval.pdf",
+        "type": "Approval Letter",
+        "result": {
+            "success": True,
+            "conditions": "| # | Condition | Responsible | Status |\n|---|---|---|---|\n"
+                          "| 1 | Provide title commitment | Borrower | Needed |\n"
+                          "| 2 | Hazard insurance declarations page | Borrower | Waived |",
+            "contacts": {"borrower": {"name": "Testy McFakerson", "dob": "01/01/1900"}, "empty": {"name": ""}},
+            "extracted_data": {"loan_amount": "$100,000", "_image_only": False},
+            "lender_name": "Sample Lender",
+        },
+        "loan_match": {"loan_id": None, "loan_num": "", "borrower": None, "confidence": 0, "suggestion": "unknown"},
+    }
+    batch = scan_service.saved_batch_to_contract(legacy)
+    assert [c.num for c in batch.result.conditions] == [1, 2]
+    assert batch.result.conditions[0].party == "Title"
+    assert batch.result.conditions[1].status == "Needed"          # unknown status mapped
+    assert set(batch.result.contacts) == {"borrower"}              # nameless contacts dropped
+    assert "dob" not in batch.result.contacts["borrower"].model_dump()
+    assert batch.result.extracted_data == {"loan_amount": "$100,000"}
+    assert batch.loan_match.borrower == "" and batch.loan_match.loan_id is None
+
+
+def test_contract_shaped_batch_round_trips():
+    response_shaped = {
+        "file": "a.pdf", "type": "W-2",
+        "result": {"success": True, "doc_type": "W-2", "conditions": [], "extracted_data": {"wages": "1"},
+                   "contacts": {}, "risks": "", "image_only": False, "ai_used": False, "ai_note": "Local extraction", "error": ""},
+        "loan_match": {"loan_id": 7, "loan_num": "FAKE-7", "borrower": "Testy", "confidence": 90, "suggestion": "match"},
+    }
+    batch = scan_service.saved_batch_to_contract(response_shaped)
+    assert batch.type == "W-2" and batch.loan_match.loan_id == 7 and batch.result.ai_note == "Local extraction"
