@@ -22,6 +22,7 @@ import {
   updateLoan,
 } from "@/lib/api";
 import type { Activity, Condition, Loan, LoanStatus } from "@/lib/types";
+import ScanIntoLoan from "./_components/ScanIntoLoan";
 
 const STATUSES: LoanStatus[] = [
   "Pending",
@@ -314,8 +315,13 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </button>
         </section>
       </div>
-      <section id="scan-into-loan" />
-      {/* Claude will add the scan-into-loan control with T-23 merge-scan. */}
+      <ScanIntoLoan
+        loanId={loan.id}
+        onMerged={(updated) => {
+          setLoan(updated);
+          loanActivity(updated.id).then((value) => setActivity(value.items)).catch(() => undefined);
+        }}
+      />
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
           <h2 className="font-semibold text-foreground">Contacts</h2>

@@ -3,15 +3,17 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, File, Form, UploadFile
+from fastapi.responses import Response
 from starlette.concurrency import run_in_threadpool
 
 import scan_history_store
+import scan_outputs
 
 from .. import detection, scan_service
 from .. import models as m
 from ..auth import get_context
 from ..context import RequestContext
-from ..errors import ApiError, NotBuilt
+from ..errors import ApiError
 
 router = APIRouter(prefix="/api", tags=["scanning"])
 
@@ -100,16 +102,31 @@ def delete_scan(scan_id: str, ctx: RequestContext = Depends(get_context)) -> m.O
     return m.Ok(ok=True)
 
 
+# ---------- outputs (T-22): local text and files built by scan_outputs; no AI, nothing stored ----------
+def _split_subject(draft: str) -> m.EmailDraft:
+    """scan_outputs drafts start with 'Subject: ...' then a blank line."""
+    first, _, rest = draft.partition("\n\n")
+    if first.lower().startswith("subject:"):
+        return m.EmailDraft(subject=first[len("subject:"):].strip(), body=rest.strip())
+    return m.EmailDraft(subject="", body=draft.strip())
+
+
 @router.post("/outputs/email-drafts", response_model=m.EmailDrafts)
 def email_drafts(body: m.BatchIn, ctx: RequestContext = Depends(get_context)) -> m.EmailDrafts:
-    raise NotBuilt("T-22")
+    borrower_email, officer_email = scan_outputs.email_drafts(body.batch.model_dump())
+    return m.EmailDrafts(borrower_needs_list=_split_subject(borrower_email),
+                         loan_officer_update=_split_subject(officer_email))
 
 
 @router.post("/outputs/csv")
-def export_csv(body: m.BatchIn, ctx: RequestContext = Depends(get_context)):
-    raise NotBuilt("T-22")
+def export_csv(body: m.BatchIn, ctx: RequestContext = Depends(get_context)) -> Response:
+    data = scan_outputs.csv_bytes(body.batch.model_dump())
+    return Response(content=data, media_type="text/csv; charset=utf-8",
+                    headers={"Content-Disposition": 'attachment; filename="loan-scan.csv"'})
 
 
 @router.post("/outputs/pdf")
-def export_pdf(body: m.BatchIn, ctx: RequestContext = Depends(get_context)):
-    raise NotBuilt("T-22")
+def export_pdf(body: m.BatchIn, ctx: RequestContext = Depends(get_context)) -> Response:
+    data = scan_outputs.pdf_bytes(body.batch.model_dump())
+    return Response(content=data, media_type="application/pdf",
+                    headers={"Content-Disposition": 'attachment; filename="loan-scan.pdf"'})
