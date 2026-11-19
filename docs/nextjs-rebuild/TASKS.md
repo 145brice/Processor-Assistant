@@ -173,7 +173,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
 - **Check:** standard checks; tests against a temporary pipeline (patch storage to a temp
   file; never touch real data).
 
-### [ ] T-25 Loan detail: core
+### [x] T-25 Loan detail: core
 
 - **Change:** `GET/PATCH /api/loans/{id}`, `PUT /api/loans/{id}/conditions`. Web `/loans/[id]`:
   header, Change Status, Assigned To, Conditions tab (edit status per condition, Save),
