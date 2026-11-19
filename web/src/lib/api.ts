@@ -86,6 +86,9 @@ export const loanFromScan = (batch: ScanBatch) => request<Loan>("POST", "/api/lo
 export const mergeScan = (id: number, batch: ScanBatch) =>
   request<{ loan: Loan; added_conditions: number }>("POST", `/api/loans/${id}/merge-scan`, { batch });
 export const loanActivity = (id: number) => request<{ items: Activity[] }>("GET", `/api/loans/${id}/activity`);
+export const draftLoanEmail = (id: number) => request<{ subject: string; body: string }>("POST", `/api/loans/${id}/draft-email`);
+export const generateHoiRequest = (id: number) => request<{ subject: string; body: string }>("POST", `/api/loans/${id}/hoi-request`);
+export const generateTitleRequest = (id: number) => request<{ subject: string; body: string }>("POST", `/api/loans/${id}/title-request`);
 export function importLoans(file: File) {
   const form = new FormData();
   form.append("file", file);

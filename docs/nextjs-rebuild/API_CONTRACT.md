@@ -188,6 +188,11 @@ interface Tier { key: string; name: string; price: number; scan_limit: number | 
 | `POST /api/loans/from-scan` | `{batch: ScanBatch}` | `Loan` | `crm.add_loan` + `attach_document` (same fields the scanner's "Start New Loan" fills) | T-23 |
 | `POST /api/loans/{id}/merge-scan` | `{batch: ScanBatch}` | `{loan: Loan, added_conditions: number}` | merge as in the scanner's "Merge into Loan" | T-23 |
 | `GET /api/loans/{id}/activity` | none | `{items: Activity[]}` | `crm.get_activity` | T-26 |
+| `GET /api/loans/{id}/contacts` | none | `{contacts: Record<string, Contact>}` | loan contacts | T-26 |
+| `GET /api/loans/{id}/documents` | none | `{documents: LoanDocument[]}` | loan documents | T-26 |
+| `POST /api/loans/{id}/draft-email` | none | `{subject: string, body: string}` | text builder | T-26 |
+| `POST /api/loans/{id}/hoi-request` | none | `{subject: string, body: string}` | text builder | T-26 |
+| `POST /api/loans/{id}/title-request` | none | `{subject: string, body: string}` | text builder | T-26 |
 | `POST /api/loans/import` | multipart `file` (CSV or JSON) | `{imported: number, skipped: number, errors: string[]}` | `crm.bulk_import_loans` | T-24 |
 | `GET /api/usage` | none | `UsageSummary` | `tiers.check_scan_quota` | T-27 |
 | `GET /api/pricing` | none | `{tiers: Tier[], beta_offer: string, free_beta: boolean}` | `tiers.TIERS`, `tiers.stripe_payment_link`, `product_config.beta_offer` | T-27 |

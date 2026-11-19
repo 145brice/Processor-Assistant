@@ -269,6 +269,11 @@ class ActivityList(BaseModel):
     items: list[Activity]
 
 
+class TextDraft(BaseModel):
+    subject: str
+    body: str
+
+
 class ImportResult(BaseModel):
     imported: int
     skipped: int

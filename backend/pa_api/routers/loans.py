@@ -89,6 +89,30 @@ def _find(loan_id: int, ctx: RequestContext) -> dict:
     raise ApiError(404, "not_found", "Loan not found")
 
 
+def _safe_text(value: object) -> str:
+    import re
+    text = str(value or "")
+    text = re.sub(r"\b\d{3}-\d{2}-\d{4}\b|\b\d{9}\b", "[redacted]", text)
+    return re.sub(r"\b(?:account|acct)[\s:#-]*\d{4,}\b", "account [redacted]", text, flags=re.I)
+
+
+def _draft(loan: dict, kind: str) -> m.TextDraft:
+    borrower = _safe_text(loan.get("borrower"))
+    number = _safe_text(loan.get("loan_num"))
+    address = _safe_text(loan.get("property_address"))
+    if kind == "email":
+        subject = f"Loan {number} - outstanding conditions"
+        body = f"Hello,\n\nPlease provide the outstanding items for loan {number} for {borrower}.\n"
+        body += "\n".join(f"- {_safe_text(item.get('desc') or item.get('text'))}" for item in loan.get("conditions", []))
+    elif kind == "hoi":
+        subject = f"HOI / Evidence of Insurance Request Loan {number}"
+        body = f"Please provide Evidence of Insurance for loan {number}.\nBorrower: {borrower}\nProperty: {address}\n"
+    else:
+        subject = f"Title Work Request Loan {number}"
+        body = f"Please provide title work for loan {number}.\nBorrower: {borrower}\nProperty: {address}\n"
+    return m.TextDraft(subject=subject, body=_safe_text(body))
+
+
 @router.get("", response_model=m.LoanList)
 def list_loans(
     status: Optional[m.LoanStatus] = None,
@@ -147,6 +171,31 @@ async def import_loans(file: UploadFile = File(...), ctx: RequestContext = Depen
 @router.post("/from-scan", response_model=m.Loan)
 def loan_from_scan(body: m.BatchIn, ctx: RequestContext = Depends(get_context)) -> m.Loan:
     raise NotBuilt("T-23")
+
+
+@router.get("/{loan_id}/contacts")
+def loan_contacts(loan_id: int, ctx: RequestContext = Depends(get_context)) -> dict:
+    return {"contacts": _find(loan_id, ctx).get("contacts", {}) or {}}
+
+
+@router.get("/{loan_id}/documents")
+def loan_documents(loan_id: int, ctx: RequestContext = Depends(get_context)) -> dict:
+    return {"documents": _find(loan_id, ctx).get("documents", []) or []}
+
+
+@router.post("/{loan_id}/draft-email", response_model=m.TextDraft)
+def draft_email(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.TextDraft:
+    return _draft(_find(loan_id, ctx), "email")
+
+
+@router.post("/{loan_id}/hoi-request", response_model=m.TextDraft)
+def hoi_request(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.TextDraft:
+    return _draft(_find(loan_id, ctx), "hoi")
+
+
+@router.post("/{loan_id}/title-request", response_model=m.TextDraft)
+def title_request(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.TextDraft:
+    return _draft(_find(loan_id, ctx), "title")
 
 
 @router.get("/{loan_id}", response_model=m.Loan)

@@ -12,12 +12,16 @@ import {
 } from "lucide-react";
 import {
   ApiError,
+  draftLoanEmail,
+  generateHoiRequest,
+  generateTitleRequest,
   getLoan,
+  loanActivity,
   setConditions,
   setLoanStatus,
   updateLoan,
 } from "@/lib/api";
-import type { Condition, Loan, LoanStatus } from "@/lib/types";
+import type { Activity, Condition, Loan, LoanStatus } from "@/lib/types";
 
 const STATUSES: LoanStatus[] = [
   "Pending",
@@ -127,6 +131,7 @@ function Conditions({
 export default function Page({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const [loan, setLoan] = useState<Loan | null>(null);
+  const [activity, setActivity] = useState<Activity[]>([]);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
@@ -141,6 +146,9 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           e instanceof ApiError ? e.message : "Could not load this loan.",
         ),
       );
+    loanActivity(Number(id))
+      .then((value) => setActivity(value.items))
+      .catch(() => undefined);
   }, [id]);
   const status = async (value: LoanStatus) => {
     if (!loan) return;
@@ -237,6 +245,26 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           ))}
         </div>
       </section>
+      <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-card">
+        <h2 className="font-semibold text-foreground">Activity</h2>
+        {activity.length ? (
+          <div className="mt-4 space-y-3">
+            {activity.map((item, index) => (
+              <div
+                key={`${item.at}-${index}`}
+                className="border-l-2 border-brand/30 pl-3"
+              >
+                <p className="text-sm text-foreground">{item.detail}</p>
+                <p className="mt-1 text-xs text-muted">
+                  {item.action} · {item.at}
+                </p>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-muted">No activity recorded yet.</p>
+        )}
+      </section>
       <div className="mt-6 grid gap-6 lg:grid-cols-2">
         <Conditions loan={loan} onSaved={setLoan} />
         <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
@@ -263,6 +291,85 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </button>
         </section>
       </div>
+      <section id="scan-into-loan" />
+      {/* Claude will add the scan-into-loan control with T-23 merge-scan. */}
+      <div className="mt-6 grid gap-6 lg:grid-cols-2">
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+          <h2 className="font-semibold text-foreground">Contacts</h2>
+          {Object.keys(loan.contacts).length ? (
+            <div className="mt-4 space-y-3">
+              {Object.entries(loan.contacts).map(([role, contact]) => (
+                <div key={role} className="rounded-xl border border-border p-3">
+                  <p className="text-xs font-semibold uppercase text-muted">
+                    {role.replaceAll("_", " ")}
+                  </p>
+                  <p className="mt-1 text-sm text-foreground">
+                    {contact.name || contact.company || "Unnamed contact"}
+                  </p>
+                  {contact.email && (
+                    <p className="text-xs text-muted">{contact.email}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted">
+              No contacts have been added.
+            </p>
+          )}
+        </section>
+        <section className="rounded-2xl border border-border bg-card p-6 shadow-card">
+          <h2 className="font-semibold text-foreground">Documents</h2>
+          {loan.documents.length ? (
+            <div className="mt-4 space-y-2">
+              {loan.documents.map((document) => (
+                <div
+                  key={document.filename}
+                  className="flex items-center justify-between rounded-xl border border-border p-3 text-sm"
+                >
+                  <span className="text-foreground">{document.filename}</span>
+                  <span className="text-xs text-muted">
+                    {document.doc_type}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-4 text-sm text-muted">
+              No documents have been attached.
+            </p>
+          )}
+        </section>
+      </div>
+      <section className="mt-6 rounded-2xl border border-border bg-card p-6 shadow-card">
+        <h2 className="font-semibold text-foreground">Request drafts</h2>
+        <p className="mt-1 text-sm text-muted">
+          Generate text you can review and send yourself.
+        </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={() => void draftLoanEmail(loan.id)}
+            className="rounded-xl border border-border bg-card px-4 py-2 text-sm text-foreground"
+          >
+            Draft email
+          </button>
+          <button
+            type="button"
+            onClick={() => void generateHoiRequest(loan.id)}
+            className="rounded-xl border border-border bg-card px-4 py-2 text-sm text-foreground"
+          >
+            HOI request
+          </button>
+          <button
+            type="button"
+            onClick={() => void generateTitleRequest(loan.id)}
+            className="rounded-xl border border-border bg-card px-4 py-2 text-sm text-foreground"
+          >
+            Title request
+          </button>
+        </div>
+      </section>
     </div>
   );
 }
