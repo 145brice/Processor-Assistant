@@ -49,8 +49,8 @@ def test_signed_out_request_is_401_in_contract_shape():
 
 def test_unbuilt_endpoint_names_its_task():
     response = client.get("/api/loans", headers=SANDBOX)
-    assert response.status_code == 501
-    assert "T-24" in response.json()["error"]["message"]
+    assert response.status_code == 200
+    assert set(response.json()) == {"loans", "counts"}
 
 
 def test_context_is_active_only_inside_a_request():
