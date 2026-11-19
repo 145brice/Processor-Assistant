@@ -149,7 +149,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   `cloud_client._generate` to record its `prompt` and `system`; call `POST /api/scan` with a
   context that has a fake key; assert none of the invented values appear in anything recorded.
 
-### [ ] T-22 Result card and outputs
+### [x] T-22 Result card and outputs
 
 - **Read:** result rendering in `show_dashboard`; `scan_outputs.py`.
 - **Change:** `POST /api/outputs/email-drafts|csv|pdf`. Web result card: summary line,
@@ -157,7 +157,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   PDF, Export CSV, the two email drafts with copy buttons and "Open in Gmail".
 - **Check:** standard checks; CSV and PDF download and open.
 
-### [ ] T-23 Loan matching actions
+### [x] T-23 Loan matching actions
 
 - **Change:** `POST /api/loans/from-scan` and `/api/loans/{id}/merge-scan` (same merge rules as
   the scanner: add conditions not already present by description, update contacts, purchase
