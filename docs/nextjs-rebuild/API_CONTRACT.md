@@ -201,3 +201,32 @@ interface Tier { key: string; name: string; price: number; scan_limit: number | 
 With `X-PA-Sandbox: 1`: `/api/me` returns `sandbox: true`, `usage: null`; loans come from
 `pipeline.sample.json` and writes return `403` with message "Sign in to save changes"; scans
 run with local extraction only (`ai_used: false`), are not saved and are not counted.
+
+## Tool output blocks (More Tools, T-30 to T-33)
+
+`POST /api/tools/{tool}` takes `{input: {...}}` and returns `{output: {blocks: Block[]}}`. The web
+app renders every tool's blocks with one component, so a tool only decides *what* to show.
+Tools that act on a loan take `input.loan_id` (the caller's own loans only: 404 otherwise, 400 if
+missing). Tools with several buttons take `input.action`. Errors use the normal error shape.
+
+```ts
+type Tone = "good" | "warn" | "bad" | "info" | "neutral";
+type Block =
+  | { type: "stats"; items: { label: string; value: string | number; tone: Tone }[] }
+  | { type: "list"; title: string; tone: Tone; items: string[] }
+  | { type: "checklist"; title: string; rows: { label: string; ok: boolean }[] }
+  | { type: "kv"; title: string; rows: { label: string; value: string }[] }
+  | { type: "text"; title: string; text: string }              // shown with a Copy button
+  | { type: "notice"; tone: Tone; text: string; href: string; link_label: string }
+  | { type: "table"; title: string; columns: string[]; rows: string[][] }
+  | { type: "link"; label: string; href: string };
+```
+
+Tools work from each loan's saved document list. They never read folders on the server and never
+store anything. Tools that call AI redact first and use only the signed-in user's own key.
+
+| Tool | Input | Notes |
+|---|---|---|
+| `snapshot`, `missing_docs`, `doc_expiry` | `{loan_id}` | Required and tracked documents from the loan's document list |
+| `report_issue` | `{text, loan_id?}` | Masks SSN, account numbers and dates of birth; returns the report and a `mailto:` link, stores nothing |
+| `spanish_reply` | `{action: "detect" \| "reply" \| "templates", email_text?, reply_en?, conditions?}` | `detect` and `reply` translate with the user's Gemini key after redaction (400 `ai_key_needed` without one; 503 `redaction_unavailable` if name detection is off); `templates` is local |

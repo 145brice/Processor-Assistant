@@ -54,9 +54,9 @@ def test_pipeline_list_returns_loans_and_counts():
 
 
 def test_unbuilt_endpoint_names_its_task():
-    response = client.post("/api/tools/snapshot", headers=SANDBOX, json={})
+    response = client.post("/api/tools/income_verifier", headers=SANDBOX, json={})
     assert response.status_code == 501
-    assert "T-30" in response.json()["error"]["message"]
+    assert "T-31" in response.json()["error"]["message"]
 
 
 def test_context_is_active_only_inside_a_request():
