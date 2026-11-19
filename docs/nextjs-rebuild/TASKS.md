@@ -165,7 +165,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   Start New Loan Instead, + Start New Loan from this Doc.
 - **Check:** standard checks; tests for merge without duplicates.
 
-### [ ] T-24 Pipeline
+### [x] T-24 Pipeline
 
 - **Change:** loan list, create, status, delete, removed, restore, import endpoints. Web
   `/pipeline`: + Add Loan form, Bulk Import, status filter (from `?status=`), search, sort,
