@@ -103,9 +103,19 @@ def delete_ai_key(ctx: RequestContext = Depends(get_context)) -> m.AiKeyStatus:
 
 @router.get("/usage", response_model=m.UsageSummary)
 def get_usage(ctx: RequestContext = Depends(get_context)) -> m.UsageSummary:
-    raise NotBuilt("T-27")
+    if ctx.sandbox:
+        return m.UsageSummary(tier="free", tier_name="Free", limit=20, used=0, remaining=20, free_beta=True)
+    profile = supabase_auth.ensure_user_profile(ctx.user_key, email=ctx.email)
+    quota = tiers.check_scan_quota(ctx.user_key, profile)
+    return m.UsageSummary(**{key: quota[key] for key in ("tier", "tier_name", "limit", "used", "remaining")},
+                          free_beta=bool(tiers.free_beta_mode() or profile.get("beta_free") is True))
 
 
 @router.get("/pricing", response_model=m.Pricing)
 def get_pricing(ctx: RequestContext = Depends(get_context)) -> m.Pricing:
-    raise NotBuilt("T-27")
+    return m.Pricing(
+        tiers=[m.Tier(key=key, name=config["name"], price=config["price"],
+                      scan_limit=config["scan_limit"], payment_link=tiers.stripe_payment_link(key))
+               for key, config in tiers.TIERS.items()],
+        beta_offer=product_config.beta_offer(), free_beta=tiers.free_beta_mode(),
+    )
