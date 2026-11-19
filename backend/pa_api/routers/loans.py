@@ -4,9 +4,13 @@ from __future__ import annotations
 import csv
 import io
 import json
+import re
+import tempfile
+from pathlib import Path
+from urllib.parse import quote
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, Response, UploadFile
 
 from .. import models as m
 from ..auth import get_context
@@ -96,6 +100,10 @@ def _safe_text(value: object) -> str:
     return re.sub(r"\b(?:account|acct)[\s:#-]*\d{4,}\b", "account [redacted]", text, flags=re.I)
 
 
+def _gmail_url(to: str, subject: str, body: str) -> str:
+    return f"https://mail.google.com/mail/?view=cm&fs=1&to={quote(to or '')}&su={quote(subject)}&body={quote(body)}"
+
+
 def _draft(loan: dict, kind: str) -> m.TextDraft:
     borrower = _safe_text(loan.get("borrower"))
     number = _safe_text(loan.get("loan_num"))
@@ -103,7 +111,7 @@ def _draft(loan: dict, kind: str) -> m.TextDraft:
     if kind == "email":
         subject = f"Loan {number} - outstanding conditions"
         body = f"Hello,\n\nPlease provide the outstanding items for loan {number} for {borrower}.\n"
-        body += "\n".join(f"- {_safe_text(item.get('desc') or item.get('text'))}" for item in loan.get("conditions", []))
+        body += "\n".join(f"- {_safe_text(item.get('desc') or item.get('text'))}" for item in loan.get("conditions", []) if item.get("status") != "Cleared")
     elif kind == "hoi":
         subject = f"HOI / Evidence of Insurance Request Loan {number}"
         body = f"Please provide Evidence of Insurance for loan {number}.\nBorrower: {borrower}\nProperty: {address}\n"
@@ -173,29 +181,39 @@ def loan_from_scan(body: m.BatchIn, ctx: RequestContext = Depends(get_context)) 
     raise NotBuilt("T-23")
 
 
-@router.get("/{loan_id}/contacts")
-def loan_contacts(loan_id: int, ctx: RequestContext = Depends(get_context)) -> dict:
-    return {"contacts": _find(loan_id, ctx).get("contacts", {}) or {}}
-
-
-@router.get("/{loan_id}/documents")
-def loan_documents(loan_id: int, ctx: RequestContext = Depends(get_context)) -> dict:
-    return {"documents": _find(loan_id, ctx).get("documents", []) or []}
-
-
 @router.post("/{loan_id}/draft-email", response_model=m.TextDraft)
 def draft_email(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.TextDraft:
     return _draft(_find(loan_id, ctx), "email")
 
 
-@router.post("/{loan_id}/hoi-request", response_model=m.TextDraft)
-def hoi_request(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.TextDraft:
-    return _draft(_find(loan_id, ctx), "hoi")
+def _word_request(loan_id: int, ctx: RequestContext, template: str, kind: str) -> Response:
+    loan = _find(loan_id, ctx)
+    from template_filler import build_context, fill_template
+    context_data = build_context(loan)
+    safe = re.sub(r"[^A-Za-z0-9_-]+", "_", str(context_data["borrower_name"]))[:40]
+    label = "HOI Request" if kind == "hoi" else "Title Request"
+    subject = _draft(loan, kind).subject
+    contact = (loan.get("contacts", {}) or {}).get("insurance" if kind == "hoi" else "title", {}) or {}
+    recipient = contact.get("email", "")
+    gmail = _gmail_url(recipient, subject, _draft(loan, kind).body)
+    with tempfile.TemporaryDirectory() as directory:
+        target = Path(directory) / f"{label}_{safe}.docx"
+        fill_template(template, context_data, str(target))
+        content = target.read_bytes()
+    if not ctx.sandbox:
+        import crm
+        crm.log_activity(loan_id, "generated", f"{label} generated", user=ctx.email)
+    return Response(content=content, media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document", headers={"Content-Disposition": f'attachment; filename="{target.name}"', "X-PA-Gmail-URL": gmail})
 
 
-@router.post("/{loan_id}/title-request", response_model=m.TextDraft)
-def title_request(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.TextDraft:
-    return _draft(_find(loan_id, ctx), "title")
+@router.post("/{loan_id}/hoi-request")
+def hoi_request(loan_id: int, ctx: RequestContext = Depends(get_context)) -> Response:
+    return _word_request(loan_id, ctx, "HOI Request.docx", "hoi")
+
+
+@router.post("/{loan_id}/title-request")
+def title_request(loan_id: int, ctx: RequestContext = Depends(get_context)) -> Response:
+    return _word_request(loan_id, ctx, "Title Request copy.docx", "title")
 
 
 @router.get("/{loan_id}", response_model=m.Loan)

@@ -172,6 +172,29 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
       setBusy(false);
     }
   };
+  const downloadRequest = async (
+    builder: (
+      loanId: number,
+    ) => Promise<{ blob: Blob; gmailUrl: string | null }>,
+    name: string,
+  ) => {
+    if (!loan) return;
+    try {
+      const result = await builder(loan.id);
+      const url = URL.createObjectURL(result.blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = name;
+      link.click();
+      URL.revokeObjectURL(url);
+      if (result.gmailUrl && window.confirm("Open the pre-filled Gmail draft?"))
+        window.open(result.gmailUrl, "_blank", "noopener,noreferrer");
+    } catch (e) {
+      setError(
+        e instanceof ApiError ? e.message : "Could not generate the request.",
+      );
+    }
+  };
   if (error)
     return (
       <div className="mx-auto max-w-5xl px-4 py-8 md:px-8">
@@ -356,14 +379,18 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
           </button>
           <button
             type="button"
-            onClick={() => void generateHoiRequest(loan.id)}
+            onClick={() =>
+              void downloadRequest(generateHoiRequest, "HOI Request.docx")
+            }
             className="rounded-xl border border-border bg-card px-4 py-2 text-sm text-foreground"
           >
             HOI request
           </button>
           <button
             type="button"
-            onClick={() => void generateTitleRequest(loan.id)}
+            onClick={() =>
+              void downloadRequest(generateTitleRequest, "Title Request.docx")
+            }
             className="rounded-xl border border-border bg-card px-4 py-2 text-sm text-foreground"
           >
             Title request
