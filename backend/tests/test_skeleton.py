@@ -53,10 +53,13 @@ def test_pipeline_list_returns_loans_and_counts():
     assert set(response.json()) == {"loans", "counts"}
 
 
-def test_unbuilt_endpoint_names_its_task():
-    response = client.post("/api/tools/team", headers=SANDBOX, json={})
-    assert response.status_code == 501
-    assert "T-33" in response.json()["error"]["message"]
+def test_a_removed_tool_is_not_found():
+    """Team, Income Verifier, Auto Data Entry, Fraud Detector and Underwriting Tracker are parked
+    (see parked/README.md). They must answer a plain 404, not pretend to exist."""
+    for tool in ("team", "income_verifier", "fraud_detector"):
+        response = client.post(f"/api/tools/{tool}", headers=SANDBOX, json={})
+        assert response.status_code == 404
+        assert response.json()["error"]["code"] == "unknown_tool"
 
 
 def test_context_is_active_only_inside_a_request():

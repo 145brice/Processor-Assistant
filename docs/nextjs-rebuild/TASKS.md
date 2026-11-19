@@ -225,12 +225,15 @@ first, then build `/tools/<route_key>`. Same privacy rules: any AI use goes thro
 `cloud_client` with redaction.
 
 - [x] **T-30** Quick Tools: snapshot, report_issue, missing_docs, doc_expiry, spanish_reply
-- [x] **T-31** Advanced Tools: income_verifier, auto_data_entry, credit_summary, dti_calculator,
+- [x] **T-31** Advanced Tools: credit_summary, dti_calculator,
   condition_clearer, compliance_checker
 - [x] **T-32** Pipeline Advanced + Automation: closing_package, pipeline_dashboard,
-  guideline_checker, fraud_detector, multi_borrower, los_export, rate_lock_monitor,
-  underwriting_tracker, document_classifier, escrow_calculator
-- [ ] **T-33** Team page
+  guideline_checker, multi_borrower, los_export, rate_lock_monitor,
+  document_classifier, escrow_calculator
+- [-] **T-33** Team page: parked, not built (see `parked/README.md`)
+
+Parked on 2026-11-19 (never worked in the current app): Income Verifier, Auto Data Entry, Fraud Detector,
+Underwriting Tracker. Saved in `parked/more-tools/`.
 
 Not planned for the rebuild (decide later): Reader, Chat, Email Watch, Lender Learning.
 

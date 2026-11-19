@@ -66,6 +66,7 @@ Two new Railway services, `pa-api` and `pa-web`, deploy from the `rebuild` branc
 - **Concurrent users.** The engine's loan cache is kept per user while serving API requests
   (`crm._api_bucket`), so users cannot see each other's loans. `backend/tests/test_crm_isolation.py`
   covers this and must stay green.
-- **Not in the new app yet:** the Team page (it depends on folders on each person's computer), merging
+- **Not in the new app:** Team, Income Verifier, Auto Data Entry, Fraud Detector and Underwriting Tracker (parked in
+  `parked/`, see `parked/README.md`), plus merging
   the pages of one bank statement, the usage history list, and a Cloud AI on/off switch (AI is on
   whenever a key is saved).

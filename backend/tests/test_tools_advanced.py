@@ -1,5 +1,4 @@
-"""T-31 Advanced Tools: income_verifier, auto_data_entry, credit_summary, dti_calculator,
-condition_clearer, compliance_checker."""
+"""T-31 Advanced Tools: credit_summary, dti_calculator, condition_clearer, compliance_checker."""
 import pytest
 
 from backend.pa_api import context
@@ -35,37 +34,10 @@ DOC = {"filename": "paystub_jan.pdf", "doc_type": "Pay Stub", "attached": "2026-
                           "monthly_gross_income": "6000"}}
 
 
-# ---------- loan-based tools ----------
-@pytest.mark.parametrize("tool", ["income_verifier", "auto_data_entry"])
-def test_no_saved_scan_data_says_so_instead_of_failing(temporary_pipeline, tool):
-    owner = ctx_for("owner")
-    out = run(owner, tool, loan_id=make_loan(owner, []).id)
-    note = of(out, "notice")[0]
-    assert note["tone"] == "warn" and "Scan documents into the loan" in note["text"]
-
-
-def test_income_verifier_uses_the_loans_scanned_data(temporary_pipeline):
-    owner = ctx_for("owner")
-    out = run(owner, "income_verifier", loan_id=make_loan(owner, [DOC]).id)
-    assert of(out, "stats"), "expected the match counts"
-    assert of(out, "notice")[0]["text"].startswith("Status:")
-
-
-def test_auto_data_entry_fills_from_the_loans_scanned_data(temporary_pipeline):
-    owner = ctx_for("owner")
-    out = run(owner, "auto_data_entry", loan_id=make_loan(owner, [DOC]).id)
-    rows = {r["label"]: r["value"] for r in of(out, "kv")[0]["rows"]}
-    assert rows["Borrower Name"] == "Testy McFakerson"
-    assert rows["Employer Name"] == "Fake Employer Inc"
-    assert "Completion" in [i["label"] for i in of(out, "stats")[0]["items"]]
-
-
-@pytest.mark.parametrize("tool,extra", [("income_verifier", {}), ("auto_data_entry", {}),
-                                        ("condition_clearer", {"condition": "Provide paystub"})])
-def test_other_users_loan_is_404(temporary_pipeline, tool, extra):
+def test_other_users_loan_is_404(temporary_pipeline):
     loan = make_loan(ctx_for("owner"), [DOC])
     with pytest.raises(ApiError) as error:
-        run(ctx_for("other"), tool, loan_id=loan.id, **extra)
+        run(ctx_for("other"), "condition_clearer", loan_id=loan.id, condition="Provide paystub")
     assert error.value.status == 404
 
 
