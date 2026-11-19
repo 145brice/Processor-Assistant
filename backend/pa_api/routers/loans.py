@@ -60,6 +60,18 @@ def _full(loan: dict) -> m.Loan:
     if data.get("status") not in VALID_STATUSES:
         data["status"] = "Pending"
     data["progress_percent"] = _summary(loan).progress_percent
+    for field in ("loan_amount", "purchase_price"):
+        if data.get(field) is not None:
+            data[field] = str(data[field])
+    normalized_conditions = []
+    for index, condition in enumerate(data.get("conditions") or [], start=1):
+        item = dict(condition)
+        item["num"] = item.get("num", index)
+        item["desc"] = item.get("desc") or item.get("text", "")
+        party = item.get("party", "")
+        item["party"] = ", ".join(party) if isinstance(party, list) else str(party)
+        normalized_conditions.append(item)
+    data["conditions"] = normalized_conditions
     return m.Loan.model_validate(data)
 
 
@@ -133,12 +145,17 @@ def loan_from_scan(body: m.BatchIn, ctx: RequestContext = Depends(get_context)) 
 
 @router.get("/{loan_id}", response_model=m.Loan)
 def get_loan(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.Loan:
-    raise NotBuilt("T-25")
+    return _full(_find(loan_id, ctx))
 
 
 @router.patch("/{loan_id}", response_model=m.Loan)
 def update_loan(loan_id: int, body: m.LoanUpdate, ctx: RequestContext = Depends(get_context)) -> m.Loan:
-    raise NotBuilt("T-25")
+    _write_context(ctx)
+    loan = _find(loan_id, ctx)
+    import crm
+    changes = body.model_dump(exclude_none=True)
+    crm.update_loan(loan_id, **changes)
+    return _full(_find(loan_id, ctx))
 
 
 @router.delete("/{loan_id}", response_model=m.Ok)
@@ -161,7 +178,11 @@ def set_status(loan_id: int, body: m.StatusIn, ctx: RequestContext = Depends(get
 
 @router.put("/{loan_id}/conditions", response_model=m.Loan)
 def set_conditions(loan_id: int, body: m.ConditionsIn, ctx: RequestContext = Depends(get_context)) -> m.Loan:
-    raise NotBuilt("T-25")
+    _write_context(ctx)
+    _find(loan_id, ctx)
+    import crm
+    crm.update_loan(loan_id, conditions=[condition.model_dump() for condition in body.conditions])
+    return _full(_find(loan_id, ctx))
 
 
 @router.post("/{loan_id}/restore", response_model=m.Loan)
