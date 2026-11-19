@@ -188,7 +188,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   no sending); upload a document to scan into this loan (reuses `POST /api/scan` + merge).
 - **Check:** standard checks.
 
-### [ ] T-27 History, usage, pricing, overview
+### [x] T-27 History, usage, pricing, overview
 
 - **Change:** `GET/DELETE /api/scans`, `GET /api/usage`, `GET /api/pricing`. Pages `/history`
   (restore into scanner), `/settings/usage`, `/pricing`, `/overview` with onboarding checklist.

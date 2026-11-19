@@ -1,5 +1,5 @@
-import Placeholder from "@/components/Placeholder";
+import UsagePage from "./_components/UsagePage";
 
 export default function Page() {
-  return <Placeholder title="Usage / Billing" task="T-27" notes="" />;
+  return <UsagePage />;
 }
