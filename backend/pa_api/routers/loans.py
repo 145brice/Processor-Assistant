@@ -13,9 +13,10 @@ from typing import Literal, Optional
 from fastapi import APIRouter, Depends, File, Response, UploadFile
 
 from .. import models as m
+from .. import scan_to_loan
 from ..auth import get_context
 from ..context import RequestContext
-from ..errors import ApiError, NotBuilt
+from ..errors import ApiError
 
 router = APIRouter(prefix="/api/loans", tags=["loans"])
 
@@ -82,7 +83,46 @@ def _full(loan: dict) -> m.Loan:
             item["status"] = "Needed"
         normalized_conditions.append(item)
     data["conditions"] = normalized_conditions
+    # crm.attach_document stores the time as "attached"; the contract calls it "scanned_at".
+    # Without this, any loan with a scanned document failed to load (500).
+    data["documents"] = [
+        {
+            "filename": str(doc.get("filename") or ""),
+            "doc_type": str(doc.get("doc_type") or ""),
+            "scanned_at": str(doc.get("scanned_at") or doc.get("attached") or ""),
+        }
+        for doc in (data.get("documents") or [])
+        if isinstance(doc, dict)
+    ]
+    data["contacts"] = _contract_contacts(data.get("contacts"))
     return m.Loan.model_validate(data)
+
+
+def _contract_contacts(raw: object) -> dict:
+    """Fit stored contacts to the contract's Contact (name required).
+
+    The Streamlit app stores some contacts without "name": title companies are
+    {company, contact, phone, email}, and a few are plain strings. Those loans failed to load.
+    """
+    out = {}
+    if not isinstance(raw, dict):
+        return out
+    for role, value in raw.items():
+        if isinstance(value, str):
+            value = {"name": value}
+        if not isinstance(value, dict):
+            continue
+        name = str(value.get("name") or value.get("contact") or value.get("company") or "").strip()
+        if not name:
+            continue
+        out[str(role)] = {
+            "name": name,
+            "company": str(value.get("company") or value.get("brokerage") or "") or None,
+            "phone": str(value.get("phone") or "") or None,
+            "email": str(value.get("email") or "") or None,
+            "role": str(value.get("role") or "") or None,
+        }
+    return out
 
 
 def _find(loan_id: int, ctx: RequestContext) -> dict:
@@ -179,7 +219,9 @@ async def import_loans(file: UploadFile = File(...), ctx: RequestContext = Depen
 
 @router.post("/from-scan", response_model=m.Loan)
 def loan_from_scan(body: m.BatchIn, ctx: RequestContext = Depends(get_context)) -> m.Loan:
-    raise NotBuilt("T-23")
+    _write_context(ctx)
+    loan = scan_to_loan.loan_from_scan(ctx, body.batch)
+    return _full(_find(int(loan["id"]), ctx))
 
 
 @router.post("/{loan_id}/draft-email", response_model=m.TextDraft)
@@ -299,7 +341,9 @@ def restore_loan(loan_id: int, ctx: RequestContext = Depends(get_context)) -> m.
 
 @router.post("/{loan_id}/merge-scan", response_model=m.MergeResult)
 def merge_scan(loan_id: int, body: m.BatchIn, ctx: RequestContext = Depends(get_context)) -> m.MergeResult:
-    raise NotBuilt("T-23")
+    _write_context(ctx)
+    added = scan_to_loan.merge_scan(ctx, _find(loan_id, ctx), body.batch)
+    return m.MergeResult(loan=_full(_find(loan_id, ctx)), added_conditions=added)
 
 
 @router.get("/{loan_id}/activity", response_model=m.ActivityList)
