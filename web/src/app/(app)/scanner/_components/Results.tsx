@@ -120,13 +120,22 @@ function ResultCard({ batch, defaultOpen }: { batch: ScanBatch; defaultOpen: boo
   );
 }
 
-export default function Results({ batches }: { batches: ScanBatch[] }) {
+export default function Results({ batches, onClear }: { batches: ScanBatch[]; onClear: () => void }) {
   if (!batches.length) return null;
   return (
     <section className="mt-8">
-      <h2 className="mb-3 text-sm font-semibold text-foreground">
-        Results <span className="ml-1 rounded-full bg-subtle px-2 py-0.5 text-xs font-medium text-muted">{batches.length}</span>
-      </h2>
+      <div className="mb-3 flex items-center justify-between">
+        <h2 className="text-sm font-semibold text-foreground">
+          Results <span className="ml-1 rounded-full bg-subtle px-2 py-0.5 text-xs font-medium text-muted">{batches.length}</span>
+        </h2>
+        <button
+          type="button"
+          onClick={onClear}
+          className="rounded-md px-2 py-1 text-xs font-medium text-muted transition hover:bg-subtle hover:text-foreground"
+        >
+          Clear all
+        </button>
+      </div>
       <div className="space-y-3">
         {batches.map((b, i) => <ResultCard key={`${b.file}-${i}`} batch={b} defaultOpen={i === 0} />)}
       </div>

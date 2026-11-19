@@ -10,7 +10,12 @@ import {
   listLoans,
   setLoanStatus,
 } from "@/lib/api";
-import type { LoanStatus, LoanSummary, StatusCounts } from "@/lib/types";
+import type {
+  LoanSort,
+  LoanStatus,
+  LoanSummary,
+  StatusCounts,
+} from "@/lib/types";
 import AddLoanForm from "./_components/AddLoanForm";
 import EmptyState from "./_components/EmptyState";
 import FilterBar from "./_components/FilterBar";
@@ -25,6 +30,7 @@ export default function Page() {
   const [status, setStatus] = useState<LoanStatus | "">("");
   const [query, setQuery] = useState("");
   const [mine, setMine] = useState(false);
+  const [sort, setSort] = useState<LoanSort>("newest");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [addOpen, setAddOpen] = useState(false);
@@ -36,6 +42,7 @@ export default function Page() {
       const result = await listLoans({
         status: status || undefined,
         q: query || undefined,
+        sort,
         mine,
       });
       setLoans(result.loans);
@@ -49,7 +56,7 @@ export default function Page() {
     } finally {
       setLoading(false);
     }
-  }, [mine, query, status]);
+  }, [mine, query, sort, status]);
 
   useEffect(() => {
     const value = new URLSearchParams(window.location.search).get("status");
@@ -134,9 +141,11 @@ export default function Page() {
         status={status}
         query={query}
         mine={mine}
+        sort={sort}
         setStatus={setStatus}
         setQuery={setQuery}
         setMine={setMine}
+        setSort={setSort}
         search={() => void load()}
       />
       {counts && (
