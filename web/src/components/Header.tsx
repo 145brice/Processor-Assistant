@@ -20,22 +20,22 @@ export default function Header() {
   useEffect(() => { listLoans().then((result) => setCounts(result.counts)).catch(() => setCounts(null)); }, []);
   return (
     <header className="sticky top-0 z-20 border-b border-border bg-surface/85 backdrop-blur supports-[backdrop-filter]:bg-surface/70">
-      <div className="flex items-center gap-4 px-4 py-3 pl-16 md:px-8">
-        <span className="hidden shrink-0 text-xs font-semibold uppercase tracking-[0.08em] text-muted sm:block">My pipeline</span>
-        <div className="-my-1 flex min-w-0 flex-1 gap-2 overflow-x-auto py-1 [scrollbar-width:none]">
-          {CHIPS.map((chip) => (
-            <Link
-              key={chip.label}
-              href={chip.status ? "/pipeline?status=" + chip.status : "/pipeline"}
-              className="inline-flex shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-sm font-medium text-foreground/80 shadow-card transition hover:border-brand/40 hover:text-foreground"
-            >
-              <span className={"size-2 rounded-full " + chip.dot} />
-              {chip.label}
-              {counts && (
-                <span className="rounded-full bg-subtle px-1.5 text-xs font-semibold tabular-nums text-muted">{counts[chip.key]}</span>
-              )}
-            </Link>
-          ))}
+      <div className="flex h-14 items-center gap-4 px-4 pl-16 md:px-8">
+        <span className="hidden shrink-0 text-[11px] font-semibold uppercase tracking-[0.1em] text-muted sm:block">My pipeline</span>
+        <div className="min-w-0 overflow-x-auto [scrollbar-width:none]">
+          <div className="inline-flex items-center gap-0.5 rounded-xl border border-border bg-subtle/70 p-0.5">
+            {CHIPS.map((chip) => (
+              <Link
+                key={chip.label}
+                href={chip.status ? "/pipeline?status=" + chip.status : "/pipeline"}
+                className="inline-flex h-7 shrink-0 items-center gap-1.5 rounded-[10px] px-2.5 text-[13px] font-medium text-muted transition hover:bg-card hover:text-foreground hover:shadow-card"
+              >
+                <span className={"size-1.5 rounded-full " + chip.dot} />
+                {chip.label}
+                {counts && <span className="tabular-nums text-foreground/70">{counts[chip.key]}</span>}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </header>

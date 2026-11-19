@@ -179,13 +179,10 @@ export default function GeminiSetupWizard() {
   const [busy, setBusy] = useState(false);
   const [done, setDone] = useState(false);
   const [open, setOpen] = useState(false);
+  // Opening on load is decided by the effect below, which respects "skip".
   const refresh = () =>
     getMe()
-      .then((value) => {
-        setMe(value);
-        if (!value.sandbox && !value.ai.has_key && value.terms_accepted)
-          setOpen(true);
-      })
+      .then((value) => setMe(value))
       .catch(() => undefined);
   useEffect(() => {
     refresh();
@@ -224,6 +221,8 @@ export default function GeminiSetupWizard() {
       await saveAiKey(key);
       await refresh();
       setDone(true);
+      // Lets other parts of the page (e.g. the scanner's key banner) update without a reload.
+      window.dispatchEvent(new Event("pa:ai-key-saved"));
     } catch (e) {
       setError(
         e instanceof ApiError
