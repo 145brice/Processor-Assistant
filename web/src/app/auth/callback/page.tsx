@@ -12,8 +12,13 @@ export default function Page() {
     const finish = async () => {
       const search = new URLSearchParams(window.location.search);
       const code = search.get("code");
+      // The Supabase client may already have exchanged the code and removed it from the address, so a
+      // session can exist even when the code is gone. Waiting on getSession lets that finish first.
       const result = code ? await supabase.auth.exchangeCodeForSession(code) : { error: new Error("Missing sign-in code") };
-      if (result.error) { setError(true); return; }
+      if (result.error) {
+        const { data } = await supabase.auth.getSession();
+        if (!data.session) { setError(true); return; }
+      }
       router.replace(safeNext(search.get("next"), window.location.origin));
     };
     void finish();
