@@ -194,7 +194,7 @@ Delivered with this brief: `backend/pa_api` (health endpoint, context, models, 5
   (restore into scanner), `/settings/usage`, `/pricing`, `/overview` with onboarding checklist.
 - **Check:** standard checks.
 
-### [ ] T-28 Core parity review
+### [x] T-28 Core parity review
 
 - **Goal:** prove the new core matches the old one.
 - **Change:** none unless you find gaps; list gaps as new cards.
