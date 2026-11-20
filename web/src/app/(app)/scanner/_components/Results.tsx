@@ -43,6 +43,13 @@ const STATUS_OPTIONS: ConditionStatus[] = [
   "Cleared",
 ];
 
+function isEmailInstruction(condition: Condition): boolean {
+  const text = condition.desc.trim().replace(/\s+/g, " ");
+  return /^select the (?:named )?part(?:y|ies|ys) below to draft emails?$/i.test(
+    text,
+  );
+}
+
 const selectClass =
   "min-h-9 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium " +
   "text-foreground outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15";
@@ -139,7 +146,15 @@ function ResultCard({
   defaultOpen: boolean;
 }) {
   const [open, setOpen] = useState(defaultOpen);
-  const [editedBatch, setEditedBatch] = useState(batch);
+  const [editedBatch, setEditedBatch] = useState<ScanBatch>(() => ({
+    ...batch,
+    result: {
+      ...batch.result,
+      conditions: batch.result.conditions.filter(
+        (condition) => !isEmailInstruction(condition),
+      ),
+    },
+  }));
   const r = editedBatch.result;
   const borrower = borrowerOf(editedBatch);
   const summary = [
@@ -242,6 +257,7 @@ function ResultCard({
                 <p className="text-xs text-muted">{r.ai_note}</p>
                 <OutputActions batch={editedBatch} />
               </div>
+              <EmailDraftsPanel batch={editedBatch} />
               <ContactsGrid contacts={r.contacts} />
               <FieldsTable data={r.extracted_data} />
               <Conditions batch={editedBatch} onChange={updateCondition} />
@@ -255,7 +271,6 @@ function ResultCard({
                   </p>
                 </section>
               )}
-              <EmailDraftsPanel batch={editedBatch} />
             </>
           )}
         </div>
