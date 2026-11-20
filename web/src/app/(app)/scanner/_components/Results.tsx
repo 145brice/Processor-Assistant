@@ -51,8 +51,9 @@ function isEmailInstruction(condition: Condition): boolean {
 }
 
 const selectClass =
-  "min-h-9 rounded-lg border border-border bg-card px-2.5 py-1.5 text-xs font-medium " +
-  "text-foreground outline-none transition focus:border-brand focus:ring-2 focus:ring-brand/15";
+  "min-h-9 rounded-lg border border-transparent bg-subtle/80 px-2.5 py-1.5 text-xs font-medium " +
+  "text-foreground outline-none transition hover:bg-subtle focus:border-brand/40 focus:bg-card " +
+  "focus:ring-2 focus:ring-brand/15";
 
 function Conditions({
   batch,
@@ -65,17 +66,30 @@ function Conditions({
   if (!rows.length) return null;
   return (
     <section>
-      <h3 className="mb-2 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
-        Conditions{" "}
-        <span className="rounded bg-subtle px-1.5 py-px text-[10px] tracking-normal">
+      <div className="mb-3 flex items-end justify-between gap-4">
+        <div>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-brand">
+            Conditions
+          </p>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-foreground">
+            Review responsibilities
+          </h3>
+        </div>
+        <span className="rounded-full bg-brand-soft px-2.5 py-1 text-[11px] font-semibold text-brand">
           {rows.length}
         </span>
-      </h3>
-      <ol className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+      </div>
+      <div className="hidden grid-cols-[2rem_minmax(0,1fr)_10rem_9rem] gap-3 border-b border-border/70 px-2 pb-2 text-[10px] font-semibold uppercase tracking-[0.1em] text-muted sm:grid">
+        <span>#</span>
+        <span>Condition</span>
+        <span>Responsible</span>
+        <span>Status</span>
+      </div>
+      <ol className="divide-y divide-border/70">
         {rows.map((c, index) => (
           <li
             key={`${c.num}-${index}`}
-            className="grid gap-3 px-4 py-3 text-sm sm:grid-cols-[2rem_minmax(0,1fr)_10rem_9rem]"
+            className="grid gap-3 px-2 py-3.5 text-sm transition hover:bg-subtle/40 sm:grid-cols-[2rem_minmax(0,1fr)_10rem_9rem]"
           >
             <span className="w-6 shrink-0 pt-0.5 text-right text-xs font-medium tabular-nums text-muted">
               {c.num}
@@ -180,16 +194,16 @@ function ResultCard({
   };
 
   return (
-    <article className="animate-fade-up overflow-hidden rounded-2xl border border-border bg-card shadow-card transition hover:shadow-md">
+    <article className="animate-fade-up overflow-hidden rounded-[24px] bg-card shadow-[0_20px_55px_-42px_rgba(15,23,42,0.55)] ring-1 ring-black/[0.04] dark:ring-white/[0.07]">
       <button
         type="button"
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="flex w-full items-center gap-4 px-5 py-4 text-left"
+        className="flex w-full items-center gap-4 bg-gradient-to-r from-brand/[0.07] via-transparent to-transparent px-6 py-5 text-left"
       >
         <div
           className={
-            "grid size-10 shrink-0 place-items-center rounded-xl " +
+            "grid size-11 shrink-0 place-items-center rounded-full ring-1 ring-current/10 " +
             (r.success
               ? "bg-emerald-500/10 text-emerald-600"
               : "bg-rose-500/10 text-rose-600")
@@ -203,7 +217,7 @@ function ResultCard({
         </div>
         <div className="min-w-0 flex-1">
           <p
-            className="truncate font-medium text-foreground"
+            className="truncate text-[15px] font-semibold tracking-tight text-foreground"
             title={editedBatch.file}
           >
             {editedBatch.file}
@@ -236,7 +250,7 @@ function ResultCard({
       </button>
 
       {open && (
-        <div className="space-y-6 border-t border-border px-5 py-5">
+        <div className="space-y-7 border-t border-border/60 px-6 py-6">
           {!r.success && (
             <p className="rounded-xl bg-rose-500/[0.07] px-4 py-3 text-sm text-rose-700 dark:text-rose-300">
               {r.error}
@@ -253,11 +267,13 @@ function ResultCard({
           {r.success && (
             <>
               <LoanActions batch={editedBatch} />
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <p className="text-xs text-muted">{r.ai_note}</p>
-                <OutputActions batch={editedBatch} />
+              <div className="grid gap-5 border-y border-border/70 py-5 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start">
+                <EmailDraftsPanel batch={editedBatch} />
+                <div className="lg:text-right">
+                  <p className="mb-2 text-xs text-muted">{r.ai_note}</p>
+                  <OutputActions batch={editedBatch} />
+                </div>
               </div>
-              <EmailDraftsPanel batch={editedBatch} />
               <ContactsGrid contacts={r.contacts} />
               <FieldsTable data={r.extracted_data} />
               <Conditions batch={editedBatch} onChange={updateCondition} />
@@ -266,7 +282,7 @@ function ResultCard({
                   <h3 className="mb-2 text-[11px] font-semibold uppercase tracking-[0.08em] text-muted">
                     Notes
                   </h3>
-                  <p className="whitespace-pre-line rounded-xl border border-border bg-surface px-4 py-3 text-[13px] text-foreground">
+                  <p className="whitespace-pre-line border-l-2 border-brand/30 pl-4 text-[13px] leading-relaxed text-foreground">
                     {r.risks}
                   </p>
                 </section>
